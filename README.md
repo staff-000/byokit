@@ -175,25 +175,6 @@ Price tags use a stated reference workload of 1,000 input + 1,000 output tokens:
 Speed and hosting fields remain unknown until sourced. Prices/capabilities come from upstream; openness, licensing and speed are never
 inferred from marketing names. Review changes before accepting a new snapshot.
 Scheduled CI emits a candidate artifact; it cannot publish packages or overwrite defaults.
-
-## Scope and status
-
-Implemented: catalog/preset selection, capability metadata and filtering, budget
-checks, price estimates, TS declarations, browser UI, React wrapper, Python core/CLI,
-local discovery, asset tooling, snapshot import and shared tests.
-
-Next: deeper provider-specific capability overlays and context accounting review,
-family artwork, exact token-count adapters, task-specific constrained client types,
-Go/Rust SDKs, extra localization and platform smoke coverage. Full inference,
-subscription authorization, quota dashboards and OS keychain implementations stay
-in host applications or optional future integrations.
-
-Credentials never enter catalog files. Memory is the only supplied key store.
-The host controls endpoint/auth adapters; catalog updates cannot redirect keys.
-No telemetry, CDN dependency, automatic inference, or hosted credential proxy.
-
-MIT. See THIRD_PARTY_NOTICES.md and licenses/ for upstream attribution.
-
 ### Reviewed capability overrides
 
 Add entries under `models` or `offerings` in `catalog/overlays.json`:
@@ -213,3 +194,23 @@ Add entries under `models` or `offerings` in `catalog/overlays.json`:
 Targets must exist, evidence is required, and identity/auth/endpoint fields cannot be
 changed. Structured fields are merged and derived tags rebuilt. Missing targets
 fail import so a disappearing recommendation gets reviewed.
+
+## Scope and status
+
+Implemented: catalog/preset selection, capability metadata and filtering, budget
+checks, price estimates, TS declarations, browser UI, React wrapper, Python core/CLI,
+local discovery, asset tooling, snapshot import and shared tests.
+
+Next: deeper provider-specific capability overlays and context accounting review,
+family artwork, exact token-count adapters, task-specific constrained client types,
+Go/Rust SDKs, extra localization and platform smoke coverage. Full inference,
+subscription authorization, quota dashboards and OS keychain implementations stay
+in host applications or optional future integrations.
+
+Credentials never enter catalog files. Memory is the only supplied key store.
+The host controls endpoint/auth adapters; catalog updates cannot redirect keys.
+No telemetry, CDN dependency, automatic inference, or hosted credential proxy.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE). See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for third-party notices and upstream attribution.
