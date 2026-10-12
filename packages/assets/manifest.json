@@ -1,0 +1,56 @@
+{
+  "provider:openai": {
+    "id": "provider:openai",
+    "light": "provider_openai.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:anthropic": {
+    "id": "provider:anthropic",
+    "light": "provider_anthropic.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:google": {
+    "id": "provider:google",
+    "light": "provider_google.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:mistral": {
+    "id": "provider:mistral",
+    "light": "provider_mistral.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:groq": {
+    "id": "provider:groq",
+    "light": "provider_groq.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:openrouter": {
+    "id": "provider:openrouter",
+    "light": "provider_openrouter.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:deepseek": {
+    "id": "provider:deepseek",
+    "light": "provider_deepseek.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:zhipuai": {
+    "id": "provider:zhipuai",
+    "light": "provider_zhipuai.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:siliconflow": {
+    "id": "provider:siliconflow",
+    "light": "provider_siliconflow.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  }
+}

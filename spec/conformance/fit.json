@@ -1,0 +1,674 @@
+[
+  {
+    "name": "test/small-0-0",
+    "offeringId": "test/small",
+    "budget": {
+      "inputTokens": 0,
+      "outputTokens": 0
+    }
+  },
+  {
+    "name": "test/large-0-0",
+    "offeringId": "test/large",
+    "budget": {
+      "inputTokens": 0,
+      "outputTokens": 0
+    }
+  },
+  {
+    "name": "local/custom-0-0",
+    "offeringId": "local/custom",
+    "budget": {
+      "inputTokens": 0,
+      "outputTokens": 0
+    }
+  },
+  {
+    "name": "test/small-0-1000",
+    "offeringId": "test/small",
+    "budget": {
+      "inputTokens": 0,
+      "outputTokens": 1000
+    }
+  },
+  {
+    "name": "test/large-0-1000",
+    "offeringId": "test/large",
+    "budget": {
+      "inputTokens": 0,
+      "outputTokens": 1000
+    }
+  },
+  {
+    "name": "local/custom-0-1000",
+    "offeringId": "local/custom",
+    "budget": {
+      "inputTokens": 0,
+      "outputTokens": 1000
+    }
+  },
+  {
+    "name": "test/small-0-4000",
+    "offeringId": "test/small",
+    "budget": {
+      "inputTokens": 0,
+      "outputTokens": 4000
+    }
+  },
+  {
+    "name": "test/large-0-4000",
+    "offeringId": "test/large",
+    "budget": {
+      "inputTokens": 0,
+      "outputTokens": 4000
+    }
+  },
+  {
+    "name": "local/custom-0-4000",
+    "offeringId": "local/custom",
+    "budget": {
+      "inputTokens": 0,
+      "outputTokens": 4000
+    }
+  },
+  {
+    "name": "test/small-0-5000",
+    "offeringId": "test/small",
+    "budget": {
+      "inputTokens": 0,
+      "outputTokens": 5000
+    }
+  },
+  {
+    "name": "test/large-0-5000",
+    "offeringId": "test/large",
+    "budget": {
+      "inputTokens": 0,
+      "outputTokens": 5000
+    }
+  },
+  {
+    "name": "local/custom-0-5000",
+    "offeringId": "local/custom",
+    "budget": {
+      "inputTokens": 0,
+      "outputTokens": 5000
+    }
+  },
+  {
+    "name": "test/small-500-0",
+    "offeringId": "test/small",
+    "budget": {
+      "inputTokens": 500,
+      "outputTokens": 0
+    }
+  },
+  {
+    "name": "test/large-500-0",
+    "offeringId": "test/large",
+    "budget": {
+      "inputTokens": 500,
+      "outputTokens": 0
+    }
+  },
+  {
+    "name": "local/custom-500-0",
+    "offeringId": "local/custom",
+    "budget": {
+      "inputTokens": 500,
+      "outputTokens": 0
+    }
+  },
+  {
+    "name": "test/small-500-1000",
+    "offeringId": "test/small",
+    "budget": {
+      "inputTokens": 500,
+      "outputTokens": 1000
+    }
+  },
+  {
+    "name": "test/large-500-1000",
+    "offeringId": "test/large",
+    "budget": {
+      "inputTokens": 500,
+      "outputTokens": 1000
+    }
+  },
+  {
+    "name": "local/custom-500-1000",
+    "offeringId": "local/custom",
+    "budget": {
+      "inputTokens": 500,
+      "outputTokens": 1000
+    }
+  },
+  {
+    "name": "test/small-500-4000",
+    "offeringId": "test/small",
+    "budget": {
+      "inputTokens": 500,
+      "outputTokens": 4000
+    }
+  },
+  {
+    "name": "test/large-500-4000",
+    "offeringId": "test/large",
+    "budget": {
+      "inputTokens": 500,
+      "outputTokens": 4000
+    }
+  },
+  {
+    "name": "local/custom-500-4000",
+    "offeringId": "local/custom",
+    "budget": {
+      "inputTokens": 500,
+      "outputTokens": 4000
+    }
+  },
+  {
+    "name": "test/small-500-5000",
+    "offeringId": "test/small",
+    "budget": {
+      "inputTokens": 500,
+      "outputTokens": 5000
+    }
+  },
+  {
+    "name": "test/large-500-5000",
+    "offeringId": "test/large",
+    "budget": {
+      "inputTokens": 500,
+      "outputTokens": 5000
+    }
+  },
+  {
+    "name": "local/custom-500-5000",
+    "offeringId": "local/custom",
+    "budget": {
+      "inputTokens": 500,
+      "outputTokens": 5000
+    }
+  },
+  {
+    "name": "test/small-4000-0",
+    "offeringId": "test/small",
+    "budget": {
+      "inputTokens": 4000,
+      "outputTokens": 0
+    }
+  },
+  {
+    "name": "test/large-4000-0",
+    "offeringId": "test/large",
+    "budget": {
+      "inputTokens": 4000,
+      "outputTokens": 0
+    }
+  },
+  {
+    "name": "local/custom-4000-0",
+    "offeringId": "local/custom",
+    "budget": {
+      "inputTokens": 4000,
+      "outputTokens": 0
+    }
+  },
+  {
+    "name": "test/small-4000-1000",
+    "offeringId": "test/small",
+    "budget": {
+      "inputTokens": 4000,
+      "outputTokens": 1000
+    }
+  },
+  {
+    "name": "test/large-4000-1000",
+    "offeringId": "test/large",
+    "budget": {
+      "inputTokens": 4000,
+      "outputTokens": 1000
+    }
+  },
+  {
+    "name": "local/custom-4000-1000",
+    "offeringId": "local/custom",
+    "budget": {
+      "inputTokens": 4000,
+      "outputTokens": 1000
+    }
+  },
+  {
+    "name": "test/small-4000-4000",
+    "offeringId": "test/small",
+    "budget": {
+      "inputTokens": 4000,
+      "outputTokens": 4000
+    }
+  },
+  {
+    "name": "test/large-4000-4000",
+    "offeringId": "test/large",
+    "budget": {
+      "inputTokens": 4000,
+      "outputTokens": 4000
+    }
+  },
+  {
+    "name": "local/custom-4000-4000",
+    "offeringId": "local/custom",
+    "budget": {
+      "inputTokens": 4000,
+      "outputTokens": 4000
+    }
+  },
+  {
+    "name": "test/small-4000-5000",
+    "offeringId": "test/small",
+    "budget": {
+      "inputTokens": 4000,
+      "outputTokens": 5000
+    }
+  },
+  {
+    "name": "test/large-4000-5000",
+    "offeringId": "test/large",
+    "budget": {
+      "inputTokens": 4000,
+      "outputTokens": 5000
+    }
+  },
+  {
+    "name": "local/custom-4000-5000",
+    "offeringId": "local/custom",
+    "budget": {
+      "inputTokens": 4000,
+      "outputTokens": 5000
+    }
+  },
+  {
+    "name": "test/small-6500-0",
+    "offeringId": "test/small",
+    "budget": {
+      "inputTokens": 6500,
+      "outputTokens": 0
+    }
+  },
+  {
+    "name": "test/large-6500-0",
+    "offeringId": "test/large",
+    "budget": {
+      "inputTokens": 6500,
+      "outputTokens": 0
+    }
+  },
+  {
+    "name": "local/custom-6500-0",
+    "offeringId": "local/custom",
+    "budget": {
+      "inputTokens": 6500,
+      "outputTokens": 0
+    }
+  },
+  {
+    "name": "test/small-6500-1000",
+    "offeringId": "test/small",
+    "budget": {
+      "inputTokens": 6500,
+      "outputTokens": 1000
+    }
+  },
+  {
+    "name": "test/large-6500-1000",
+    "offeringId": "test/large",
+    "budget": {
+      "inputTokens": 6500,
+      "outputTokens": 1000
+    }
+  },
+  {
+    "name": "local/custom-6500-1000",
+    "offeringId": "local/custom",
+    "budget": {
+      "inputTokens": 6500,
+      "outputTokens": 1000
+    }
+  },
+  {
+    "name": "test/small-6500-4000",
+    "offeringId": "test/small",
+    "budget": {
+      "inputTokens": 6500,
+      "outputTokens": 4000
+    }
+  },
+  {
+    "name": "test/large-6500-4000",
+    "offeringId": "test/large",
+    "budget": {
+      "inputTokens": 6500,
+      "outputTokens": 4000
+    }
+  },
+  {
+    "name": "local/custom-6500-4000",
+    "offeringId": "local/custom",
+    "budget": {
+      "inputTokens": 6500,
+      "outputTokens": 4000
+    }
+  },
+  {
+    "name": "test/small-6500-5000",
+    "offeringId": "test/small",
+    "budget": {
+      "inputTokens": 6500,
+      "outputTokens": 5000
+    }
+  },
+  {
+    "name": "test/large-6500-5000",
+    "offeringId": "test/large",
+    "budget": {
+      "inputTokens": 6500,
+      "outputTokens": 5000
+    }
+  },
+  {
+    "name": "local/custom-6500-5000",
+    "offeringId": "local/custom",
+    "budget": {
+      "inputTokens": 6500,
+      "outputTokens": 5000
+    }
+  },
+  {
+    "name": "test/small-8000-0",
+    "offeringId": "test/small",
+    "budget": {
+      "inputTokens": 8000,
+      "outputTokens": 0
+    }
+  },
+  {
+    "name": "test/large-8000-0",
+    "offeringId": "test/large",
+    "budget": {
+      "inputTokens": 8000,
+      "outputTokens": 0
+    }
+  },
+  {
+    "name": "local/custom-8000-0",
+    "offeringId": "local/custom",
+    "budget": {
+      "inputTokens": 8000,
+      "outputTokens": 0
+    }
+  },
+  {
+    "name": "test/small-8000-1000",
+    "offeringId": "test/small",
+    "budget": {
+      "inputTokens": 8000,
+      "outputTokens": 1000
+    }
+  },
+  {
+    "name": "test/large-8000-1000",
+    "offeringId": "test/large",
+    "budget": {
+      "inputTokens": 8000,
+      "outputTokens": 1000
+    }
+  },
+  {
+    "name": "local/custom-8000-1000",
+    "offeringId": "local/custom",
+    "budget": {
+      "inputTokens": 8000,
+      "outputTokens": 1000
+    }
+  },
+  {
+    "name": "test/small-8000-4000",
+    "offeringId": "test/small",
+    "budget": {
+      "inputTokens": 8000,
+      "outputTokens": 4000
+    }
+  },
+  {
+    "name": "test/large-8000-4000",
+    "offeringId": "test/large",
+    "budget": {
+      "inputTokens": 8000,
+      "outputTokens": 4000
+    }
+  },
+  {
+    "name": "local/custom-8000-4000",
+    "offeringId": "local/custom",
+    "budget": {
+      "inputTokens": 8000,
+      "outputTokens": 4000
+    }
+  },
+  {
+    "name": "test/small-8000-5000",
+    "offeringId": "test/small",
+    "budget": {
+      "inputTokens": 8000,
+      "outputTokens": 5000
+    }
+  },
+  {
+    "name": "test/large-8000-5000",
+    "offeringId": "test/large",
+    "budget": {
+      "inputTokens": 8000,
+      "outputTokens": 5000
+    }
+  },
+  {
+    "name": "local/custom-8000-5000",
+    "offeringId": "local/custom",
+    "budget": {
+      "inputTokens": 8000,
+      "outputTokens": 5000
+    }
+  },
+  {
+    "name": "test/small-16000-0",
+    "offeringId": "test/small",
+    "budget": {
+      "inputTokens": 16000,
+      "outputTokens": 0
+    }
+  },
+  {
+    "name": "test/large-16000-0",
+    "offeringId": "test/large",
+    "budget": {
+      "inputTokens": 16000,
+      "outputTokens": 0
+    }
+  },
+  {
+    "name": "local/custom-16000-0",
+    "offeringId": "local/custom",
+    "budget": {
+      "inputTokens": 16000,
+      "outputTokens": 0
+    }
+  },
+  {
+    "name": "test/small-16000-1000",
+    "offeringId": "test/small",
+    "budget": {
+      "inputTokens": 16000,
+      "outputTokens": 1000
+    }
+  },
+  {
+    "name": "test/large-16000-1000",
+    "offeringId": "test/large",
+    "budget": {
+      "inputTokens": 16000,
+      "outputTokens": 1000
+    }
+  },
+  {
+    "name": "local/custom-16000-1000",
+    "offeringId": "local/custom",
+    "budget": {
+      "inputTokens": 16000,
+      "outputTokens": 1000
+    }
+  },
+  {
+    "name": "test/small-16000-4000",
+    "offeringId": "test/small",
+    "budget": {
+      "inputTokens": 16000,
+      "outputTokens": 4000
+    }
+  },
+  {
+    "name": "test/large-16000-4000",
+    "offeringId": "test/large",
+    "budget": {
+      "inputTokens": 16000,
+      "outputTokens": 4000
+    }
+  },
+  {
+    "name": "local/custom-16000-4000",
+    "offeringId": "local/custom",
+    "budget": {
+      "inputTokens": 16000,
+      "outputTokens": 4000
+    }
+  },
+  {
+    "name": "test/small-16000-5000",
+    "offeringId": "test/small",
+    "budget": {
+      "inputTokens": 16000,
+      "outputTokens": 5000
+    }
+  },
+  {
+    "name": "test/large-16000-5000",
+    "offeringId": "test/large",
+    "budget": {
+      "inputTokens": 16000,
+      "outputTokens": 5000
+    }
+  },
+  {
+    "name": "local/custom-16000-5000",
+    "offeringId": "local/custom",
+    "budget": {
+      "inputTokens": 16000,
+      "outputTokens": 5000
+    }
+  },
+  {
+    "name": "test/small-32000-0",
+    "offeringId": "test/small",
+    "budget": {
+      "inputTokens": 32000,
+      "outputTokens": 0
+    }
+  },
+  {
+    "name": "test/large-32000-0",
+    "offeringId": "test/large",
+    "budget": {
+      "inputTokens": 32000,
+      "outputTokens": 0
+    }
+  },
+  {
+    "name": "local/custom-32000-0",
+    "offeringId": "local/custom",
+    "budget": {
+      "inputTokens": 32000,
+      "outputTokens": 0
+    }
+  },
+  {
+    "name": "test/small-32000-1000",
+    "offeringId": "test/small",
+    "budget": {
+      "inputTokens": 32000,
+      "outputTokens": 1000
+    }
+  },
+  {
+    "name": "test/large-32000-1000",
+    "offeringId": "test/large",
+    "budget": {
+      "inputTokens": 32000,
+      "outputTokens": 1000
+    }
+  },
+  {
+    "name": "local/custom-32000-1000",
+    "offeringId": "local/custom",
+    "budget": {
+      "inputTokens": 32000,
+      "outputTokens": 1000
+    }
+  },
+  {
+    "name": "test/small-32000-4000",
+    "offeringId": "test/small",
+    "budget": {
+      "inputTokens": 32000,
+      "outputTokens": 4000
+    }
+  },
+  {
+    "name": "test/large-32000-4000",
+    "offeringId": "test/large",
+    "budget": {
+      "inputTokens": 32000,
+      "outputTokens": 4000
+    }
+  },
+  {
+    "name": "local/custom-32000-4000",
+    "offeringId": "local/custom",
+    "budget": {
+      "inputTokens": 32000,
+      "outputTokens": 4000
+    }
+  },
+  {
+    "name": "test/small-32000-5000",
+    "offeringId": "test/small",
+    "budget": {
+      "inputTokens": 32000,
+      "outputTokens": 5000
+    }
+  },
+  {
+    "name": "test/large-32000-5000",
+    "offeringId": "test/large",
+    "budget": {
+      "inputTokens": 32000,
+      "outputTokens": 5000
+    }
+  },
+  {
+    "name": "local/custom-32000-5000",
+    "offeringId": "local/custom",
+    "budget": {
+      "inputTokens": 32000,
+      "outputTokens": 5000
+    }
+  }
+]

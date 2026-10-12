@@ -1,0 +1,222 @@
+{
+  "schemaVersion": 1,
+  "providers": [
+    {
+      "id": "test",
+      "name": "Test",
+      "auth": "required",
+      "deployment": "hosted"
+    },
+    {
+      "id": "local",
+      "name": "Local",
+      "auth": "optional",
+      "deployment": "local"
+    }
+  ],
+  "models": [
+    {
+      "id": "test/model",
+      "name": "Example",
+      "openWeights": true,
+      "commercialUse": "unknown",
+      "license": null,
+      "origin": "cn",
+      "size": {
+        "totalParameters": 8000000000,
+        "activeParameters": null,
+        "architecture": "dense"
+      },
+      "tags": [
+        "weights:open"
+      ]
+    }
+  ],
+  "families": [],
+  "offerings": [
+    {
+      "id": "test/small",
+      "providerId": "test",
+      "modelId": "test/model",
+      "apiModelId": "small",
+      "name": "test/small",
+      "deployment": "hosted",
+      "status": "stable",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "limits": {
+        "context": 8000,
+        "input": null,
+        "output": 4000,
+        "contextAccounting": "combined"
+      },
+      "features": {
+        "functionCalling": {
+          "status": "supported",
+          "source": "fixture"
+        },
+        "strictJsonSchema": {
+          "status": "unknown",
+          "source": "fixture"
+        }
+      },
+      "price": {
+        "currency": "USD",
+        "input": 0.1,
+        "output": 0.3
+      },
+      "tags": [
+        "input:text",
+        "cap:functionCalling"
+      ]
+    },
+    {
+      "id": "test/large",
+      "providerId": "test",
+      "modelId": "test/model",
+      "apiModelId": "large",
+      "name": "test/large",
+      "deployment": "hosted",
+      "status": "stable",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "limits": {
+        "context": 32000,
+        "input": null,
+        "output": 4000,
+        "contextAccounting": "combined"
+      },
+      "features": {
+        "functionCalling": {
+          "status": "supported",
+          "source": "fixture"
+        },
+        "strictJsonSchema": {
+          "status": "unknown",
+          "source": "fixture"
+        }
+      },
+      "price": {
+        "currency": "USD",
+        "input": 0.1,
+        "output": 0.3
+      },
+      "tags": [
+        "input:text",
+        "cap:functionCalling"
+      ]
+    },
+    {
+      "id": "test/old",
+      "providerId": "test",
+      "modelId": "test/model",
+      "apiModelId": "old",
+      "name": "test/old",
+      "deployment": "hosted",
+      "status": "deprecated",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "limits": {
+        "context": 16000,
+        "input": null,
+        "output": 4000,
+        "contextAccounting": "combined"
+      },
+      "features": {
+        "functionCalling": {
+          "status": "supported",
+          "source": "fixture"
+        },
+        "strictJsonSchema": {
+          "status": "unknown",
+          "source": "fixture"
+        }
+      },
+      "price": {
+        "currency": "USD",
+        "input": 0.1,
+        "output": 0.3
+      },
+      "tags": [
+        "input:text",
+        "cap:functionCalling"
+      ]
+    },
+    {
+      "id": "local/custom",
+      "providerId": "local",
+      "modelId": "test/model",
+      "apiModelId": "custom",
+      "name": "local/custom",
+      "deployment": "local",
+      "status": "stable",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "limits": {
+        "context": null,
+        "input": null,
+        "output": null,
+        "contextAccounting": "unknown"
+      },
+      "features": {
+        "functionCalling": {
+          "status": "supported",
+          "source": "fixture"
+        },
+        "strictJsonSchema": {
+          "status": "unknown",
+          "source": "fixture"
+        }
+      },
+      "price": {
+        "currency": "USD",
+        "input": 0.1,
+        "output": 0.3
+      },
+      "tags": [
+        "input:text",
+        "cap:functionCalling"
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "id": "global",
+      "providerIds": [
+        "test",
+        "local"
+      ]
+    },
+    {
+      "id": "china",
+      "providerIds": [
+        "test",
+        "local"
+      ]
+    }
+  ]
+}

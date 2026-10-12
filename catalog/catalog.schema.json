@@ -1,0 +1,389 @@
+{
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "providers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "auth": {
+            "enum": [
+              "required",
+              "optional",
+              "none"
+            ]
+          },
+          "deployment": {
+            "enum": [
+              "hosted",
+              "local",
+              "self-hosted"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "auth",
+          "deployment"
+        ]
+      }
+    },
+    "models": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "openWeights": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "commercialUse": {
+            "enum": [
+              "allowed",
+              "restricted",
+              "unknown"
+            ]
+          },
+          "license": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "size": {
+            "type": "object",
+            "properties": {
+              "totalParameters": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "activeParameters": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "architecture": {
+                "enum": [
+                  "dense",
+                  "moe",
+                  "unknown"
+                ]
+              }
+            },
+            "required": []
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "openWeights",
+          "commercialUse",
+          "license",
+          "tags"
+        ]
+      }
+    },
+    "families": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "presets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "providerIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "required": [
+          "id",
+          "providerIds"
+        ]
+      }
+    },
+    "offerings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "providerId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "modelId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "apiModelId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "deployment": {
+            "enum": [
+              "hosted",
+              "local",
+              "self-hosted"
+            ]
+          },
+          "modalities": {
+            "type": "object",
+            "properties": {
+              "input": {
+                "type": [
+                  "array",
+                  "null"
+                ],
+                "items": {
+                  "enum": [
+                    "text",
+                    "image",
+                    "audio",
+                    "video",
+                    "embedding"
+                  ]
+                }
+              },
+              "output": {
+                "type": [
+                  "array",
+                  "null"
+                ],
+                "items": {
+                  "enum": [
+                    "text",
+                    "image",
+                    "audio",
+                    "video",
+                    "embedding"
+                  ]
+                }
+              }
+            },
+            "required": []
+          },
+          "limits": {
+            "type": "object",
+            "properties": {
+              "context": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "input": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "output": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "contextAccounting": {
+                "enum": [
+                  "combined",
+                  "input-only",
+                  "unknown"
+                ]
+              }
+            },
+            "required": []
+          },
+          "features": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "required": [
+                "status"
+              ],
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "supported",
+                    "unsupported",
+                    "conditional",
+                    "unknown"
+                  ]
+                },
+                "source": {
+                  "type": "string"
+                },
+                "reviewedAt": {
+                  "type": "string"
+                },
+                "details": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "price": {
+            "type": "object",
+            "properties": {
+              "currency": {
+                "type": "string",
+                "minLength": 1
+              },
+              "input": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "output": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "cacheRead": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "cacheWrite": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              }
+            },
+            "required": []
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "required": [
+          "id",
+          "providerId",
+          "modelId",
+          "apiModelId",
+          "name",
+          "deployment",
+          "modalities",
+          "limits",
+          "features",
+          "price",
+          "tags"
+        ]
+      }
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "light": {
+            "type": "string",
+            "minLength": 1
+          },
+          "dark": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "light",
+          "source"
+        ]
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "providers",
+    "models",
+    "families",
+    "offerings",
+    "presets"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "byokit catalog v1"
+}

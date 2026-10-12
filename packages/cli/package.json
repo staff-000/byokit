@@ -1,0 +1,17 @@
+{
+  "name": "@byokit/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "byokit": "bin.mjs"
+  },
+  "dependencies": {
+    "@byokit/core": "0.1.0"
+  },
+  "files": [
+    "bin.mjs",
+    "LICENSE",
+    "README.md"
+  ],
+  "license": "MIT"
+}

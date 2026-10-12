@@ -1,0 +1,33 @@
+{
+  "name": "byokit-workspace",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "packages/core",
+    "packages/dom",
+    "packages/react",
+    "packages/cli",
+    "packages/assets"
+  ],
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "test:python": "python3 -m unittest discover -s packages/python/tests -v",
+    "check": "node packages/cli/bin.mjs check examples/byok.config.json --strict",
+    "catalog:import": "node scripts/import-catalog.mjs",
+    "demo": "node scripts/serve.mjs",
+    "typecheck": "tsc --noEmit",
+    "test:browser": "node scripts/browser-smoke.mjs",
+    "build": "node packages/cli/bin.mjs build examples/byok.config.json --out examples/generated/catalog.json"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT",
+  "type": "module",
+  "devDependencies": {
+    "ajv": "^8.20.0",
+    "jsdom": "^26.1.0",
+    "playwright-core": "^1.64.0",
+    "typescript": "^5.9.3"
+  }
+}

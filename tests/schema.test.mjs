@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import Ajv from 'ajv/dist/2020.js';
+test('bundled catalog conforms to the cross-language JSON Schema',()=>{const schema=JSON.parse(readFileSync('catalog/catalog.schema.json'));const data=JSON.parse(readFileSync('catalog/catalog.json'));const ajv=new Ajv({strict:false});const validate=ajv.compile(schema);assert.equal(validate(data),true,JSON.stringify(validate.errors));});

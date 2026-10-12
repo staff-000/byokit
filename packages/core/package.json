@@ -1,0 +1,26 @@
+{
+  "name": "@byokit/core",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./catalog": {
+      "types": "./catalog.d.ts",
+      "default": "./catalog.js"
+    }
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "catalog.js",
+    "catalog.d.ts",
+    "NOTICE",
+    "LICENSE",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "license": "MIT"
+}

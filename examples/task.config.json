@@ -1,0 +1,33 @@
+{
+  "catalog": "../spec/fixtures/catalog.json",
+  "preset": "global",
+  "ui": {
+    "maxProviders": 8,
+    "maxModelsPerProvider": 4
+  },
+  "tasks": [
+    {
+      "offeringIds": [
+        "test/small"
+      ],
+      "budget": {
+        "maxInputTokens": 3000,
+        "maxOutputTokens": 2000,
+        "overheadTokens": 500
+      },
+      "requires": {
+        "features": [
+          "functionCalling"
+        ],
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        }
+      }
+    }
+  ]
+}

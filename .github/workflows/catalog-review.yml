@@ -1,0 +1,24 @@
+name: Upstream catalog review
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 8 * * 1'
+permissions:
+  contents: read
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: curl --fail --location --max-time 60 https://models.dev/api.json -o /tmp/models.json
+      - run: node scripts/import-catalog.mjs /tmp/models.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reviewed-catalog-candidate
+          path: |
+            catalog/catalog.json
+            catalog/catalog.lock.json
+            catalog/changes.json
+# Deliberately produces a review artifact. Publishing/changing recommendations is explicit.
