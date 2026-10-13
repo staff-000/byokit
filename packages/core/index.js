@@ -80,15 +80,16 @@ export class Catalog {
   }
   get(id) { return this.offerings.get(id); }
   getModels(config = {}) {
-    const groups=this.select({...config,ui:{maxProviders:100,maxModelsPerProvider:100}});
+    const groups=this._select(config,true);
     return structuredClone(groups.flatMap(g=>g.offerings.map(o=>{
       const model=this.models.get(o.modelId),family=this.data.families.find(f=>f.id===model?.familyId);
       return {...o,provider:g.provider,model,family:family || null,
         logos:{provider:this.data.assets?.find(a=>a.id===g.provider.logoId)||null,family:this.data.assets?.find(a=>a.id===family?.logoId)||null},
         verification:verificationSummary(this.data,o.id,{asOf:config.asOf,maxAgeDays:config.filters?.verifiedWithinDays,contributor:config.filters?.verifiedBy})};
-    })).slice(0,config.limit ?? 10));
+    })).slice(0,config.limit ?? (config.providerIds ? Infinity : 10)));
   }
-  select(config = {}) {
+  select(config = {}) { return this._select(config); }
+  _select(config = {},uncapped = false) {
     const errors=validateConfig(config); if(errors.length) throw new Error(errors.join('; '));
     const preset=this.data.presets.find(p=>p.id===(config.preset || 'global'));
     if (!preset) throw new Error(`Unknown preset: ${config.preset}`);
@@ -101,9 +102,9 @@ export class Catalog {
         const preferred=(x)=>config.prefer?.features?.filter(f=>x.features?.[f]?.status==='supported').length || 0;
         return preferred(b)-preferred(a) || (config.prefer?.lowerCost ? (a.price?.input ?? Infinity)-(b.price?.input ?? Infinity) : 0) || (a.rank ?? 100)-(b.rank ?? 100) || (a.id<b.id?-1:a.id>b.id?1:0);
       });
-      if (choices.length) groups.push({provider:this.providers.get(id),offerings:choices.slice(0,config.ui?.maxModelsPerProvider ?? 4)});
+      if (choices.length) groups.push({provider:this.providers.get(id),offerings:uncapped?choices:choices.slice(0,config.ui?.maxModelsPerProvider ?? 4)});
     }
-    return groups.slice(0,config.ui?.maxProviders ?? 8);
+    return uncapped?groups:groups.slice(0,config.ui?.maxProviders ?? 8);
   }
 }
 export function checkFit(offering, budget, options = {}) {

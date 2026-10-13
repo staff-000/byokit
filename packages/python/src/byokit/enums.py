@@ -17,6 +17,7 @@ class ProviderId(str, Enum):
 class Preset(str, Enum):
     GLOBAL = "global"
     CHINA = "china"
+    NON_CHINA = "non-china"
 
 class Country(str, Enum):
     CHINA = "cn"

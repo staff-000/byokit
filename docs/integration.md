@@ -3,14 +3,13 @@
 ## UI
 
 ```js
-import {Preset} from '@byokit/core';
-import { mountByok } from '@byokit/dom';
+import * as byokit from '@byokit/dom';
 import data from '@byokit/core/catalog';
 import '@byokit/dom/styles.css';
 
-const ui = mountByok(element, {
+const ui = byokit.mountByok(element, {
   catalog: data,
-  config: { preset: Preset.China, ui: { maxProviders: 8, maxModelsPerProvider: 4, allowCustomModel: true } },
+  config: { preset: byokit.Preset.NonChina, ui: { maxProviders: 8, maxModelsPerProvider: 4, allowCustomModel: true } },
   credentialStore: applicationCredentialStore,
   onSave: selection => saveSelection(selection),
   onCheck: async ({ providerId, modelId, apiKey, signal }) => checkProvider({ providerId, modelId, apiKey, signal }),
@@ -27,15 +26,15 @@ the DOM options and import its stylesheet separately. Changing options remounts.
 
 ## Advanced catalogs
 
-`new Catalog(customData).getModels(query)` uses your own catalog. `Catalog.select`
-returns provider groups for menus with per-provider limits. `Catalog.get` looks up
+`new byokit.Catalog(customData).getModels(query)` uses your own catalog. Its `select` method
+returns provider groups for menus with per-provider limits. `byokit.Catalog.get` looks up
 an offering by ID. The simple `getModels` helper uses the bundled snapshot.
 
 ## Budgets
 
 ```js
-import { checkFit } from '@byokit/core';
-const fit = checkFit(model, { inputTokens: 20000, outputTokens: 4000, overheadTokens: 2000 });
+import * as byokit from '@byokit/core/catalog';
+const fit = byokit.checkFit(model, { inputTokens: 20000, outputTokens: 4000, overheadTokens: 2000 });
 ```
 
 Results are fits/exceeds/unknown, with diagnostics. Context accounting may include

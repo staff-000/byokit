@@ -1,6 +1,6 @@
 // Generated from spec/enums.json. Run npm run enums:generate.
 export const ProviderId=Object.freeze({"OpenAI":"openai","Anthropic":"anthropic","Google":"google","Mistral":"mistral","Groq":"groq","OpenRouter":"openrouter","DeepSeek":"deepseek","ZhipuAI":"zhipuai","SiliconFlow":"siliconflow","Ollama":"ollama","Local":"local"});
-export const Preset=Object.freeze({"Global":"global","China":"china"});
+export const Preset=Object.freeze({"Global":"global","China":"china","NonChina":"non-china"});
 export const Country=Object.freeze({"China":"cn","UnitedStates":"us","France":"fr"});
 export const Deployment=Object.freeze({"Hosted":"hosted","Local":"local","SelfHosted":"self-hosted"});
 export const AuthRequirement=Object.freeze({"Required":"required","Optional":"optional","None":"none"});

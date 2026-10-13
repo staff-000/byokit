@@ -16,7 +16,7 @@ test('simple query returns a bounded flat list with provider/model metadata and 
 });
 test('README example matches the bundled catalog',()=>{
  const run=spawnSync('node',['examples/query.mjs'],{encoding:'utf8'});assert.equal(run.status,0,run.stderr);
- assert.deepEqual(JSON.parse(run.stdout),[{id:'deepseek/deepseek-flash',name:'DeepSeek V4.1 Flash'}]);
+ assert.deepEqual(JSON.parse(run.stdout),[{id:'deepseek/deepseek-flash',name:'DeepSeek V4.1 Flash'},{id:'deepseek/deepseek-v4-pro',name:'DeepSeek V4 Pro'}]);
 });
 test('reports retain author and evidence, but never promote unknown capabilities',()=>{
  const data=fixture();data.verifications=[report()];const c=new Catalog(data);
@@ -44,4 +44,31 @@ test('JS and Python simple query and verification filters agree',()=>{
  const queries=[{asOf},{asOf,filters:{verified:true}},{asOf,filters:{verified:false}},{asOf,filters:{verifiedBy:'github:bob'}},{asOf,limit:1}];
  const result=spawnSync(process.env.BYOKIT_PYTHON || (process.platform==='win32'?'python':'python3'),['packages/python/tests/conformance_runner.py','models'],{input:JSON.stringify({data,queries}),encoding:'utf8'});assert.equal(result.status,0,result.stderr);
  assert.deepEqual(queries.map(q=>new Catalog(data).getModels(q)),JSON.parse(result.stdout));
+});
+
+test('explicit provider queries return all non-deprecated matches unless a limit is supplied',()=>{
+ const data=fixture(),base=data.offerings[0];data.offerings=Array.from({length:125},(_,i)=>({...base,id:`test/model-${i}`,apiModelId:`model-${i}`,rank:i}));
+ data.offerings.push({...base,id:'test/deprecated',status:'deprecated'});
+ const c=new Catalog(data);
+ assert.equal(c.getModels({providerIds:['test']}).length,125);
+ assert.equal(c.getModels({providerIds:['test'],limit:5}).length,5);
+ assert.equal(c.getModels().length,10);
+ assert.equal(c.select()[0].offerings.length,4);
+ const run=spawnSync(process.env.BYOKIT_PYTHON || (process.platform==='win32'?'python':'python3'),['packages/python/tests/conformance_runner.py','models'],{input:JSON.stringify({data,queries:[{providerIds:['test']},{providerIds:['test'],limit:5},{}]}),encoding:'utf8'});
+ assert.equal(run.status,0,run.stderr);assert.deepEqual(JSON.parse(run.stdout).map(x=>x.length),[125,5,10]);
+});
+
+test('non-China preset excludes China-based providers and preserves local choices',()=>{
+ const data=JSON.parse(readFileSync('catalog/catalog.json'));
+ const preset=data.presets.find(p=>p.id==='non-china');assert.ok(preset);
+ for(const id of preset.providerIds){const p=data.providers.find(p=>p.id===id);assert.ok(p.deployment==='local'||p.origin!=='cn');}
+ assert.ok(preset.providerIds.includes('ollama'));assert.ok(!preset.providerIds.includes('deepseek'));
+ const c=new Catalog(data);assert.ok(c.getModels({preset:'non-china'}).length);
+ const run=spawnSync(process.env.BYOKIT_PYTHON || (process.platform==='win32'?'python':'python3'),['packages/python/tests/conformance_runner.py','models'],{input:JSON.stringify({data,queries:[{preset:'non-china'}]}),encoding:'utf8'});
+ assert.equal(run.status,0,run.stderr);assert.deepEqual(JSON.parse(run.stdout),[c.getModels({preset:'non-china'})]);
+});
+test('catalog namespace includes all helpers used by documented examples',async()=>{
+ const byokit=await import('@byokit/core/catalog');
+ assert.equal(byokit.Preset.NonChina,'non-china');assert.equal(byokit.githubContributor('example'),'github:example');assert.equal(typeof byokit.checkFit,'function');
+ const ui=await import('@byokit/dom');assert.equal(ui.Preset.NonChina,'non-china');assert.equal(typeof ui.discoverLocal,'function');
 });

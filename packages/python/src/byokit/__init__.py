@@ -113,7 +113,7 @@ class Catalog:
         self.offerings={o["id"]:o for o in self.data["offerings"]}
     def get(self, offering_id): return self.offerings.get(offering_id)
     def get_models(self, config: "PickerConfig | None" = None) -> list[dict]:
-        config=config or {}; groups=self.select(dict(config,ui={"maxProviders":100,"maxModelsPerProvider":100}))
+        config=config or {}; groups=self._select(config,True)
         result=[]
         for g in groups:
             for o in g["offerings"]:
@@ -121,8 +121,10 @@ class Catalog:
                 family=next((f for f in self.data["families"] if f["id"]==model.get("familyId")),None)
                 assets=self.data.get("assets",[])
                 result.append(dict(o,provider=g["provider"],model=model,family=family,logos={"provider":next((a for a in assets if a["id"]==g["provider"].get("logoId")),None),"family":next((a for a in assets if family and a["id"]==family.get("logoId")),None)},verification=verification_summary(self.data,o["id"],as_of=config.get("asOf"),max_age_days=config.get("filters",{}).get("verifiedWithinDays",90),contributor=config.get("filters",{}).get("verifiedBy"))))
-        return copy.deepcopy(result[:config.get("limit",10)])
+        return copy.deepcopy(result[:config.get("limit",len(result) if "providerIds" in config else 10)])
     def select(self, config=None):
+        return self._select(config)
+    def _select(self, config=None, uncapped=False):
         config=config or {}; errors=validate_config(config)
         if errors: raise ValueError("; ".join(errors))
         preset=next((p for p in self.data["presets"] if p["id"]==config.get("preset","global")),None)
@@ -136,8 +138,8 @@ class Catalog:
             return (-count,(price if price is not None else math.inf) if config.get("prefer",{}).get("lowerCost") else 0,o.get("rank",100),o["id"])
         for provider_id in ids:
             choices=sorted((o for o in self.data["offerings"] if o["providerId"]==provider_id and matches(o,self.models[o["modelId"]],config) and matches_verification(self.data,o["id"],config)),key=order)
-            if choices: groups.append({"provider":self.providers[provider_id],"offerings":choices[:config.get("ui",{}).get("maxModelsPerProvider",4)]})
-        return groups[:config.get("ui",{}).get("maxProviders",8)]
+            if choices: groups.append({"provider":self.providers[provider_id],"offerings":choices if uncapped else choices[:config.get("ui",{}).get("maxModelsPerProvider",4)]})
+        return groups if uncapped else groups[:config.get("ui",{}).get("maxProviders",8)]
 
 def check_fit(offering, budget, options=None):
     options=options or {}

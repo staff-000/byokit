@@ -16,6 +16,7 @@ export declare enum ProviderId {
 export declare enum Preset {
   Global = "global",
   China = "china",
+  NonChina = "non-china",
 }
 
 export declare enum Country {

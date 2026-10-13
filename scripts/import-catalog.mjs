@@ -6,7 +6,7 @@ import {validateCatalog,deriveTags} from '../packages/core/index.js';
 const [source,...args]=process.argv.slice(2);if(!source)throw new Error('Usage: node scripts/import-catalog.mjs snapshot.json [--out directory]');
 const i=args.indexOf('--out'),out=resolve(i>=0?args[i+1]:'catalog');
 const raw=await readFile(resolve(source)),upstream=JSON.parse(raw),overlay=JSON.parse(await readFile(new URL('../catalog/overlays.json',import.meta.url)));
-const catalog={schemaVersion:1,provenance:{source:'https://models.dev/api.json',reviewedAt:new Date().toISOString().slice(0,10)},providers:[],families:[],models:[],offerings:[],presets:[{id:'global',providerIds:[]},{id:'china',providerIds:[]}],assets:[]};
+const catalog={schemaVersion:1,provenance:{source:'https://models.dev/api.json',reviewedAt:new Date().toISOString().slice(0,10)},providers:[],families:[],models:[],offerings:[],presets:[{id:'global',providerIds:[]},{id:'china',providerIds:[]},{id:'non-china',providerIds:[]}],assets:[]};
 const known=new Set(),families=new Set();
 const feature=(value)=>({status:value===true?'supported':value===false?'unsupported':'unknown',source:'models.dev'});
 const number=n=>typeof n==='number'&&Number.isFinite(n)&&n>=0?n:null;
@@ -65,6 +65,6 @@ console.log(`Imported ${catalog.providers.length} providers and ${catalog.offeri
 if(i<0){
  const core=new URL('../packages/core/',import.meta.url),python=new URL('../packages/python/src/byokit/data/',import.meta.url);
  await mkdir(python,{recursive:true});
- await writeFile(new URL('catalog.js',core),'import {Catalog} from "./index.js";\nconst data='+JSON.stringify(catalog)+';\nexport default data;\nexport * from \"./enums.js\";\nexport function getModels(config={}){return new Catalog(data).getModels(config)}\n');
+ await writeFile(new URL('catalog.js',core),'import {Catalog} from "./index.js";\nconst data='+JSON.stringify(catalog)+';\nexport default data;\nexport * from \"./index.js\";\nexport function getModels(config={}){return new Catalog(data).getModels(config)}\n');
  await writeFile(new URL('catalog.json',python),JSON.stringify(catalog)+'\n');
 }

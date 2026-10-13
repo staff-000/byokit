@@ -1,6 +1,6 @@
 # Initial implementation verification
 
-- 32 Node tests passed, including shared fit/filter conformance and browser DOM lifecycle tests.
+- 35 Node tests passed, including shared fit/filter conformance and browser DOM lifecycle tests.
 - 84 fit vectors agree across native JavaScript/TypeScript API and Python implementations.
 - 6 standalone Python tests passed, including bundled resource loading.
 - TypeScript declaration/client fixture checks passed.

@@ -5,42 +5,48 @@
       "origin": "us",
       "rank": 1,
       "presets": [
-        "global"
+        "global",
+        "non-china"
       ]
     },
     "anthropic": {
       "origin": "us",
       "rank": 2,
       "presets": [
-        "global"
+        "global",
+        "non-china"
       ]
     },
     "google": {
       "origin": "us",
       "rank": 3,
       "presets": [
-        "global"
+        "global",
+        "non-china"
       ]
     },
     "mistral": {
       "origin": "fr",
       "rank": 4,
       "presets": [
-        "global"
+        "global",
+        "non-china"
       ]
     },
     "groq": {
       "origin": "us",
       "rank": 5,
       "presets": [
-        "global"
+        "global",
+        "non-china"
       ]
     },
     "openrouter": {
       "origin": "us",
       "rank": 6,
       "presets": [
-        "global"
+        "global",
+        "non-china"
       ]
     },
     "deepseek": {

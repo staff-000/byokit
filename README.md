@@ -11,9 +11,9 @@ an interface or configure your provider SDK. The demo UI is optional.
 In this repository, run `npm install` first. Packages are not published yet.
 
 ```js
-import { getModels, ProviderId } from '@byokit/core/catalog';
+import * as byokit from '@byokit/core/catalog';
 
-const models = getModels({ providerIds: [ProviderId.DeepSeek], limit: 1 });
+const models = byokit.getModels({ providerIds: [byokit.ProviderId.DeepSeek] });
 console.log(models.map(({ id, name }) => ({ id, name })));
 ```
 
@@ -24,17 +24,24 @@ Expected output with the bundled snapshot:
   {
     "id": "deepseek/deepseek-flash",
     "name": "DeepSeek V4.1 Flash"
+  },
+  {
+    "id": "deepseek/deepseek-v4-pro",
+    "name": "DeepSeek V4 Pro"
   }
 ]
 ```
 
 `models` contains full records; the example prints only their IDs and names.
+An explicit `providerIds` query returns all non-deprecated models in the bundled
+catalog for those providers. Add `limit` when you want a smaller list. This is
+catalog activity, not a live account-access check.
 This API queries an offline catalog. It needs no API key and makes no network
 request. To generate an AI response, pass the selected `apiModelId` to your
 provider SDK and keep your key in your application's credential storage.
 
-Import `Preset` from `@byokit/core` for a preset instead: `getModels({ preset: Preset.China, limit: 10 })` returns up to ten
-matches. `getModels()` uses the global preset and the same ten-result limit.
+For a preset instead: `byokit.getModels({ preset: byokit.Preset.NonChina, limit: 10 })` returns up to ten
+matches. `byokit.getModels()` uses the global preset and the same ten-result limit.
 
 Python has the same interface and JSON field names:
 
@@ -43,9 +50,9 @@ python -m pip install ./packages/python
 ```
 
 ```python
-from byokit import get_models, ProviderId
+import byokit
 
-models = get_models({'providerIds': [ProviderId.DEEP_SEEK], 'limit': 1})
+models = byokit.get_models({'providerIds': [byokit.ProviderId.DEEP_SEEK]})
 print([{'id': m['id'], 'name': m['name']} for m in models])
 ```
 
@@ -54,16 +61,16 @@ Run the JavaScript example: `node examples/query.mjs`.
 ## Filter the list
 
 ```js
-import {Preset,Deployment,Modality,FeatureName} from '@byokit/core';
+import * as byokit from '@byokit/core/catalog';
 
-const models = getModels({
-  preset: Preset.China,
+const models = byokit.getModels({
+  preset: byokit.Preset.NonChina,
   limit: 10,
   filters: {
-    deployment: [Deployment.Hosted, Deployment.Local],
-    input: [Modality.Text, Modality.Image],
-    output: [Modality.Text],
-    requiredFeatures: [FeatureName.FunctionCalling],
+    deployment: [byokit.Deployment.Hosted, byokit.Deployment.Local],
+    input: [byokit.Modality.Text, byokit.Modality.Image],
+    output: [byokit.Modality.Text],
+    requiredFeatures: [byokit.FeatureName.FunctionCalling],
     minContextTokens: 32000,
     maxInputPricePerM: 2,
   },
@@ -72,15 +79,15 @@ const models = getModels({
 ```
 
 All requirements must match. Unknown values fail requirements by default;
-`unknownPolicy: UnknownPolicy.Include` explicitly allows unknown metadata. Conditional support
+`unknownPolicy: byokit.UnknownPolicy.Include` explicitly allows unknown metadata. Conditional support
 still does not meet an unconditional feature requirement. Empty results mean no
 models meet the rules; byokit never relaxes a rule to fill the list.
 
 | Option | What it selects |
 |---|---|
-| `preset` | `china` or `global` audience shortlist |
+| `preset` | `non-china` audience shortlist (other presets remain available) |
 | `providerIds` | Explicit provider IDs, overriding the preset shortlist |
-| `limit` | Maximum returned models; default 10, maximum 1,000 |
+| `limit` | Maximum returned models; default 10 for presets, all matches for explicit providers; maximum explicit limit 1,000 |
 | `filters.deployment` | `hosted`, `local`, or `self-hosted` |
 | `filters.origin` | Known model-maker origin, such as `cn` or `us` |
 | `filters.input`, `filters.output` | Required modalities: text, image, audio, video, embedding |
@@ -100,7 +107,9 @@ models meet the rules; byokit never relaxes a rule to fill the list.
 
 Provider order follows the preset or `providerIds`; ranking happens within each
 provider. For a price comparison across providers, sort the returned list yourself.
-China/global presets are recommendations for an audience, not guarantees of network
+The non-China preset selects providers based outside China plus local runtimes.
+Those providers may serve models originating elsewhere; use origin filters when
+the underlying model maker matters. Presets are recommendations for an audience, not guarantees of network
 access or data residency. Origin is separate from hosting. Speed and model size
 remain unknown until a source or measurement supplies them.
 
@@ -115,18 +124,18 @@ Use enum members for fixed API choices. With TypeScript strict checking enabled,
 members before deployment:
 
 ```ts
-getModels({filters:{input:[Modality.Image]}}); // valid
+byokit.getModels({filters:{input:[byokit.Modality.Image]}}); // valid
 // TypeScript error: raw string is not a Modality enum member
-getModels({filters:{input:['image']}});
+byokit.getModels({filters:{input:['image']}});
 // TypeScript error: this enum member does not exist
-getModels({filters:{requiredFeatures:[FeatureName.FunctionCallling]}});
+byokit.getModels({filters:{requiredFeatures:[byokit.FeatureName.FunctionCallling]}});
 ```
 
 The same constants are available to JavaScript and as Python enums. JavaScript/JSON
 inputs are validated at runtime; Python type checkers use the typed query configuration.
 JSON catalogs/overlays still store enum values as text. Model IDs, URLs, and contributor
-notes are open-ended data. Use `customProviderId`, `customCountryCode`, `customFileFormat`,
-`customTag`, or `githubContributor` for explicit custom query values.
+notes are open-ended data. Use `byokit.customProviderId`, `byokit.customCountryCode`, `byokit.customFileFormat`,
+`byokit.customTag`, or `byokit.githubContributor` for explicit custom query values.
 
 Fixed enum definitions live in `spec/enums.json`; run `npm run enums:generate` after changing them.
 
@@ -134,7 +143,7 @@ Fixed enum definitions live in `spec/enums.json`; run `npm run enums:generate` a
 in `examples/generated/catalog.json.ids.js`. These describe the pinned build snapshot:
 
 ```ts
-import {OfferingId} from './examples/generated/catalog.json.ids.js';
+import * as byokit from './examples/generated/catalog.json.ids.js';
 const id=OfferingId['deepseek/deepseek-flash']; // when included in that build
 ```
 
@@ -177,12 +186,12 @@ Logos are metadata only; queries never download images or send credentials.
 ## Which calls have contributors verified?
 
 ```js
-import {githubContributor} from '@byokit/core';
+import * as byokit from '@byokit/core/catalog';
 
-const models = getModels({
+const models = byokit.getModels({
   filters: {
     verified: true,
-    verifiedBy: githubContributor('alice'),
+    verifiedBy: byokit.githubContributor('alice'),
     verifiedWithinDays: 30,
   },
 });

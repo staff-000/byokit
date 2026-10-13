@@ -38,20 +38,19 @@ login and quota handling belong to the application.
 ## Public query
 
 ```ts
-import {Preset,Modality,FeatureName} from '@byokit/core';
-import {getModels} from '@byokit/core/catalog';
+import * as byokit from '@byokit/core/catalog';
 
-const models=getModels({
-  preset:Preset.China,
+const models=byokit.getModels({
+  preset:byokit.Preset.NonChina,
   limit:10,
-  filters:{input:[Modality.Text],requiredFeatures:[FeatureName.FunctionCalling]},
+  filters:{input:[byokit.Modality.Text],requiredFeatures:[byokit.FeatureName.FunctionCalling]},
 });
 ```
 
 Each result is one provider/model offering enriched with provider, model, family,
-logo and verification metadata. `Catalog(customData).getModels` uses another pinned
-catalog. `Catalog.select` remains available for grouped menus. Python mirrors these
-interfaces as `get_models` and `Catalog.get_models`.
+logo and verification metadata. `byokit.Catalog(customData).getModels` uses another pinned
+catalog. `byokit.Catalog.select` remains available for grouped menus. Python mirrors these
+interfaces as `get_models` and `byokit.Catalog.get_models`.
 
 ## Selection flow
 
@@ -69,10 +68,11 @@ flowchart TD
 
 Provider order follows the preset or explicit provider list. Within a provider,
 preferred supported features rank first, followed by optional input-token price,
-curated rank and stable ID. `getModels` returns at most ten results by default.
+curated rank and stable ID. `getModels` returns all matching non-deprecated catalog entries for explicit providerIds;
+preset-only queries return at most ten results by default. An explicit limit caps either query.
 Grouped UI menus have separate provider/model-per-provider limits.
 
-Unknown metadata fails a requirement unless UnknownPolicy.Include permits it.
+Unknown metadata fails a requirement unless byokit.UnknownPolicy.Include permits it.
 Conditional features do not satisfy unconditional requirements. Hard filters are
 never relaxed to fill a list. Open weights, commercial permission, model origin,
 endpoint location and account eligibility are distinct facts. Speed needs a sourced

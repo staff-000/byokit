@@ -14,7 +14,8 @@
   },
   "Preset": {
     "Global": "global",
-    "China": "china"
+    "China": "china",
+    "NonChina": "non-china"
   },
   "Country": {
     "China": "cn",

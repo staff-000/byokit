@@ -24088,6 +24088,19 @@
         "ollama",
         "local"
       ]
+    },
+    {
+      "id": "non-china",
+      "providerIds": [
+        "openai",
+        "anthropic",
+        "google",
+        "mistral",
+        "groq",
+        "openrouter",
+        "ollama",
+        "local"
+      ]
     }
   ],
   "assets": [

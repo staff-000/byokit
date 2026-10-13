@@ -11,12 +11,12 @@ try{
  await page.getByRole('button',{name:'Save',exact:true}).click();
  await page.getByText('Settings saved',{exact:true}).waitFor();
  assert.ok(!(await page.locator('#output').textContent()).includes('demo-secret'));
- await page.getByRole('button',{name:'Use China preset'}).click();
+ await page.getByRole('button',{name:'Use global preset'}).click();
  assert.ok((await page.locator('.byokit select').first().locator('option').allTextContents()).some(s=>s==='DeepSeek'));
  await page.screenshot({path:'/private/tmp/byokit-desktop.png',fullPage:true});
  await page.setViewportSize({width:390,height:844});
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));
  await page.screenshot({path:'/private/tmp/byokit-mobile.png',fullPage:true});
  assert.deepEqual(errors,[]);
- console.log('Chrome smoke passed: save, preset switch, secret isolation, mobile layout, no page errors.');
+ console.log('Chrome smoke passed: save, non-China/global preset switch, secret isolation, mobile layout, no page errors.');
 }finally{await browser.close()}

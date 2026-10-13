@@ -1,1 +1,20 @@
-{"catalog":"../catalog/catalog.json","preset":"global","filters":{"input":["text"],"output":["text"],"deployment":["hosted"]},"ui":{"maxProviders":8,"maxModelsPerProvider":4,"allowCustomModel":true}}
+{
+  "catalog": "../catalog/catalog.json",
+  "preset": "non-china",
+  "filters": {
+    "input": [
+      "text"
+    ],
+    "output": [
+      "text"
+    ],
+    "deployment": [
+      "hosted"
+    ]
+  },
+  "ui": {
+    "maxProviders": 8,
+    "maxModelsPerProvider": 4,
+    "allowCustomModel": true
+  }
+}

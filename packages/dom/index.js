@@ -105,3 +105,6 @@ async function bounded(operation,controller,ms){
   try{return await Promise.race([operation,new Promise((_,reject)=>{timer=setTimeout(()=>{controller.abort();reject(new Error('Timed out'))},ms)})])}
   finally{clearTimeout(timer)}
 }
+
+export * from '@byokit/core';
+export {discoverLocal} from './local.js';
