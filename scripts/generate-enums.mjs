@@ -5,7 +5,7 @@ const js=header+Object.entries(spec).map(([name,values])=>`export const ${name}=
 const ts=header+Object.entries(spec).map(([name,values])=>`export declare enum ${name} {\n${Object.entries(values).map(([k,v])=>`  ${k} = ${JSON.stringify(v)},`).join('\n')}\n}`).join('\n\n')+'\n';
 const snake=s=>s.replace(/([a-z0-9])([A-Z])/g,'$1_$2').replace(/([A-Z])([A-Z][a-z])/g,'$1_$2').toUpperCase();
 const py='# Generated from spec/enums.json. Run npm run enums:generate.\nfrom enum import Enum\n\n'+Object.entries(spec).map(([name,values])=>`class ${name}(str, Enum):\n${Object.entries(values).map(([k,v])=>`    ${snake(k)} = ${JSON.stringify(v)}`).join('\n')}`).join('\n\n')+'\n';
-await writeFile(new URL('../packages/core/enums.js',import.meta.url),js);
-await writeFile(new URL('../packages/core/enums.d.ts',import.meta.url),ts);
-await writeFile(new URL('../packages/python/src/byokit/enums.py',import.meta.url),py);
+await writeFile(new URL('../packages/core/enums.js',import.meta.url),js+'export const DEFAULT=ModelList.Default, COMPLETE=ModelList.Complete, CHINA=ModelList.China, NON_CHINA=ModelList.NonChina;\n');
+await writeFile(new URL('../packages/core/enums.d.ts',import.meta.url),ts+'export declare const DEFAULT:ModelList.Default, COMPLETE:ModelList.Complete, CHINA:ModelList.China, NON_CHINA:ModelList.NonChina;\n');
+await writeFile(new URL('../packages/python/src/byokit/enums.py',import.meta.url),py+'\nDEFAULT=ModelList.DEFAULT\nCOMPLETE=ModelList.COMPLETE\nCHINA=ModelList.CHINA\nNON_CHINA=ModelList.NON_CHINA\n');
 console.log(`Generated ${Object.keys(spec).length} enums for JavaScript/TypeScript and Python.`);

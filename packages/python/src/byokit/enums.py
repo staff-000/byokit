@@ -205,3 +205,22 @@ class Tag(str, Enum):
     POPULARITY_UNCERTAIN = "popularity:UNCERTAIN"
     PRICE_PREMIUM = "price:premium"
     WEIGHTS_OPEN = "weights:open"
+
+class ModelList(str, Enum):
+    DEFAULT = "default"
+    COMPLETE = "complete"
+    CHINA = "china"
+    NON_CHINA = "non-china"
+
+class LocalApi(str, Enum):
+    OPEN_AI = "openai-compatible"
+    OLLAMA = "ollama"
+
+class LifecycleBasis(str, Enum):
+    PROVIDER = "provider"
+    CATALOG_LISTING = "catalog-listing"
+
+DEFAULT=ModelList.DEFAULT
+COMPLETE=ModelList.COMPLETE
+CHINA=ModelList.CHINA
+NON_CHINA=ModelList.NON_CHINA

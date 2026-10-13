@@ -1,4 +1,4 @@
-import {FeatureStatus,ContextAccounting,Currency,VerificationStatus,Deployment as DeploymentType,Modality,FeatureName,Deployment,UnknownPolicy,CommercialUse,VerificationCheck,LocalRuntime,Lifecycle,Popularity,PopularityMetric} from './enums.js';
+import {FeatureStatus,ContextAccounting,Currency,VerificationStatus,Deployment as DeploymentType,Modality,FeatureName,Deployment,UnknownPolicy,CommercialUse,VerificationCheck,LocalRuntime,Lifecycle,Popularity,PopularityMetric,ModelList,LocalApi,LifecycleBasis} from './enums.js';
 export * from './enums.js';
 /** Framework-independent catalog, selection and preflight rules. No network or storage. */
 const finite = n => typeof n === 'number' && Number.isFinite(n) && n >= 0;
@@ -31,7 +31,12 @@ export function validateCatalog(data) {
 }
 export function validateConfig(c = {}) {
   const errors = [];
-  const allowed={root:['limit','asOf','unknownPolicy','schemaVersion','catalog','preset','providerIds','filters','prefer','ui','budget','tasks'],filters:['deployment','origin','openWeights','commercialUse','input','output','requiredFeatures','minContextTokens','maxInputPricePerM','maxOutputPricePerM','maxParameters','maxTimeToFirstTokenMs','minTokensPerSecond','fileFormats','includeTags','excludeTags','lifecycle','popularity','includeDeprecated','verified','verifiedBy','verifiedWithinDays'],prefer:['features','lowerCost'],ui:['maxProviders','maxModelsPerProvider','allowCustomModel'],budget:['maxInputTokens','maxOutputTokens','overheadTokens']};
+  if(c.list!==undefined&&!Object.values(ModelList).includes(c.list))errors.push('Unknown model list');
+  if(c.local!==undefined&&c.local!==false){
+    if(!Array.isArray(c.local))errors.push('local must be false or an array');
+    else for(const entry of c.local)try{validateLocal(entry)}catch(e){errors.push(e.message)}
+  }
+  const allowed={root:['list','local','limit','asOf','unknownPolicy','schemaVersion','catalog','preset','providerIds','filters','prefer','ui','budget','tasks'],filters:['deployment','origin','openWeights','commercialUse','input','output','requiredFeatures','minContextTokens','maxInputPricePerM','maxOutputPricePerM','maxParameters','maxTimeToFirstTokenMs','minTokensPerSecond','fileFormats','includeTags','excludeTags','lifecycle','popularity','includeDeprecated','verified','verifiedBy','verifiedWithinDays'],prefer:['features','lowerCost'],ui:['maxProviders','maxModelsPerProvider','allowCustomModel'],budget:['maxInputTokens','maxOutputTokens','overheadTokens']};
   for(const [group,keys] of Object.entries(allowed))for(const key of Object.keys(group==='root'?c:c[group] || {}))if(!keys.includes(key))errors.push(`Unknown ${group}.${key}`);
   for(const key of ['deployment','origin','input','output','requiredFeatures','fileFormats','includeTags','excludeTags','lifecycle','popularity'])if(c.filters?.[key]!==undefined&&(!Array.isArray(c.filters[key])||c.filters[key].some(v=>typeof v!=='string')))errors.push(`filters.${key} must be a string array`);
   for (const key of ['minContextTokens','maxInputPricePerM','maxOutputPricePerM','maxParameters','maxTimeToFirstTokenMs','minTokensPerSecond']) if (c.filters?.[key] !== undefined && !finite(c.filters[key])) errors.push(`filters.${key} must be a nonnegative finite number`);
@@ -66,7 +71,7 @@ function matches(o, m, c, providerTags = []) {
   }
   const constraints = [[f.minContextTokens,o.limits?.context,'min'],[f.maxInputPricePerM,o.price?.input,'max'],[f.maxOutputPricePerM,o.price?.output,'max'],[f.maxParameters,m.size?.totalParameters,'max'],[f.maxTimeToFirstTokenMs,o.speed?.timeToFirstTokenMs,'max'],[f.minTokensPerSecond,o.speed?.tokensPerSecond,'min']];
   for (const [bound,value,op] of constraints) if (bound !== undefined && (!finite(value) ? !unknown(c) : op === 'min' ? value < bound : value > bound)) return false;
-  if(f.lifecycle && !f.lifecycle.includes(o.lifecycle.status))return false;
+  if(!(f.lifecycle || [Lifecycle.Live]).includes(o.lifecycle.status))return false;
   if(f.popularity && !f.popularity.includes(o.popularity.status))return false;
   const tags=new Set([...[...(m.tags || []),...providerTags].filter(t=>!t.startsWith('lifecycle:')&&!t.startsWith('popularity:')),...(o.tags || [])]);
   if ((f.includeTags || []).some(t=>!tags.has(t)) || (f.excludeTags || []).some(t=>tags.has(t))) return false;
@@ -82,32 +87,38 @@ export class Catalog {
     this.offerings=new Map(this.data.offerings.map(x=>[x.id,x]));
   }
   get(id) { return this.offerings.get(id); }
-  getModels(config = {}) {
+  getModels(input = {},options) {
+    const config=normalizeQuery(input,options);
     const groups=this._select(config,true);
-    return structuredClone(groups.flatMap(g=>g.offerings.map(o=>{
-      const model=this.models.get(o.modelId),family=this.data.families.find(f=>f.id===model?.familyId);
+    const hosted=groups.filter(g=>g.provider.deployment!==Deployment.Local).flatMap(g=>g.offerings.map(o=>[g,o])).slice(0,config.limit);
+    const locals=groups.filter(g=>g.provider.deployment===Deployment.Local).flatMap(g=>g.offerings.map(o=>[g,o]));
+    return structuredClone([...hosted,...locals].map(([g,o])=>{
+      const model=this.models.get(o.modelId) || {id:o.modelId,name:o.name,openWeights:null,commercialUse:CommercialUse.Unknown,license:null,tags:[]},family=this.data.families.find(f=>f.id===model?.familyId);
       return {...o,provider:g.provider,model,family:family || null,
         logos:{provider:this.data.assets?.find(a=>a.id===g.provider.logoId)||null,family:this.data.assets?.find(a=>a.id===family?.logoId)||null},
         verification:verificationSummary(this.data,o.id,{asOf:config.asOf,maxAgeDays:config.filters?.verifiedWithinDays,contributor:config.filters?.verifiedBy})};
-    })).slice(0,config.limit ?? (config.providerIds ? Infinity : 10)));
+    }));
   }
-  select(config = {}) { return this._select(config); }
+  select(input = {},options) { return this._select(normalizeQuery(input,options)); }
   _select(config = {},uncapped = false) {
     const errors=validateConfig(config); if(errors.length) throw new Error(errors.join('; '));
-    const preset=this.data.presets.find(p=>p.id===(config.preset || 'global'));
+    const preset=this.data.presets.find(p=>p.id===(config.preset || (config.list===ModelList.Default?'default':'global'))) || (config.list===ModelList.Default?this.data.presets.find(p=>p.id==='global'):undefined);
     if (!preset) throw new Error(`Unknown preset: ${config.preset}`);
-    const ids=config.providerIds || preset.providerIds;
+    const ids=config.providerIds || (config.list===ModelList.Complete?this.data.providers.map(p=>p.id):preset.providerIds);
     if (!Array.isArray(ids) || ids.some(id=>!this.providers.has(id))) throw new Error('Unknown provider in providerIds');
     const groups=[];
     for(const id of ids) {
+      if(this.providers.get(id).deployment===Deployment.Local)continue;
       let choices=this.data.offerings.filter(o=>o.providerId===id).map(o=>withSignals(o,config.asOf)).filter(o=>matches(o,this.models.get(o.modelId),config,this.providers.get(id).tags) && matchesVerification(this.data,o.id,config));
       choices.sort((a,b)=> {
         const preferred=(x)=>config.prefer?.features?.filter(f=>x.features?.[f]?.status==='supported').length || 0;
         return preferred(b)-preferred(a) || (config.prefer?.lowerCost ? (a.price?.input ?? Infinity)-(b.price?.input ?? Infinity) : 0) || (a.rank ?? 100)-(b.rank ?? 100) || (a.id<b.id?-1:a.id>b.id?1:0);
       });
-      if (choices.length) groups.push({provider:this.providers.get(id),offerings:uncapped?choices:choices.slice(0,config.ui?.maxModelsPerProvider ?? 4)});
+      const cap=uncapped?(config.list===ModelList.Complete||config.providerIds?Infinity:config.ui?.maxModelsPerProvider ?? 1):config.ui?.maxModelsPerProvider ?? 4;
+      if (choices.length) groups.push({provider:this.providers.get(id),offerings:choices.slice(0,cap)});
     }
-    return uncapped?groups:groups.slice(0,config.ui?.maxProviders ?? 8);
+    const locals=localGroups(config,this);
+    return [...(uncapped?groups:groups.slice(0,Math.max(0,(config.ui?.maxProviders ?? 8)-locals.length))),...locals];
   }
 }
 export function checkFit(offering, budget, options = {}) {
@@ -251,15 +262,45 @@ function validateSignals(o) {
  const errors=[];
  const check=(record,keys)=>record && typeof record==='object' && !Array.isArray(record) && Object.keys(record).every(k=>keys.includes(k));
  const l=o.lifecycleEvidence,p=o.popularityEvidence;
- if(l!==undefined && (!check(l,['status','source','checkedAt']) || !Object.values(Lifecycle).includes(l.status) || !signalSource(l.source) || !signalDate(l.checkedAt)))errors.push(`${o.id}: invalid lifecycle evidence`);
+ if(l!==undefined && (!check(l,['status','source','checkedAt','basis']) || !Object.values(Lifecycle).includes(l.status) || (l.basis!==undefined&&!Object.values(LifecycleBasis).includes(l.basis)) || !signalSource(l.source) || !signalDate(l.checkedAt)))errors.push(`${o.id}: invalid lifecycle evidence`);
  if(p!==undefined && (!check(p,['metric','rank','population','scope','source','windowStart','windowEnd']) || !Object.values(PopularityMetric).includes(p.metric) || !Number.isInteger(p.rank) || p.rank<1 || !Number.isInteger(p.population) || p.population<p.rank || typeof p.scope!=='string' || !p.scope.trim() || !signalSource(p.source) || !signalDate(p.windowStart) || !signalDate(p.windowEnd) || Date.parse(p.windowStart)>=Date.parse(p.windowEnd)))errors.push(`${o.id}: invalid popularity evidence`);
  return errors;
 }
 function withSignals(o,asOf) {
  const now=asOf===undefined?Date.now():Date.parse(asOf),l=o.lifecycleEvidence,p=o.popularityEvidence;
  const fresh=(date,days)=>signalDate(date)&&Date.parse(date)<=now&&now-Date.parse(date)<=days*86400000;
- const lifecycle={status:l&&fresh(l.checkedAt,90)?l.status:Lifecycle.Uncertain,evidence:l||null};
+ const lifecycle={status:l&&fresh(l.checkedAt,90)?(o.status==='deprecated'?Lifecycle.Outdated:l.status):Lifecycle.Uncertain,evidence:l||null};
  const popularity={status:p&&fresh(p.windowEnd,30)?(p.rank<=Math.ceil(p.population*.1)?Popularity.Popular:Popularity.NotPopular):Popularity.Uncertain,evidence:p||null};
  const tags=(o.tags||[]).filter(t=>!t.startsWith('lifecycle:')&&!t.startsWith('popularity:'));
  return {...o,lifecycle,popularity,tags:[...tags,`lifecycle:${lifecycle.status}`,`popularity:${popularity.status}`]};
+}
+
+
+function normalizeQuery(input={},options) {
+ const mode=typeof input==='string';
+ if(mode&&!Object.values(ModelList).includes(input))throw new Error('Unknown model list');
+ if(!mode&&(input===null||typeof input!=='object'||Array.isArray(input)||options!==undefined))throw new Error('Use getModels(options) or getModels(list, options)');
+ const config=mode?{...(options||{}),list:input}:{...input};
+ if(config.list===undefined && config.preset===undefined && config.providerIds===undefined)config.list=ModelList.Default;
+ if(config.list===ModelList.China)config.preset='china';
+ if(config.list===ModelList.NonChina)config.preset='non-china';
+ return config;
+}
+function validateLocal(entry) {
+ if(!entry || typeof entry!=='object'||Array.isArray(entry)||Object.keys(entry).some(k=>!['endpoint','api','modelId','name'].includes(k)))throw new Error('Invalid local entry');
+ if(typeof entry.endpoint!=='string')throw new Error('Local endpoint must be a URL string');
+ let url;try{url=new URL(entry.endpoint)}catch{throw new Error('Local entry needs an HTTP(S) endpoint')}
+ if(!['http:','https:'].includes(url.protocol)||url.username||url.password||url.search||url.hash)throw new Error('Use a local HTTP(S) URL without credentials, query, or fragment');
+ if(entry.api!==undefined&&!Object.values(LocalApi).includes(entry.api))throw new Error('Unknown local API');
+ for(const k of ['modelId','name'])if(entry[k]!==undefined&&(typeof entry[k]!=='string'||!entry[k].trim()))throw new Error(`Invalid local ${k}`);
+}
+function localGroups(config,catalog) {
+ if(config.local===false || config.filters?.deployment&&!config.filters.deployment.includes(Deployment.Local))return [];
+ const ids=config.providerIds || catalog.data.presets.find(p=>p.id===config.preset)?.providerIds;
+ if(config.local===undefined && ids&&!ids.some(id=>catalog.providers.get(id)?.deployment===Deployment.Local))return [];
+ const entries=config.local || [{}];
+ if(!entries.length)return [];
+ const provider=catalog.providers.get('local') || {id:'local',name:'Local',auth:'optional',deployment:'local',tags:[]};
+ const offerings=entries.map((entry,i)=>({id:entries.length===1?'local/custom':`local/endpoint-${i}`,providerId:'local',modelId:entry.modelId||'local/custom',apiModelId:entry.modelId||'',name:entry.name||entry.modelId||'Local — enter your server URL',deployment:'local',local:{endpoint:entry.endpoint||'',api:entry.api||LocalApi.OpenAI,configured:!!entry.endpoint},modalities:{input:null,output:null},limits:{context:null,input:null,output:null,contextAccounting:'unknown'},features:{},price:{currency:'USD',input:null,output:null},tags:['deployment:local'],lifecycle:{status:Lifecycle.Uncertain,evidence:null},popularity:{status:Popularity.Uncertain,evidence:null}}));
+ return [{provider:{...provider,name:'Local'},offerings}];
 }

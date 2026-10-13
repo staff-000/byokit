@@ -13,37 +13,51 @@ In this repository, run `npm install` first. Packages are not published yet.
 ```js
 import * as byokit from '@byokit/core/catalog';
 
-const models = byokit.getModels({ providerIds: [byokit.ProviderId.DeepSeek] });
-console.log(models.map(({ id, name }) => ({ id, name })));
+const models = byokit.getModels();
+console.log(models.map(model => model.provider.id));
 ```
 
-Expected output with the bundled snapshot:
+Expected output:
 
 ```json
-[
-  {
-    "id": "deepseek/deepseek-flash",
-    "name": "DeepSeek V4.1 Flash"
-  },
-  {
-    "id": "deepseek/deepseek-v4-pro",
-    "name": "DeepSeek V4 Pro"
-  }
-]
+["openai", "anthropic", "google", "openrouter", "deepseek", "local"]
 ```
 
-`models` contains full records; the example prints only their IDs and names.
-An explicit `providerIds` query returns all non-deprecated models in the bundled
-catalog for those providers. Add `limit` when you want a smaller list. This is
-catalog activity, not a live account-access check.
-This API queries an offline catalog. It needs no API key and makes no network
-request. To generate an AI response, pass the selected `apiModelId` to your
-provider SDK and keep your key in your application's credential storage.
+The default is one LIVE hosted model per provider: OpenAI, Anthropic (Claude),
+Google (Gemini), OpenRouter, and DeepSeek, followed by one Local setup entry.
+Providers without a matching LIVE model are omitted. Every result contains its
+provider, API model ID, capabilities, limits, prices, and evidence; the example
+prints just provider IDs.
 
-For a preset instead: `byokit.getModels({ preset: byokit.Preset.NonChina, limit: 10 })` returns up to ten
-matches. `byokit.getModels()` uses the global preset and the same ten-result limit.
+```js
+byokit.getModels();                       // Small default list + Local
+byokit.getModels(byokit.COMPLETE);        // Every LIVE hosted offering in this catalog + Local
+byokit.getModels(byokit.CHINA);           // One LIVE model per China provider + Local
+byokit.getModels(byokit.NON_CHINA);       // One LIVE model per non-China provider + Local
 
-Python has the same interface and JSON field names:
+// All LIVE offerings from a specific provider:
+byokit.getModels({ providerIds: [byokit.ProviderId.DeepSeek] });
+
+// A shortcut plus extra options:
+byokit.getModels(byokit.COMPLETE, { local: false, limit: 20 });
+```
+
+COMPLETE covers all **supported providers in the bundled snapshot**, currently
+nine hosted providers plus local adapters. It is not every provider worldwide.
+The importer retains every text-output offering for these providers; COMPLETE
+has no per-provider or overall limit unless you specify one. Default/region
+queries choose one model per provider, so the first provider cannot fill the list.
+Use `ui.maxModelsPerProvider` to request more per provider. `limit` caps hosted
+results; the Local entry is appended afterward. `local: false` removes Local.
+Existing `{ preset: byokit.Preset.NonChina }` and detailed filters still work.
+
+Queries run offline, need no API key, and make no network requests. LIVE means
+recent evidence lists this model at this provider; it does not guarantee access
+for your account. The result states whether the evidence is a provider source or
+a Models.dev catalog listing. To generate a response, pass `apiModelId` to your
+provider SDK and keep keys in your application's credential storage.
+
+Python has the same shortcuts and JSON field names:
 
 ```bash
 python -m pip install ./packages/python
@@ -52,8 +66,10 @@ python -m pip install ./packages/python
 ```python
 import byokit
 
-models = byokit.get_models({'providerIds': [byokit.ProviderId.DEEP_SEEK]})
-print([{'id': m['id'], 'name': m['name']} for m in models])
+models = byokit.get_models()
+all_models = byokit.get_models(byokit.COMPLETE)
+china_models = byokit.get_models(byokit.CHINA)
+print([model['provider']['id'] for model in models])
 ```
 
 Run the JavaScript example: `node examples/query.mjs`.
@@ -78,16 +94,16 @@ const models = byokit.getModels({
 });
 ```
 
-All requirements must match. Unknown values fail requirements by default;
+All hosted requirements must match. Local entries are appended without metadata filtering. Unknown hosted values fail requirements by default;
 `unknownPolicy: byokit.UnknownPolicy.Include` explicitly allows unknown metadata. Conditional support
-still does not meet an unconditional feature requirement. Empty results mean no
+still does not meet an unconditional feature requirement. Empty hosted results mean no hosted
 models meet the rules; byokit never relaxes a rule to fill the list.
 
 | Option | What it selects |
 |---|---|
 | `preset` | `non-china` audience shortlist (other presets remain available) |
 | `providerIds` | Explicit provider IDs, overriding the preset shortlist |
-| `limit` | Maximum returned models; default 10 for presets, all matches for explicit providers; maximum explicit limit 1,000 |
+| `limit` | Cap hosted results before appending Local; maximum explicit limit 1,000 |
 | `filters.deployment` | `hosted`, `local`, or `self-hosted` |
 | `filters.origin` | Known model-maker origin, such as `cn` or `us` |
 | `filters.input`, `filters.output` | Required modalities: text, image, audio, video, embedding |
@@ -100,7 +116,7 @@ models meet the rules; byokit never relaxes a rule to fill the list.
 | `filters.maxParameters` | Maximum total parameter count, when known |
 | `filters.maxTimeToFirstTokenMs`, `minTokensPerSecond` | Sourced speed measurements, when available |
 | `filters.includeTags`, `excludeTags` | Match provider/model/offering tags; all included tags required, any excluded tag removes a result |
-| `filters.lifecycle` | `byokit.Lifecycle.Live`, `.Outdated`, `.Uncertain` |
+| `filters.lifecycle` | Defaults to LIVE for hosted entries; explicitly request Outdated/Uncertain for inspection |
 | `filters.popularity` | `byokit.Popularity.Popular`, `.NotPopular`, `.Uncertain` |
 | `filters.includeDeprecated` | Include deprecated entries present in your catalog; default false |
 | `filters.verified`, `verifiedBy`, `verifiedWithinDays` | Filter contributor reports; explained below |
@@ -243,7 +259,7 @@ availability and usage can differ between providers.
 
 | Label | Meaning |
 |---|---|
-| LIVE | Dated evidence confirms this offering is currently supported/available |
+| LIVE | Recent provider evidence or an explicitly dated Models.dev listing names this offering as active |
 | OUTDATED | Dated evidence explicitly identifies this offering as deprecated, retired, or superseded |
 | UNCERTAIN lifecycle | Evidence missing, future-dated, or more than 90 days old |
 | POPULAR | Rank is in the top 10% (`rank <= ceil(population × 0.1)`) of a cited usage dataset |
@@ -257,14 +273,70 @@ Quality benchmarks, picker order, model age, and GitHub stars are not usage metr
 A truncated leaderboard cannot establish the full population or label absent models
 NOT_POPULAR. Local downloads indicate downloads, not active installations.
 
-The bundled snapshot currently has **no reviewed lifecycle or popularity evidence**,
-so these labels are UNCERTAIN and the strict example above returns `[]`.
-Do not treat a Models.dev listing or a successful contributor call as proof of
-continued provider support. `status` (stable/preview/deprecated) and contributor
-`verification` remain separate. Explicit enum filters match exactly, even with
-`unknownPolicy: Include`; request Uncertain explicitly to include it.
-Queries evaluate freshness when called; use the existing `asOf` UTC timestamp
-option for reproducible builds. No query makes network requests.
+The bundled snapshot includes dated Models.dev **catalog-listing** evidence per
+provider/offering; it has no sourced popularity rankings, so popularity is
+UNCERTAIN and the strict popular-model example returns only the Local setup
+entry. Add `local: false` for hosted results only. Provider evidence can override
+listings. `lifecycle.evidence.basis` distinguishes `catalog-listing` from `provider`.
+Release `status` and contributor `verification` remain separate. A provider's
+retired model can remain LIVE on OpenRouter; labels never transfer between them.
+LIVE is the default hosted filter; use an explicit lifecycle array to inspect
+OUTDATED or UNCERTAIN. Deprecated entries additionally need `includeDeprecated`.
+Unknown-policy relaxation does not override lifecycle filters. Queries evaluate
+freshness when called; use `asOf` for reproducible builds. Catalog imports preserve
+recorded observation times instead of making evidence fresh on every build.
+
+## Append your local server
+
+```ts
+import * as byokit from '@byokit/core/catalog';
+
+const models = byokit.getModels({
+  local: [{
+    endpoint: 'http://localhost:8000/v1',
+    api: byokit.LocalApi.OpenAI,
+    modelId: 'my-served-model',
+  }],
+});
+```
+
+The configured entry replaces the empty Local setup entry and is appended after
+hosted results. Tag, price, popularity, capability, and lifecycle filters apply
+to hosted entries. `local: false`, `local: []`, or a hosted-only deployment filter
+removes local entries. Explicit hosted `providerIds` also omit the placeholder;
+providing `local` explicitly appends your server to any provider list.
+
+URL + API protocol + model ID is enough to configure the host application's
+client. Ollama, vLLM, and llama.cpp offer OpenAI-compatible servers; use
+`byokit.LocalApi.OpenAI` and their `/v1` base URL. Ollama's native API uses
+`byokit.LocalApi.Ollama` and its root URL. Protocol compatibility does not prove
+support for tools, vision, structured output, or a context size. These stay
+unknown until your application checks them. A Local setup entry is not marked
+LIVE and is not a hosted model.
+
+Optional discovery is explicit and makes a network request:
+
+```ts
+import * as byokit from '@byokit/core/catalog';
+import * as byokitLocal from '@byokit/dom/local';
+
+const installed = await byokitLocal.discoverLocal('http://localhost:8080/v1', {
+  api: byokit.LocalApi.OpenAI,
+});
+// Pick the served model, or offer a selector when the server returns several.
+const models = byokit.getModels({
+  local: installed.slice(0, 1).map(model => ({
+    endpoint: model.local!.endpoint,
+    api: model.local!.api,
+    modelId: model.apiModelId,
+  })),
+});
+```
+
+The `/v1/models` endpoint can report more than one served model. Native Ollama
+`/api/tags` lists installed models, while `runningOnly: true` uses `/api/ps` for
+currently loaded models. Zero discovery results means no configured local model;
+byokit never invents a model ID or selects another model silently.
 
 ## Contribute: update model tags or capabilities
 

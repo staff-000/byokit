@@ -53,7 +53,12 @@ Builds use local snapshots and emit reduced metadata, a lockfile and TS ID union
 
 ## Local discovery and logos
 
-`discoverLocal` from `@byokit/dom/local` supports Ollama/OpenAI-compatible endpoints.
+`discoverLocal` from `@byokit/dom/local` supports URL-based Ollama/OpenAI-compatible endpoints.
+Pass `api: byokit.LocalApi.OpenAI` for Ollama, vLLM, or llama.cpp `/v1/models`;
+pass `api: byokit.LocalApi.Ollama` for native `/api/tags`, optionally `runningOnly: true` for `/api/ps`.
+UI `discoverLocal(endpoint, signal, {api})` callbacks receive the selected protocol.
+Queries append one generic Local setup entry, or explicit `local` URL/model entries,
+without hosted metadata filtering. `local: false` removes them.
 It runs only when called, defaults to loopback, requires allowRemote for other hosts,
 and times out after ten seconds. Supply application callbacks for authenticated runtimes.
 

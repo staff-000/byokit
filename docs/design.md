@@ -68,8 +68,9 @@ flowchart TD
 
 Provider order follows the preset or explicit provider list. Within a provider,
 preferred supported features rank first, followed by optional input-token price,
-curated rank and stable ID. `getModels` returns all matching non-deprecated catalog entries for explicit providerIds;
-preset-only queries return at most ten results by default. An explicit limit caps either query.
+curated rank and stable ID. Explicit providerIds and COMPLETE return all matching
+LIVE hosted entries; default and region queries choose one per provider. An explicit
+limit caps hosted results before local entries are appended.
 Grouped UI menus have separate provider/model-per-provider limits.
 
 Unknown metadata fails a requirement unless byokit.UnknownPolicy.Include permits it.
@@ -253,7 +254,8 @@ global score. Existing picker `rank` never supplies popularity. Query `asOf`
 makes freshness reproducible. Unknown-policy relaxation does not override explicit
 lifecycle/popularity filters. These metadata additions are optional for older
 catalogs; returned model options always contain both summaries. The bundled
-snapshot currently supplies no reviewed signal evidence.
+snapshot includes explicitly dated Models.dev catalog-listing lifecycle evidence;
+popularity remains UNCERTAIN without scoped usage rankings.
 
 Tag matching combines provider, model, and offering tags. Exclusions win, and
 reserved lifecycle/popularity tags are derived only from evidence, preventing
@@ -261,3 +263,45 @@ handwritten tags from claiming a model is live or popular. Queries are offline;
 contributors supply dated evidence, while import validates its shape and preserves
 observation dates. Future metric importers must preserve platform scope and may
 not label models missing from a ranking as unpopular.
+
+## Simple queries and local endpoints
+
+`getModels()` chooses one LIVE offering from OpenAI, Anthropic, Google,
+OpenRouter, and DeepSeek, then appends a Local setup entry. Typed `COMPLETE`,
+`CHINA`, and `NON_CHINA` shortcuts accept an optional second options argument.
+COMPLETE considers every text-output offering from all supported providers, not
+just a truncated per-provider snapshot. Explicit provider queries are unbounded;
+region/default queries use one model per provider. A hosted limit applies before
+local append. Grouped UI selection still uses its configured display caps.
+
+```mermaid
+flowchart TD
+  A[Default / COMPLETE / CHINA / options] --> B[Normalize typed query]
+  B --> C[Provider-specific lifecycle evidence]
+  C --> D[Hosted LIVE filter and other requirements]
+  D --> E[Rank within provider and apply hosted limits]
+  E --> F[Append configured local servers or one setup entry]
+  F --> G[Return model options]
+  H[URL + API protocol + optional model ID] --> F
+```
+
+A current upstream snapshot explicitly recorded at download time can provide
+`basis: catalog-listing` lifecycle evidence. It does not verify provider execution
+or account entitlement. Provider reviews can override it with `basis: provider`.
+`--observed-at` belongs to the snapshot observation, not the import clock. Reimports
+without a new observation reuse the timestamp only if the source hash matches;
+an unobserved new file yields UNCERTAIN. No inference is run during import.
+
+Hosted LIVE is default across queries and pickers; explicit lifecycle filters
+allow inspection of retired/uncertain records. Local setup/configuration entries
+are separate and bypass tag, popularity, lifecycle, cost, and capability filters.
+`local: false`, an empty local list, or hosted-only deployment removes them.
+Local entries preserve unknown capabilities and are not labeled LIVE just because
+a URL is configured. Inference belongs to the host's protocol adapter.
+
+Local discovery accepts OpenAI-compatible or native Ollama API protocols rather
+than requiring a runtime brand. OpenAI-compatible `/v1/models` works for Ollama,
+vLLM, and llama.cpp servers; native Ollama distinguishes installed `/api/tags`
+from running `/api/ps`. Discovery remains explicit, loopback by default, and
+bounded. An unavailable saved hosted model is shown as a disabled recovery prompt
+instead of being restored to the selectable list or silently replaced.

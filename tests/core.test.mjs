@@ -2,12 +2,12 @@ import test from 'node:test';import assert from 'node:assert/strict';import {rea
 import {Catalog,checkFit,checkTask,validateCatalog,validateConfig,estimatePrice,preflight,reduceSetup,resolveSelection,deriveTags} from '../packages/core/index.js';
 const data=JSON.parse(readFileSync(new URL('../spec/fixtures/catalog.json',import.meta.url)));const catalog=new Catalog(data);
 test('capability filters, unknown policy, limits, origins, open weights and commercial use are distinct',()=>{
- assert.deepEqual(catalog.select({filters:{requiredFeatures:['strictJsonSchema']}}),[]);
- assert.equal(catalog.select({filters:{requiredFeatures:['strictJsonSchema']},unknownPolicy:'include'}).length,2);
- assert.equal(catalog.select({filters:{openWeights:true,commercialUse:'allowed'}}).length,0);
- assert.equal(catalog.select({filters:{minContextTokens:16000}})[0].offerings[0].id,'test/large');
- assert.equal(catalog.select({filters:{origin:['us']}}).length,0);
- assert.equal(catalog.select({filters:{input:['image']}}).length,0);
+ assert.deepEqual(catalog.select({local:false,filters:{requiredFeatures:['strictJsonSchema']}}),[]);
+ assert.equal(catalog.select({local:false,filters:{requiredFeatures:['strictJsonSchema']},unknownPolicy:'include'}).length,1);
+ assert.equal(catalog.select({local:false,filters:{openWeights:true,commercialUse:'allowed'}}).length,0);
+ assert.equal(catalog.select({local:false,filters:{minContextTokens:16000}})[0].offerings[0].id,'test/large');
+ assert.equal(catalog.select({local:false,filters:{origin:['us']}}).length,0);
+ assert.equal(catalog.select({local:false,filters:{input:['image']}}).length,0);
  assert.equal(catalog.select({ui:{maxProviders:1,maxModelsPerProvider:1}})[0].offerings.length,1);
 });
 test('budget accounting and unknown local context',()=>{

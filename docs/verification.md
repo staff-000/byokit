@@ -28,3 +28,16 @@ JSON/JavaScript queries reject unknown vocabularies at runtime. Python ships py.
 and an enum-based query TypedDict; Pyright checks valid calls and confirms invalid
 raw-literal calls fail. Generated build IDs
 now have both runtime enum objects and matching TS enum declarations.
+
+## Simple query and local endpoint revision
+
+Default queries cover OpenAI, Anthropic, Google, OpenRouter, DeepSeek, then Local.
+COMPLETE has no shortlist cap; CHINA and NON_CHINA use typed shortcuts. Hosted
+selection defaults to LIVE, with provider-specific lifecycle evidence. Snapshot
+imports retain their recorded observation date and cannot silently freshen a
+changed unobserved source. Cross-language tests cover shortcuts, local append,
+protocol records, and a retired direct offering that remains LIVE via an aggregator.
+Local discovery tests cover native Ollama installed/running endpoints and
+OpenAI-compatible root or /v1 URLs. UI tests cover local URL/API draft retention
+and disabled recovery for a retired saved hosted model. The catalog was freshly
+fetched from Models.dev, without provider keys or inference calls.

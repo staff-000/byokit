@@ -34,3 +34,12 @@ byokit.getModels({filters:{lifecycle:['LIVE']}});
 // @ts-expect-error unknown popularity label
 byokit.getModels({filters:{popularity:['famous']}});
 const lifecycle:byokit.Lifecycle=byokit.getModels()[0].lifecycle.status;
+
+byokit.getModels();
+byokit.getModels(byokit.COMPLETE);
+byokit.getModels(byokit.CHINA,{local:false});
+byokit.getModels({local:[{endpoint:'http://localhost:8000/v1',api:byokit.LocalApi.OpenAI,modelId:'my-model'}]});
+// @ts-expect-error shortcuts are enum values, not raw strings
+byokit.getModels('complete');
+// @ts-expect-error unknown local protocol
+byokit.getModels({local:[{endpoint:'http://localhost:8000',api:'vllm'}]});

@@ -233,3 +233,21 @@ export declare enum Tag {
   PricePremium = "price:premium",
   WeightsOpen = "weights:open",
 }
+
+export declare enum ModelList {
+  Default = "default",
+  Complete = "complete",
+  China = "china",
+  NonChina = "non-china",
+}
+
+export declare enum LocalApi {
+  OpenAI = "openai-compatible",
+  Ollama = "ollama",
+}
+
+export declare enum LifecycleBasis {
+  Provider = "provider",
+  CatalogListing = "catalog-listing",
+}
+export declare const DEFAULT:ModelList.Default, COMPLETE:ModelList.Complete, CHINA:ModelList.China, NON_CHINA:ModelList.NonChina;

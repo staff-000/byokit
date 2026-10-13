@@ -46,7 +46,14 @@ def validate_catalog(data):
 
 def validate_config(config):
     errors=[]
-    allowed={"root":["limit","asOf","unknownPolicy","schemaVersion","catalog","preset","providerIds","filters","prefer","ui","budget","tasks"],"filters":["deployment","origin","openWeights","commercialUse","input","output","requiredFeatures","minContextTokens","maxInputPricePerM","maxOutputPricePerM","maxParameters","maxTimeToFirstTokenMs","minTokensPerSecond","fileFormats","includeTags","excludeTags","lifecycle","popularity","includeDeprecated","verified","verifiedBy","verifiedWithinDays"],"prefer":["features","lowerCost"],"ui":["maxProviders","maxModelsPerProvider","allowCustomModel"],"budget":["maxInputTokens","maxOutputTokens","overheadTokens"]}
+    if 'list' in config and config['list'] not in {v.value for v in ModelList}: errors.append('Unknown model list')
+    if 'local' in config and config['local'] is not False:
+        if not isinstance(config['local'],list): errors.append('local must be false or an array')
+        else:
+            for entry in config['local']:
+                try: _validate_local(entry)
+                except ValueError as error: errors.append(str(error))
+    allowed={"root":["list","local","limit","asOf","unknownPolicy","schemaVersion","catalog","preset","providerIds","filters","prefer","ui","budget","tasks"],"filters":["deployment","origin","openWeights","commercialUse","input","output","requiredFeatures","minContextTokens","maxInputPricePerM","maxOutputPricePerM","maxParameters","maxTimeToFirstTokenMs","minTokensPerSecond","fileFormats","includeTags","excludeTags","lifecycle","popularity","includeDeprecated","verified","verifiedBy","verifiedWithinDays"],"prefer":["features","lowerCost"],"ui":["maxProviders","maxModelsPerProvider","allowCustomModel"],"budget":["maxInputTokens","maxOutputTokens","overheadTokens"]}
     for group,keys in allowed.items():
         for key in (config if group=="root" else config.get(group,{}) or {}):
             if key not in keys: errors.append(f"Unknown {group}.{key}")
@@ -100,7 +107,7 @@ def matches(o, m, config, provider_tags=None):
     constraints=[("minContextTokens",o.get("limits",{}).get("context"),"min"),("maxInputPricePerM",o.get("price",{}).get("input"),"max"),("maxOutputPricePerM",o.get("price",{}).get("output"),"max"),("maxParameters",m.get("size",{}).get("totalParameters"),"max"),("maxTimeToFirstTokenMs",o.get("speed",{}).get("timeToFirstTokenMs"),"max"),("minTokensPerSecond",o.get("speed",{}).get("tokensPerSecond"),"min")]
     for key,value,op in constraints:
         if key in f and ((not finite(value) and not unknown) or (finite(value) and (value<f[key] if op=="min" else value>f[key]))): return False
-    if "lifecycle" in f and o["lifecycle"]["status"] not in f["lifecycle"]: return False
+    if o["lifecycle"]["status"] not in f.get("lifecycle",[Lifecycle.LIVE]): return False
     if "popularity" in f and o["popularity"]["status"] not in f["popularity"]: return False
     tags=set([t for t in m.get("tags",[])+(provider_tags or []) if not t.startswith(("lifecycle:","popularity:"))]+o.get("tags",[]))
     if any(t not in tags for t in f.get("includeTags",[])) or any(t in tags for t in f.get("excludeTags",[])): return False
@@ -115,24 +122,25 @@ class Catalog:
         self.models={m["id"]:m for m in self.data["models"]}
         self.offerings={o["id"]:o for o in self.data["offerings"]}
     def get(self, offering_id): return self.offerings.get(offering_id)
-    def get_models(self, config: "PickerConfig | None" = None) -> list[dict]:
-        config=config or {}; groups=self._select(config,True)
+    def get_models(self, config: "PickerConfig | ModelList | None" = None, options: "PickerConfig | None" = None) -> list[dict]:
+        config=_normalize_query(config,options); groups=self._select(config,True)
         result=[]
         for g in groups:
             for o in g["offerings"]:
-                model=self.models[o["modelId"]]
+                model=self.models.get(o["modelId"],{"id":o["modelId"],"name":o["name"],"openWeights":None,"commercialUse":"unknown","license":None,"tags":[]})
                 family=next((f for f in self.data["families"] if f["id"]==model.get("familyId")),None)
                 assets=self.data.get("assets",[])
                 result.append(dict(o,provider=g["provider"],model=model,family=family,logos={"provider":next((a for a in assets if a["id"]==g["provider"].get("logoId")),None),"family":next((a for a in assets if family and a["id"]==family.get("logoId")),None)},verification=verification_summary(self.data,o["id"],as_of=config.get("asOf"),max_age_days=config.get("filters",{}).get("verifiedWithinDays",90),contributor=config.get("filters",{}).get("verifiedBy"))))
-        return copy.deepcopy(result[:config.get("limit",len(result) if "providerIds" in config else 10)])
-    def select(self, config=None):
-        return self._select(config)
+        return copy.deepcopy([o for o in result if o["deployment"]!="local"][:config.get("limit",len(result))]+[o for o in result if o["deployment"]=="local"])
+    def select(self, config=None, options=None):
+        return self._select(_normalize_query(config,options))
     def _select(self, config=None, uncapped=False):
         config=config or {}; errors=validate_config(config)
         if errors: raise ValueError("; ".join(errors))
-        preset=next((p for p in self.data["presets"] if p["id"]==config.get("preset","global")),None)
+        preset=next((p for p in self.data["presets"] if p["id"]==config.get("preset","default" if config.get("list")==ModelList.DEFAULT else "global")),None)
+        if not preset and config.get("list")==ModelList.DEFAULT: preset=next((p for p in self.data["presets"] if p["id"]=="global"),None)
         if not preset: raise ValueError("Unknown preset")
-        ids=config.get("providerIds",preset["providerIds"])
+        ids=config.get("providerIds",list(self.providers) if config.get("list")==ModelList.COMPLETE else preset["providerIds"])
         if any(i not in self.providers for i in ids): raise ValueError("Unknown provider in providerIds")
         groups=[]
         def order(o):
@@ -140,9 +148,12 @@ class Catalog:
             price=o.get("price",{}).get("input")
             return (-count,(price if price is not None else math.inf) if config.get("prefer",{}).get("lowerCost") else 0,o.get("rank",100),o["id"])
         for provider_id in ids:
+            if self.providers[provider_id]["deployment"]=="local": continue
             choices=sorted((o for o in (_with_signals(item,config.get("asOf")) for item in self.data["offerings"] if item["providerId"]==provider_id) if matches(o,self.models[o["modelId"]],config,self.providers[provider_id].get("tags",[])) and matches_verification(self.data,o["id"],config)),key=order)
-            if choices: groups.append({"provider":self.providers[provider_id],"offerings":choices if uncapped else choices[:config.get("ui",{}).get("maxModelsPerProvider",4)]})
-        return groups if uncapped else groups[:config.get("ui",{}).get("maxProviders",8)]
+            cap=(len(choices) if config.get("list")==ModelList.COMPLETE or "providerIds" in config else config.get("ui",{}).get("maxModelsPerProvider",1)) if uncapped else config.get("ui",{}).get("maxModelsPerProvider",4)
+            if choices: groups.append({"provider":self.providers[provider_id],"offerings":choices[:cap]})
+        locals_=_local_groups(config,self)
+        return (groups if uncapped else groups[:max(0,config.get("ui",{}).get("maxProviders",8)-len(locals_))])+locals_
 
 def check_fit(offering, budget, options=None):
     options=options or {}
@@ -270,8 +281,8 @@ def matches_verification(data,oid,config):
     status=verification_summary(data,oid,as_of=config.get("asOf"),max_age_days=f.get("verifiedWithinDays",90),contributor=f.get("verifiedBy"))["status"]
     return status!="passed" if f.get("verified") is False else status=="passed"
 
-def get_models(config: "PickerConfig | None" = None) -> list[dict]:
-    return load_catalog().get_models(config)
+def get_models(config: "PickerConfig | ModelList | None" = None, options: "PickerConfig | None" = None) -> list[dict]:
+    return load_catalog().get_models(config,options)
 
 from .types import PickerConfig, ContributorId, CustomTag, CustomProviderId, CustomCountryCode, CustomFileFormat
 
@@ -315,7 +326,7 @@ def _validate_signals(o):
         except ValueError: return False
     def record(v,keys): return isinstance(v,dict) and set(v)<=set(keys)
     l=o.get('lifecycleEvidence'); p=o.get('popularityEvidence')
-    if 'lifecycleEvidence' in o and (not record(l,['status','source','checkedAt']) or l.get('status') not in {v.value for v in Lifecycle} or not source(l.get('source')) or not _signal_date(l.get('checkedAt'))): errors.append(o['id']+': invalid lifecycle evidence')
+    if 'lifecycleEvidence' in o and (not record(l,['status','source','checkedAt','basis']) or l.get('status') not in {v.value for v in Lifecycle} or ('basis' in l and l['basis'] not in {v.value for v in LifecycleBasis}) or not source(l.get('source')) or not _signal_date(l.get('checkedAt'))): errors.append(o['id']+': invalid lifecycle evidence')
     if 'popularityEvidence' in o and (not record(p,['metric','rank','population','scope','source','windowStart','windowEnd']) or p.get('metric') not in {v.value for v in PopularityMetric} or type(p.get('rank')) is not int or p['rank']<1 or type(p.get('population')) is not int or p['population']<p['rank'] or not isinstance(p.get('scope'),str) or not p['scope'].strip() or not source(p.get('source')) or not _signal_date(p.get('windowStart')) or not _signal_date(p.get('windowEnd')) or _timestamp(p['windowStart'])>=_timestamp(p['windowEnd'])): errors.append(o['id']+': invalid popularity evidence')
     return errors
 
@@ -324,7 +335,44 @@ def _with_signals(o,as_of=None):
     now=_timestamp(as_of) if as_of else time.time()
     def fresh(date,days): return _signal_date(date) and 0<=now-_timestamp(date)<=days*86400
     l=o.get('lifecycleEvidence'); p=o.get('popularityEvidence')
-    lifecycle={'status':l['status'] if l and fresh(l['checkedAt'],90) else 'UNCERTAIN','evidence':l}
+    lifecycle={'status':('OUTDATED' if o.get('status')=='deprecated' else l['status']) if l and fresh(l['checkedAt'],90) else 'UNCERTAIN','evidence':l}
     popularity={'status':('POPULAR' if p['rank']<=math.ceil(p['population']*.1) else 'NOT_POPULAR') if p and fresh(p['windowEnd'],30) else 'UNCERTAIN','evidence':p}
     tags=[t for t in o.get('tags',[]) if not t.startswith(('lifecycle:','popularity:'))]
     return dict(o,lifecycle=lifecycle,popularity=popularity,tags=tags+['lifecycle:'+lifecycle['status'],'popularity:'+popularity['status']])
+
+
+def _normalize_query(input=None,options=None):
+    if isinstance(input,str):
+        if input not in {v.value for v in ModelList}: raise ValueError('Unknown model list')
+        config=dict(options or {},list=input)
+    else:
+        if input is not None and not isinstance(input,dict) or options is not None: raise ValueError('Use get_models(options) or get_models(list, options)')
+        config=dict(input or {})
+    if not any(k in config for k in ['list','preset','providerIds']): config['list']=ModelList.DEFAULT
+    if config.get('list')==ModelList.CHINA: config['preset']='china'
+    if config.get('list')==ModelList.NON_CHINA: config['preset']='non-china'
+    return config
+
+def _validate_local(entry):
+    from urllib.parse import urlparse
+    if not isinstance(entry,dict) or set(entry)-{'endpoint','api','modelId','name'}: raise ValueError('Invalid local entry')
+    try:
+        url=urlparse(entry.get('endpoint',''))
+        if not isinstance(entry.get('endpoint'),str) or url.scheme not in ['http','https'] or not url.netloc or url.username or url.password or url.query or url.fragment: raise ValueError('Use a local HTTP(S) URL without credentials, query, or fragment')
+    except (ValueError,TypeError): raise ValueError('Local entry needs an HTTP(S) endpoint')
+    if 'api' in entry and entry['api'] not in {v.value for v in LocalApi}: raise ValueError('Unknown local API')
+    for key in ['modelId','name']:
+        if key in entry and (not isinstance(entry[key],str) or not entry[key].strip()): raise ValueError('Invalid local '+key)
+
+def _local_groups(config,catalog):
+    if config.get('local') is False or 'deployment' in config.get('filters',{}) and 'local' not in config['filters']['deployment']: return []
+    preset=next((p for p in catalog.data['presets'] if p['id']==config.get('preset')),None)
+    ids=config.get('providerIds',preset['providerIds'] if preset else None)
+    if 'local' not in config and ids is not None and not any(catalog.providers[id]['deployment']=='local' for id in ids): return []
+    entries=config.get('local',[{}])
+    if not entries: return []
+    provider=dict(catalog.providers.get('local',{'id':'local','auth':'optional','deployment':'local','tags':[]}),name='Local')
+    offerings=[]
+    for i,entry in enumerate(entries):
+        offerings.append({'id':'local/custom' if len(entries)==1 else 'local/endpoint-'+str(i),'providerId':'local','modelId':entry.get('modelId','local/custom'),'apiModelId':entry.get('modelId',''),'name':entry.get('name',entry.get('modelId','Local — enter your server URL')),'deployment':'local','local':{'endpoint':entry.get('endpoint',''),'api':entry.get('api','openai-compatible'),'configured':bool(entry.get('endpoint'))},'modalities':{'input':None,'output':None},'limits':{'context':None,'input':None,'output':None,'contextAccounting':'unknown'},'features':{},'price':{'currency':'USD','input':None,'output':None},'tags':['deployment:local'],'lifecycle':{'status':'UNCERTAIN','evidence':None},'popularity':{'status':'UNCERTAIN','evidence':None}})
+    return [{'provider':provider,'offerings':offerings}]

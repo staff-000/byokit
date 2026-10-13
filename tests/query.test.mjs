@@ -12,19 +12,19 @@ test('simple query returns a bounded flat list with provider/model metadata and 
  const list=getModels({providerIds:['deepseek'],limit:1});assert.equal(list.length,1);
  assert.equal(list[0].provider.id,'deepseek');assert.ok(list[0].apiModelId);assert.ok(list[0].model);
  assert.equal(list[0].verification.status,'unverified');assert.deepEqual(list[0].verification.records,[]);
- assert.deepEqual(getModels({filters:{verified:true}}),[]);assert.throws(()=>getModels({limit:0}));
+ assert.deepEqual(getModels({local:false,filters:{verified:true}}),[]);assert.throws(()=>getModels({limit:0}));
 });
 test('README example matches the bundled catalog',()=>{
  const run=spawnSync('node',['examples/query.mjs'],{encoding:'utf8'});assert.equal(run.status,0,run.stderr);
- assert.deepEqual(JSON.parse(run.stdout),[{id:'deepseek/deepseek-flash',name:'DeepSeek V4.1 Flash'},{id:'deepseek/deepseek-v4-pro',name:'DeepSeek V4 Pro'}]);
+ assert.deepEqual(JSON.parse(run.stdout),['openai','anthropic','google','openrouter','deepseek','local']);
 });
 test('reports retain author and evidence, but never promote unknown capabilities',()=>{
  const data=fixture();data.verifications=[report()];const c=new Catalog(data);
- const models=c.getModels({asOf,filters:{verified:true,verifiedBy:'github:alice'}});
+ const models=c.getModels({asOf,local:false,filters:{verified:true,verifiedBy:'github:alice'}});
  assert.equal(models.length,1);assert.equal(models[0].verification.latest.contributor,'github:alice');
  assert.equal(models[0].features.strictJsonSchema.status,'unknown');
- assert.deepEqual(c.getModels({asOf,filters:{verified:true,requiredFeatures:['strictJsonSchema']}}),[]);
- assert.deepEqual(c.getModels({asOf,filters:{verifiedBy:'github:bob'}}),[]);
+ assert.deepEqual(c.getModels({asOf,local:false,filters:{verified:true,requiredFeatures:['strictJsonSchema']}}),[]);
+ assert.deepEqual(c.getModels({asOf,local:false,filters:{verifiedBy:'github:bob'}}),[]);
  models[0].verification.records[0].result='failed';assert.equal(c.data.verifications[0].result,'passed');
 });
 test('later failures, stale reports, feature-only reports, and future reports cannot establish a passing text call',()=>{
@@ -52,10 +52,10 @@ test('explicit provider queries return all non-deprecated matches unless a limit
  const c=new Catalog(data);
  assert.equal(c.getModels({providerIds:['test']}).length,125);
  assert.equal(c.getModels({providerIds:['test'],limit:5}).length,5);
- assert.equal(c.getModels().length,10);
+ assert.equal(c.getModels().length,2);
  assert.equal(c.select()[0].offerings.length,4);
  const run=spawnSync(process.env.BYOKIT_PYTHON || (process.platform==='win32'?'python':'python3'),['packages/python/tests/conformance_runner.py','models'],{input:JSON.stringify({data,queries:[{providerIds:['test']},{providerIds:['test'],limit:5},{}]}),encoding:'utf8'});
- assert.equal(run.status,0,run.stderr);assert.deepEqual(JSON.parse(run.stdout).map(x=>x.length),[125,5,10]);
+ assert.equal(run.status,0,run.stderr);assert.deepEqual(JSON.parse(run.stdout).map(x=>x.length),[125,5,2]);
 });
 
 test('non-China preset excludes China-based providers and preserves local choices',()=>{

@@ -29,3 +29,7 @@ export const Lifecycle=Object.freeze({"Live":"LIVE","Outdated":"OUTDATED","Uncer
 export const Popularity=Object.freeze({"Popular":"POPULAR","NotPopular":"NOT_POPULAR","Uncertain":"UNCERTAIN"});
 export const PopularityMetric=Object.freeze({"Requests":"requests","Tokens":"tokens","Downloads":"downloads"});
 export const Tag=Object.freeze({"LifecycleLive":"lifecycle:LIVE","LifecycleOutdated":"lifecycle:OUTDATED","LifecycleUncertain":"lifecycle:UNCERTAIN","PopularityPopular":"popularity:POPULAR","PopularityNotPopular":"popularity:NOT_POPULAR","PopularityUncertain":"popularity:UNCERTAIN","PricePremium":"price:premium","WeightsOpen":"weights:open"});
+export const ModelList=Object.freeze({"Default":"default","Complete":"complete","China":"china","NonChina":"non-china"});
+export const LocalApi=Object.freeze({"OpenAI":"openai-compatible","Ollama":"ollama"});
+export const LifecycleBasis=Object.freeze({"Provider":"provider","CatalogListing":"catalog-listing"});
+export const DEFAULT=ModelList.Default, COMPLETE=ModelList.Complete, CHINA=ModelList.China, NON_CHINA=ModelList.NonChina;

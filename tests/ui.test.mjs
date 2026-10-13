@@ -18,7 +18,7 @@ test('catalog logo URLs are never loaded implicitly',()=>{
  const {root,ui}=setup();assert.equal(root.querySelector('img').getAttribute('src'),null);ui.destroy();
 });
 test('empty filters explain failure instead of silently choosing a provider',()=>{
- const {root,ui}=setup({config:{filters:{input:['video']}}});assert.ok(root.textContent.includes('No models match'));assert.ok(root.querySelector('button[type=submit]').disabled);ui.destroy();
+ const {root,ui}=setup({config:{local:false,filters:{input:['video']}}});assert.ok(root.textContent.includes('No models match'));assert.ok(root.querySelector('button[type=submit]').disabled);ui.destroy();
 });
 
 test('a stuck connection check times out and permits retry',async()=>{
@@ -44,4 +44,23 @@ test('provider switches retain distinct drafts and never borrow another provider
  model.value='__custom';model.dispatchEvent(new document.defaultView.Event('change'));root.querySelector('input[data-role=custom]').value='custom-test';key.value='test-secret';
  provider.value='local';provider.dispatchEvent(new document.defaultView.Event('change'));assert.equal(key.value,'');key.value='local-secret';
  provider.value='test';provider.dispatchEvent(new document.defaultView.Event('change'));assert.equal(key.value,'test-secret');assert.equal(ui.getSelection().modelId,'custom-test');ui.destroy();
+});
+
+test('local URL and protocol drafts survive provider switches and are passed on save',async()=>{
+ let saved;const {root,ui}=setup({config:{local:[{endpoint:'http://localhost:8000/v1',modelId:'served-one'}]},onSave:s=>saved=s});
+ const provider=root.querySelector('select'),api=root.querySelectorAll('select')[2];
+ provider.value='local';provider.dispatchEvent(new document.defaultView.Event('change'));
+ assert.equal(ui.getSelection().endpoint,'http://localhost:8000/v1');assert.equal(ui.getSelection().modelId,'served-one');
+ api.value='ollama';api.dispatchEvent(new document.defaultView.Event('change'));
+ provider.value='test';provider.dispatchEvent(new document.defaultView.Event('change'));
+ provider.value='local';provider.dispatchEvent(new document.defaultView.Event('change'));
+ assert.equal(ui.getSelection().api,'ollama');assert.equal(ui.getSelection().modelId,'served-one');
+ root.querySelector('form').dispatchEvent(new document.defaultView.Event('submit',{cancelable:true}));await tick();
+ assert.equal(saved.api,'ollama');assert.equal(saved.apiKey,undefined);ui.destroy();
+});
+test('a retired saved hosted model is not restored or silently substituted',()=>{
+ const changed=structuredClone(data);changed.offerings[0].lifecycleEvidence.status='OUTDATED';
+ const {root,ui}=setup({catalog:changed,value:{providerId:'test',offeringId:'test/small',modelId:'small'}});
+ const model=root.querySelectorAll('select')[1];assert.ok(![...model.options].some(o=>o.value==='test/small'));
+ assert.equal(model.value,'__unavailable');assert.equal(ui.getSelection().modelId,'');ui.destroy();
 });

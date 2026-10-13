@@ -74,7 +74,13 @@
       "tags": [
         "input:text",
         "cap:functionCalling"
-      ]
+      ],
+      "lifecycleEvidence": {
+        "status": "LIVE",
+        "source": "https://example.com/test-fixture",
+        "checkedAt": "2026-10-11T00:00:00Z",
+        "basis": "provider"
+      }
     },
     {
       "id": "test/large",
@@ -116,7 +122,13 @@
       "tags": [
         "input:text",
         "cap:functionCalling"
-      ]
+      ],
+      "lifecycleEvidence": {
+        "status": "LIVE",
+        "source": "https://example.com/test-fixture",
+        "checkedAt": "2026-10-11T00:00:00Z",
+        "basis": "provider"
+      }
     },
     {
       "id": "test/old",
@@ -158,7 +170,13 @@
       "tags": [
         "input:text",
         "cap:functionCalling"
-      ]
+      ],
+      "lifecycleEvidence": {
+        "status": "LIVE",
+        "source": "https://example.com/test-fixture",
+        "checkedAt": "2026-10-11T00:00:00Z",
+        "basis": "provider"
+      }
     },
     {
       "id": "local/custom",

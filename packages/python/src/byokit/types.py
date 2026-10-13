@@ -1,5 +1,5 @@
-from typing import TypedDict, NewType
-from .enums import (FeatureStatus,Modality,Preset,ProviderId,Deployment,Country,CommercialUse,FeatureName,UnknownPolicy,FileFormat,Lifecycle,Popularity,Tag)
+from typing import TypedDict, NewType, Literal
+from .enums import (FeatureStatus,Modality,Preset,ProviderId,Deployment,Country,CommercialUse,FeatureName,UnknownPolicy,FileFormat,Lifecycle,Popularity,Tag,ModelList,LocalApi)
 
 CustomProviderId=NewType("CustomProviderId",str)
 CustomCountryCode=NewType("CustomCountryCode",str)
@@ -53,7 +53,15 @@ class UI(TypedDict, total=False):
     maxProviders: int
     maxModelsPerProvider: int
     allowCustomModel: bool
+class _LocalOptional(TypedDict,total=False):
+    api: LocalApi
+    modelId: str
+    name: str
+class LocalEndpoint(_LocalOptional):
+    endpoint: str
 class PickerConfig(TypedDict, total=False):
+    list: ModelList
+    local: list[LocalEndpoint] | Literal[False]
     preset: Preset
     providerIds: list[ProviderId | CustomProviderId]
     limit: int

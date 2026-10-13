@@ -203,5 +203,19 @@
     "PopularityUncertain": "popularity:UNCERTAIN",
     "PricePremium": "price:premium",
     "WeightsOpen": "weights:open"
+  },
+  "ModelList": {
+    "Default": "default",
+    "Complete": "complete",
+    "China": "china",
+    "NonChina": "non-china"
+  },
+  "LocalApi": {
+    "OpenAI": "openai-compatible",
+    "Ollama": "ollama"
+  },
+  "LifecycleBasis": {
+    "Provider": "provider",
+    "CatalogListing": "catalog-listing"
   }
 }

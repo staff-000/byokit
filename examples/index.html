@@ -4,6 +4,6 @@
 <script type="module">
 import * as byokit from '@byokit/dom';
 const data=await fetch('/catalog/catalog.json').then(r=>r.json());const assetManifest=await fetch('/assets/manifest.json').then(r=>r.json());const assets=Object.fromEntries(Object.entries(assetManifest).map(([id,a])=>[id,'/assets/'+a.light]));const store=byokit.createMemoryCredentialStore();let preset=byokit.Preset.NonChina,ui;
-function render(){ui?.destroy();ui=byokit.mountByok(document.querySelector('#picker'),{catalog:data,assets,config:{preset,ui:{maxProviders:8,maxModelsPerProvider:4,allowCustomModel:true}},credentialStore:store,discoverLocal:endpoint=>byokit.discoverLocal(endpoint),onSave:selection=>{document.querySelector('#output').textContent=JSON.stringify(selection,null,2)}})}
+function render(){ui?.destroy();ui=byokit.mountByok(document.querySelector('#picker'),{catalog:data,assets,config:{preset,ui:{maxProviders:8,maxModelsPerProvider:4,allowCustomModel:true}},credentialStore:store,discoverLocal:(endpoint,signal,{api})=>byokit.discoverLocal(endpoint,{api,signal}),onSave:selection=>{document.querySelector('#output').textContent=JSON.stringify(selection,null,2)}})}
 render();document.querySelector('#preset').onclick=()=>{preset=preset===byokit.Preset.NonChina?byokit.Preset.Global:byokit.Preset.NonChina;document.querySelector('#preset').textContent=preset===byokit.Preset.NonChina?'Use global preset':'Use non-China preset';render()};
 </script></html>

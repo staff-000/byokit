@@ -129,3 +129,22 @@ Regenerate using `npm run catalog:import -- /path/to/models-dev.json`, then run
 `node --test tests/signals.test.mjs tests/schema.test.mjs`, `npm run typecheck`,
 and `npm run typecheck:python`. Fixed enum values live in `spec/enums.json`;
 run `npm run enums:generate` after editing them.
+
+## Record catalog-listing lifecycle evidence
+
+A freshly downloaded Models.dev snapshot can seed provider-specific lifecycle
+with `basis: "catalog-listing"`. Record the actual observation timestamp:
+
+```bash
+node scripts/import-catalog.mjs /path/to/fresh-models.json --observed-at 2026-10-13T12:02:26Z
+```
+
+This example timestamp is not a value to reuse for future downloads. Observe the
+source, hash it, and supply its real UTC time. Importing an old/arbitrary file
+without an observation must not make it LIVE; same-hash imports reuse the saved
+observation and changed unobserved sources remain UNCERTAIN. Provider evidence
+can override listing evidence with `basis: "provider"`. No listing proves access
+for an individual account. The default hosted filter is now LIVE, so fixtures and
+custom catalogs need dated lifecycle evidence or explicit inspection filters.
+The importer retains all text-output offerings for supported providers so COMPLETE
+has no hidden per-provider cap. Do not copy availability between providers.

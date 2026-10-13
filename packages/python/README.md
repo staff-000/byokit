@@ -4,7 +4,7 @@ Get a short list of AI models without Node or a network request:
 
 ```python
 import byokit
-models=byokit.get_models({'preset':byokit.Preset.NON_CHINA,'limit':10})
+models=byokit.get_models()
 print([{'id':m['id'],'name':m['name']} for m in models])
 ```
 
@@ -18,3 +18,5 @@ metadata and call-report submissions.
 python -m pip install ./packages/python
 byokit check examples/byok.config.json
 ```
+
+Use `byokit.get_models(byokit.COMPLETE)` for all LIVE offerings, or `byokit.CHINA` for China providers. `local` accepts URL/API/model entries appended without metadata filtering.
