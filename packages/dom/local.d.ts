@@ -1,2 +1,2 @@
-import type {Offering} from '@byokit/core';
-export function discoverLocal(endpoint:string,options?:{runtime?:'ollama'|'openai-compatible';fetch?:typeof fetch;signal?:AbortSignal;allowRemote?:boolean}):Promise<Offering[]>;
+import type {Offering,LocalRuntime} from '@byokit/core';
+export function discoverLocal(endpoint:string,options?:{runtime?:LocalRuntime;fetch?:typeof fetch;signal?:AbortSignal;allowRemote?:boolean}):Promise<Offering[]>;

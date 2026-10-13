@@ -1,4 +1,5 @@
 """Pure catalog and validation logic; no network, key persistence or inference."""
+from .enums import *
 import copy
 import math
 
@@ -39,11 +40,12 @@ def validate_catalog(data):
             if isinstance(value, (int, float)) and not finite(value): errors.append(f'{o["id"]}: invalid price')
     for p in data["presets"]:
         if not isinstance(p.get("providerIds"), list) or any(i not in providers for i in p["providerIds"]): errors.append(f'{p["id"]}: unresolved provider')
+    errors.extend(validate_verifications(data.get("verifications",[]),data))
     return errors
 
 def validate_config(config):
     errors=[]
-    allowed={"root":["unknownPolicy","schemaVersion","catalog","preset","providerIds","filters","prefer","ui","budget","tasks"],"filters":["deployment","origin","openWeights","commercialUse","input","output","requiredFeatures","minContextTokens","maxInputPricePerM","maxOutputPricePerM","maxParameters","maxTimeToFirstTokenMs","minTokensPerSecond","fileFormats","includeTags","excludeTags","includeDeprecated"],"prefer":["features","lowerCost"],"ui":["maxProviders","maxModelsPerProvider","allowCustomModel"],"budget":["maxInputTokens","maxOutputTokens","overheadTokens"]}
+    allowed={"root":["limit","asOf","unknownPolicy","schemaVersion","catalog","preset","providerIds","filters","prefer","ui","budget","tasks"],"filters":["deployment","origin","openWeights","commercialUse","input","output","requiredFeatures","minContextTokens","maxInputPricePerM","maxOutputPricePerM","maxParameters","maxTimeToFirstTokenMs","minTokensPerSecond","fileFormats","includeTags","excludeTags","includeDeprecated","verified","verifiedBy","verifiedWithinDays"],"prefer":["features","lowerCost"],"ui":["maxProviders","maxModelsPerProvider","allowCustomModel"],"budget":["maxInputTokens","maxOutputTokens","overheadTokens"]}
     for group,keys in allowed.items():
         for key in (config if group=="root" else config.get(group,{}) or {}):
             if key not in keys: errors.append(f"Unknown {group}.{key}")
@@ -54,6 +56,24 @@ def validate_config(config):
     for key in ["maxProviders", "maxModelsPerProvider"]:
         value=config.get("ui", {}).get(key)
         if value is not None and (not isinstance(value,int) or isinstance(value,bool) or not 1<=value<=100): errors.append(f"ui.{key} must be an integer from 1 to 100")
+    import re
+    if "limit" in config and (not isinstance(config["limit"],int) or isinstance(config["limit"],bool) or not 1<=config["limit"]<=1000): errors.append("limit must be an integer from 1 to 1000")
+    if "asOf" in config:
+        try:
+            if not isinstance(config["asOf"],str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}T.*Z",config["asOf"]): raise ValueError("UTC timestamp required")
+            _timestamp(config["asOf"])
+        except (ValueError,TypeError): errors.append("asOf must be an ISO timestamp")
+    f=config.get("filters",{})
+    if "verified" in f and not isinstance(f["verified"],bool): errors.append("filters.verified must be boolean")
+    if "verifiedBy" in f and (not isinstance(f["verifiedBy"],str) or not re.fullmatch(r"github:[a-z0-9-]+",f["verifiedBy"],re.I)): errors.append("verifiedBy must identify a GitHub contributor")
+    if "verifiedWithinDays" in f and (not finite(f["verifiedWithinDays"]) or f["verifiedWithinDays"]<1): errors.append("verifiedWithinDays must be positive")
+    vocab={"input":Modality,"output":Modality,"requiredFeatures":FeatureName,"deployment":Deployment}
+    for key,enum in vocab.items():
+        values=f.get(key)
+        if isinstance(values,list) and any(v not in {m.value for m in enum} for v in values): errors.append(f"Unknown filters.{key} value")
+    preferred=config.get("prefer",{}).get("features")
+    if preferred is not None and (not isinstance(preferred,list) or any(v not in {m.value for m in FeatureName} for v in preferred)): errors.append("Unknown preferred feature")
+    if "commercialUse" in f and f["commercialUse"] not in {m.value for m in CommercialUse}: errors.append("Unknown commercialUse value")
     if config.get("unknownPolicy", "exclude") not in ["include", "exclude"]: errors.append("Invalid unknownPolicy")
     for key in ["maxInputTokens", "maxOutputTokens", "overheadTokens"]:
         if key in config.get("budget",{}) and not finite(config["budget"][key]): errors.append(f"budget.{key} must be a nonnegative finite number")
@@ -92,6 +112,16 @@ class Catalog:
         self.models={m["id"]:m for m in self.data["models"]}
         self.offerings={o["id"]:o for o in self.data["offerings"]}
     def get(self, offering_id): return self.offerings.get(offering_id)
+    def get_models(self, config: "PickerConfig | None" = None) -> list[dict]:
+        config=config or {}; groups=self.select(dict(config,ui={"maxProviders":100,"maxModelsPerProvider":100}))
+        result=[]
+        for g in groups:
+            for o in g["offerings"]:
+                model=self.models[o["modelId"]]
+                family=next((f for f in self.data["families"] if f["id"]==model.get("familyId")),None)
+                assets=self.data.get("assets",[])
+                result.append(dict(o,provider=g["provider"],model=model,family=family,logos={"provider":next((a for a in assets if a["id"]==g["provider"].get("logoId")),None),"family":next((a for a in assets if family and a["id"]==family.get("logoId")),None)},verification=verification_summary(self.data,o["id"],as_of=config.get("asOf"),max_age_days=config.get("filters",{}).get("verifiedWithinDays",90),contributor=config.get("filters",{}).get("verifiedBy"))))
+        return copy.deepcopy(result[:config.get("limit",10)])
     def select(self, config=None):
         config=config or {}; errors=validate_config(config)
         if errors: raise ValueError("; ".join(errors))
@@ -105,7 +135,7 @@ class Catalog:
             price=o.get("price",{}).get("input")
             return (-count,(price if price is not None else math.inf) if config.get("prefer",{}).get("lowerCost") else 0,o.get("rank",100),o["id"])
         for provider_id in ids:
-            choices=sorted((o for o in self.data["offerings"] if o["providerId"]==provider_id and matches(o,self.models[o["modelId"]],config)),key=order)
+            choices=sorted((o for o in self.data["offerings"] if o["providerId"]==provider_id and matches(o,self.models[o["modelId"]],config) and matches_verification(self.data,o["id"],config)),key=order)
             if choices: groups.append({"provider":self.providers[provider_id],"offerings":choices[:config.get("ui",{}).get("maxModelsPerProvider",4)]})
         return groups[:config.get("ui",{}).get("maxProviders",8)]
 
@@ -187,3 +217,80 @@ async def preflight(offering, messages, *, count_tokens=None, output_tokens=0, o
     count=count_tokens(messages,offering)
     if inspect.isawaitable(count): count=await count
     return check_fit(offering,{"inputTokens":count["tokens"],"outputTokens":output_tokens,"overheadTokens":overhead_tokens},{**(options or {}),"estimate":count.get("certainty")!="measured","certainty":count.get("certainty","estimated")})
+
+
+def _timestamp(value):
+    from datetime import datetime
+    parsed=datetime.fromisoformat(value.replace("Z","+00:00"))
+    if parsed.tzinfo is None: raise ValueError("Timezone required")
+    return parsed.timestamp()
+
+def validate_verifications(records,data):
+    import re
+    from urllib.parse import urlparse
+    if not isinstance(records,list): return ["verifications must be an array"]
+    errors=[]; ids=set(); offerings={o["id"] for o in data["offerings"]}
+    for r in records:
+        if not isinstance(r,dict): errors.append("Invalid verification record"); continue
+        if not isinstance(r.get("id"),str) or not r["id"] or r["id"] in ids: errors.append("Invalid or duplicate verification ID")
+        ids.add(r.get("id"))
+        if r.get("offeringId") not in offerings: errors.append("Verification target is missing")
+        if not isinstance(r.get("contributor"),str) or not re.fullmatch(r"github:[a-z0-9-]+",r["contributor"],re.I): errors.append("Invalid verification contributor")
+        try:
+            if not re.fullmatch(r"\d{4}-\d{2}-\d{2}T.*Z",r.get("checkedAt","")): raise ValueError("Invalid date")
+            _timestamp(r["checkedAt"])
+        except (ValueError,TypeError): errors.append("Invalid verification timestamp")
+        if r.get("result") not in ["passed","failed"]: errors.append("Invalid verification result")
+        if not isinstance(r.get("checks"),list) or not r["checks"] or any(c not in {m.value for m in VerificationCheck} for c in r["checks"]): errors.append("Verification must name its checks")
+        try:
+            u=urlparse(r.get("evidence",""))
+            if u.scheme!="https" or not u.hostname or u.username or u.password: raise ValueError("Invalid URL")
+        except (ValueError,TypeError): errors.append("Verification evidence is required")
+        if not isinstance(r.get("adapter"),str) or not r["adapter"]: errors.append("Verification adapter and version are required")
+        if set(r)-{"id","offeringId","contributor","checkedAt","result","checks","evidence","adapter","notes"}: errors.append("Unknown verification field; do not record keys or request payloads")
+    return errors
+
+def verification_summary(data,offering_id,*,as_of=None,max_age_days=90,contributor=None):
+    from datetime import datetime,timezone
+    now=_timestamp(as_of) if as_of else datetime.now(timezone.utc).timestamp()
+    records=[r for r in data.get("verifications",[]) if r["offeringId"]==offering_id and (not contributor or r["contributor"].lower()==contributor.lower())]
+    calls=sorted((r for r in records if "textGeneration" in r["checks"] and _timestamp(r["checkedAt"])<=now),key=lambda r:(-_timestamp(r["checkedAt"]),0 if r["result"]=="failed" else 1,r["id"]))
+    latest=calls[0] if calls else None
+    status="unverified" if latest is None else "stale" if now-_timestamp(latest["checkedAt"])>max_age_days*86400 else latest["result"]
+    return {"status":status,"latest":latest,"records":records}
+
+def matches_verification(data,oid,config):
+    f=config.get("filters",{})
+    if not any(k in f for k in ["verified","verifiedBy","verifiedWithinDays"]): return True
+    status=verification_summary(data,oid,as_of=config.get("asOf"),max_age_days=f.get("verifiedWithinDays",90),contributor=f.get("verifiedBy"))["status"]
+    return status!="passed" if f.get("verified") is False else status=="passed"
+
+def get_models(config: "PickerConfig | None" = None) -> list[dict]:
+    return load_catalog().get_models(config)
+
+from .types import PickerConfig, ContributorId, CustomTag, CustomProviderId, CustomCountryCode, CustomFileFormat
+
+def github_contributor(handle: str) -> ContributorId:
+    import re
+    if not re.fullmatch(r"[a-z0-9-]{1,39}",handle,re.I): raise ValueError("Invalid GitHub handle")
+    return ContributorId("github:"+handle)
+
+def custom_tag(value: str) -> CustomTag:
+    import re
+    if not re.fullmatch(r"[a-z][a-z0-9_-]*:[^\s]+",value): raise ValueError("Use a namespaced tag")
+    return CustomTag(value)
+
+def custom_provider_id(value: str) -> CustomProviderId:
+    import re
+    if not re.fullmatch(r"[a-z][a-z0-9_-]{0,63}",value): raise ValueError("Invalid custom provider ID")
+    return CustomProviderId(value)
+
+def custom_country_code(value: str) -> CustomCountryCode:
+    import re
+    if not re.fullmatch(r"[a-z]{2}",value): raise ValueError("Use a two-letter country code")
+    return CustomCountryCode(value)
+
+def custom_file_format(value: str) -> CustomFileFormat:
+    import re
+    if not re.fullmatch(r"[a-z0-9][a-z0-9.+-]{0,63}",value): raise ValueError("Invalid custom file format")
+    return CustomFileFormat(value)

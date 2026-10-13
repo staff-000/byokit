@@ -1,5 +1,9 @@
 # Delivery roadmap
 
+- [x] Shared runtime enums, TypeScript/Python invalid-call checks and generated model enums
+- [x] Architecture, filtering and verification illustration charts
+- [x] Simple getModels/get_models API and executable README quickstart
+- [x] Contributor call reports, evidence, freshness and contributor filters
 - [x] Native JS core with TypeScript declarations and Python core
 - [x] Versioned offering schema, provenance, strict unknown handling
 - [x] China/global presets, bounded menus, optional custom IDs

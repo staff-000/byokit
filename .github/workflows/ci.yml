@@ -13,4 +13,5 @@ jobs:
       - run: npm test
       - run: npm run test:python
       - run: npm run typecheck
+      - run: npm run typecheck:python
       - run: npm run check

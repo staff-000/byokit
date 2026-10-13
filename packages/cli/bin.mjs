@@ -23,13 +23,19 @@ async function run(){
     const models=data.models.filter(m=>modelIds.has(m.id)),familyIds=new Set(models.map(m=>m.familyId));
     const families=data.families.filter(f=>familyIds.has(f.id)),providers=data.providers.filter(p=>providerIds.has(p.id));
     const assets=new Set([...providers,...families].map(x=>x.logoId));
-    const slim={...data,providers,models,families,offerings,assets:(data.assets||[]).filter(a=>assets.has(a.id)),presets:[{id:config.preset||'global',providerIds:[...providerIds]}]};
+    const offeringIds=new Set(offerings.map(o=>o.id));
+    const slim={...data,verifications:(data.verifications||[]).filter(r=>offeringIds.has(r.offeringId)),providers,models,families,offerings,assets:(data.assets||[]).filter(a=>assets.has(a.id)),presets:[{id:config.preset||'global',providerIds:[...providerIds]}]};
     await mkdir(dirname(output),{recursive:true});await writeFile(output,JSON.stringify(slim,null,2)+'\n');
     await writeFile(output+'.lock.json',JSON.stringify({schemaVersion:1,upstreamHash:createHash('sha256').update(raw).digest('hex'),configHash:createHash('sha256').update(JSON.stringify(config)).digest('hex')},null,2)+'\n');
-    const union=values=>[...new Set(values)].map(v=>JSON.stringify(v)).join(' | ') || 'never';
-    const declarations=[`export type OfferingId = ${union(offerings.map(o=>o.id))};`,`export type ModelId = ${union(offerings.map(o=>o.apiModelId))};`];
-    for(const feature of ['functionCalling','strictJsonSchema','thinking'])declarations.push(`export type ${feature[0].toUpperCase()+feature.slice(1)}OfferingId = ${union(offerings.filter(o=>o.features?.[feature]?.status==='supported').map(o=>o.id))};`);
-    await writeFile(output+'.d.ts',declarations.join('\n')+'\n');
+    const registry={OfferingId:[...new Set(offerings.map(o=>o.id))],ModelId:[...new Set(offerings.map(o=>o.apiModelId))]};
+    for(const feature of ['functionCalling','strictJsonSchema','thinking'])registry[feature[0].toUpperCase()+feature.slice(1)+'OfferingId']=[...new Set(offerings.filter(o=>o.features?.[feature]?.status==='supported').map(o=>o.id))];
+    const entries=values=>values.map(v=>[v,v]);
+    const declarations=Object.entries(registry).map(([name,values])=>`export declare enum ${name} {\n${entries(values).map(([k,v])=>`  ${JSON.stringify(k)} = ${JSON.stringify(v)},`).join('\n')}\n}`);
+    const runtime=Object.entries(registry).map(([name,values])=>`export const ${name}=Object.freeze(${JSON.stringify(Object.fromEntries(entries(values)))});`).join('\n');
+    await writeFile(output+'.ids.d.ts',declarations.join('\n')+'\n');
+    await writeFile(output+'.ids.js',runtime+'\n');
+    // Keep the old declaration filename as a compatibility re-export.
+    await writeFile(output+'.d.ts',`export * from './${output.split(/[\\/]/).pop()}.ids.js';\n`);
     console.log(`Built ${providers.length} providers / ${offerings.length} offerings → ${output}`);
   }else console.log(`Checked ${groups.length} providers; ${diagnostics.length} diagnostics.`);
   return 0;

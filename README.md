@@ -1,216 +1,333 @@
 # byokit
 
-**A small BYOK setup interface with curated providers, local models, and early compatibility checks.**
+**Get a list of providers and models for your BYOK application, then refine it into a short list with your filters.**
 
-Initial 0.1 implementation. Unpublished package names are provisional; no registry availability is claimed.
+Filter by region preset, capabilities, price, context window, local execution,
+and contributor-tested calls. Each result includes the metadata needed to build
+an interface or configure your provider SDK. The demo UI is optional.
 
-## Try the working demo
+## Start with one API call
 
-Requires Node 20+ and Python 3.10+ for cross-language tests.
-
-```bash
-npm install
-npm run demo
-# Open http://127.0.0.1:4173/examples/index.html
-npm test
-npm run test:python
-npm run typecheck
-npm run check
-npm run build
-```
-
-The demo uses in-memory keys and makes no hosted-provider calls. Local discovery is explicit.
-
-## Add a BYOK interface
-
-The packages are npm workspaces. Until publication, consume them from this repository or package them with `npm pack --workspace @byokit/core` (and the UI packages).
+In this repository, run `npm install` first. Packages are not published yet.
 
 ```js
-import { mountByok } from '@byokit/dom';
-import { createMemoryCredentialStore } from '@byokit/core';
-import '@byokit/dom/styles.css';
-import catalog from '@byokit/core/catalog'; // Or your build-generated subset.
+import { getModels, ProviderId } from '@byokit/core/catalog';
 
-const store = createMemoryCredentialStore(); // Replace with application-owned secure storage.
-const ui = mountByok(document.querySelector('#ai-settings'), {
-  catalog,
-  config: { preset: 'china', ui: { maxProviders: 8, maxModelsPerProvider: 4, allowCustomModel: true } },
-  credentialStore: store,
-  onSave(selection) { /* Persist provider/model/credentialRef; no secret in selection. */ },
-  // Optional: implement an explicit, preferably non-generating check using your provider adapter.
-  // onCheck: async ({ providerId, modelId, apiKey }) => ({ ok: true }),
-});
-// ui.destroy() removes the UI and fences pending callbacks.
+const models = getModels({ providerIds: [ProviderId.DeepSeek], limit: 1 });
+console.log(models.map(({ id, name }) => ({ id, name })));
 ```
 
-React: `ByokSettings` from `@byokit/react`, with an `options` prop matching `mountByok`.
-Memoize options; replacing them remounts the panel and resets unsaved drafts.
-Import the DOM stylesheet separately. React 18+ is a peer dependency.
+Expected output with the bundled snapshot:
 
-Use `locale: 'zh'` for Chinese, or override `labels`. English is the default.
-The `onCheck` callback receives the secret and an AbortSignal only following an explicit click.
-Checks time out after 15 seconds (configurable with `checkTimeoutMs`).
-Errors shown by the UI are generic to avoid leaking provider error bodies.
-
-## Catalog and filtering
-
-```js
-import { Catalog } from '@byokit/core';
-const c = new Catalog(catalog);
-const groups = c.select({
-  preset: 'global',
-  filters: {
-    input: ['text', 'image'], output: ['text'],
-    requiredFeatures: ['functionCalling'], minContextTokens: 32000,
-    maxInputPricePerM: 2,
-  },
-  prefer: { lowerCost: true, features: ['promptCaching'] },
-  unknownPolicy: 'exclude',
-  ui: { maxProviders: 8, maxModelsPerProvider: 4 },
-});
+```json
+[
+  {
+    "id": "deepseek/deepseek-flash",
+    "name": "DeepSeek V4.1 Flash"
+  }
+]
 ```
 
-No hard filter is relaxed to fill the menu. Empty results stay empty.
-Unknown capabilities are excluded by default when a requirement asks for them.
-Provider identity, model identity, family, and offering identity are separate.
-A saved selection excluded by current filters remains visible; custom IDs remain possible.
-Provider switches preserve separate in-memory drafts and keys; destroying the panel clears drafts.
+`models` contains full records; the example prints only their IDs and names.
+This API queries an offline catalog. It needs no API key and makes no network
+request. To generate an AI response, pass the selected `apiModelId` to your
+provider SDK and keep your key in your application's credential storage.
 
-Presets are editorial audience recommendations, not assurances of accessibility,
-account eligibility, hosting location, or data residency. The initial China preset
-uses DeepSeek, Zhipu AI, SiliconFlow and local runtimes; global includes a curated
-set of providers and local runtimes. Override `providerIds` for your own shortlist.
+Import `Preset` from `@byokit/core` for a preset instead: `getModels({ preset: Preset.China, limit: 10 })` returns up to ten
+matches. `getModels()` uses the global preset and the same ten-result limit.
 
-## Build-time checks
-
-```bash
-node packages/cli/bin.mjs check examples/task.config.json --strict
-node packages/cli/bin.mjs build examples/byok.config.json --out /tmp/byok-catalog.json
-```
-
-`check` validates declared task budgets/capabilities against the pinned catalog.
-`--strict` makes warnings fail CI. Exit codes: 0 success, 1 failed checks,
-2 invalid configuration. `build` emits selected offerings and associated metadata, a lockfile, and TypeScript
-literal unions for the pinned offering/model IDs and supported capabilities.
-No network is used by ordinary builds. Generated catalogs record input hashes.
-
-```js
-import { checkFit, preflight } from '@byokit/core';
-checkFit(c.get('provider/model'), {
-  inputTokens: 20000, outputTokens: 4000, overheadTokens: 2000,
-});
-await preflight(c.get('provider/model'), messages, {
-  outputTokens: 4000,
-  countTokens: async (messages, offering) => ({ tokens: 1234, certainty: 'measured' }),
-});
-```
-
-Token counters are application/provider adapters; byokit does not claim a generic
-exact tokenizer for multimodal requests. Without a counter the result is unknown.
-An estimate remains unknown for fit guarantees. Known input/output/context limits
-can still produce an exceeds result. Reasoning/tool/media overhead belongs in the
-provider-aware budget. No truncation, model fallback or automatic provider billing.
-
-Upstream context accounting is not assumed: the initial importer marks it unknown.
-Reviewed offering overrides can set `combined` or `input-only`. Strict task checks
-therefore warn when metadata is insufficient rather than guessing a fit.
-
-## Python
+Python has the same interface and JSON field names:
 
 ```bash
 python -m pip install ./packages/python
-python -m byokit check examples/task.config.json --strict
 ```
 
 ```python
-import json
-from byokit import Catalog, check_fit
-catalog = Catalog(json.load(open('catalog/catalog.json')))
-groups = catalog.select({'preset': 'china', 'filters': {'input': ['text']}})
-result = check_fit(catalog.get('provider/model'), {'inputTokens': 20000, 'outputTokens': 4000})
+from byokit import get_models, ProviderId
+
+models = get_models({'providerIds': [ProviderId.DEEP_SEEK], 'limit': 1})
+print([{'id': m['id'], 'name': m['name']} for m in models])
 ```
 
-Python is native and dependency-free at runtime, shares JSON field names and passes
-the same conformance vectors. Each SDK bundles the same offline snapshot. Python exposes `load_catalog()`;
-TypeScript exposes `@byokit/core/catalog`. Neither SDK silently downloads data.
+Run the JavaScript example: `node examples/query.mjs`.
 
-## Local models
-
-`discoverLocal` from `@byokit/dom/local` supports Ollama and explicit
-OpenAI-compatible endpoints. It only contacts an endpoint when you call it;
-remote endpoints require `allowRemote: true`. Discovery times out after ten seconds.
-Results retain artifact size, digest and quantization where available, while leaving
-unverified context and capabilities unknown. It does not launch/install models.
-The UI accepts a `discoverLocal` callback, so authenticated runtimes can use an
-application-owned adapter. Selecting a local model does not make your whole app offline.
-
-## Logos
-
-Provider logo metadata comes from Models.dev. Family metadata includes a fallback
-provider logo reference; unique family artwork remains a curated contribution.
-The UI never loads catalog URLs automatically. Supply local `assets` mappings:
+## Filter the list
 
 ```js
-assets: { 'provider:openai': '/assets/openai.svg' }
+import {Preset,Deployment,Modality,FeatureName} from '@byokit/core';
+
+const models = getModels({
+  preset: Preset.China,
+  limit: 10,
+  filters: {
+    deployment: [Deployment.Hosted, Deployment.Local],
+    input: [Modality.Text, Modality.Image],
+    output: [Modality.Text],
+    requiredFeatures: [FeatureName.FunctionCalling],
+    minContextTokens: 32000,
+    maxInputPricePerM: 2,
+  },
+  prefer: { lowerCost: true },
+});
 ```
 
-The optional `@byokit/assets` workspace ships nine provider SVGs and a manifest.
-Use `node scripts/fetch-assets.mjs catalog/catalog.json assets/` to explicitly fetch
-selected Models.dev SVGs. Only validated, sanitized local assets are emitted.
-Missing artwork uses a neutral UI fallback. The asset manifest retains provenance
-and notices. Do not include the whole icon collection in each application.
+All requirements must match. Unknown values fail requirements by default;
+`unknownPolicy: UnknownPolicy.Include` explicitly allows unknown metadata. Conditional support
+still does not meet an unconditional feature requirement. Empty results mean no
+models meet the rules; byokit never relaxes a rule to fill the list.
 
-## Update the catalog
+| Option | What it selects |
+|---|---|
+| `preset` | `china` or `global` audience shortlist |
+| `providerIds` | Explicit provider IDs, overriding the preset shortlist |
+| `limit` | Maximum returned models; default 10, maximum 1,000 |
+| `filters.deployment` | `hosted`, `local`, or `self-hosted` |
+| `filters.origin` | Known model-maker origin, such as `cn` or `us` |
+| `filters.input`, `filters.output` | Required modalities: text, image, audio, video, embedding |
+| `filters.fileFormats` | Required file formats, such as `pdf` |
+| `filters.requiredFeatures` | Features that must have `supported` status |
+| `filters.minContextTokens` | Minimum advertised context window |
+| `filters.maxInputPricePerM`, `maxOutputPricePerM` | Maximum USD price per million tokens in the shipped catalog |
+| `filters.openWeights` | Whether model weights are available |
+| `filters.commercialUse` | `allowed`, `restricted`, or `unknown`; distinct from open weights |
+| `filters.maxParameters` | Maximum total parameter count, when known |
+| `filters.maxTimeToFirstTokenMs`, `minTokensPerSecond` | Sourced speed measurements, when available |
+| `filters.includeTags`, `excludeTags` | All required tags; any excluded tag removes a result |
+| `filters.includeDeprecated` | Include deprecated entries present in your catalog; default false |
+| `filters.verified`, `verifiedBy`, `verifiedWithinDays` | Filter contributor reports; explained below |
+| `prefer.features` | Rank models with these features higher without excluding others |
+| `prefer.lowerCost` | Rank by lower input-token price within each provider |
 
-```bash
-curl --fail --location https://models.dev/api.json -o /tmp/models.json
-node scripts/import-catalog.mjs /tmp/models.json
+Provider order follows the preset or `providerIds`; ranking happens within each
+provider. For a price comparison across providers, sort the returned list yourself.
+China/global presets are recommendations for an audience, not guarantees of network
+access or data residency. Origin is separate from hosting. Speed and model size
+remain unknown until a source or measurement supplies them.
+
+Feature names include `functionCalling`, `parallelTools`, `forcedToolChoice`,
+`strictToolSchema`, `promptCaching`, `jsonMode`, `jsonSchema`, `strictJsonSchema`,
+`systemMessages`, `developerMessages`, `thinking`, `thinkingDisable`,
+`thinkingBudget`, and `thinkingEffort`.
+
+## Catch API typos at build time
+
+Use enum members for fixed API choices. With TypeScript strict checking enabled, the compiler rejects raw literals and unknown
+members before deployment:
+
+```ts
+getModels({filters:{input:[Modality.Image]}}); // valid
+// TypeScript error: raw string is not a Modality enum member
+getModels({filters:{input:['image']}});
+// TypeScript error: this enum member does not exist
+getModels({filters:{requiredFeatures:[FeatureName.FunctionCallling]}});
 ```
 
-The importer reads a local file, applies `catalog/overlays.json`, and produces a
-snapshot, lockfile and change report. It retains up to 24 recent non-deprecated
-text-output offerings per curated provider. Applications display fewer choices.
-Price tags use a stated reference workload of 1,000 input + 1,000 output tokens:
-`budget` ≤ $0.002, `mid` ≤ $0.02, `premium` above; zero token rates are not a free-service guarantee.
-Speed and hosting fields remain unknown until sourced. Prices/capabilities come from upstream; openness, licensing and speed are never
-inferred from marketing names. Review changes before accepting a new snapshot.
-Scheduled CI emits a candidate artifact; it cannot publish packages or overwrite defaults.
-### Reviewed capability overrides
+The same constants are available to JavaScript and as Python enums. JavaScript/JSON
+inputs are validated at runtime; Python type checkers use the typed query configuration.
+JSON catalogs/overlays still store enum values as text. Model IDs, URLs, and contributor
+notes are open-ended data. Use `customProviderId`, `customCountryCode`, `customFileFormat`,
+`customTag`, or `githubContributor` for explicit custom query values.
 
-Add entries under `models` or `offerings` in `catalog/overlays.json`:
+Fixed enum definitions live in `spec/enums.json`; run `npm run enums:generate` after changing them.
+
+`npm run build` additionally emits runtime model/offering enums and matching TS types
+in `examples/generated/catalog.json.ids.js`. These describe the pinned build snapshot:
+
+```ts
+import {OfferingId} from './examples/generated/catalog.json.ids.js';
+const id=OfferingId['deepseek/deepseek-flash']; // when included in that build
+```
+
+## What each model returns
+
+A result represents one model served by one provider. The same underlying model
+served by two providers is two results because prices and features may differ.
+
+| Field | Contents |
+|---|---|
+| `id`, `name` | Stable offering ID and display name |
+| `apiModelId` | Model ID to give that provider's SDK |
+| `provider` | Provider ID, name, docs, authentication requirement, deployment type |
+| `model`, `family` | Underlying model, family, openness, license, parameter counts |
+| `modalities`, `fileFormats` | Supported input/output types and document formats |
+| `features` | Status, source, and optional details for each capability |
+| `limits` | Context, input, output limits and context-accounting rule |
+| `price` | Currency, input/output/cache prices per million tokens, optional tiers |
+| `speed`, `hosting` | Known measurements/location or explicit unknown fields |
+| `tags` | Derived labels and contributor-maintained custom tags |
+| `logos` | Provider and family asset metadata, or null; family may use a provider fallback |
+| `provenance` | Source and review date for offering metadata |
+| `verification` | Contributor call reports, latest text-call result, and freshness |
+
+For example:
+
+```js
+const model = models[0];
+model.apiModelId;                      // 'deepseek-flash'
+model.limits.context;                 // 1000000 in this snapshot
+model.features.functionCalling.status; // 'supported' from catalog metadata
+model.verification.status;            // 'unverified': no submitted call report
+```
+
+Capabilities use `supported`, `unsupported`, `conditional`, or `unknown`. Unknown
+numeric facts use null. Metadata support does not establish that your account has
+access, and a successful text call does not verify tools or strict JSON output.
+Logos are metadata only; queries never download images or send credentials.
+
+## Which calls have contributors verified?
+
+```js
+import {githubContributor} from '@byokit/core';
+
+const models = getModels({
+  filters: {
+    verified: true,
+    verifiedBy: githubContributor('alice'),
+    verifiedWithinDays: 30,
+  },
+});
+```
+
+The current catalog ships **no contributor verification claims**, so this returns
+an empty list until actual reports are contributed.
+
+Each report identifies the exact provider/model pairing, contributor, UTC test
+time, adapter/version, checks, result, and public evidence. `verification.records`
+returns all matching reports; `verification.latest` is the newest eligible
+`textGeneration` report. `verification.status` is `passed`, `failed`, `stale`, or
+`unverified`. The default freshness window is 90 days. Future-dated reports do not
+establish verification. A later failed call supersedes an earlier successful one.
+
+`verifiedBy` restricts reports to that contributor. Without it, the newest text
+report across contributors determines status. Setting `verified: false` selects
+results without a current passing report. Set `asOf` to a UTC ISO timestamp for
+reproducible checks. Reports are contributor observations reviewed through pull
+requests, not proof of identity, current entitlement, or universal availability.
+
+## Contribute: update model tags or capabilities
+
+1. Run `npm install` from the repository root.
+2. Edit **`catalog/overlays.json`**, not generated catalog files.
+3. Add the exact offering ID under `offerings`, or an underlying model ID under
+   `models`. Include a source and review date.
+4. Regenerate the catalog, run checks, and submit the changes with their evidence.
+
+Example overlay entry (add it to the existing `offerings` object):
 
 ```json
-{
-  "offerings": {
-    "provider/model": {
-      "source": "https://provider.example/docs/context",
-      "reviewedAt": "2026-10-12",
-      "fields": { "limits": { "contextAccounting": "combined" } }
+"deepseek/deepseek-flash": {
+  "source": "https://provider.example/official-capability-docs",
+  "reviewedAt": "2026-10-12",
+  "fields": {
+    "tags": ["usecase:summarization"],
+    "features": {
+      "functionCalling": {
+        "status": "supported",
+        "source": "https://provider.example/official-capability-docs"
+      }
     }
   }
 }
 ```
 
-Targets must exist, evidence is required, and identity/auth/endpoint fields cannot be
-changed. Structured fields are merged and derived tags rebuilt. Missing targets
-fail import so a disappearing recommendation gets reviewed.
+This is a template: replace the source and claim with real evidence. Change a
+structured feature field to update capability tags. Do not manually add
+`cap:functionCalling` while leaving that feature unsupported.
 
-## Scope and status
+| Tag prefix | How it is updated |
+|---|---|
+| `cap:` | Derived from supported feature fields |
+| `input:`, `output:` | Derived from modalities |
+| `context:` | Derived from the context limit |
+| `price:` | Derived from USD input/output prices |
+| `weights:`, `origin:` | Derived from underlying model fields |
+| `deployment:` | Derived from deployment type |
+| `usecase:` or your own namespace | Add to `fields.tags` with supporting evidence |
 
-Implemented: catalog/preset selection, capability metadata and filtering, budget
-checks, price estimates, TS declarations, browser UI, React wrapper, Python core/CLI,
-local discovery, asset tooling, snapshot import and shared tests.
+Derived prefixes are reserved and recomputed. Custom `fields.tags` replaces the
+previous custom tag list, so keep existing custom tags you want to retain.
+Price labels use 1,000 input + 1,000 output tokens: budget ≤ $0.002, mid ≤ $0.02,
+premium above that. A zero token rate does not imply a free service.
 
-Next: deeper provider-specific capability overlays and context accounting review,
-family artwork, exact token-count adapters, task-specific constrained client types,
-Go/Rust SDKs, extra localization and platform smoke coverage. Full inference,
-subscription authorization, quota dashboards and OS keychain implementations stay
-in host applications or optional future integrations.
+```bash
+curl --fail --location https://models.dev/api.json -o /tmp/models.json
+node scripts/import-catalog.mjs /tmp/models.json
+npm test
+npm run test:python
+npm run typecheck
+npm run typecheck:python
+npm run check
+```
 
-Credentials never enter catalog files. Memory is the only supplied key store.
-The host controls endpoint/auth adapters; catalog updates cannot redirect keys.
-No telemetry, CDN dependency, automatic inference, or hosted credential proxy.
+The importer updates the catalog, bundled JS/Python snapshots, lockfile and change
+report. Review those diffs together. Missing overlay targets fail import. Identity,
+authentication, and endpoint fields cannot be overridden.
+
+To change a preset, edit `providers.<id>.presets` in the same overlay. New provider
+integration also needs the provider in the upstream snapshot. To change code:
+JS/TS behavior lives in `packages/core`, Python behavior in `packages/python`,
+UI behavior in `packages/dom` and `packages/react`. Add tests for changed behavior;
+cross-language changes must pass the shared conformance checks. More detail:
+[contributor guide](CONTRIBUTING.md).
+
+## Contribute: record a tested model call
+
+Copy `catalog/verification.example.json`, replace every placeholder, and append
+the record to **`catalog/verifications.json`** after running an actual test:
+
+```json
+{
+  "id": "alice-deepseek-text-2026-10-12",
+  "offeringId": "deepseek/deepseek-flash",
+  "contributor": "github:alice",
+  "checkedAt": "2026-10-12T12:00:00Z",
+  "result": "passed",
+  "checks": ["textGeneration"],
+  "adapter": "your-provider-adapter@version",
+  "evidence": "https://github.com/alice/example/blob/commit/model-test.md"
+}
+```
+
+This is an example, not an actual verification. Evidence should explain the test,
+expected response and observed result. Include only checks actually exercised;
+record failed calls too. Never include keys, authorization headers, private prompts
+or personal data. Extra fields such as `apiKey` are rejected.
+
+Regenerate and test using the commands above. Reviewers should compare the claimed
+contributor with the pull request author and inspect evidence; the library cannot
+authenticate a GitHub handle merely because it appears in JSON. Reports remain
+separate from capability metadata; adding a passing report never upgrades a tag.
+
+## Optional tools and demo
+
+- **Context checks:** `checkFit` and `preflight` from `@byokit/core`, plus the CLI.
+  Declared budgets can be checked during builds; dynamic requests need a supplied
+  token counter. Unknown accounting rules or estimated counts stay explicit.
+- **UI:** DOM settings panel and React wrapper, with application-owned key storage.
+- **Local discovery:** `@byokit/dom/local` queries an explicitly selected Ollama or
+  OpenAI-compatible endpoint; unverified local limits remain unknown.
+- **Logos:** optional `@byokit/assets` package with local provider SVGs and notices.
+
+```bash
+npm run demo      # http://127.0.0.1:4173/examples/index.html
+npm run build     # small catalog + pinned TypeScript IDs
+```
+
+The demo uses memory-only keys and makes no hosted AI calls. See
+[the integration guide](docs/integration.md) for UI, budget and local-runtime examples.
+
+## Thank you, Models.dev
+
+A huge thank-you to the maintainers and contributors of [Models.dev](https://models.dev)
+and its [open-source catalog](https://github.com/anomalyco/models.dev). Their work makes
+provider/model metadata accessible and saves byokit from maintaining a complete model
+database. byokit builds a curated filtering layer on top of that foundation. We appreciate
+the community keeping the catalog useful and current; contribute upstream facts there
+when possible. 
+
+Architecture and data-flow diagrams: [design document](docs/design.md).
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE). See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for third-party notices and upstream attribution.
+[MIT](LICENSE). Catalog metadata and selected logos come from Models.dev;
+see [third-party notices](THIRD_PARTY_NOTICES.md).

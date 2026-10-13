@@ -1,0 +1,181 @@
+{
+  "ProviderId": {
+    "OpenAI": "openai",
+    "Anthropic": "anthropic",
+    "Google": "google",
+    "Mistral": "mistral",
+    "Groq": "groq",
+    "OpenRouter": "openrouter",
+    "DeepSeek": "deepseek",
+    "ZhipuAI": "zhipuai",
+    "SiliconFlow": "siliconflow",
+    "Ollama": "ollama",
+    "Local": "local"
+  },
+  "Preset": {
+    "Global": "global",
+    "China": "china"
+  },
+  "Country": {
+    "China": "cn",
+    "UnitedStates": "us",
+    "France": "fr"
+  },
+  "Deployment": {
+    "Hosted": "hosted",
+    "Local": "local",
+    "SelfHosted": "self-hosted"
+  },
+  "AuthRequirement": {
+    "Required": "required",
+    "Optional": "optional",
+    "None": "none"
+  },
+  "Modality": {
+    "Text": "text",
+    "Image": "image",
+    "Audio": "audio",
+    "Video": "video",
+    "Embedding": "embedding"
+  },
+  "FileFormat": {
+    "PDF": "pdf",
+    "Text": "txt",
+    "Markdown": "md",
+    "HTML": "html",
+    "JSON": "json",
+    "Docx": "docx"
+  },
+  "FeatureName": {
+    "FunctionCalling": "functionCalling",
+    "ParallelTools": "parallelTools",
+    "ForcedToolChoice": "forcedToolChoice",
+    "StrictToolSchema": "strictToolSchema",
+    "PromptCaching": "promptCaching",
+    "JsonMode": "jsonMode",
+    "JsonSchema": "jsonSchema",
+    "StrictJsonSchema": "strictJsonSchema",
+    "SystemMessages": "systemMessages",
+    "DeveloperMessages": "developerMessages",
+    "Thinking": "thinking",
+    "ThinkingDisable": "thinkingDisable",
+    "ThinkingBudget": "thinkingBudget",
+    "ThinkingEffort": "thinkingEffort"
+  },
+  "FeatureStatus": {
+    "Supported": "supported",
+    "Unsupported": "unsupported",
+    "Conditional": "conditional",
+    "Unknown": "unknown"
+  },
+  "CommercialUse": {
+    "Allowed": "allowed",
+    "Restricted": "restricted",
+    "Unknown": "unknown"
+  },
+  "Architecture": {
+    "Dense": "dense",
+    "MoE": "moe",
+    "Unknown": "unknown"
+  },
+  "ContextAccounting": {
+    "Combined": "combined",
+    "InputOnly": "input-only",
+    "Unknown": "unknown"
+  },
+  "UnknownPolicy": {
+    "Include": "include",
+    "Exclude": "exclude"
+  },
+  "FitStatus": {
+    "Fits": "fits",
+    "Exceeds": "exceeds",
+    "Unknown": "unknown"
+  },
+  "Certainty": {
+    "Declared": "declared",
+    "Measured": "measured",
+    "Estimated": "estimated",
+    "Unknown": "unknown"
+  },
+  "Currency": {
+    "USD": "USD",
+    "EUR": "EUR",
+    "CNY": "CNY"
+  },
+  "ModelStatus": {
+    "Stable": "stable",
+    "Preview": "preview",
+    "Alpha": "alpha",
+    "Beta": "beta",
+    "Deprecated": "deprecated"
+  },
+  "VerificationResult": {
+    "Passed": "passed",
+    "Failed": "failed"
+  },
+  "VerificationStatus": {
+    "Unverified": "unverified",
+    "Passed": "passed",
+    "Failed": "failed",
+    "Stale": "stale"
+  },
+  "VerificationCheck": {
+    "TextGeneration": "textGeneration",
+    "FunctionCalling": "functionCalling",
+    "ParallelTools": "parallelTools",
+    "ForcedToolChoice": "forcedToolChoice",
+    "StrictToolSchema": "strictToolSchema",
+    "PromptCaching": "promptCaching",
+    "JsonMode": "jsonMode",
+    "JsonSchema": "jsonSchema",
+    "StrictJsonSchema": "strictJsonSchema",
+    "SystemMessages": "systemMessages",
+    "DeveloperMessages": "developerMessages",
+    "Thinking": "thinking",
+    "ThinkingDisable": "thinkingDisable",
+    "ThinkingBudget": "thinkingBudget",
+    "ThinkingEffort": "thinkingEffort"
+  },
+  "LocalRuntime": {
+    "Ollama": "ollama",
+    "OpenAICompatible": "openai-compatible"
+  },
+  "Locale": {
+    "English": "en",
+    "Chinese": "zh"
+  },
+  "SetupStatus": {
+    "Idle": "idle",
+    "Checking": "checking",
+    "Ready": "ready",
+    "Error": "error"
+  },
+  "SetupEventType": {
+    "Edit": "edit",
+    "Checking": "checking",
+    "Result": "result"
+  },
+  "Severity": {
+    "Warning": "warning",
+    "Error": "error"
+  },
+  "DiagnosticCode": {
+    "CapabilityUnsupported": "CAPABILITY_UNSUPPORTED",
+    "CapabilityUnverified": "CAPABILITY_UNVERIFIED",
+    "ContextBudgetExceeded": "CONTEXT_BUDGET_EXCEEDED",
+    "ContextNearLimit": "CONTEXT_NEAR_LIMIT",
+    "ContextUnverified": "CONTEXT_UNVERIFIED",
+    "InputBudgetExceeded": "INPUT_BUDGET_EXCEEDED",
+    "LocalContextUnknown": "LOCAL_CONTEXT_UNKNOWN",
+    "ModalityUnsupported": "MODALITY_UNSUPPORTED",
+    "ModalityUnverified": "MODALITY_UNVERIFIED",
+    "ModelDeprecated": "MODEL_DEPRECATED",
+    "ModelUnverified": "MODEL_UNVERIFIED",
+    "NoModels": "NO_MODELS",
+    "OutputBudgetExceeded": "OUTPUT_BUDGET_EXCEEDED",
+    "OutputLimitUnknown": "OUTPUT_LIMIT_UNKNOWN",
+    "TokenCountUnknown": "TOKEN_COUNT_UNKNOWN",
+    "TokenEstimate": "TOKEN_ESTIMATE"
+  }
+}

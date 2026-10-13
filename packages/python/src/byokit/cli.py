@@ -22,6 +22,7 @@ def main():
         if args.command=="build":
             if not args.out: raise ValueError("build requires --out")
             data=catalog.data.copy(); data["providers"]=[g["provider"] for g in groups]; data["offerings"]=[o for g in groups for o in g["offerings"]]
+            offering_ids={o["id"] for o in data["offerings"]}; data["verifications"]=[r for r in data.get("verifications",[]) if r["offeringId"] in offering_ids]
             model_ids={o["modelId"] for o in data["offerings"]}; data["models"]=[m for m in data["models"] if m["id"] in model_ids]
             family_ids={m.get("familyId") for m in data["models"]}; data["families"]=[f for f in data["families"] if f["id"] in family_ids]
             assets={p.get("logoId") for p in data["providers"]}|{f.get("logoId") for f in data["families"]}; data["assets"]=[a for a in data.get("assets",[]) if a["id"] in assets]

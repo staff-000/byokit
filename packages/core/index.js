@@ -1,3 +1,5 @@
+import {FeatureStatus,ContextAccounting,Currency,VerificationStatus,Deployment as DeploymentType,Modality,FeatureName,Deployment,UnknownPolicy,CommercialUse,VerificationCheck,LocalRuntime} from './enums.js';
+export * from './enums.js';
 /** Framework-independent catalog, selection and preflight rules. No network or storage. */
 const finite = n => typeof n === 'number' && Number.isFinite(n) && n >= 0;
 const positive = n => finite(n) && n > 0;
@@ -23,15 +25,25 @@ export function validateCatalog(data) {
     for (const val of Object.values(o.price || {})) if (typeof val === 'number' && !finite(val)) errors.push(`${o.id}: invalid price`);
   }
   for (const p of data.presets) if (!Array.isArray(p.providerIds) || p.providerIds.some(id=>!providers.has(id))) errors.push(`${p.id}: unresolved provider`);
+  errors.push(...validateVerifications(data.verifications || [],data));
   return errors;
 }
 export function validateConfig(c = {}) {
   const errors = [];
-  const allowed={root:['unknownPolicy','schemaVersion','catalog','preset','providerIds','filters','prefer','ui','budget','tasks'],filters:['deployment','origin','openWeights','commercialUse','input','output','requiredFeatures','minContextTokens','maxInputPricePerM','maxOutputPricePerM','maxParameters','maxTimeToFirstTokenMs','minTokensPerSecond','fileFormats','includeTags','excludeTags','includeDeprecated'],prefer:['features','lowerCost'],ui:['maxProviders','maxModelsPerProvider','allowCustomModel'],budget:['maxInputTokens','maxOutputTokens','overheadTokens']};
+  const allowed={root:['limit','asOf','unknownPolicy','schemaVersion','catalog','preset','providerIds','filters','prefer','ui','budget','tasks'],filters:['deployment','origin','openWeights','commercialUse','input','output','requiredFeatures','minContextTokens','maxInputPricePerM','maxOutputPricePerM','maxParameters','maxTimeToFirstTokenMs','minTokensPerSecond','fileFormats','includeTags','excludeTags','includeDeprecated','verified','verifiedBy','verifiedWithinDays'],prefer:['features','lowerCost'],ui:['maxProviders','maxModelsPerProvider','allowCustomModel'],budget:['maxInputTokens','maxOutputTokens','overheadTokens']};
   for(const [group,keys] of Object.entries(allowed))for(const key of Object.keys(group==='root'?c:c[group] || {}))if(!keys.includes(key))errors.push(`Unknown ${group}.${key}`);
   for(const key of ['deployment','origin','input','output','requiredFeatures','fileFormats','includeTags','excludeTags'])if(c.filters?.[key]!==undefined&&(!Array.isArray(c.filters[key])||c.filters[key].some(v=>typeof v!=='string')))errors.push(`filters.${key} must be a string array`);
   for (const key of ['minContextTokens','maxInputPricePerM','maxOutputPricePerM','maxParameters','maxTimeToFirstTokenMs','minTokensPerSecond']) if (c.filters?.[key] !== undefined && !finite(c.filters[key])) errors.push(`filters.${key} must be a nonnegative finite number`);
   for (const key of ['maxProviders','maxModelsPerProvider']) if (c.ui?.[key] !== undefined && (!Number.isInteger(c.ui[key]) || c.ui[key] < 1 || c.ui[key] > 100)) errors.push(`ui.${key} must be an integer from 1 to 100`);
+  if(c.limit!==undefined&&(!Number.isInteger(c.limit)||c.limit<1||c.limit>1000))errors.push('limit must be an integer from 1 to 1000');
+  if(c.asOf!==undefined&&(typeof c.asOf!=='string'||!/^\d{4}-\d{2}-\d{2}T.*Z$/.test(c.asOf)||!Number.isFinite(Date.parse(c.asOf))))errors.push('asOf must be an ISO timestamp');
+  if(c.filters?.verified!==undefined&&typeof c.filters.verified!=='boolean')errors.push('filters.verified must be boolean');
+  if(c.filters?.verifiedBy!==undefined&&!/^github:[a-z0-9-]+$/i.test(c.filters.verifiedBy))errors.push('verifiedBy must identify a GitHub contributor');
+  if(c.filters?.verifiedWithinDays!==undefined&&(!finite(c.filters.verifiedWithinDays)||c.filters.verifiedWithinDays<1))errors.push('verifiedWithinDays must be positive');
+  const vocab={input:Modality,output:Modality,requiredFeatures:FeatureName,deployment:Deployment};
+  for(const [key,values] of Object.entries(vocab))if(Array.isArray(c.filters?.[key])&&c.filters[key].some(v=>!Object.values(values).includes(v)))errors.push(`Unknown filters.${key} value`);
+  if(c.prefer?.features!==undefined&&(!Array.isArray(c.prefer.features)||c.prefer.features.some(v=>!Object.values(FeatureName).includes(v))))errors.push('Unknown preferred feature');
+  if(c.filters?.commercialUse!==undefined&&!Object.values(CommercialUse).includes(c.filters.commercialUse))errors.push('Unknown commercialUse value');
   if (c.unknownPolicy && !['include','exclude'].includes(c.unknownPolicy)) errors.push('Invalid unknownPolicy');
   for (const key of ['maxInputTokens','maxOutputTokens','overheadTokens']) if (c.budget?.[key] !== undefined && !finite(c.budget[key])) errors.push(`budget.${key} must be a nonnegative finite number`);
   return errors;
@@ -48,8 +60,8 @@ function matches(o, m, c) {
   }
   if(f.fileFormats?.length && (o.fileFormats==null?!unknown(c):!f.fileFormats.every(x=>o.fileFormats.includes(x))))return false;
   for (const feature of f.requiredFeatures || []) {
-    const s=o.features?.[feature]?.status || 'unknown';
-    if (s !== 'supported' && !(s === 'unknown' && unknown(c))) return false;
+    const s=o.features?.[feature]?.status || FeatureStatus.Unknown;
+    if (s !== FeatureStatus.Supported && !(s === FeatureStatus.Unknown && unknown(c))) return false;
   }
   const constraints = [[f.minContextTokens,o.limits?.context,'min'],[f.maxInputPricePerM,o.price?.input,'max'],[f.maxOutputPricePerM,o.price?.output,'max'],[f.maxParameters,m.size?.totalParameters,'max'],[f.maxTimeToFirstTokenMs,o.speed?.timeToFirstTokenMs,'max'],[f.minTokensPerSecond,o.speed?.tokensPerSecond,'min']];
   for (const [bound,value,op] of constraints) if (bound !== undefined && (!finite(value) ? !unknown(c) : op === 'min' ? value < bound : value > bound)) return false;
@@ -67,6 +79,15 @@ export class Catalog {
     this.offerings=new Map(this.data.offerings.map(x=>[x.id,x]));
   }
   get(id) { return this.offerings.get(id); }
+  getModels(config = {}) {
+    const groups=this.select({...config,ui:{maxProviders:100,maxModelsPerProvider:100}});
+    return structuredClone(groups.flatMap(g=>g.offerings.map(o=>{
+      const model=this.models.get(o.modelId),family=this.data.families.find(f=>f.id===model?.familyId);
+      return {...o,provider:g.provider,model,family:family || null,
+        logos:{provider:this.data.assets?.find(a=>a.id===g.provider.logoId)||null,family:this.data.assets?.find(a=>a.id===family?.logoId)||null},
+        verification:verificationSummary(this.data,o.id,{asOf:config.asOf,maxAgeDays:config.filters?.verifiedWithinDays,contributor:config.filters?.verifiedBy})};
+    })).slice(0,config.limit ?? 10));
+  }
   select(config = {}) {
     const errors=validateConfig(config); if(errors.length) throw new Error(errors.join('; '));
     const preset=this.data.presets.find(p=>p.id===(config.preset || 'global'));
@@ -75,7 +96,7 @@ export class Catalog {
     if (!Array.isArray(ids) || ids.some(id=>!this.providers.has(id))) throw new Error('Unknown provider in providerIds');
     const groups=[];
     for(const id of ids) {
-      let choices=this.data.offerings.filter(o=>o.providerId===id && matches(o,this.models.get(o.modelId),config));
+      let choices=this.data.offerings.filter(o=>o.providerId===id && matches(o,this.models.get(o.modelId),config) && matchesVerification(this.data,o.id,config));
       choices.sort((a,b)=> {
         const preferred=(x)=>config.prefer?.features?.filter(f=>x.features?.[f]?.status==='supported').length || 0;
         return preferred(b)-preferred(a) || (config.prefer?.lowerCost ? (a.price?.input ?? Infinity)-(b.price?.input ?? Infinity) : 0) || (a.rank ?? 100)-(b.rank ?? 100) || (a.id<b.id?-1:a.id>b.id?1:0);
@@ -101,10 +122,10 @@ export function checkFit(offering, budget, options = {}) {
   }
   if (positive(c.input) && input>c.input) diagnostics.push(diag('INPUT_BUDGET_EXCEEDED',`Input ${input} exceeds ${c.input}.`,'error',offering.id));
   if (positive(c.output) && output>c.output) diagnostics.push(diag('OUTPUT_BUDGET_EXCEEDED',`Output ${output} exceeds ${c.output}.`,'error',offering.id));
-  const combined=c.contextAccounting==='combined';
+  const combined=c.contextAccounting===ContextAccounting.Combined;
   const used=combined?input+output:input;
   let ratio;
-  if(positive(c.context) && ['combined','input-only'].includes(c.contextAccounting)) {
+  if(positive(c.context) && [ContextAccounting.Combined,ContextAccounting.InputOnly].includes(c.contextAccounting)) {
     ratio=used/c.context;
     if(ratio>1) diagnostics.push(diag('CONTEXT_BUDGET_EXCEEDED',`Required ${used} exceeds context ${c.context}.`,'error',offering.id));
     else if(ratio>=.8) diagnostics.push(diag('CONTEXT_NEAR_LIMIT',`Context budget uses ${Math.round(ratio*100)}%.`,'warning',offering.id));
@@ -133,7 +154,7 @@ export async function preflight(offering, messages, {countTokens,outputTokens=0,
 export function estimatePrice(offering,{inputTokens,outputTokens}) {
   if(!finite(inputTokens)||!finite(outputTokens)) throw new Error('Invalid token counts');
   const p=offering.price;
-  if(p?.currency!=='USD'||!finite(p.input)||!finite(p.output)||p.tiers?.length) return {status:'unknown'};
+  if(p?.currency!==Currency.USD||!finite(p.input)||!finite(p.output)||p.tiers?.length) return {status:'unknown'};
   return {status:'estimated',currency:'USD',amount:(inputTokens*p.input+outputTokens*p.output)/1e6,excludes:['cache pricing','additional reasoning charges','tax','tier changes']};
 }
 export function createMemoryCredentialStore() {
@@ -164,6 +185,56 @@ export function deriveTags(offering,model={}) {
  const ctx=offering.limits?.context;
  if(positive(ctx))tags.push(`context:${ctx>=1000000?'1m+':ctx>=128000?'128k+':ctx>=32000?'32k+':'under-32k'}`);
  const p=offering.price;
- if(p?.currency==='USD'&&finite(p.input)&&finite(p.output)&&!p.tiers?.length){const cost=(p.input+p.output)/1000;tags.push(`price:${cost===0?'zero-token-rate':cost<=.002?'budget':cost<=.02?'mid':'premium'}`)}
+ if(p?.currency===Currency.USD&&finite(p.input)&&finite(p.output)&&!p.tiers?.length){const cost=(p.input+p.output)/1000;tags.push(`price:${cost===0?'zero-token-rate':cost<=.002?'budget':cost<=.02?'mid':'premium'}`)}
  return [...new Set(tags)].sort();
+}
+
+/** Contributor reports describe observed calls, never account entitlements. */
+export function validateVerifications(records,data) {
+  if(!Array.isArray(records))return ['verifications must be an array'];
+  const errors=[],ids=new Set(),offerings=new Set(data.offerings.map(o=>o.id));
+  for(const r of records){
+    if(!r || typeof r!=='object'){errors.push('Invalid verification record');continue}
+    if(typeof r.id!=='string'||!r.id||ids.has(r.id))errors.push('Invalid or duplicate verification ID');ids.add(r.id);
+    if(!offerings.has(r.offeringId))errors.push('Verification target is missing');
+    if(typeof r.contributor!=='string'||!/^github:[a-z0-9-]+$/i.test(r.contributor))errors.push('Invalid verification contributor');
+    if(typeof r.checkedAt!=='string'||!/^\d{4}-\d{2}-\d{2}T.*Z$/.test(r.checkedAt)||!Number.isFinite(Date.parse(r.checkedAt)))errors.push('Invalid verification timestamp');
+    if(!['passed','failed'].includes(r.result))errors.push('Invalid verification result');
+    if(!Array.isArray(r.checks)||!r.checks.length||r.checks.some(c=>!Object.values(VerificationCheck).includes(c)))errors.push('Verification must name its checks');
+    try{const u=new URL(r.evidence);if(u.protocol!=='https:'||u.username||u.password)errors.push('Verification evidence must be a public HTTPS link')}catch{errors.push('Verification evidence is required')}
+    if(typeof r.adapter!=='string'||!r.adapter)errors.push('Verification adapter and version are required');
+    const permitted=['id','offeringId','contributor','checkedAt','result','checks','evidence','adapter','notes'];
+    if(Object.keys(r).some(k=>!permitted.includes(k)))errors.push('Unknown verification field; do not record keys or request payloads');
+  }
+  return errors;
+}
+export function verificationSummary(data,offeringId,{asOf=new Date().toISOString(),maxAgeDays=90,contributor}={}) {
+  const records=(data.verifications || []).filter(r=>r.offeringId===offeringId&&(!contributor||r.contributor.toLowerCase()===contributor.toLowerCase()));
+  const now=Date.parse(asOf);
+  const calls=records.filter(r=>r.checks.includes('textGeneration')&&Date.parse(r.checkedAt)<=now);
+  calls.sort((a,b)=>Date.parse(b.checkedAt)-Date.parse(a.checkedAt)||(a.result===b.result?0:a.result==='failed'?-1:1)||(a.id<b.id?-1:1));
+  const latest=calls[0];
+  return {status:!latest?'unverified':now-Date.parse(latest.checkedAt)>maxAgeDays*86400000?'stale':latest.result,latest:latest || null,records};
+}
+function matchesVerification(data,id,config) {
+  const f=config.filters || {};
+  if(f.verified===undefined&&!f.verifiedBy&&f.verifiedWithinDays===undefined)return true;
+  const state=verificationSummary(data,id,{asOf:config.asOf,maxAgeDays:f.verifiedWithinDays,contributor:f.verifiedBy}).status;
+  return f.verified===false?state!=='passed':state==='passed';
+}
+
+export function customProviderId(value) {
+ if(typeof value!=='string'||! /^[a-z][a-z0-9_-]{0,63}$/.test(value))throw new Error('Invalid custom provider ID');return value;
+}
+export function customCountryCode(value) {
+ if(typeof value!=='string'||! /^[a-z]{2}$/.test(value))throw new Error('Use a two-letter country code');return value;
+}
+export function customFileFormat(value) {
+ if(typeof value!=='string'||! /^[a-z0-9][a-z0-9.+-]{0,63}$/.test(value))throw new Error('Invalid custom file format');return value;
+}
+export function customTag(value) {
+ if(typeof value!=='string'||! /^[a-z][a-z0-9_-]*:[^\s]+$/.test(value))throw new Error('Use a namespaced tag');return value;
+}
+export function githubContributor(handle) {
+ if(typeof handle!=='string'||! /^[a-z0-9-]{1,39}$/i.test(handle))throw new Error('Invalid GitHub handle');return `github:${handle}`;
 }

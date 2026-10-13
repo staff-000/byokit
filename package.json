@@ -17,7 +17,9 @@
     "demo": "node scripts/serve.mjs",
     "typecheck": "tsc --noEmit",
     "test:browser": "node scripts/browser-smoke.mjs",
-    "build": "node packages/cli/bin.mjs build examples/byok.config.json --out examples/generated/catalog.json"
+    "build": "node packages/cli/bin.mjs build examples/byok.config.json --out examples/generated/catalog.json",
+    "enums:generate": "node scripts/generate-enums.mjs",
+    "typecheck:python": "pyright --project pyrightconfig.json"
   },
   "engines": {
     "node": ">=20"
@@ -28,6 +30,7 @@
     "ajv": "^8.20.0",
     "jsdom": "^26.1.0",
     "playwright-core": "^1.64.0",
+    "pyright": "^1.1.414",
     "typescript": "^5.9.3"
   }
 }

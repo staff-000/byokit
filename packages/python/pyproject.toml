@@ -17,4 +17,4 @@ byokit = "byokit.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-byokit = ["data/*.json", "data/NOTICE"]
+byokit = ["data/*.json", "data/NOTICE", "py.typed"]

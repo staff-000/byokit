@@ -1,0 +1,10 @@
+{
+  "include": [
+    "tests/python_types_valid.py"
+  ],
+  "extraPaths": [
+    "packages/python/src"
+  ],
+  "typeCheckingMode": "basic",
+  "pythonVersion": "3.10"
+}

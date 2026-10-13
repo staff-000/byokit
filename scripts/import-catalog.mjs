@@ -52,18 +52,19 @@ for(const [collection,allowed] of [['models',['origin','openWeights','commercial
  }
 }
 for(const o of catalog.offerings)o.tags=deriveTags(o,catalog.models.find(m=>m.id===o.modelId));
+catalog.verifications=JSON.parse(await readFile(new URL('../catalog/verifications.json',import.meta.url),'utf8'));
 const errors=validateCatalog(catalog);if(errors.length)throw new Error(errors.join('; '));
 await mkdir(out,{recursive:true});
 const destination=resolve(out,'catalog.json');
 let previous;try{previous=JSON.parse(await readFile(destination,'utf8'))}catch{}
 if(previous){const old=new Map(previous.offerings.map(o=>[o.id,o])),next=new Map(catalog.offerings.map(o=>[o.id,o]));const diff={added:[...next.keys()].filter(id=>!old.has(id)),removed:[...old.keys()].filter(id=>!next.has(id)),changed:[...next].filter(([id,o])=>old.has(id)&&JSON.stringify(o.limits)+JSON.stringify(o.price)!==JSON.stringify(old.get(id).limits)+JSON.stringify(old.get(id).price)).map(([id])=>id)};await writeFile(resolve(out,'changes.json'),JSON.stringify(diff,null,2)+'\n')}
 await writeFile(destination,JSON.stringify(catalog,null,2)+'\n');
-await writeFile(resolve(out,'catalog.lock.json'),JSON.stringify({schemaVersion:1,source:'https://models.dev/api.json',sha256:createHash('sha256').update(raw).digest('hex'),overlaySha256:createHash('sha256').update(JSON.stringify(overlay)).digest('hex'),generatedAt:catalog.provenance.reviewedAt},null,2)+'\n');
+await writeFile(resolve(out,'catalog.lock.json'),JSON.stringify({schemaVersion:1,source:'https://models.dev/api.json',sha256:createHash('sha256').update(raw).digest('hex'),overlaySha256:createHash('sha256').update(JSON.stringify(overlay)).digest('hex'),verificationsSha256:createHash('sha256').update(JSON.stringify(catalog.verifications)).digest('hex'),generatedAt:catalog.provenance.reviewedAt},null,2)+'\n');
 console.log(`Imported ${catalog.providers.length} providers and ${catalog.offerings.length} offerings`);
 
 if(i<0){
  const core=new URL('../packages/core/',import.meta.url),python=new URL('../packages/python/src/byokit/data/',import.meta.url);
  await mkdir(python,{recursive:true});
- await writeFile(new URL('catalog.js',core),'export default '+JSON.stringify(catalog)+';\n');
+ await writeFile(new URL('catalog.js',core),'import {Catalog} from "./index.js";\nconst data='+JSON.stringify(catalog)+';\nexport default data;\nexport * from \"./enums.js\";\nexport function getModels(config={}){return new Catalog(data).getModels(config)}\n');
  await writeFile(new URL('catalog.json',python),JSON.stringify(catalog)+'\n');
 }
