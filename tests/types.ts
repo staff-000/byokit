@@ -27,3 +27,10 @@ import * as byokit from '@byokit/core/catalog';
 byokit.getModels({providerIds:[byokit.ProviderId.DeepSeek]});
 
 byokit.getModels({preset:byokit.Preset.NonChina,filters:{verifiedBy:byokit.githubContributor('example')}});
+
+byokit.getModels({filters:{excludeTags:[byokit.Tag.PricePremium],lifecycle:[byokit.Lifecycle.Live],popularity:[byokit.Popularity.Popular]}});
+// @ts-expect-error lifecycle values require enums
+byokit.getModels({filters:{lifecycle:['LIVE']}});
+// @ts-expect-error unknown popularity label
+byokit.getModels({filters:{popularity:['famous']}});
+const lifecycle:byokit.Lifecycle=byokit.getModels()[0].lifecycle.status;

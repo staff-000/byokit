@@ -87,3 +87,45 @@ offline and avoid making metadata edits launch AI calls or redirect keys.
 SDK and catalog changes require review. The scheduled importer produces a candidate
 artifact, not an automatic publication. Package names are provisional until registry
 availability is checked. See docs/roadmap.md for remaining work.
+
+## Lifecycle and popularity evidence
+
+Add `lifecycleEvidence` or `popularityEvidence` under an offering's `fields` in
+`catalog/overlays.json`, with the usual overlay `source` and `reviewedAt`.
+Use the exact provider/model offering ID; do not copy platform usage to other
+providers. The following is a shape example, **not real evidence**:
+
+```json
+{
+  "lifecycleEvidence": {
+    "status": "LIVE",
+    "source": "https://example.com/provider/model-support",
+    "checkedAt": "2026-10-12T00:00:00Z"
+  },
+  "popularityEvidence": {
+    "metric": "requests",
+    "rank": 3,
+    "population": 100,
+    "scope": "Example platform: all text models ranked by requests",
+    "windowStart": "2026-10-01T00:00:00Z",
+    "windowEnd": "2026-10-08T00:00:00Z",
+    "source": "https://example.com/usage/weekly-snapshot"
+  }
+}
+```
+
+For LIVE/OUTDATED cite provider documentation or a dated provider announcement.
+Superseded must be explicit, not inferred from release age. Record when evidence
+was actually checked; regenerating the catalog must not refresh evidence dates.
+For popularity provide a reproducible usage ranking, complete population,
+metric, scope, and time window. Preserve tie ranks and document the source's tie
+method in the linked evidence. Do not invent a rank for an absent model.
+The top 10% rule rounds up; every nonempty complete population has at least one
+qualifying rank. Evidence is scoped to that platform, not worldwide adoption.
+Missing evidence remains UNCERTAIN. Do not add lifecycle/popularity labels by
+hand to `tags`: queries derive and refresh those reserved namespaces.
+
+Regenerate using `npm run catalog:import -- /path/to/models-dev.json`, then run
+`node --test tests/signals.test.mjs tests/schema.test.mjs`, `npm run typecheck`,
+and `npm run typecheck:python`. Fixed enum values live in `spec/enums.json`;
+run `npm run enums:generate` after editing them.

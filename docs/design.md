@@ -226,3 +226,38 @@ Unmount clears drafts; already-started host persistence cannot be rolled back.
 Release checks cover TS invalid-call fixtures, runtime vocabulary checks, Python
 parity, schema validation, query/report tests, builds and optional browser smoke.
 Catalog candidates never auto-publish or rewrite application selections.
+
+## Evidence-based lifecycle and popularity
+
+Each offering can carry `lifecycleEvidence` and `popularityEvidence` in its
+reviewed overlay. Query-time summaries have three states each:
+LIVE / OUTDATED / UNCERTAIN and POPULAR / NOT_POPULAR / UNCERTAIN.
+They are independent of release channel and contributor call verification.
+
+```mermaid
+flowchart LR
+  A[Provider lifecycle evidence] --> C[90-day freshness check]
+  B[Scoped usage ranking and time window] --> D[30-day freshness check]
+  C --> E[Lifecycle summary]
+  D --> F[Top 10 percent rule]
+  F --> G[Popularity summary]
+  E --> H[Enum filters and derived tags]
+  G --> H
+  H --> I[Include all / exclude any]
+  I --> J[Model options with evidence]
+```
+
+Missing, stale, or future-dated evidence becomes UNCERTAIN. Rank-based popularity
+uses requests, tokens, or downloads within a complete named dataset; it is not a
+global score. Existing picker `rank` never supplies popularity. Query `asOf`
+makes freshness reproducible. Unknown-policy relaxation does not override explicit
+lifecycle/popularity filters. These metadata additions are optional for older
+catalogs; returned model options always contain both summaries. The bundled
+snapshot currently supplies no reviewed signal evidence.
+
+Tag matching combines provider, model, and offering tags. Exclusions win, and
+reserved lifecycle/popularity tags are derived only from evidence, preventing
+handwritten tags from claiming a model is live or popular. Queries are offline;
+contributors supply dated evidence, while import validates its shape and preserves
+observation dates. Future metric importers must preserve platform scope and may
+not label models missing from a ranking as unpopular.

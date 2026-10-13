@@ -178,5 +178,30 @@
     "OutputLimitUnknown": "OUTPUT_LIMIT_UNKNOWN",
     "TokenCountUnknown": "TOKEN_COUNT_UNKNOWN",
     "TokenEstimate": "TOKEN_ESTIMATE"
+  },
+  "Lifecycle": {
+    "Live": "LIVE",
+    "Outdated": "OUTDATED",
+    "Uncertain": "UNCERTAIN"
+  },
+  "Popularity": {
+    "Popular": "POPULAR",
+    "NotPopular": "NOT_POPULAR",
+    "Uncertain": "UNCERTAIN"
+  },
+  "PopularityMetric": {
+    "Requests": "requests",
+    "Tokens": "tokens",
+    "Downloads": "downloads"
+  },
+  "Tag": {
+    "LifecycleLive": "lifecycle:LIVE",
+    "LifecycleOutdated": "lifecycle:OUTDATED",
+    "LifecycleUncertain": "lifecycle:UNCERTAIN",
+    "PopularityPopular": "popularity:POPULAR",
+    "PopularityNotPopular": "popularity:NOT_POPULAR",
+    "PopularityUncertain": "popularity:UNCERTAIN",
+    "PricePremium": "price:premium",
+    "WeightsOpen": "weights:open"
   }
 }

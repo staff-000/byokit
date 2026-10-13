@@ -99,7 +99,9 @@ models meet the rules; byokit never relaxes a rule to fill the list.
 | `filters.commercialUse` | `allowed`, `restricted`, or `unknown`; distinct from open weights |
 | `filters.maxParameters` | Maximum total parameter count, when known |
 | `filters.maxTimeToFirstTokenMs`, `minTokensPerSecond` | Sourced speed measurements, when available |
-| `filters.includeTags`, `excludeTags` | All required tags; any excluded tag removes a result |
+| `filters.includeTags`, `excludeTags` | Match provider/model/offering tags; all included tags required, any excluded tag removes a result |
+| `filters.lifecycle` | `byokit.Lifecycle.Live`, `.Outdated`, `.Uncertain` |
+| `filters.popularity` | `byokit.Popularity.Popular`, `.NotPopular`, `.Uncertain` |
 | `filters.includeDeprecated` | Include deprecated entries present in your catalog; default false |
 | `filters.verified`, `verifiedBy`, `verifiedWithinDays` | Filter contributor reports; explained below |
 | `prefer.features` | Rank models with these features higher without excluding others |
@@ -212,6 +214,57 @@ report across contributors determines status. Setting `verified: false` selects
 results without a current passing report. Set `asOf` to a UTC ISO timestamp for
 reproducible checks. Reports are contributor observations reviewed through pull
 requests, not proof of identity, current entitlement, or universal availability.
+
+### Exclude tags and select live, popular models
+
+```ts
+import * as byokit from '@byokit/core/catalog';
+
+const models = byokit.getModels({
+  preset: byokit.Preset.NonChina,
+  filters: {
+    excludeTags: [byokit.Tag.PricePremium, byokit.customTag('usecase:experimental')],
+    lifecycle: [byokit.Lifecycle.Live],
+    popularity: [byokit.Popularity.Popular],
+  },
+});
+```
+
+`excludeTags` removes a result if **any** listed tag occurs on its provider,
+model, or offering. It wins over `includeTags`. Tags are exact matches, not
+wildcards. Use `byokit.Tag` for built-in labels and `byokit.customTag()` for
+other namespaced labels. You can also exclude `byokit.Tag.LifecycleOutdated`
+while keeping entries whose lifecycle is uncertain.
+
+Each result includes `lifecycle: { status, evidence }` and
+`popularity: { status, evidence }`, plus equivalent `lifecycle:*` and
+`popularity:*` tags. These refer to the **model at this provider**, since its
+availability and usage can differ between providers.
+
+| Label | Meaning |
+|---|---|
+| LIVE | Dated evidence confirms this offering is currently supported/available |
+| OUTDATED | Dated evidence explicitly identifies this offering as deprecated, retired, or superseded |
+| UNCERTAIN lifecycle | Evidence missing, future-dated, or more than 90 days old |
+| POPULAR | Rank is in the top 10% (`rank <= ceil(population × 0.1)`) of a cited usage dataset |
+| NOT_POPULAR | Ranked outside that dataset's top 10%; does not mean globally unpopular |
+| UNCERTAIN popularity | No usable ranking, future-dated window, or window ended more than 30 days ago |
+
+Popularity evidence includes `metric` (requests, tokens, or downloads), `rank`,
+`population`, `scope`, `windowStart`, `windowEnd`, and an HTTPS `source`.
+Only compare rankings within the same metric, population, platform, and window.
+Quality benchmarks, picker order, model age, and GitHub stars are not usage metrics.
+A truncated leaderboard cannot establish the full population or label absent models
+NOT_POPULAR. Local downloads indicate downloads, not active installations.
+
+The bundled snapshot currently has **no reviewed lifecycle or popularity evidence**,
+so these labels are UNCERTAIN and the strict example above returns `[]`.
+Do not treat a Models.dev listing or a successful contributor call as proof of
+continued provider support. `status` (stable/preview/deprecated) and contributor
+`verification` remain separate. Explicit enum filters match exactly, even with
+`unknownPolicy: Include`; request Uncertain explicitly to include it.
+Queries evaluate freshness when called; use the existing `asOf` UTC timestamp
+option for reproducible builds. No query makes network requests.
 
 ## Contribute: update model tags or capabilities
 

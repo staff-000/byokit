@@ -204,3 +204,32 @@ export declare enum DiagnosticCode {
   TokenCountUnknown = "TOKEN_COUNT_UNKNOWN",
   TokenEstimate = "TOKEN_ESTIMATE",
 }
+
+export declare enum Lifecycle {
+  Live = "LIVE",
+  Outdated = "OUTDATED",
+  Uncertain = "UNCERTAIN",
+}
+
+export declare enum Popularity {
+  Popular = "POPULAR",
+  NotPopular = "NOT_POPULAR",
+  Uncertain = "UNCERTAIN",
+}
+
+export declare enum PopularityMetric {
+  Requests = "requests",
+  Tokens = "tokens",
+  Downloads = "downloads",
+}
+
+export declare enum Tag {
+  LifecycleLive = "lifecycle:LIVE",
+  LifecycleOutdated = "lifecycle:OUTDATED",
+  LifecycleUncertain = "lifecycle:UNCERTAIN",
+  PopularityPopular = "popularity:POPULAR",
+  PopularityNotPopular = "popularity:NOT_POPULAR",
+  PopularityUncertain = "popularity:UNCERTAIN",
+  PricePremium = "price:premium",
+  WeightsOpen = "weights:open",
+}

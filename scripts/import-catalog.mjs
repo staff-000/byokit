@@ -39,7 +39,7 @@ for(const id of ['ollama','local']){
  for(const p of catalog.presets)p.providerIds.push(id);
 }
 // Explicit evidence-backed overlays; identities/endpoints/auth cannot be overridden.
-for(const [collection,allowed] of [['models',['origin','openWeights','commercialUse','license','size','tags']],['offerings',['modalities','fileFormats','limits','features','price','tags','speed','hosting','rank','status']]]){
+for(const [collection,allowed] of [['models',['origin','openWeights','commercialUse','license','size','tags']],['offerings',['modalities','fileFormats','limits','features','price','tags','speed','hosting','rank','status','lifecycleEvidence','popularityEvidence']]]){
  for(const [id,override] of Object.entries(overlay[collection] || {})){
   const record=catalog[collection].find(x=>x.id===id);
   if(!record)throw new Error(`Overlay target missing: ${id}`);

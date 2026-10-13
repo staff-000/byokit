@@ -1,4 +1,4 @@
-import {FeatureStatus,ContextAccounting,Currency,VerificationStatus,Deployment as DeploymentType,Modality,FeatureName,Deployment,UnknownPolicy,CommercialUse,VerificationCheck,LocalRuntime} from './enums.js';
+import {FeatureStatus,ContextAccounting,Currency,VerificationStatus,Deployment as DeploymentType,Modality,FeatureName,Deployment,UnknownPolicy,CommercialUse,VerificationCheck,LocalRuntime,Lifecycle,Popularity,PopularityMetric} from './enums.js';
 export * from './enums.js';
 /** Framework-independent catalog, selection and preflight rules. No network or storage. */
 const finite = n => typeof n === 'number' && Number.isFinite(n) && n >= 0;
@@ -18,6 +18,7 @@ export function validateCatalog(data) {
   }
   const providers = new Set(data.providers.map(x=>x.id)), models = new Set(data.models.map(x=>x.id));
   for (const o of data.offerings) {
+    errors.push(...validateSignals(o));
     if (!providers.has(o.providerId) || !models.has(o.modelId)) errors.push(`${o.id}: unresolved reference`);
     if (!['hosted','local','self-hosted'].includes(o.deployment)) errors.push(`${o.id}: invalid deployment`);
     for (const [key, val] of Object.entries(o.limits || {})) if (key !== 'contextAccounting' && val !== null && !positive(val)) errors.push(`${o.id}: invalid ${key}`);
@@ -30,9 +31,9 @@ export function validateCatalog(data) {
 }
 export function validateConfig(c = {}) {
   const errors = [];
-  const allowed={root:['limit','asOf','unknownPolicy','schemaVersion','catalog','preset','providerIds','filters','prefer','ui','budget','tasks'],filters:['deployment','origin','openWeights','commercialUse','input','output','requiredFeatures','minContextTokens','maxInputPricePerM','maxOutputPricePerM','maxParameters','maxTimeToFirstTokenMs','minTokensPerSecond','fileFormats','includeTags','excludeTags','includeDeprecated','verified','verifiedBy','verifiedWithinDays'],prefer:['features','lowerCost'],ui:['maxProviders','maxModelsPerProvider','allowCustomModel'],budget:['maxInputTokens','maxOutputTokens','overheadTokens']};
+  const allowed={root:['limit','asOf','unknownPolicy','schemaVersion','catalog','preset','providerIds','filters','prefer','ui','budget','tasks'],filters:['deployment','origin','openWeights','commercialUse','input','output','requiredFeatures','minContextTokens','maxInputPricePerM','maxOutputPricePerM','maxParameters','maxTimeToFirstTokenMs','minTokensPerSecond','fileFormats','includeTags','excludeTags','lifecycle','popularity','includeDeprecated','verified','verifiedBy','verifiedWithinDays'],prefer:['features','lowerCost'],ui:['maxProviders','maxModelsPerProvider','allowCustomModel'],budget:['maxInputTokens','maxOutputTokens','overheadTokens']};
   for(const [group,keys] of Object.entries(allowed))for(const key of Object.keys(group==='root'?c:c[group] || {}))if(!keys.includes(key))errors.push(`Unknown ${group}.${key}`);
-  for(const key of ['deployment','origin','input','output','requiredFeatures','fileFormats','includeTags','excludeTags'])if(c.filters?.[key]!==undefined&&(!Array.isArray(c.filters[key])||c.filters[key].some(v=>typeof v!=='string')))errors.push(`filters.${key} must be a string array`);
+  for(const key of ['deployment','origin','input','output','requiredFeatures','fileFormats','includeTags','excludeTags','lifecycle','popularity'])if(c.filters?.[key]!==undefined&&(!Array.isArray(c.filters[key])||c.filters[key].some(v=>typeof v!=='string')))errors.push(`filters.${key} must be a string array`);
   for (const key of ['minContextTokens','maxInputPricePerM','maxOutputPricePerM','maxParameters','maxTimeToFirstTokenMs','minTokensPerSecond']) if (c.filters?.[key] !== undefined && !finite(c.filters[key])) errors.push(`filters.${key} must be a nonnegative finite number`);
   for (const key of ['maxProviders','maxModelsPerProvider']) if (c.ui?.[key] !== undefined && (!Number.isInteger(c.ui[key]) || c.ui[key] < 1 || c.ui[key] > 100)) errors.push(`ui.${key} must be an integer from 1 to 100`);
   if(c.limit!==undefined&&(!Number.isInteger(c.limit)||c.limit<1||c.limit>1000))errors.push('limit must be an integer from 1 to 1000');
@@ -40,7 +41,7 @@ export function validateConfig(c = {}) {
   if(c.filters?.verified!==undefined&&typeof c.filters.verified!=='boolean')errors.push('filters.verified must be boolean');
   if(c.filters?.verifiedBy!==undefined&&!/^github:[a-z0-9-]+$/i.test(c.filters.verifiedBy))errors.push('verifiedBy must identify a GitHub contributor');
   if(c.filters?.verifiedWithinDays!==undefined&&(!finite(c.filters.verifiedWithinDays)||c.filters.verifiedWithinDays<1))errors.push('verifiedWithinDays must be positive');
-  const vocab={input:Modality,output:Modality,requiredFeatures:FeatureName,deployment:Deployment};
+  const vocab={input:Modality,output:Modality,requiredFeatures:FeatureName,deployment:Deployment,lifecycle:Lifecycle,popularity:Popularity};
   for(const [key,values] of Object.entries(vocab))if(Array.isArray(c.filters?.[key])&&c.filters[key].some(v=>!Object.values(values).includes(v)))errors.push(`Unknown filters.${key} value`);
   if(c.prefer?.features!==undefined&&(!Array.isArray(c.prefer.features)||c.prefer.features.some(v=>!Object.values(FeatureName).includes(v))))errors.push('Unknown preferred feature');
   if(c.filters?.commercialUse!==undefined&&!Object.values(CommercialUse).includes(c.filters.commercialUse))errors.push('Unknown commercialUse value');
@@ -49,7 +50,7 @@ export function validateConfig(c = {}) {
   return errors;
 }
 function unknown(c) { return c.unknownPolicy === 'include'; }
-function matches(o, m, c) {
+function matches(o, m, c, providerTags = []) {
   const f=c.filters || {};
   if (f.deployment && !f.deployment.includes(o.deployment)) return false;
   if (f.origin && (!m.origin || !f.origin.includes(m.origin))) return false;
@@ -65,7 +66,9 @@ function matches(o, m, c) {
   }
   const constraints = [[f.minContextTokens,o.limits?.context,'min'],[f.maxInputPricePerM,o.price?.input,'max'],[f.maxOutputPricePerM,o.price?.output,'max'],[f.maxParameters,m.size?.totalParameters,'max'],[f.maxTimeToFirstTokenMs,o.speed?.timeToFirstTokenMs,'max'],[f.minTokensPerSecond,o.speed?.tokensPerSecond,'min']];
   for (const [bound,value,op] of constraints) if (bound !== undefined && (!finite(value) ? !unknown(c) : op === 'min' ? value < bound : value > bound)) return false;
-  const tags=new Set([...(m.tags || []),...(o.tags || [])]);
+  if(f.lifecycle && !f.lifecycle.includes(o.lifecycle.status))return false;
+  if(f.popularity && !f.popularity.includes(o.popularity.status))return false;
+  const tags=new Set([...[...(m.tags || []),...providerTags].filter(t=>!t.startsWith('lifecycle:')&&!t.startsWith('popularity:')),...(o.tags || [])]);
   if ((f.includeTags || []).some(t=>!tags.has(t)) || (f.excludeTags || []).some(t=>tags.has(t))) return false;
   if (!f.includeDeprecated && o.status === 'deprecated') return false;
   return true;
@@ -97,7 +100,7 @@ export class Catalog {
     if (!Array.isArray(ids) || ids.some(id=>!this.providers.has(id))) throw new Error('Unknown provider in providerIds');
     const groups=[];
     for(const id of ids) {
-      let choices=this.data.offerings.filter(o=>o.providerId===id && matches(o,this.models.get(o.modelId),config) && matchesVerification(this.data,o.id,config));
+      let choices=this.data.offerings.filter(o=>o.providerId===id).map(o=>withSignals(o,config.asOf)).filter(o=>matches(o,this.models.get(o.modelId),config,this.providers.get(id).tags) && matchesVerification(this.data,o.id,config));
       choices.sort((a,b)=> {
         const preferred=(x)=>config.prefer?.features?.filter(f=>x.features?.[f]?.status==='supported').length || 0;
         return preferred(b)-preferred(a) || (config.prefer?.lowerCost ? (a.price?.input ?? Infinity)-(b.price?.input ?? Infinity) : 0) || (a.rank ?? 100)-(b.rank ?? 100) || (a.id<b.id?-1:a.id>b.id?1:0);
@@ -177,7 +180,7 @@ export function reduceSetup(state,event) {
 
 /** Derived tags are convenience views; structured fields remain authoritative. */
 export function deriveTags(offering,model={}) {
- const tags=(offering.tags || []).filter(t=>!['cap:','input:','output:','price:','context:','weights:','origin:','deployment:'].some(p=>t.startsWith(p)));
+ const tags=(offering.tags || []).filter(t=>!['cap:','input:','output:','price:','context:','weights:','origin:','deployment:','lifecycle:','popularity:'].some(p=>t.startsWith(p)));
  for(const [name,feature] of Object.entries(offering.features || {}))if(feature.status==='supported')tags.push(`cap:${name}`);
  for(const direction of ['input','output'])for(const modality of offering.modalities?.[direction] || [])tags.push(`${direction}:${modality}`);
  if(model.openWeights===true)tags.push('weights:open');
@@ -238,4 +241,25 @@ export function customTag(value) {
 }
 export function githubContributor(handle) {
  if(typeof handle!=='string'||! /^[a-z0-9-]{1,39}$/i.test(handle))throw new Error('Invalid GitHub handle');return `github:${handle}`;
+}
+
+
+// Evidence is per offering: availability and usage can differ across providers.
+const signalDate = value => typeof value==='string' && /^\d{4}-\d{2}-\d{2}T.*Z$/.test(value) && Number.isFinite(Date.parse(value));
+const signalSource = value => {try{return new URL(value).protocol==='https:'}catch{return false}};
+function validateSignals(o) {
+ const errors=[];
+ const check=(record,keys)=>record && typeof record==='object' && !Array.isArray(record) && Object.keys(record).every(k=>keys.includes(k));
+ const l=o.lifecycleEvidence,p=o.popularityEvidence;
+ if(l!==undefined && (!check(l,['status','source','checkedAt']) || !Object.values(Lifecycle).includes(l.status) || !signalSource(l.source) || !signalDate(l.checkedAt)))errors.push(`${o.id}: invalid lifecycle evidence`);
+ if(p!==undefined && (!check(p,['metric','rank','population','scope','source','windowStart','windowEnd']) || !Object.values(PopularityMetric).includes(p.metric) || !Number.isInteger(p.rank) || p.rank<1 || !Number.isInteger(p.population) || p.population<p.rank || typeof p.scope!=='string' || !p.scope.trim() || !signalSource(p.source) || !signalDate(p.windowStart) || !signalDate(p.windowEnd) || Date.parse(p.windowStart)>=Date.parse(p.windowEnd)))errors.push(`${o.id}: invalid popularity evidence`);
+ return errors;
+}
+function withSignals(o,asOf) {
+ const now=asOf===undefined?Date.now():Date.parse(asOf),l=o.lifecycleEvidence,p=o.popularityEvidence;
+ const fresh=(date,days)=>signalDate(date)&&Date.parse(date)<=now&&now-Date.parse(date)<=days*86400000;
+ const lifecycle={status:l&&fresh(l.checkedAt,90)?l.status:Lifecycle.Uncertain,evidence:l||null};
+ const popularity={status:p&&fresh(p.windowEnd,30)?(p.rank<=Math.ceil(p.population*.1)?Popularity.Popular:Popularity.NotPopular):Popularity.Uncertain,evidence:p||null};
+ const tags=(o.tags||[]).filter(t=>!t.startsWith('lifecycle:')&&!t.startsWith('popularity:'));
+ return {...o,lifecycle,popularity,tags:[...tags,`lifecycle:${lifecycle.status}`,`popularity:${popularity.status}`]};
 }

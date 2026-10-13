@@ -30,6 +30,7 @@ def validate_catalog(data):
     providers = {p["id"] for p in data["providers"]}
     models = {m["id"] for m in data["models"]}
     for o in data["offerings"]:
+        errors.extend(_validate_signals(o))
         if o.get("providerId") not in providers or o.get("modelId") not in models: errors.append(f'{o["id"]}: unresolved reference')
         if o.get("deployment") not in ["hosted", "local", "self-hosted"]: errors.append(f'{o["id"]}: invalid deployment')
         for key, value in o.get("limits", {}).items():
@@ -45,11 +46,11 @@ def validate_catalog(data):
 
 def validate_config(config):
     errors=[]
-    allowed={"root":["limit","asOf","unknownPolicy","schemaVersion","catalog","preset","providerIds","filters","prefer","ui","budget","tasks"],"filters":["deployment","origin","openWeights","commercialUse","input","output","requiredFeatures","minContextTokens","maxInputPricePerM","maxOutputPricePerM","maxParameters","maxTimeToFirstTokenMs","minTokensPerSecond","fileFormats","includeTags","excludeTags","includeDeprecated","verified","verifiedBy","verifiedWithinDays"],"prefer":["features","lowerCost"],"ui":["maxProviders","maxModelsPerProvider","allowCustomModel"],"budget":["maxInputTokens","maxOutputTokens","overheadTokens"]}
+    allowed={"root":["limit","asOf","unknownPolicy","schemaVersion","catalog","preset","providerIds","filters","prefer","ui","budget","tasks"],"filters":["deployment","origin","openWeights","commercialUse","input","output","requiredFeatures","minContextTokens","maxInputPricePerM","maxOutputPricePerM","maxParameters","maxTimeToFirstTokenMs","minTokensPerSecond","fileFormats","includeTags","excludeTags","lifecycle","popularity","includeDeprecated","verified","verifiedBy","verifiedWithinDays"],"prefer":["features","lowerCost"],"ui":["maxProviders","maxModelsPerProvider","allowCustomModel"],"budget":["maxInputTokens","maxOutputTokens","overheadTokens"]}
     for group,keys in allowed.items():
         for key in (config if group=="root" else config.get(group,{}) or {}):
             if key not in keys: errors.append(f"Unknown {group}.{key}")
-    for key in ["deployment","origin","input","output","requiredFeatures","fileFormats","includeTags","excludeTags"]:
+    for key in ["deployment","origin","input","output","requiredFeatures","fileFormats","includeTags","excludeTags","lifecycle","popularity"]:
         if key in config.get("filters",{}) and (not isinstance(config["filters"][key],list) or any(not isinstance(v,str) for v in config["filters"][key])): errors.append(f"filters.{key} must be a string array")
     for key in ["minContextTokens", "maxInputPricePerM", "maxOutputPricePerM", "maxParameters", "maxTimeToFirstTokenMs", "minTokensPerSecond"]:
         if key in config.get("filters", {}) and not finite(config["filters"][key]): errors.append(f"filters.{key} must be a nonnegative finite number")
@@ -67,7 +68,7 @@ def validate_config(config):
     if "verified" in f and not isinstance(f["verified"],bool): errors.append("filters.verified must be boolean")
     if "verifiedBy" in f and (not isinstance(f["verifiedBy"],str) or not re.fullmatch(r"github:[a-z0-9-]+",f["verifiedBy"],re.I)): errors.append("verifiedBy must identify a GitHub contributor")
     if "verifiedWithinDays" in f and (not finite(f["verifiedWithinDays"]) or f["verifiedWithinDays"]<1): errors.append("verifiedWithinDays must be positive")
-    vocab={"input":Modality,"output":Modality,"requiredFeatures":FeatureName,"deployment":Deployment}
+    vocab={"input":Modality,"output":Modality,"requiredFeatures":FeatureName,"deployment":Deployment,"lifecycle":Lifecycle,"popularity":Popularity}
     for key,enum in vocab.items():
         values=f.get(key)
         if isinstance(values,list) and any(v not in {m.value for m in enum} for v in values): errors.append(f"Unknown filters.{key} value")
@@ -79,7 +80,7 @@ def validate_config(config):
         if key in config.get("budget",{}) and not finite(config["budget"][key]): errors.append(f"budget.{key} must be a nonnegative finite number")
     return errors
 
-def matches(o, m, config):
+def matches(o, m, config, provider_tags=None):
     f=config.get("filters",{}); unknown=config.get("unknownPolicy")=="include"
     if "deployment" in f and o["deployment"] not in f["deployment"]: return False
     if "origin" in f and m.get("origin") not in f["origin"]: return False
@@ -99,7 +100,9 @@ def matches(o, m, config):
     constraints=[("minContextTokens",o.get("limits",{}).get("context"),"min"),("maxInputPricePerM",o.get("price",{}).get("input"),"max"),("maxOutputPricePerM",o.get("price",{}).get("output"),"max"),("maxParameters",m.get("size",{}).get("totalParameters"),"max"),("maxTimeToFirstTokenMs",o.get("speed",{}).get("timeToFirstTokenMs"),"max"),("minTokensPerSecond",o.get("speed",{}).get("tokensPerSecond"),"min")]
     for key,value,op in constraints:
         if key in f and ((not finite(value) and not unknown) or (finite(value) and (value<f[key] if op=="min" else value>f[key]))): return False
-    tags=set(m.get("tags",[])+o.get("tags",[]))
+    if "lifecycle" in f and o["lifecycle"]["status"] not in f["lifecycle"]: return False
+    if "popularity" in f and o["popularity"]["status"] not in f["popularity"]: return False
+    tags=set([t for t in m.get("tags",[])+(provider_tags or []) if not t.startswith(("lifecycle:","popularity:"))]+o.get("tags",[]))
     if any(t not in tags for t in f.get("includeTags",[])) or any(t in tags for t in f.get("excludeTags",[])): return False
     return f.get("includeDeprecated",False) or o.get("status")!="deprecated"
 
@@ -137,7 +140,7 @@ class Catalog:
             price=o.get("price",{}).get("input")
             return (-count,(price if price is not None else math.inf) if config.get("prefer",{}).get("lowerCost") else 0,o.get("rank",100),o["id"])
         for provider_id in ids:
-            choices=sorted((o for o in self.data["offerings"] if o["providerId"]==provider_id and matches(o,self.models[o["modelId"]],config) and matches_verification(self.data,o["id"],config)),key=order)
+            choices=sorted((o for o in (_with_signals(item,config.get("asOf")) for item in self.data["offerings"] if item["providerId"]==provider_id) if matches(o,self.models[o["modelId"]],config,self.providers[provider_id].get("tags",[])) and matches_verification(self.data,o["id"],config)),key=order)
             if choices: groups.append({"provider":self.providers[provider_id],"offerings":choices if uncapped else choices[:config.get("ui",{}).get("maxModelsPerProvider",4)]})
         return groups if uncapped else groups[:config.get("ui",{}).get("maxProviders",8)]
 
@@ -195,7 +198,7 @@ def load_catalog():
 
 def derive_tags(offering, model=None):
     model=model or {}
-    prefixes=('cap:','input:','output:','price:','context:','weights:','origin:','deployment:')
+    prefixes=('cap:','input:','output:','price:','context:','weights:','origin:','deployment:','lifecycle:','popularity:')
     tags=[t for t in offering.get('tags',[]) if not t.startswith(prefixes)]
     tags.extend('cap:'+name for name,f in offering.get('features',{}).items() if f.get('status')=='supported')
     for direction in ['input','output']:
@@ -296,3 +299,32 @@ def custom_file_format(value: str) -> CustomFileFormat:
     import re
     if not re.fullmatch(r"[a-z0-9][a-z0-9.+-]{0,63}",value): raise ValueError("Invalid custom file format")
     return CustomFileFormat(value)
+
+
+def _signal_date(value):
+    import re
+    try:
+        return isinstance(value,str) and bool(re.fullmatch(r"\d{4}-\d{2}-\d{2}T.*Z",value)) and math.isfinite(_timestamp(value))
+    except (ValueError,TypeError): return False
+
+def _validate_signals(o):
+    from urllib.parse import urlparse
+    errors=[]
+    def source(v):
+        try: return isinstance(v,str) and urlparse(v).scheme=='https' and bool(urlparse(v).netloc)
+        except ValueError: return False
+    def record(v,keys): return isinstance(v,dict) and set(v)<=set(keys)
+    l=o.get('lifecycleEvidence'); p=o.get('popularityEvidence')
+    if 'lifecycleEvidence' in o and (not record(l,['status','source','checkedAt']) or l.get('status') not in {v.value for v in Lifecycle} or not source(l.get('source')) or not _signal_date(l.get('checkedAt'))): errors.append(o['id']+': invalid lifecycle evidence')
+    if 'popularityEvidence' in o and (not record(p,['metric','rank','population','scope','source','windowStart','windowEnd']) or p.get('metric') not in {v.value for v in PopularityMetric} or type(p.get('rank')) is not int or p['rank']<1 or type(p.get('population')) is not int or p['population']<p['rank'] or not isinstance(p.get('scope'),str) or not p['scope'].strip() or not source(p.get('source')) or not _signal_date(p.get('windowStart')) or not _signal_date(p.get('windowEnd')) or _timestamp(p['windowStart'])>=_timestamp(p['windowEnd'])): errors.append(o['id']+': invalid popularity evidence')
+    return errors
+
+def _with_signals(o,as_of=None):
+    import time
+    now=_timestamp(as_of) if as_of else time.time()
+    def fresh(date,days): return _signal_date(date) and 0<=now-_timestamp(date)<=days*86400
+    l=o.get('lifecycleEvidence'); p=o.get('popularityEvidence')
+    lifecycle={'status':l['status'] if l and fresh(l['checkedAt'],90) else 'UNCERTAIN','evidence':l}
+    popularity={'status':('POPULAR' if p['rank']<=math.ceil(p['population']*.1) else 'NOT_POPULAR') if p and fresh(p['windowEnd'],30) else 'UNCERTAIN','evidence':p}
+    tags=[t for t in o.get('tags',[]) if not t.startswith(('lifecycle:','popularity:'))]
+    return dict(o,lifecycle=lifecycle,popularity=popularity,tags=tags+['lifecycle:'+lifecycle['status'],'popularity:'+popularity['status']])

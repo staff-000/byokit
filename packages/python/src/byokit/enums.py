@@ -180,3 +180,28 @@ class DiagnosticCode(str, Enum):
     OUTPUT_LIMIT_UNKNOWN = "OUTPUT_LIMIT_UNKNOWN"
     TOKEN_COUNT_UNKNOWN = "TOKEN_COUNT_UNKNOWN"
     TOKEN_ESTIMATE = "TOKEN_ESTIMATE"
+
+class Lifecycle(str, Enum):
+    LIVE = "LIVE"
+    OUTDATED = "OUTDATED"
+    UNCERTAIN = "UNCERTAIN"
+
+class Popularity(str, Enum):
+    POPULAR = "POPULAR"
+    NOT_POPULAR = "NOT_POPULAR"
+    UNCERTAIN = "UNCERTAIN"
+
+class PopularityMetric(str, Enum):
+    REQUESTS = "requests"
+    TOKENS = "tokens"
+    DOWNLOADS = "downloads"
+
+class Tag(str, Enum):
+    LIFECYCLE_LIVE = "lifecycle:LIVE"
+    LIFECYCLE_OUTDATED = "lifecycle:OUTDATED"
+    LIFECYCLE_UNCERTAIN = "lifecycle:UNCERTAIN"
+    POPULARITY_POPULAR = "popularity:POPULAR"
+    POPULARITY_NOT_POPULAR = "popularity:NOT_POPULAR"
+    POPULARITY_UNCERTAIN = "popularity:UNCERTAIN"
+    PRICE_PREMIUM = "price:premium"
+    WEIGHTS_OPEN = "weights:open"

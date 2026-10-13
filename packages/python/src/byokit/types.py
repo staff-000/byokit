@@ -1,5 +1,5 @@
 from typing import TypedDict, NewType
-from .enums import (FeatureStatus,Modality,Preset,ProviderId,Deployment,Country,CommercialUse,FeatureName,UnknownPolicy,FileFormat)
+from .enums import (FeatureStatus,Modality,Preset,ProviderId,Deployment,Country,CommercialUse,FeatureName,UnknownPolicy,FileFormat,Lifecycle,Popularity,Tag)
 
 CustomProviderId=NewType("CustomProviderId",str)
 CustomCountryCode=NewType("CustomCountryCode",str)
@@ -38,8 +38,10 @@ class Filters(TypedDict, total=False):
     maxParameters: int
     maxTimeToFirstTokenMs: float
     minTokensPerSecond: float
-    includeTags: list[CustomTag]
-    excludeTags: list[CustomTag]
+    includeTags: list[Tag | CustomTag]
+    excludeTags: list[Tag | CustomTag]
+    lifecycle: list[Lifecycle]
+    popularity: list[Popularity]
     includeDeprecated: bool
     verified: bool
     verifiedBy: ContributorId
