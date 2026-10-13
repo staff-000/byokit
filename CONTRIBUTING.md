@@ -148,3 +148,17 @@ for an individual account. The default hosted filter is now LIVE, so fixtures an
 custom catalogs need dated lifecycle evidence or explicit inspection filters.
 The importer retains all text-output offerings for supported providers so COMPLETE
 has no hidden per-provider cap. Do not copy availability between providers.
+
+## Update the verification tracker
+
+Run `npm run verify` before documenting a new checked revision. It records exact
+commands, statuses, source digest, commit/working-tree identity, platform and test
+counts in `docs/verification/latest.json` and a dated run under
+`docs/verification/runs/`. Include both records with the change. Do not manually
+turn omitted or failed checks into passing outcomes. Browser checks are optional
+with `npm run verify -- --browser` and require the site preview.
+
+For actual model calls, continue to submit `catalog/verifications.json` reports
+with reviewable contributor evidence; library/browser checks never establish those.
+See [the tracker](docs/verification.md). Website sources live in `website/`;
+`npm run site:build` packages them for the GitHub Pages project path `/byokit/`.

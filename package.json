@@ -19,7 +19,11 @@
     "test:browser": "node scripts/browser-smoke.mjs",
     "build": "node packages/cli/bin.mjs build examples/byok.config.json --out examples/generated/catalog.json",
     "enums:generate": "node scripts/generate-enums.mjs",
-    "typecheck:python": "pyright --project pyrightconfig.json"
+    "typecheck:python": "pyright --project pyrightconfig.json",
+    "site:build": "node scripts/build-site.mjs",
+    "site:preview": "node scripts/serve-site.mjs",
+    "site:test": "node scripts/site-smoke.mjs",
+    "verify": "node scripts/verify.mjs"
   },
   "engines": {
     "node": ">=20"

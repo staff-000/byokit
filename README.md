@@ -6,6 +6,10 @@ Filter by region preset, capabilities, price, context window, local execution,
 and contributor-tested calls. Each result includes the metadata needed to build
 an interface or configure your provider SDK. The demo UI is optional.
 
+[Website & model explorer](https://staff-000.github.io/byokit/) ·
+[Verification tracker](docs/verification.md) ·
+[Contributing](CONTRIBUTING.md)
+
 ## Start with one API call
 
 In this repository, run `npm install` first. Packages are not published yet.

@@ -1,43 +1,79 @@
-# Initial implementation verification
+# Verification tracker
 
-- 35 Node tests passed, including shared fit/filter conformance and browser DOM lifecycle tests.
-- 84 fit vectors agree across native JavaScript/TypeScript API and Python implementations.
-- 6 standalone Python tests passed, including bundled resource loading.
-- TypeScript declaration/client fixture checks passed.
-- The real pinned snapshot passed the published JSON Schema.
-- CLI checks exercise excessive budgets, strict warnings, subset builds and generated ID unions.
-- Headless Chrome on macOS passed Save, China/global switch, secret isolation, mobile overflow and page-error checks.
-- npm package dry-run checks passed; Python wheel built successfully with bundled catalog resources.
+This document tracks the library and website checks separately from actual model
+calls. A passing library test never becomes a contributor model-call report.
 
-No live inference or billable provider checks ran. onCheck and token counting are host-provided adapters.
-Windows/Linux browser smoke and unique model-family artwork remain release follow-ups.
+## Latest recorded run
 
-## README/interface revision
+- [Machine-readable latest run](verification/latest.json)
+- [Run history](verification/runs/)
+- [Public verification page](https://staff-000.github.io/byokit/verification.html)
+- [Historical implementation notes](verification-history.md)
 
-The executable quickstart matches its documented output. Flat getModels/get_models
-queries agree across JS/Python, including contributor and freshness filters. Test
-reports are isolated fixtures; no actual contributor claims are seeded. Tests cover
-latest failures, stale/future dates, feature-only reports, malformed evidence,
-secret fields, missing targets, returned-data isolation and unchanged capabilities.
+Each run records its UTC start/end, Git commit, whether source changes were
+present, a source SHA-256, platform/architecture, Node version, exact commands,
+exit codes, durations, test totals when available, and output digests. These are
+observed outcomes for the checked source, not promises about future versions.
+Generated run records are committed with changes they verify. Source hashing
+excludes verification reports themselves and ignored build/dependency files.
 
-## Enum contract revision
+## Repeat and record
 
-Shared enum generation is tested against JS/Python serialized values. TypeScript
-fixtures require compile errors for raw fixed-choice strings and misspelled members.
-JSON/JavaScript queries reject unknown vocabularies at runtime. Python ships py.typed
-and an enum-based query TypedDict; Pyright checks valid calls and confirms invalid
-raw-literal calls fail. Generated build IDs
-now have both runtime enum objects and matching TS enum declarations.
+```bash
+npm ci
+npm run verify
+```
 
-## Simple query and local endpoint revision
+For Chrome checks, launch the site preview in another terminal:
 
-Default queries cover OpenAI, Anthropic, Google, OpenRouter, DeepSeek, then Local.
-COMPLETE has no shortlist cap; CHINA and NON_CHINA use typed shortcuts. Hosted
-selection defaults to LIVE, with provider-specific lifecycle evidence. Snapshot
-imports retain their recorded observation date and cannot silently freshen a
-changed unobserved source. Cross-language tests cover shortcuts, local append,
-protocol records, and a retired direct offering that remains LIVE via an aggregator.
-Local discovery tests cover native Ollama installed/running endpoints and
-OpenAI-compatible root or /v1 URLs. UI tests cover local URL/API draft retention
-and disabled recovery for a retired saved hosted model. The catalog was freshly
-fetched from Models.dev, without provider keys or inference calls.
+```bash
+npm run site:build
+npm run site:preview
+# In another terminal:
+npm run verify -- --browser
+```
+
+Set `BYOKIT_CHROME` to an installed Chrome executable on other operating systems.
+Browser checks require a working preview at `/byokit/`. The recorder never runs
+inference or needs provider credentials. Failed commands produce a failed record
+and a nonzero exit; an omitted browser check is recorded as NOT RUN, not passed.
+
+| Check | What it establishes |
+|---|---|
+| JavaScript tests | Filtering, lifecycle, exclusions, model reports, ownership of keys, local discovery, UI behavior, CLI and JS/Python parity |
+| Python tests | Native Python behavior and bundled catalog resource loading |
+| TypeScript / Python type checks | Typed enum interface and client examples |
+| Catalog check and sample build | Schema/budget checks and usable generated IDs |
+| Website build | Static assets, browser modules and truthful verification data are packaged |
+| Website Chrome smoke | Actual list queries, filters, search, paging, language tabs, `/byokit/` paths, verification page, mobile layout and resource errors |
+
+## Actual provider call verification
+
+Canonical records live in [catalog/verifications.json](../catalog/verifications.json).
+Use [the report template](../catalog/verification.example.json) and follow
+[CONTRIBUTING.md](../CONTRIBUTING.md). Record exact offering ID, contributor,
+checked timestamp, result, checks, adapter version and HTTPS evidence. Contributor
+identity is a submitted claim; maintainers must verify authorship and evidence.
+A source listing, catalog import, browser simulation, or test fixture is not a
+successful provider call. Submit no API keys, tokens or account credentials.
+
+The public page renders the submitted reports without converting library tests
+into provider claims. Failed/stale reports remain visible; runtime summaries use
+the library's freshness rules. There are currently no submitted real-call reports.
+
+## Open verification work
+
+- Windows and Linux browser/runtime smoke tests.
+- Real provider calls with each supported adapter and contributor evidence.
+- Local server inference tests for Ollama, vLLM and llama.cpp.
+- Account-specific model access, quota, and context behavior.
+- Objective, sourced popularity rankings.
+
+## Website publishing
+
+`npm run site:build` produces `dist/site` with paths relative to `/byokit/`.
+The [Pages workflow](../.github/workflows/pages.yml) publishes changes on `main`
+to [staff-000.github.io/byokit](https://staff-000.github.io/byokit/).
+GitHub repository Settings → Pages must use **GitHub Actions** as the source.
+Verification JSON is included from the committed latest run; deployment does not
+invent a new passing run or claim tests that were not executed.

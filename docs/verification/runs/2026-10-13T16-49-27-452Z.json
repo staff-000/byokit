@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "id": "2026-10-13T16-49-27-452Z",
+  "startedAt": "2026-10-13T16:49:23.310Z",
+  "completedAt": "2026-10-13T16:49:27.452Z",
+  "commit": "330dc864e4d3bfc37eabfb65d3c79fecc9394f62",
+  "sourceDirty": true,
+  "sourceDigest": "5f9d154f2c7bd4cc0b0b96f45299d7560166fccc5362a5660355f64d912c41c1",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "nodeVersion": "v23.7.0",
+  "checks": [
+    {
+      "id": "javascript",
+      "name": "JavaScript tests",
+      "command": [
+        "node",
+        "--test",
+        "--test-reporter=tap",
+        "tests/cli.test.mjs",
+        "tests/conformance.test.mjs",
+        "tests/core.test.mjs",
+        "tests/enums.test.mjs",
+        "tests/import-lifecycle.test.mjs",
+        "tests/local.test.mjs",
+        "tests/query.test.mjs",
+        "tests/schema.test.mjs",
+        "tests/signals.test.mjs",
+        "tests/simple-api.test.mjs",
+        "tests/ui.test.mjs"
+      ],
+      "status": "passed",
+      "durationMs": 1221,
+      "exitCode": 0,
+      "tests": {
+        "total": 51,
+        "passed": 51
+      },
+      "outputSha256": "a1fce845e562827471c077296ae4bb70f4bd1e02e7d72d380c3222eab117ba67"
+    },
+    {
+      "id": "python",
+      "name": "Python tests",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "packages/python/tests",
+        "-v"
+      ],
+      "status": "passed",
+      "durationMs": 168,
+      "exitCode": 0,
+      "tests": {
+        "total": 6,
+        "passed": 6
+      },
+      "outputSha256": "cee1aa10f9c709edd450ff38cdc5f48b6f5ef05e486c6c5e0c19040971051b88"
+    },
+    {
+      "id": "typescript",
+      "name": "TypeScript types",
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "status": "passed",
+      "durationMs": -672,
+      "exitCode": 0,
+      "outputSha256": "d601c28abd2d19809b0ed1aa75a30bcac8df46f32550187f6075b16aea41f403"
+    },
+    {
+      "id": "python-types",
+      "name": "Python types",
+      "command": [
+        "npm",
+        "run",
+        "typecheck:python"
+      ],
+      "status": "passed",
+      "durationMs": 486,
+      "exitCode": 0,
+      "outputSha256": "06eea4eb5c4a0f9d89771ef5316d6c6641b0c245c2084f66dd700d63319741a7"
+    },
+    {
+      "id": "catalog",
+      "name": "Catalog and budget check",
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "status": "passed",
+      "durationMs": 179,
+      "exitCode": 0,
+      "outputSha256": "fffd2956c2c8ea2da99e82a3f30208ca6a8bddbfa397aa68e1c566addac6ed2f"
+    },
+    {
+      "id": "sample-build",
+      "name": "Sample catalog build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "status": "passed",
+      "durationMs": 186,
+      "exitCode": 0,
+      "outputSha256": "0df49378352b4f1da556943aa1abfaf3c327c0bc99bb80e79881114c764f6a1b"
+    },
+    {
+      "id": "website-build",
+      "name": "Static website build",
+      "command": [
+        "npm",
+        "run",
+        "site:build"
+      ],
+      "status": "failed",
+      "durationMs": 180,
+      "exitCode": 1,
+      "outputSha256": "1c68228434ce63991b2273cf7c05fe7819813a01f71b614b652645157233665c"
+    },
+    {
+      "id": "website-browser",
+      "name": "Website Chrome smoke",
+      "command": [
+        "node",
+        "scripts/site-smoke.mjs"
+      ],
+      "status": "passed",
+      "durationMs": 2345,
+      "exitCode": 0,
+      "outputSha256": "599dbc2a22f9569123bada333d4863de7d427068dd01df0216f1a79002d9f50c"
+    }
+  ]
+}
