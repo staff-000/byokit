@@ -22,6 +22,16 @@ to answer one question: **can these settings make an actual model call?**
    occur. The response does not need to match the word OK; success means visible
    text generation worked with the chosen settings.
 
+## Copy the API call
+
+Expand **Copy this API call** for JavaScript/TypeScript, Python, or cURL that
+matches the selected endpoint, model ID, protocol, prompt and output limit.
+Examples use an `API_KEY` environment variable and never include the entered key.
+Displaying or copying code makes no request. The code prints the provider’s native
+JSON response. Node.js/Python examples reject redirects to protect credential
+destinations. The README also has complete byokit-query and DeepSeek inference
+examples.
+
 ## API keys and privacy
 
 Keys stay only in this page's memory. They are sent in authentication headers

@@ -78,6 +78,116 @@ print([model['provider']['id'] for model in models])
 
 Run the JavaScript example: `node examples/query.mjs`.
 
+## Call the selected model
+
+`byokit.getModels()` queries metadata and returns a list; it makes no inference
+request. To generate text, send the selected `apiModelId` to the provider API.
+These Node.js and Python examples choose a LIVE DeepSeek offering, then make one
+real call using [DeepSeek's API](https://api-docs.deepseek.com/guides/codex).
+
+Set `DEEPSEEK_API_KEY` in your application's environment. Do not hardcode it.
+Use your application's credential store for user-supplied keys. The examples
+need the byokit repository workspace/package installed; no HTTP SDK is needed.
+Running them may consume provider credits.
+
+### JavaScript / TypeScript (Node.js)
+
+```js
+import * as byokit from '@byokit/core/catalog';
+
+const [model] = byokit.getModels({
+  providerIds: [byokit.ProviderId.DeepSeek], limit: 1,
+});
+if (!model) throw new Error('No LIVE DeepSeek offering found.');
+const apiKey = process.env.DEEPSEEK_API_KEY;
+if (!apiKey) throw new Error('Set DEEPSEEK_API_KEY first.');
+
+const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${apiKey}`,
+  },
+  body: JSON.stringify({
+    model: model.apiModelId,
+    messages: [{ role: 'user', content: 'Reply with exactly: OK' }],
+    max_tokens: 256,
+    stream: false,
+  }),
+  signal: AbortSignal.timeout(90_000),
+  redirect: 'error',
+});
+if (!response.ok) throw new Error(`HTTP ${response.status}`);
+const data = await response.json();
+console.log(data.choices[0].message.content);
+```
+
+Run it with `node examples/call-model.mjs`.
+
+### Python
+
+```python
+import json
+import os
+import urllib.request
+import byokit
+
+models = byokit.get_models({
+    "providerIds": [byokit.ProviderId.DEEP_SEEK], "limit": 1,
+})
+if not models:
+    raise RuntimeError("No LIVE DeepSeek offering found.")
+model = models[0]
+api_key = os.environ["DEEPSEEK_API_KEY"]
+
+request = urllib.request.Request(
+    "https://api.deepseek.com/v1/chat/completions",
+    method="POST",
+    headers={
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}",
+    },
+    data=json.dumps({
+        "model": model["apiModelId"],
+        "messages": [{"role": "user", "content": "Reply with exactly: OK"}],
+        "max_tokens": 256,
+        "stream": False,
+    }).encode(),
+)
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *args, **kwargs):
+        return None
+
+opener = urllib.request.build_opener(NoRedirect)
+with opener.open(request, timeout=90) as response:
+    data = json.load(response)
+print(data["choices"][0]["message"]["content"])
+```
+
+After installing `./packages/python`, run `python examples/call_model.py`.
+
+Example generated text:
+
+```text
+OK
+```
+
+Actual output varies. The provider returns a native response object, such as:
+
+```json
+{
+  "model": "deepseek-flash",
+  "choices": [{ "message": { "role": "assistant", "content": "OK" } }]
+}
+```
+
+This is an illustrative subset. The selected model may differ as the catalog
+updates. Account access, output budgets and provider errors still apply. Different
+providers use different endpoints/protocols. For a request that matches your
+provider/model/settings, open [Verify a model](https://staff-000.github.io/byokit/verification.html)
+and expand **Copy this API call**. It offers JavaScript, Python and cURL without
+copying your entered key.
+
 ## Filter the list
 
 ```js

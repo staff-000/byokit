@@ -1,4 +1,5 @@
 import * as byokit from './lib/core/catalog.js';
+import {tutorials} from './tutorials.js';
 const $=selector=>document.querySelector(selector);
 const modes={default:byokit.DEFAULT,complete:byokit.COMPLETE,china:byokit.CHINA,'non-china':byokit.NON_CHINA};
 let mode='default',shown=12;
@@ -11,19 +12,15 @@ function render(){try{const config=query(),models=byokit.getModels(modes[mode],c
 for(const button of document.querySelectorAll('[data-mode]'))button.addEventListener('click',()=>{mode=button.dataset.mode;shown=12;for(const b of document.querySelectorAll('[data-mode]')){b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button))}render()});
 for(const id of ['search','tools','premium','local'])$('#'+id).addEventListener('input',()=>{shown=12;render()});$('#more').addEventListener('click',()=>{shown+=24;render()});
 for(const button of document.querySelectorAll('[data-copy]'))button.addEventListener('click',async()=>{const text=$(button.dataset.copy).textContent;try{await navigator.clipboard.writeText(text);button.textContent='Copied';setTimeout(()=>button.textContent=button.dataset.copy==='#query'?'Copy query':'Copy',1800)}catch{button.textContent='Select to copy';const range=document.createRange();range.selectNodeContents($(button.dataset.copy));const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range)}});
-const starts={typescript:`import * as byokit from '@byokit/core/catalog';
-
-const models = byokit.getModels(byokit.NON_CHINA, {
-  filters: {
-    requiredFeatures: [byokit.FeatureName.FunctionCalling],
-    excludeTags: [byokit.Tag.PricePremium],
-  },
-});`,python:`import byokit
-
-models = byokit.get_models(byokit.NON_CHINA, {
-    "filters": {
-        "requiredFeatures": [byokit.FeatureName.FUNCTION_CALLING],
-        "excludeTags": [byokit.Tag.PRICE_PREMIUM],
-    },
-})`};for(const button of document.querySelectorAll('[data-language]'))button.addEventListener('click',()=>{for(const b of document.querySelectorAll('[data-language]')){b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button))}$('#start-code').textContent=starts[button.dataset.language]});
+let language='typescript',example='query';
+function renderExample(){
+ $('#start-code').textContent=tutorials[example][language];
+ const inference=example==='inference';
+ $('#example-note').textContent=inference?'Server-side example: set DEEPSEEK_API_KEY in your environment. One call may consume provider credits. Your key is not stored by byokit.':'Catalog queries run offline. No API key or provider request is needed.';
+ $('#return-label').textContent=inference?'EXAMPLE GENERATED TEXT':'RETURN (FIRST ENTRY, SELECTED FIELDS)';
+ $('#expected-return').textContent=inference?'OK — actual model output varies.':JSON.stringify(byokit.getModels().slice(0,1).map(model=>({provider:model.provider.id,model:model.apiModelId,context:model.limits.context})),null,2);
+}
+for(const button of document.querySelectorAll('[data-language]'))button.addEventListener('click',()=>{language=button.dataset.language;for(const b of document.querySelectorAll('[data-language]')){b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button))}renderExample()});
+for(const button of document.querySelectorAll('[data-example]'))button.addEventListener('click',()=>{example=button.dataset.example;for(const b of document.querySelectorAll('[data-example]')){b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button))}renderExample()});
+renderExample();
 render();
