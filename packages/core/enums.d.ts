@@ -203,6 +203,7 @@ export declare enum DiagnosticCode {
   OutputLimitUnknown = "OUTPUT_LIMIT_UNKNOWN",
   TokenCountUnknown = "TOKEN_COUNT_UNKNOWN",
   TokenEstimate = "TOKEN_ESTIMATE",
+  BUDGET_UNDECLARED = "BUDGET_UNDECLARED",
 }
 
 export declare enum Lifecycle {
@@ -249,5 +250,20 @@ export declare enum LocalApi {
 export declare enum LifecycleBasis {
   Provider = "provider",
   CatalogListing = "catalog-listing",
+}
+
+export declare enum ApiProtocol {
+  OpenAI = "openai-compatible",
+  Claude = "claude",
+  Gemini = "gemini",
+  Ollama = "ollama",
+}
+
+export declare enum Role {
+  System = "system",
+  Developer = "developer",
+  User = "user",
+  Assistant = "assistant",
+  Tool = "tool",
 }
 export declare const DEFAULT:ModelList.Default, COMPLETE:ModelList.Complete, CHINA:ModelList.China, NON_CHINA:ModelList.NonChina;

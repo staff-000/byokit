@@ -4,8 +4,9 @@ import {validateVerifications} from '../packages/core/index.js';
 import catalog from '../packages/core/catalog.js';
 const root=resolve(new URL('..',import.meta.url).pathname),out=resolve(root,'dist/site');
 await mkdir(out,{recursive:true});await cp(resolve(root,'website'),out,{recursive:true});
+await writeFile(resolve(out,'inference.js'),(await readFile(resolve(root,'website/inference.js'),'utf8')).replace('../packages/core/index.js','./lib/core/index.js'));
 await mkdir(resolve(out,'lib/core'),{recursive:true});
-for(const file of ['index.js','enums.js','catalog.js'])await cp(resolve(root,'packages/core',file),resolve(out,'lib/core',file));
+for(const file of ['index.js','enums.js','catalog.js','call.js','connection.js'])await cp(resolve(root,'packages/core',file),resolve(out,'lib/core',file));
 await mkdir(resolve(out,'assets'),{recursive:true});
 for(const provider of catalog.providers){try{await cp(resolve(root,'assets','provider_'+provider.id+'.svg'),resolve(out,'assets',provider.id+'.svg'))}catch{}}
 const reports=catalog.verifications||[],errors=validateVerifications(reports,catalog);if(errors.length)throw new Error('Invalid contributor verification records');

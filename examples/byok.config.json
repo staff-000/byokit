@@ -16,5 +16,10 @@
     "maxProviders": 8,
     "maxModelsPerProvider": 4,
     "allowCustomModel": true
+  },
+  "budget": {
+    "maxInputTokens": 2048,
+    "maxOutputTokens": 1024,
+    "overheadTokens": 256
   }
 }

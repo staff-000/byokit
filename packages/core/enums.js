@@ -24,7 +24,7 @@ export const Locale=Object.freeze({"English":"en","Chinese":"zh"});
 export const SetupStatus=Object.freeze({"Idle":"idle","Checking":"checking","Ready":"ready","Error":"error"});
 export const SetupEventType=Object.freeze({"Edit":"edit","Checking":"checking","Result":"result"});
 export const Severity=Object.freeze({"Warning":"warning","Error":"error"});
-export const DiagnosticCode=Object.freeze({"CapabilityUnsupported":"CAPABILITY_UNSUPPORTED","CapabilityUnverified":"CAPABILITY_UNVERIFIED","ContextBudgetExceeded":"CONTEXT_BUDGET_EXCEEDED","ContextNearLimit":"CONTEXT_NEAR_LIMIT","ContextUnverified":"CONTEXT_UNVERIFIED","InputBudgetExceeded":"INPUT_BUDGET_EXCEEDED","LocalContextUnknown":"LOCAL_CONTEXT_UNKNOWN","ModalityUnsupported":"MODALITY_UNSUPPORTED","ModalityUnverified":"MODALITY_UNVERIFIED","ModelDeprecated":"MODEL_DEPRECATED","ModelUnverified":"MODEL_UNVERIFIED","NoModels":"NO_MODELS","OutputBudgetExceeded":"OUTPUT_BUDGET_EXCEEDED","OutputLimitUnknown":"OUTPUT_LIMIT_UNKNOWN","TokenCountUnknown":"TOKEN_COUNT_UNKNOWN","TokenEstimate":"TOKEN_ESTIMATE"});
+export const DiagnosticCode=Object.freeze({"CapabilityUnsupported":"CAPABILITY_UNSUPPORTED","CapabilityUnverified":"CAPABILITY_UNVERIFIED","ContextBudgetExceeded":"CONTEXT_BUDGET_EXCEEDED","ContextNearLimit":"CONTEXT_NEAR_LIMIT","ContextUnverified":"CONTEXT_UNVERIFIED","InputBudgetExceeded":"INPUT_BUDGET_EXCEEDED","LocalContextUnknown":"LOCAL_CONTEXT_UNKNOWN","ModalityUnsupported":"MODALITY_UNSUPPORTED","ModalityUnverified":"MODALITY_UNVERIFIED","ModelDeprecated":"MODEL_DEPRECATED","ModelUnverified":"MODEL_UNVERIFIED","NoModels":"NO_MODELS","OutputBudgetExceeded":"OUTPUT_BUDGET_EXCEEDED","OutputLimitUnknown":"OUTPUT_LIMIT_UNKNOWN","TokenCountUnknown":"TOKEN_COUNT_UNKNOWN","TokenEstimate":"TOKEN_ESTIMATE","BUDGET_UNDECLARED":"BUDGET_UNDECLARED"});
 export const Lifecycle=Object.freeze({"Live":"LIVE","Outdated":"OUTDATED","Uncertain":"UNCERTAIN"});
 export const Popularity=Object.freeze({"Popular":"POPULAR","NotPopular":"NOT_POPULAR","Uncertain":"UNCERTAIN"});
 export const PopularityMetric=Object.freeze({"Requests":"requests","Tokens":"tokens","Downloads":"downloads"});
@@ -32,4 +32,6 @@ export const Tag=Object.freeze({"LifecycleLive":"lifecycle:LIVE","LifecycleOutda
 export const ModelList=Object.freeze({"Default":"default","Complete":"complete","China":"china","NonChina":"non-china"});
 export const LocalApi=Object.freeze({"OpenAI":"openai-compatible","Ollama":"ollama"});
 export const LifecycleBasis=Object.freeze({"Provider":"provider","CatalogListing":"catalog-listing"});
+export const ApiProtocol=Object.freeze({"OpenAI":"openai-compatible","Claude":"claude","Gemini":"gemini","Ollama":"ollama"});
+export const Role=Object.freeze({"System":"system","Developer":"developer","User":"user","Assistant":"assistant","Tool":"tool"});
 export const DEFAULT=ModelList.Default, COMPLETE=ModelList.Complete, CHINA=ModelList.China, NON_CHINA=ModelList.NonChina;

@@ -4,7 +4,7 @@
 
 Filter by region preset, capabilities, price, context window, local execution,
 and contributor-tested calls. Each result includes the metadata needed to build
-an interface or configure your provider SDK. The demo UI is optional.
+an interface or call a selected model. The demo UI is optional.
 
 [Website & model explorer](https://staff-000.github.io/byokit/) ·
 [Verification tracker](docs/verification.md) ·
@@ -58,8 +58,7 @@ Existing `{ preset: byokit.Preset.NonChina }` and detailed filters still work.
 Queries run offline, need no API key, and make no network requests. LIVE means
 recent evidence lists this model at this provider; it does not guarantee access
 for your account. The result states whether the evidence is a provider source or
-a Models.dev catalog listing. To generate a response, pass `apiModelId` to your
-provider SDK and keep keys in your application's credential storage.
+a Models.dev catalog listing. To generate a response, use `byokit.call(model, input, key)`.
 
 Python has the same shortcuts and JSON field names:
 
@@ -80,113 +79,115 @@ Run the JavaScript example: `node examples/query.mjs`.
 
 ## Call the selected model
 
-`byokit.getModels()` queries metadata and returns a list; it makes no inference
-request. To generate text, send the selected `apiModelId` to the provider API.
-These Node.js and Python examples choose a LIVE DeepSeek offering, then make one
-real call using [DeepSeek's API](https://api-docs.deepseek.com/guides/codex).
+Choose a model, supply your input and key, and make one call:
 
-Set `DEEPSEEK_API_KEY` in your application's environment. Do not hardcode it.
-Use your application's credential store for user-supplied keys. The examples
-need the byokit repository workspace/package installed; no HTTP SDK is needed.
-Running them may consume provider credits.
-
-### JavaScript / TypeScript (Node.js)
-
-```js
+```ts
 import * as byokit from '@byokit/core/catalog';
 
 const [model] = byokit.getModels({
-  providerIds: [byokit.ProviderId.DeepSeek], limit: 1,
+  providerIds: [byokit.ProviderId.DeepSeek],
 });
-if (!model) throw new Error('No LIVE DeepSeek offering found.');
-const apiKey = process.env.DEEPSEEK_API_KEY;
-if (!apiKey) throw new Error('Set DEEPSEEK_API_KEY first.');
-
-const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${apiKey}`,
-  },
-  body: JSON.stringify({
-    model: model.apiModelId,
-    messages: [{ role: 'user', content: 'Reply with exactly: OK' }],
-    max_tokens: 256,
-    stream: false,
-  }),
-  signal: AbortSignal.timeout(90_000),
-  redirect: 'error',
-});
-if (!response.ok) throw new Error(`HTTP ${response.status}`);
-const data = await response.json();
-console.log(data.choices[0].message.content);
+const result = await byokit.call(model, 'Hello', key);
+console.log(result.choices[0].message.content);
 ```
 
-Run it with `node examples/call-model.mjs`.
-
-### Python
-
-```python
-import json
-import os
-import urllib.request
-import byokit
-
-models = byokit.get_models({
-    "providerIds": [byokit.ProviderId.DEEP_SEEK], "limit": 1,
-})
-if not models:
-    raise RuntimeError("No LIVE DeepSeek offering found.")
-model = models[0]
-api_key = os.environ["DEEPSEEK_API_KEY"]
-
-request = urllib.request.Request(
-    "https://api.deepseek.com/v1/chat/completions",
-    method="POST",
-    headers={
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}",
-    },
-    data=json.dumps({
-        "model": model["apiModelId"],
-        "messages": [{"role": "user", "content": "Reply with exactly: OK"}],
-        "max_tokens": 256,
-        "stream": False,
-    }).encode(),
-)
-class NoRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, *args, **kwargs):
-        return None
-
-opener = urllib.request.build_opener(NoRedirect)
-with opener.open(request, timeout=90) as response:
-    data = json.load(response)
-print(data["choices"][0]["message"]["content"])
-```
-
-After installing `./packages/python`, run `python examples/call_model.py`.
-
-Example generated text:
-
-```text
-OK
-```
-
-Actual output varies. The provider returns a native response object, such as:
+Expected response (provider-generated values vary):
 
 ```json
 {
+  "id": "…",
+  "object": "chat.completion",
   "model": "deepseek-flash",
-  "choices": [{ "message": { "role": "assistant", "content": "OK" } }]
+  "choices": [{
+    "index": 0,
+    "message": { "role": "assistant", "content": "Hello!" },
+    "finish_reason": "stop"
+  }],
+  "usage": { "prompt_tokens": 4, "completion_tokens": 2, "total_tokens": 6 }
 }
 ```
 
-This is an illustrative subset. The selected model may differ as the catalog
-updates. Account access, output budgets and provider errors still apply. Different
-providers use different endpoints/protocols. For a request that matches your
-provider/model/settings, open [Verify a model](https://staff-000.github.io/byokit/verification.html)
-and expand **Copy this API call**. It offers JavaScript, Python and cURL without
-copying your entered key.
+Prefer Claude's Messages format? The same selected model works:
+
+```ts
+const message = await byokit.callClaude(model, 'Hello', key);
+console.log(message.content);
+// [{ type: 'text', text: 'Hello!' }]
+```
+
+`call()` accepts OpenAI-style messages and returns a Chat Completion.
+`callClaude()` accepts Claude-style messages and returns a Message. Adapters
+translate supported fields to the selected provider's native API. These are
+compatible subsets, not replacements for every provider SDK feature.
+
+Python uses the same model metadata and corresponding functions:
+
+```python
+import byokit
+
+model = byokit.get_models({
+    "providerIds": [byokit.ProviderId.DEEP_SEEK],
+})[0]
+result = byokit.call(model, "Hello", key)
+print(result["choices"][0]["message"]["content"])
+
+message = byokit.call_claude(model, "Hello", key)
+print(message["content"])
+```
+
+### Parameters and runtime checks
+
+```ts
+const result = await byokit.call(model, {
+  messages: [{ role: byokit.Role.User, content: 'Summarize this…' }],
+  max_completion_tokens: 1024,
+}, key, {
+  runtimeChecks: true,  // Default; false skips model-fit checks
+  inputTokens: 2000,   // Optional declared/countable input budget
+  timeoutMs: 90_000,
+  signal: controller.signal,
+  onWarning: diagnostic => console.warn(diagnostic.code),
+});
+```
+
+Python's fourth argument uses `runtime_checks`, `input_tokens`, `overhead_tokens`,
+`timeout_ms`, `cancel_event` (a `threading.Event`), and `on_warning`.
+
+The default output budget is 1,024 tokens, capped by a known smaller model limit.
+Runtime checks reject known excessive budgets and unsupported capabilities;
+unknown limits or unavailable input counts produce warnings. Supply a measured
+input token count when you need a reliable context check. Disabling runtime
+checks retains essential request-format and endpoint validation.
+
+Supported: non-streaming text, system messages, sampling parameters, function
+tool definitions, tool calls and tool results. Tools are returned for your
+application to execute. Unsupported fields, streaming, multimedia and native
+thinking blocks/signatures are rejected explicitly. Provider/model-specific
+restrictions can still be rejected by the provider. No retries or model
+substitution happen automatically.
+
+Each model includes `connection: { baseUrl, protocol }` (protocol uses
+`byokit.ApiProtocol`). Local entries need a configured URL and served model ID;
+pass an empty key for an unauthenticated local server. Custom providers may supply
+an explicit connection. Calls use the offering's `apiModelId`, not its family ID.
+
+Keys are per-call arguments: the call API never stores, caches, logs, or returns
+them. Authentication headers handle the key transiently while the request runs.
+Your application owns any credential storage; never embed production keys in a
+public website. Browser calls also depend on provider CORS and local-network
+permissions. Calls may consume provider quota, including canceled calls.
+
+Runnable examples: `node examples/call-model.mjs` or
+`PYTHONPATH=packages/python/src python3 examples/call_model.py`, with
+`DEEPSEEK_API_KEY` supplied by your environment. Packages are not published yet.
+
+### Build-time budgets
+
+Declare `budget.maxInputTokens` and `budget.maxOutputTokens` in your byokit build
+configuration (or individual tasks). `byokit check config.json` fails known
+limit violations and warns when budgets or model limits are missing; `--strict`
+also fails warnings. TypeScript validates parameter names/types, not arbitrary
+numeric relationships. Build checks are offline and consume no quota.
 
 ## Filter the list
 
@@ -287,7 +288,8 @@ served by two providers is two results because prices and features may differ.
 | Field | Contents |
 |---|---|
 | `id`, `name` | Stable offering ID and display name |
-| `apiModelId` | Model ID to give that provider's SDK |
+| `apiModelId` | Model ID sent to the selected provider |
+| `connection` | Provider base URL and native API protocol; null if not configured |
 | `provider` | Provider ID, name, docs, authentication requirement, deployment type |
 | `model`, `family` | Underlying model, family, openness, license, parameter counts |
 | `modalities`, `fileFormats` | Supported input/output types and document formats |

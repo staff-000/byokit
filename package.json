@@ -12,7 +12,7 @@
   "scripts": {
     "test": "node --test tests/*.test.mjs",
     "test:python": "python3 -m unittest discover -s packages/python/tests -v",
-    "check": "node packages/cli/bin.mjs check examples/byok.config.json --strict",
+    "check": "node packages/cli/bin.mjs check examples/byok.config.json",
     "catalog:import": "node scripts/import-catalog.mjs",
     "demo": "node scripts/serve.mjs",
     "typecheck": "tsc --noEmit",
@@ -23,7 +23,8 @@
     "site:build": "node scripts/build-site.mjs",
     "site:preview": "node scripts/serve-site.mjs",
     "site:test": "node scripts/site-smoke.mjs",
-    "verify": "node scripts/verify.mjs"
+    "verify": "node scripts/verify.mjs",
+    "check:budget": "node packages/cli/bin.mjs check examples/task.config.json --strict"
   },
   "engines": {
     "node": ">=20"

@@ -19,7 +19,7 @@ flowchart LR
   JS --> App[BYOK application]
   PY --> App
   App --> UI[Optional settings UI]
-  App --> SDK[Application provider SDK]
+  App --> SDK[Stateless call or application SDK]
   Store[Application credential storage] --> SDK
   SDK --> Provider[AI provider or local runtime]
 ```
@@ -32,8 +32,8 @@ can be reviewed separately.
 
 Credentials stay in the application. Neither catalog metadata nor contributor
 reports contain keys. Metadata refresh cannot launch inference, switch a saved
-model, or redirect a key to a new endpoint. Native provider execution, subscription
-login and quota handling belong to the application.
+model, or redirect a key to a new endpoint. Stateless API execution is optional and explicitly invoked. Subscription
+login and quota management belong to the application.
 
 ## Public query
 
@@ -305,3 +305,39 @@ vLLM, and llama.cpp servers; native Ollama distinguishes installed `/api/tags`
 from running `/api/ps`. Discovery remains explicit, loopback by default, and
 bounded. An unavailable saved hosted model is shown as a disabled recovery prompt
 instead of being restored to the selectable list or silently replaced.
+
+## Stateless calls
+
+```mermaid
+flowchart LR
+  Discovery[Offline discovery] --> Model[Model + connection metadata]
+  Model --> Call[call / callClaude]
+  Input[Text or structured messages] --> Call
+  Key[Per-call key argument] --> HTTP[Transient authenticated HTTP request]
+  Call --> Checks[Optional model-fit checks]
+  Checks --> Adapter[Native provider adapter]
+  Adapter --> HTTP
+  HTTP --> Provider[Selected provider or local server]
+  Provider --> Normalize[OpenAI or Claude response]
+```
+
+Discovery, catalog refresh and builds never trigger inference. The call layer
+owns only one request at a time, with no cached clients, credentials, automatic
+retry or tool execution. Connection metadata is derived from the provider or
+explicit local endpoint; API model IDs remain offering-specific.
+
+OpenAI and Claude public request/response formats are translated through a
+shared internal representation. Non-streaming text, system messages and tools
+are supported; unrepresentable fields are rejected. Native thinking signatures
+and multimedia are outside this version. Response usage fields are included
+only when reported, rather than fabricated.
+
+Runtime checks reuse checkFit; missing input counts warn rather than pretending
+to guarantee fit. runtimeChecks=false skips model-fit checks, not shape/URL
+validation. Build task budgets are checked offline; missing budgets warn and
+strict validation can fail warnings. Dynamic input budgets remain runtime work.
+
+Authentication headers use a per-call key transiently. They are excluded from
+results, diagnostics, records and logs. Redirects are blocked. Browser CORS
+restrictions remain provider-owned. Cancellation and a 90-second deadline
+terminate calls without retry; spent provider quota cannot be refunded.

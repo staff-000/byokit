@@ -25,7 +25,9 @@
     "LICENSE",
     "README.md",
     "enums.js",
-    "enums.d.ts"
+    "enums.d.ts",
+    "call.js",
+    "connection.js"
   ],
   "sideEffects": false,
   "license": "MIT"

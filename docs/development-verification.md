@@ -76,3 +76,7 @@ to [staff-000.github.io/byokit](https://staff-000.github.io/byokit/).
 GitHub repository Settings → Pages must use **GitHub Actions** as the source.
 Verification JSON is included from the committed latest run; deployment does not
 invent a new passing run or claim tests that were not executed.
+
+Catalog checks report unknown catalog limits as warnings. The separate
+`npm run check:budget` runs strict task-budget fixtures; unknown metadata is
+never converted into verified context-accounting rules to make a check pass.

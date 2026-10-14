@@ -10,3 +10,10 @@ test('CLI passes a valid budget and fails an excessive budget before requests',a
  const checked=spawnSync(process.execPath,['node_modules/typescript/bin/tsc','--noEmit','--strict','--target','ES2022','--module','NodeNext','--moduleResolution','NodeNext',join(dir,'enum-types.ts')],{encoding:'utf8'});assert.equal(checked.status,0,checked.stdout+checked.stderr);
 
 });
+
+test('undeclared budgets warn; strict validation fails without performing inference',()=>{
+ const dir=mkdtempSync(join(tmpdir(),'byokit-budget-')),file=join(dir,'config.json');
+ writeFileSync(file,JSON.stringify({catalog:resolve('spec/fixtures/catalog.json')}));
+ const warning=spawnSync('node',['packages/cli/bin.mjs','check',file],{encoding:'utf8'});assert.equal(warning.status,0);assert.match(warning.stdout,/BUDGET_UNDECLARED/);
+ const strict=spawnSync('node',['packages/cli/bin.mjs','check',file,'--strict'],{encoding:'utf8'});assert.equal(strict.status,1);
+});

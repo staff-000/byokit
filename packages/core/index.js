@@ -1,3 +1,5 @@
+import {connectionFor} from './connection.js';
+export {call,callClaude,prepareCall,CallError} from './call.js';
 import {FeatureStatus,ContextAccounting,Currency,VerificationStatus,Deployment as DeploymentType,Modality,FeatureName,Deployment,UnknownPolicy,CommercialUse,VerificationCheck,LocalRuntime,Lifecycle,Popularity,PopularityMetric,ModelList,LocalApi,LifecycleBasis} from './enums.js';
 export * from './enums.js';
 /** Framework-independent catalog, selection and preflight rules. No network or storage. */
@@ -94,7 +96,7 @@ export class Catalog {
     const locals=groups.filter(g=>g.provider.deployment===Deployment.Local).flatMap(g=>g.offerings.map(o=>[g,o]));
     return structuredClone([...hosted,...locals].map(([g,o])=>{
       const model=this.models.get(o.modelId) || {id:o.modelId,name:o.name,openWeights:null,commercialUse:CommercialUse.Unknown,license:null,tags:[]},family=this.data.families.find(f=>f.id===model?.familyId);
-      return {...o,provider:g.provider,model,family:family || null,
+      return {...o,connection:connectionFor(o),provider:g.provider,model,family:family || null,
         logos:{provider:this.data.assets?.find(a=>a.id===g.provider.logoId)||null,family:this.data.assets?.find(a=>a.id===family?.logoId)||null},
         verification:verificationSummary(this.data,o.id,{asOf:config.asOf,maxAgeDays:config.filters?.verifiedWithinDays,contributor:config.filters?.verifiedBy})};
     }));
@@ -144,7 +146,10 @@ export function checkFit(offering, budget, options = {}) {
     ratio=used/c.context;
     if(ratio>1) diagnostics.push(diag('CONTEXT_BUDGET_EXCEEDED',`Required ${used} exceeds context ${c.context}.`,'error',offering.id));
     else if(ratio>=.8) diagnostics.push(diag('CONTEXT_NEAR_LIMIT',`Context budget uses ${Math.round(ratio*100)}%.`,'warning',offering.id));
-  } else diagnostics.push(diag(offering.deployment==='local'?'LOCAL_CONTEXT_UNKNOWN':'CONTEXT_UNVERIFIED','Effective context or its accounting rules are unknown.','warning',offering.id));
+  } else {
+    if(positive(c.context)&&input>c.context)diagnostics.push(diag('CONTEXT_BUDGET_EXCEEDED',`Input ${input} exceeds context ${c.context}.`,'error',offering.id));
+    diagnostics.push(diag(offering.deployment==='local'?'LOCAL_CONTEXT_UNKNOWN':'CONTEXT_UNVERIFIED','Effective context or its accounting rules are unknown.','warning',offering.id));
+  }
   if(output>0 && !positive(c.output)) diagnostics.push(diag('OUTPUT_LIMIT_UNKNOWN','Output limit is unknown.','warning',offering.id));
   if(options.estimate) diagnostics.push(diag('TOKEN_ESTIMATE','Token count is estimated; this is not an exact fit guarantee.','warning',offering.id));
   if(offering.status==='deprecated') diagnostics.push(diag('MODEL_DEPRECATED','Selected model is deprecated.','warning',offering.id));
@@ -152,6 +157,7 @@ export function checkFit(offering, budget, options = {}) {
 }
 export function checkTask(catalog, task) {
   const diagnostics=[];
+  if(task.budget?.maxInputTokens===undefined || task.budget?.maxOutputTokens===undefined)diagnostics.push(diag('BUDGET_UNDECLARED','Declare input and output token budgets for build-time checks.'));
   if(!Array.isArray(task.offeringIds) || !task.offeringIds.length) return [diag('NO_MODELS','Task requires at least one offering.','error')];
   for(const id of task.offeringIds) {
     const o=catalog.get(id);

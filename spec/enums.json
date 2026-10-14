@@ -177,7 +177,8 @@
     "OutputBudgetExceeded": "OUTPUT_BUDGET_EXCEEDED",
     "OutputLimitUnknown": "OUTPUT_LIMIT_UNKNOWN",
     "TokenCountUnknown": "TOKEN_COUNT_UNKNOWN",
-    "TokenEstimate": "TOKEN_ESTIMATE"
+    "TokenEstimate": "TOKEN_ESTIMATE",
+    "BUDGET_UNDECLARED": "BUDGET_UNDECLARED"
   },
   "Lifecycle": {
     "Live": "LIVE",
@@ -217,5 +218,18 @@
   "LifecycleBasis": {
     "Provider": "provider",
     "CatalogListing": "catalog-listing"
+  },
+  "ApiProtocol": {
+    "OpenAI": "openai-compatible",
+    "Claude": "claude",
+    "Gemini": "gemini",
+    "Ollama": "ollama"
+  },
+  "Role": {
+    "System": "system",
+    "Developer": "developer",
+    "User": "user",
+    "Assistant": "assistant",
+    "Tool": "tool"
   }
 }

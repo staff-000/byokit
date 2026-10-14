@@ -180,6 +180,7 @@ class DiagnosticCode(str, Enum):
     OUTPUT_LIMIT_UNKNOWN = "OUTPUT_LIMIT_UNKNOWN"
     TOKEN_COUNT_UNKNOWN = "TOKEN_COUNT_UNKNOWN"
     TOKEN_ESTIMATE = "TOKEN_ESTIMATE"
+    BUDGET_UNDECLARED = "BUDGET_UNDECLARED"
 
 class Lifecycle(str, Enum):
     LIVE = "LIVE"
@@ -219,6 +220,19 @@ class LocalApi(str, Enum):
 class LifecycleBasis(str, Enum):
     PROVIDER = "provider"
     CATALOG_LISTING = "catalog-listing"
+
+class ApiProtocol(str, Enum):
+    OPEN_AI = "openai-compatible"
+    CLAUDE = "claude"
+    GEMINI = "gemini"
+    OLLAMA = "ollama"
+
+class Role(str, Enum):
+    SYSTEM = "system"
+    DEVELOPER = "developer"
+    USER = "user"
+    ASSISTANT = "assistant"
+    TOOL = "tool"
 
 DEFAULT=ModelList.DEFAULT
 COMPLETE=ModelList.COMPLETE

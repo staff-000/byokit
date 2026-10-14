@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "id": "2026-10-13T18-02-15-452Z",
-  "startedAt": "2026-10-13T18:02:08.361Z",
-  "completedAt": "2026-10-13T18:02:15.452Z",
-  "commit": "d737b82737deb05d8fe49ba17a7fb4dc0c2e108b",
+  "id": "2026-10-14T07-15-11-250Z",
+  "startedAt": "2026-10-14T07:15:02.973Z",
+  "completedAt": "2026-10-14T07:15:11.250Z",
+  "commit": "7d0344942dde8fcf3195e84fc80bff2bdcab2234",
   "sourceDirty": true,
-  "sourceDigest": "33002fcdaf8a11c4a60f315da8b82b2988aaaa4fe2c0bb7563fce88a35ba1bdc",
+  "sourceDigest": "a91ce0c930ff716a20008f4361220587986ba8b13b26dd3b7710e4d2f44d5a6f",
   "platform": "darwin",
   "architecture": "arm64",
   "nodeVersion": "v23.7.0",
@@ -16,7 +16,8 @@
       "command": [
         "node",
         "--test",
-        "--test-reporter=tap",
+        "--test-reporter=spec",
+        "tests/call.test.mjs",
         "tests/cli.test.mjs",
         "tests/conformance.test.mjs",
         "tests/core.test.mjs",
@@ -24,6 +25,7 @@
         "tests/import-lifecycle.test.mjs",
         "tests/local.test.mjs",
         "tests/query.test.mjs",
+        "tests/request-examples.test.mjs",
         "tests/schema.test.mjs",
         "tests/signals.test.mjs",
         "tests/simple-api.test.mjs",
@@ -31,13 +33,13 @@
         "tests/website-inference.test.mjs"
       ],
       "status": "passed",
-      "durationMs": 1092,
+      "durationMs": 1129,
       "exitCode": 0,
       "tests": {
-        "total": 56,
-        "passed": 56
+        "total": 70,
+        "passed": 70
       },
-      "outputSha256": "ccc5c684a1548e7c1658846e3c29a646f0c965a0ab0c0bd3d5461883b433d8d8"
+      "outputSha256": "aeca25be7897af5d8b5240536d98ebd41a91bfb25e8e910c803349be0d9fab84"
     },
     {
       "id": "python",
@@ -52,13 +54,13 @@
         "-v"
       ],
       "status": "passed",
-      "durationMs": 159,
+      "durationMs": 303,
       "exitCode": 0,
       "tests": {
-        "total": 6,
-        "passed": 6
+        "total": 12,
+        "passed": 12
       },
-      "outputSha256": "40dd5970ffd45cdc5b29075e2d122918bed8503fd93b9786063c5403d0beb7e6"
+      "outputSha256": "14cc6cb6b964bfca05cd27c3ed66aae9bc49e3fc6fe87d8a4cbf01b777bcbc4f"
     },
     {
       "id": "typescript",
@@ -69,7 +71,7 @@
         "typecheck"
       ],
       "status": "passed",
-      "durationMs": 391,
+      "durationMs": 400,
       "exitCode": 0,
       "outputSha256": "d601c28abd2d19809b0ed1aa75a30bcac8df46f32550187f6075b16aea41f403"
     },
@@ -82,7 +84,7 @@
         "typecheck:python"
       ],
       "status": "passed",
-      "durationMs": 433,
+      "durationMs": 486,
       "exitCode": 0,
       "outputSha256": "06eea4eb5c4a0f9d89771ef5316d6c6641b0c245c2084f66dd700d63319741a7"
     },
@@ -95,9 +97,22 @@
         "check"
       ],
       "status": "passed",
-      "durationMs": 165,
+      "durationMs": 174,
       "exitCode": 0,
-      "outputSha256": "fffd2956c2c8ea2da99e82a3f30208ca6a8bddbfa397aa68e1c566addac6ed2f"
+      "outputSha256": "464eca1e366b6533d52829899784f4172d4723f4613e93992145d993b2e347ea"
+    },
+    {
+      "id": "budget",
+      "name": "Strict task budget check",
+      "command": [
+        "npm",
+        "run",
+        "check:budget"
+      ],
+      "status": "passed",
+      "durationMs": 141,
+      "exitCode": 0,
+      "outputSha256": "a02f7c198b4a6193494e25845f6f2af59868addf72cc78f74b76c8f5e6bce3e0"
     },
     {
       "id": "sample-build",
@@ -108,9 +123,9 @@
         "build"
       ],
       "status": "passed",
-      "durationMs": 170,
+      "durationMs": 168,
       "exitCode": 0,
-      "outputSha256": "0df49378352b4f1da556943aa1abfaf3c327c0bc99bb80e79881114c764f6a1b"
+      "outputSha256": "c9b7431cefca1a7007261e0c47c5f1e7e79e4f7014ecfa3eb069a2ec5196cfb4"
     },
     {
       "id": "website-build",
@@ -121,7 +136,7 @@
         "site:build"
       ],
       "status": "passed",
-      "durationMs": 165,
+      "durationMs": 170,
       "exitCode": 0,
       "outputSha256": "ff8b55adbf6dd093eb5478f3b45fc52c6917031da03a2a903eaeecde6f2d0a7c"
     },
@@ -133,7 +148,7 @@
         "scripts/site-smoke.mjs"
       ],
       "status": "passed",
-      "durationMs": 4464,
+      "durationMs": 5209,
       "exitCode": 0,
       "outputSha256": "08b214096ba90d181de1df5fbbb4e93c46903cffde346bcafa56c99103559407"
     }

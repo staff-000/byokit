@@ -1,4 +1,4 @@
-"""Pure catalog and validation logic; no network, key persistence or inference."""
+"""Offline discovery and stateless, explicitly invoked inference."""
 from .enums import *
 import copy
 import math
@@ -130,7 +130,7 @@ class Catalog:
                 model=self.models.get(o["modelId"],{"id":o["modelId"],"name":o["name"],"openWeights":None,"commercialUse":"unknown","license":None,"tags":[]})
                 family=next((f for f in self.data["families"] if f["id"]==model.get("familyId")),None)
                 assets=self.data.get("assets",[])
-                result.append(dict(o,provider=g["provider"],model=model,family=family,logos={"provider":next((a for a in assets if a["id"]==g["provider"].get("logoId")),None),"family":next((a for a in assets if family and a["id"]==family.get("logoId")),None)},verification=verification_summary(self.data,o["id"],as_of=config.get("asOf"),max_age_days=config.get("filters",{}).get("verifiedWithinDays",90),contributor=config.get("filters",{}).get("verifiedBy"))))
+                result.append(dict(o,connection=connection_for(o),provider=g["provider"],model=model,family=family,logos={"provider":next((a for a in assets if a["id"]==g["provider"].get("logoId")),None),"family":next((a for a in assets if family and a["id"]==family.get("logoId")),None)},verification=verification_summary(self.data,o["id"],as_of=config.get("asOf"),max_age_days=config.get("filters",{}).get("verifiedWithinDays",90),contributor=config.get("filters",{}).get("verifiedBy"))))
         return copy.deepcopy([o for o in result if o["deployment"]!="local"][:config.get("limit",len(result))]+[o for o in result if o["deployment"]=="local"])
     def select(self, config=None, options=None):
         return self._select(_normalize_query(config,options))
@@ -176,7 +176,9 @@ def check_fit(offering, budget, options=None):
         ratio=used/limits["context"]
         if ratio>1: diagnostics.append(diagnostic("CONTEXT_BUDGET_EXCEEDED",f'Required {used} exceeds context {limits["context"]}.',"error",oid))
         elif ratio>=.8: diagnostics.append(diagnostic("CONTEXT_NEAR_LIMIT",f"Context budget uses {math.floor(ratio*100+.5)}%.","warning",oid))
-    else: diagnostics.append(diagnostic("LOCAL_CONTEXT_UNKNOWN" if offering.get("deployment")=="local" else "CONTEXT_UNVERIFIED","Effective context or its accounting rules are unknown.",offering_id=oid))
+    else:
+        if positive(limits.get("context")) and input_tokens>limits["context"]: diagnostics.append(diagnostic("CONTEXT_BUDGET_EXCEEDED",f'Input {input_tokens} exceeds context {limits["context"]}.',"error",oid))
+        diagnostics.append(diagnostic("LOCAL_CONTEXT_UNKNOWN" if offering.get("deployment")=="local" else "CONTEXT_UNVERIFIED","Effective context or its accounting rules are unknown.",offering_id=oid))
     if output>0 and not positive(limits.get("output")): diagnostics.append(diagnostic("OUTPUT_LIMIT_UNKNOWN","Output limit is unknown.",offering_id=oid))
     if options.get("estimate"): diagnostics.append(diagnostic("TOKEN_ESTIMATE","Token count is estimated; this is not an exact fit guarantee.",offering_id=oid))
     if offering.get("status")=="deprecated": diagnostics.append(diagnostic("MODEL_DEPRECATED","Selected model is deprecated.",offering_id=oid))
@@ -187,6 +189,7 @@ def check_fit(offering, budget, options=None):
 def check_task(catalog, task):
     if not task.get("offeringIds"): return [diagnostic("NO_MODELS","Task requires at least one offering.","error")]
     result=[]; b=task.get("budget",{}); r=task.get("requires",{})
+    if b.get("maxInputTokens") is None or b.get("maxOutputTokens") is None: result.append(diagnostic("BUDGET_UNDECLARED","Declare input and output token budgets for build-time checks."))
     for oid in task["offeringIds"]:
         fit=check_fit(catalog.get(oid),{"inputTokens":b.get("maxInputTokens"),"outputTokens":b.get("maxOutputTokens"),"overheadTokens":b.get("overheadTokens")},{"requiredFeatures":r.get("features",[]),"modalities":r.get("modalities",{})})
         result.extend(dict(d,offeringId=oid) for d in fit["diagnostics"])
@@ -376,3 +379,5 @@ def _local_groups(config,catalog):
     for i,entry in enumerate(entries):
         offerings.append({'id':'local/custom' if len(entries)==1 else 'local/endpoint-'+str(i),'providerId':'local','modelId':entry.get('modelId','local/custom'),'apiModelId':entry.get('modelId',''),'name':entry.get('name',entry.get('modelId','Local — enter your server URL')),'deployment':'local','local':{'endpoint':entry.get('endpoint',''),'api':entry.get('api','openai-compatible'),'configured':bool(entry.get('endpoint'))},'modalities':{'input':None,'output':None},'limits':{'context':None,'input':None,'output':None,'contextAccounting':'unknown'},'features':{},'price':{'currency':'USD','input':None,'output':None},'tags':['deployment:local'],'lifecycle':{'status':'UNCERTAIN','evidence':None},'popularity':{'status':'UNCERTAIN','evidence':None}})
     return [{'provider':provider,'offerings':offerings}]
+
+from .inference import call, call_claude, prepare_call, connection_for, CallError

@@ -15,7 +15,7 @@ def main():
         tasks=config.get("tasks",[])
         if not tasks and config.get("budget"):
             tasks=[{"offeringIds":[o["id"] for g in groups for o in g["offerings"]],"budget":config["budget"],"requires":{"features":config.get("filters",{}).get("requiredFeatures",[]),"modalities":{k:config.get("filters",{}).get(k,[]) for k in ["input","output"]}}}]
-        diagnostics=[d for t in tasks for d in check_task(catalog,t)]
+        diagnostics=[d for t in tasks for d in check_task(catalog,t)] if tasks else [dict(code='BUDGET_UNDECLARED',message='Declare input and output token budgets for build-time checks.',severity='warning')]
         if not groups: diagnostics.append({"code":"NO_MODELS","message":"No offerings match this configuration.","severity":"error"})
         for d in diagnostics: print(f'{d["severity"].upper()} {d["code"]}: {d["message"]}')
         if any(d["severity"]=="error" or args.strict for d in diagnostics): return 1

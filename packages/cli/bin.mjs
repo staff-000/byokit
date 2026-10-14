@@ -12,7 +12,7 @@ async function run(){
   const raw=await readFile(resolve(dirname(path),config.catalog),'utf8');
   const catalog=new Catalog(JSON.parse(raw)),groups=catalog.select(config);
   const tasks=config.tasks || (config.budget?[{offeringIds:groups.flatMap(g=>g.offerings.map(o=>o.id)),budget:config.budget,requires:{features:config.filters?.requiredFeatures,modalities:{input:config.filters?.input,output:config.filters?.output}}}]:[]);
-  const diagnostics=tasks.flatMap(task=>checkTask(catalog,task));
+  const diagnostics=tasks.length?tasks.flatMap(task=>checkTask(catalog,task)):[{code:'BUDGET_UNDECLARED',message:'Declare input and output token budgets for build-time checks.',severity:'warning'}];
   if(!groups.length)diagnostics.push({code:'NO_MODELS',message:'No offerings match this configuration.',severity:'error'});
   for(const d of diagnostics)console.log(`${d.severity.toUpperCase()} ${d.code}${d.offeringId?' ['+d.offeringId+']':''}: ${d.message}`);
   if(diagnostics.some(d=>d.severity==='error'||args.includes('--strict')&&d.severity==='warning'))return 1;

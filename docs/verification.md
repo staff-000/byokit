@@ -83,8 +83,10 @@ no visible text. Increase the limit explicitly if you want to try again. Calls
 have a 90-second timeout and a Cancel button. Cancellation cannot refund consumed
 quota.
 
-The website adapters live in `website/inference.js`; they demonstrate host-owned
-execution without adding inference or credential storage to the catalog library.
+The website verification flow invokes the stateless library calls. Shared adapters
+live in `packages/core/call.js`; `website/inference.js` adds verification-specific
+record formatting. Authentication headers are transient; no credential store is
+created by the call layer.
 Sources: [OpenAI](https://developers.openai.com/api/reference),
 [Anthropic](https://platform.claude.com/docs/en/api/messages/create),
 [Gemini](https://ai.google.dev/api/generate-content),
@@ -98,3 +100,6 @@ Sources: [OpenAI](https://developers.openai.com/api/reference),
 Internal checks and run records remain in
 [the development tracker](development-verification.md); they are not presented
 as model verification on the website.
+
+JavaScript and Python copied examples use `byokit.call()`; cURL shows the equivalent
+native HTTP request. The homepage also demonstrates `callClaude()` responses.

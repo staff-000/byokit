@@ -33,7 +33,7 @@ export function deriveTags(offering:Offering,model?:Partial<Model>):string[];
 
 export interface VerificationRecord {id:string;offeringId:string;contributor:ContributorId;checkedAt:string;result:VerificationResult;checks:VerificationCheck[];evidence:string;adapter:string;notes?:string;}
 export interface VerificationSummary {status:VerificationStatus;latest:VerificationRecord|null;records:VerificationRecord[];}
-export interface ModelOption extends Offering {lifecycle:{status:Lifecycle;evidence:LifecycleEvidence|null};popularity:{status:Popularity;evidence:PopularityEvidence|null};provider:Provider;model:Model;family:{id:string;name:string;logoId?:string}|null;logos:{provider:Asset|null;family:Asset|null};verification:VerificationSummary;}
+export interface ModelOption extends Offering {connection:Connection|null;lifecycle:{status:Lifecycle;evidence:LifecycleEvidence|null};popularity:{status:Popularity;evidence:PopularityEvidence|null};provider:Provider;model:Model;family:{id:string;name:string;logoId?:string}|null;logos:{provider:Asset|null;family:Asset|null};verification:VerificationSummary;}
 export function validateVerifications(records:unknown,data:CatalogData):string[];
 export function verificationSummary(data:CatalogData,offeringId:string,options?:{asOf?:string;maxAgeDays?:number;contributor?:ContributorId}):VerificationSummary;
 
@@ -51,3 +51,20 @@ export function githubContributor(handle:string):ContributorId;
 
 export interface LifecycleEvidence {status:Lifecycle;source:string;checkedAt:string;basis?:LifecycleBasis;}
 export interface PopularityEvidence {metric:PopularityMetric;rank:number;population:number;scope:string;source:string;windowStart:string;windowEnd:string;}
+
+export interface Connection {baseUrl:string;protocol:import('./enums.js').ApiProtocol;}
+export interface ToolCall {id:string;type:'function';function:{name:string;arguments:string};}
+export interface FunctionTool {type:'function';function:{name:string;description?:string;parameters:Record<string,unknown>};}
+export interface TextBlock {type:'text';text:string;}
+export interface ChatMessage {role:import('./enums.js').Role;content:string|TextBlock[]|null;tool_calls?:ToolCall[];tool_call_id?:string;}
+export interface ChatInput {messages:ChatMessage[];max_tokens?:number;max_completion_tokens?:number;temperature?:number;top_p?:number;stop?:string|string[];tools?:FunctionTool[];tool_choice?:'auto'|'none'|'required'|{type:'function';function:{name:string}};stream?:false;}
+export interface ClaudeToolUse {type:'tool_use';id:string;name:string;input:Record<string,unknown>;}
+export interface ClaudeToolResult {type:'tool_result';tool_use_id:string;content:string|TextBlock[];}
+export interface ClaudeInput {messages:{role:import('./enums.js').Role.User|import('./enums.js').Role.Assistant;content:string|(TextBlock|ClaudeToolUse|ClaudeToolResult)[]}[];system?:string|TextBlock[];max_tokens?:number;temperature?:number;top_p?:number;top_k?:number;stop_sequences?:string[];tools?:{name:string;description?:string;input_schema:Record<string,unknown>}[];tool_choice?:{type:'auto'|'any'|'none'}|{type:'tool';name:string};stream?:false;}
+export interface CallOptions {runtimeChecks?:boolean;timeoutMs?:number;signal?:AbortSignal;inputTokens?:number;overheadTokens?:number;onWarning?:(diagnostic:Diagnostic)=>void;fetch?:typeof globalThis.fetch;}
+export interface ChatResult {id:string;object:'chat.completion';created:number;model:string;choices:{index:number;message:{role:'assistant';content:string|null;tool_calls?:ToolCall[]};finish_reason:string}[];usage:{prompt_tokens?:number;completion_tokens?:number;total_tokens?:number};}
+export interface ClaudeResult {id:string;type:'message';role:'assistant';model:string;content:(TextBlock|ClaudeToolUse)[];stop_reason:'end_turn'|'max_tokens'|'tool_use'|'stop_sequence'|'refusal'|'pause_turn'|'model_context_window_exceeded';stop_sequence:string|null;usage:{input_tokens?:number;output_tokens?:number};}
+export class CallError extends Error {code:string;diagnostics:Diagnostic[];}
+export function call(model:ModelOption,input:string|ChatInput,key:string,options?:CallOptions):Promise<ChatResult>;
+export function callClaude(model:ModelOption,input:string|ClaudeInput,key:string,options?:CallOptions):Promise<ClaudeResult>;
+export function prepareCall(model:ModelOption,input:string|ChatInput|ClaudeInput,options?:Pick<CallOptions,'runtimeChecks'|'inputTokens'|'overheadTokens'>&{format?:'openai'|'claude'}):{url:string;protocol:import('./enums.js').ApiProtocol;body:Record<string,unknown>;diagnostics:Diagnostic[]};

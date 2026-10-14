@@ -1,4 +1,4 @@
-from typing import TypedDict, NewType, Literal
+from typing import TypedDict, NewType, Literal, Callable
 from .enums import (FeatureStatus,Modality,Preset,ProviderId,Deployment,Country,CommercialUse,FeatureName,UnknownPolicy,FileFormat,Lifecycle,Popularity,Tag,ModelList,LocalApi)
 
 CustomProviderId=NewType("CustomProviderId",str)
@@ -70,3 +70,79 @@ class PickerConfig(TypedDict, total=False):
     filters: Filters
     prefer: Prefer
     ui: UI
+
+
+from threading import Event
+from .enums import ApiProtocol, Role
+class Connection(TypedDict):
+    baseUrl: str
+    protocol: ApiProtocol
+class TextBlock(TypedDict):
+    type: Literal['text']
+    text: str
+class ToolFunction(TypedDict):
+    name: str
+    arguments: str
+class ToolCall(TypedDict):
+    id: str
+    type: Literal['function']
+    function: ToolFunction
+class _ChatMessageOptional(TypedDict,total=False):
+    tool_calls: list[ToolCall]
+    tool_call_id: str
+class ChatMessage(_ChatMessageOptional):
+    role: Role
+    content: str | list[TextBlock] | None
+class _FunctionOptional(TypedDict,total=False):
+    description: str
+class FunctionDefinition(_FunctionOptional):
+    name: str
+    parameters: dict
+class FunctionTool(TypedDict):
+    type: Literal['function']
+    function: FunctionDefinition
+class _ChatOptional(TypedDict,total=False):
+    max_tokens: int
+    max_completion_tokens: int
+    temperature: float
+    top_p: float
+    stop: str | list[str]
+    tools: list[FunctionTool]
+    tool_choice: Literal['auto','none','required'] | dict
+    stream: Literal[False]
+class ChatInput(_ChatOptional):
+    messages: list[ChatMessage]
+class ClaudeToolUse(TypedDict):
+    type: Literal['tool_use']
+    id: str
+    name: str
+    input: dict
+class ClaudeToolResult(TypedDict):
+    type: Literal['tool_result']
+    tool_use_id: str
+    content: str | list[TextBlock]
+class ClaudeMessage(TypedDict):
+    role: Literal[Role.USER,Role.ASSISTANT]
+    content: str | list[TextBlock | ClaudeToolUse | ClaudeToolResult]
+class ClaudeTool(_FunctionOptional):
+    name: str
+    input_schema: dict
+class _ClaudeOptional(TypedDict,total=False):
+    system: str | list[TextBlock]
+    max_tokens: int
+    temperature: float
+    top_p: float
+    top_k: int
+    stop_sequences: list[str]
+    tools: list[ClaudeTool]
+    tool_choice: dict
+    stream: Literal[False]
+class ClaudeInput(_ClaudeOptional):
+    messages: list[ClaudeMessage]
+class CallOptions(TypedDict,total=False):
+    runtime_checks: bool
+    timeout_ms: float
+    input_tokens: int
+    overhead_tokens: int
+    cancel_event: Event
+    on_warning: Callable[[dict],None]

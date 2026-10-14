@@ -9,3 +9,7 @@ byokit.get_models({"filters":{"excludeTags":[byokit.Tag.PRICE_PREMIUM],"lifecycl
 byokit.get_models(byokit.COMPLETE)
 byokit.get_models(byokit.CHINA,{"local":False})
 byokit.get_models({"local":[{"endpoint":"http://localhost:8000/v1","api":byokit.LocalApi.OPEN_AI,"modelId":"my-model"}]})
+
+model = byokit.get_models()[0]
+byokit.call(model, "Hi", "key", {"runtime_checks": False})
+byokit.call_claude(model, {"messages": [{"role": byokit.Role.USER, "content": "Hi"}]}, "key")

@@ -43,3 +43,14 @@ byokit.getModels({local:[{endpoint:'http://localhost:8000/v1',api:byokit.LocalAp
 byokit.getModels('complete');
 // @ts-expect-error unknown local protocol
 byokit.getModels({local:[{endpoint:'http://localhost:8000',api:'vllm'}]});
+
+import * as calls from '@byokit/core/catalog';
+const chosen = calls.getModels({providerIds:[calls.ProviderId.DeepSeek]})[0];
+calls.call(chosen,'Hi','key',{runtimeChecks:false});
+calls.callClaude(chosen,{messages:[{role:calls.Role.User,content:'Hi'}]},'key');
+// @ts-expect-error misspelled request parameter
+calls.call(chosen,{messages:[{role:calls.Role.User,content:'Hi'}],max_toknes:100},'key');
+// @ts-expect-error raw roles must use the public enum
+calls.call(chosen,{messages:[{role:'user',content:'Hi'}]},'key');
+// @ts-expect-error runtime checks must be boolean
+calls.call(chosen,'Hi','key',{runtimeChecks:'false'});

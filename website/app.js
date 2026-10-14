@@ -12,15 +12,16 @@ function render(){try{const config=query(),models=byokit.getModels(modes[mode],c
 for(const button of document.querySelectorAll('[data-mode]'))button.addEventListener('click',()=>{mode=button.dataset.mode;shown=12;for(const b of document.querySelectorAll('[data-mode]')){b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button))}render()});
 for(const id of ['search','tools','premium','local'])$('#'+id).addEventListener('input',()=>{shown=12;render()});$('#more').addEventListener('click',()=>{shown+=24;render()});
 for(const button of document.querySelectorAll('[data-copy]'))button.addEventListener('click',async()=>{const text=$(button.dataset.copy).textContent;try{await navigator.clipboard.writeText(text);button.textContent='Copied';setTimeout(()=>button.textContent=button.dataset.copy==='#query'?'Copy query':'Copy',1800)}catch{button.textContent='Select to copy';const range=document.createRange();range.selectNodeContents($(button.dataset.copy));const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range)}});
-let language='typescript',example='query';
+let language='typescript',example='query',format='openai';
 function renderExample(){
- $('#start-code').textContent=tutorials[example][language];
+ $('#start-code').textContent=tutorials[example==='inference'&&format==='claude'?'claude':example][language];
  const inference=example==='inference';
  $('#example-note').textContent=inference?'Server-side example: set DEEPSEEK_API_KEY in your environment. One call may consume provider credits. Your key is not stored by byokit.':'Catalog queries run offline. No API key or provider request is needed.';
  $('#return-label').textContent=inference?'EXAMPLE GENERATED TEXT':'RETURN (FIRST ENTRY, SELECTED FIELDS)';
- $('#expected-return').textContent=inference?'OK — actual model output varies.':JSON.stringify(byokit.getModels().slice(0,1).map(model=>({provider:model.provider.id,model:model.apiModelId,context:model.limits.context})),null,2);
+ $('#expected-return').textContent=inference?(format==='claude'?'[{ type: "text", text: "OK" }] — actual model output varies.':'OK — actual model output varies.'):JSON.stringify(byokit.getModels().slice(0,1).map(model=>({provider:model.provider.id,model:model.apiModelId,context:model.limits.context})),null,2);
 }
 for(const button of document.querySelectorAll('[data-language]'))button.addEventListener('click',()=>{language=button.dataset.language;for(const b of document.querySelectorAll('[data-language]')){b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button))}renderExample()});
 for(const button of document.querySelectorAll('[data-example]'))button.addEventListener('click',()=>{example=button.dataset.example;for(const b of document.querySelectorAll('[data-example]')){b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button))}renderExample()});
+for(const button of document.querySelectorAll('[data-format]'))button.addEventListener('click',()=>{format=button.dataset.format;for(const b of document.querySelectorAll('[data-format]')){b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button))}renderExample()});
 renderExample();
 render();
