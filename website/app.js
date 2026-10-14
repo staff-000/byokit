@@ -23,5 +23,6 @@ function renderExample(){
 for(const button of document.querySelectorAll('[data-language]'))button.addEventListener('click',()=>{language=button.dataset.language;for(const b of document.querySelectorAll('[data-language]')){b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button))}renderExample()});
 for(const button of document.querySelectorAll('[data-example]'))button.addEventListener('click',()=>{example=button.dataset.example;for(const b of document.querySelectorAll('[data-example]')){b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button))}renderExample()});
 for(const button of document.querySelectorAll('[data-format]'))button.addEventListener('click',()=>{format=button.dataset.format;for(const b of document.querySelectorAll('[data-format]')){b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button))}renderExample()});
+$('#hero-providers').replaceChildren(...byokit.getModels().map(model=>el('span',model.provider.name)));
 renderExample();
 render();

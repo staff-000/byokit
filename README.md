@@ -621,3 +621,9 @@ Architecture and data-flow diagrams: [design document](docs/design.md).
 
 [MIT](LICENSE). Catalog metadata and selected logos come from Models.dev;
 see [third-party notices](THIRD_PARTY_NOTICES.md).
+
+
+Website verification requires GitHub sign-in and publishes successful community
+reports through a signed Actions workflow. Maintainers must first activate the
+[GitHub App/auth service](services/verification/README.md). Provider keys stay in
+the contributor's browser. Model availability remains provider/account-specific.

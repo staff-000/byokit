@@ -172,3 +172,13 @@ GitHub identity, actual evidence and adapter/version details before converting i
 to `catalog/verifications.json`. Maintain provider-specific scope and settings.
 See [model verification](docs/verification.md). Never promote fixtures into call
 reports. Development check outcomes are not shown on the public website.
+
+## Signed-in website contributions
+
+Website calls require GitHub sign-in. Successful catalog-hosted calls submit minimal,
+attributed community reports to a signed GitHub Actions publication workflow. The
+workflow creates the commit and redeploys Pages without a manual model-list edit.
+The contributor identity is authenticated; the model success is contributor-reported,
+not independently tested by the server. No AI key, prompt or output is submitted.
+Manual verification records still require evidence and normal maintainer review.
+See [service setup](services/verification/README.md) and [verification](docs/verification.md).

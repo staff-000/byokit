@@ -4,7 +4,10 @@ import {validateVerifications} from '../packages/core/index.js';
 import catalog from '../packages/core/catalog.js';
 const root=resolve(new URL('..',import.meta.url).pathname),out=resolve(root,'dist/site');
 await mkdir(out,{recursive:true});await cp(resolve(root,'website'),out,{recursive:true});
-await writeFile(resolve(out,'inference.js'),(await readFile(resolve(root,'website/inference.js'),'utf8')).replace('../packages/core/index.js','./lib/core/index.js'));
+await writeFile(resolve(out,'inference.js'),(await readFile(resolve(root,'website/inference.js'),'utf8')).replaceAll('../packages/core/','./lib/core/'));
+const serviceUrl=process.env.BYOKIT_VERIFICATION_API_URL||JSON.parse(await readFile(resolve(root,'website/verification-config.json'),'utf8')).serviceUrl;
+if(serviceUrl){const url=new URL(serviceUrl);if(url.protocol!=='https:'||url.username||url.password||url.search||url.hash)throw new Error('Verification service must use HTTPS without credentials, query, or fragment');}
+await writeFile(resolve(out,'verification-config.json'),JSON.stringify({serviceUrl})+'\n');
 await mkdir(resolve(out,'lib/core'),{recursive:true});
 for(const file of ['index.js','enums.js','catalog.js','call.js','connection.js','sdk.js'])await cp(resolve(root,'packages/core',file),resolve(out,'lib/core',file));
 await mkdir(resolve(out,'assets'),{recursive:true});

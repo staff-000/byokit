@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 1,
+  "id": "2026-10-14T09-58-12-138Z",
+  "startedAt": "2026-10-14T09:58:08.672Z",
+  "completedAt": "2026-10-14T09:58:12.138Z",
+  "commit": "340316f5ac72027a60709279d5e2df3075298757",
+  "sourceDirty": true,
+  "sourceDigest": "8b005080a0a2b079659d933d4997d64b7d6bc5c37328895a8bfeeb94e21da6d2",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "nodeVersion": "v23.7.0",
+  "checks": [
+    {
+      "id": "javascript",
+      "name": "JavaScript tests",
+      "command": [
+        "node",
+        "--test",
+        "--test-reporter=spec",
+        "tests/call.test.mjs",
+        "tests/cli.test.mjs",
+        "tests/conformance.test.mjs",
+        "tests/core.test.mjs",
+        "tests/enums.test.mjs",
+        "tests/import-lifecycle.test.mjs",
+        "tests/local.test.mjs",
+        "tests/publication.test.mjs",
+        "tests/query.test.mjs",
+        "tests/request-examples.test.mjs",
+        "tests/schema.test.mjs",
+        "tests/sdk.test.mjs",
+        "tests/signals.test.mjs",
+        "tests/simple-api.test.mjs",
+        "tests/ui.test.mjs",
+        "tests/website-inference.test.mjs"
+      ],
+      "status": "passed",
+      "durationMs": 1322,
+      "exitCode": 0,
+      "tests": {
+        "total": 85,
+        "passed": 85
+      },
+      "outputSha256": "39d968fc0a4a02b3480c1101629e195912691f56174363528fc435473b8b2b41"
+    },
+    {
+      "id": "python",
+      "name": "Python tests",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "packages/python/tests",
+        "-v"
+      ],
+      "status": "passed",
+      "durationMs": 321,
+      "exitCode": 0,
+      "tests": {
+        "total": 16,
+        "passed": 16
+      },
+      "outputSha256": "cedea8cc0a2d4f0a8d769228edd2eb930dcaeac0697ee7bd8bcedd85a3b3a48a"
+    },
+    {
+      "id": "typescript",
+      "name": "TypeScript types",
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "status": "passed",
+      "durationMs": 456,
+      "exitCode": 0,
+      "outputSha256": "d601c28abd2d19809b0ed1aa75a30bcac8df46f32550187f6075b16aea41f403"
+    },
+    {
+      "id": "python-types",
+      "name": "Python types",
+      "command": [
+        "npm",
+        "run",
+        "typecheck:python"
+      ],
+      "status": "passed",
+      "durationMs": 545,
+      "exitCode": 0,
+      "outputSha256": "06eea4eb5c4a0f9d89771ef5316d6c6641b0c245c2084f66dd700d63319741a7"
+    },
+    {
+      "id": "catalog",
+      "name": "Catalog and budget check",
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "status": "passed",
+      "durationMs": 228,
+      "exitCode": 0,
+      "outputSha256": "464eca1e366b6533d52829899784f4172d4723f4613e93992145d993b2e347ea"
+    },
+    {
+      "id": "budget",
+      "name": "Strict task budget check",
+      "command": [
+        "npm",
+        "run",
+        "check:budget"
+      ],
+      "status": "passed",
+      "durationMs": 159,
+      "exitCode": 0,
+      "outputSha256": "a02f7c198b4a6193494e25845f6f2af59868addf72cc78f74b76c8f5e6bce3e0"
+    },
+    {
+      "id": "sample-build",
+      "name": "Sample catalog build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "status": "passed",
+      "durationMs": 187,
+      "exitCode": 0,
+      "outputSha256": "c9b7431cefca1a7007261e0c47c5f1e7e79e4f7014ecfa3eb069a2ec5196cfb4"
+    },
+    {
+      "id": "website-build",
+      "name": "Static website build",
+      "command": [
+        "npm",
+        "run",
+        "site:build"
+      ],
+      "status": "passed",
+      "durationMs": 186,
+      "exitCode": 0,
+      "outputSha256": "ff8b55adbf6dd093eb5478f3b45fc52c6917031da03a2a903eaeecde6f2d0a7c"
+    },
+    {
+      "id": "website-browser",
+      "name": "Website Chrome smoke",
+      "command": [
+        "node",
+        "scripts/site-smoke.mjs"
+      ],
+      "status": "not-run",
+      "durationMs": 0,
+      "exitCode": null
+    }
+  ]
+}

@@ -368,3 +368,16 @@ are fenced by cancellation/deadline; Python callbacks are synchronous and should
 read already-available keys. Accessor failures are reported without raw errors.
 Requests snapshot model/input settings before credential resolution. Explicit
 custom model IDs retain the provider URL and use unknown fit metadata.
+
+## Website uses the library
+
+The explorer and hero provider list query the bundled `getModels()` API. Browser
+verification uses the same `openAI()` client, adapters and request validator as
+applications. The website imports provider endpoints from `connection.js`; it
+has no separately maintained endpoint list. Display labels and documentation links
+remain website concerns.
+
+Catalogs are pinned for reproducible offline queries. Catalog refresh + application
+release updates model options without changes to model-list code. An application
+must consume an updated catalog/package; this does not claim live background
+refresh or account-level availability guarantees.

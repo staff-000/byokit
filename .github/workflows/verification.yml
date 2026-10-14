@@ -1,0 +1,31 @@
+name: Publish authenticated model verification
+on:
+  repository_dispatch:
+    types: [byokit-verification]
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.record.outputs.changed }}
+      ref: ${{ steps.record.outputs.ref }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Validate signed report and commit catalog update
+        id: record
+        run: node scripts/publish-verification.mjs
+        env:
+          BYOKIT_PUBLICATION_SECRET: ${{ secrets.BYOKIT_PUBLICATION_SECRET }}
+  deploy:
+    needs: record
+    if: needs.record.outputs.changed == 'true'
+    uses: ./.github/workflows/pages.yml
+    with:
+      ref: ${{ needs.record.outputs.ref }}

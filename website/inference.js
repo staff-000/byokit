@@ -1,15 +1,11 @@
 import {openAI,prepareCall,ApiProtocol} from '../packages/core/index.js';
 // Verification UI: shared library adapters, browser-local records, no stored credentials.
+import {providerConnections} from '../packages/core/connection.js';
+import catalog from '../packages/core/catalog.js';
+const docs={openai:'https://developers.openai.com/api/reference',anthropic:'https://platform.claude.com/docs/en/api/messages/create',google:'https://ai.google.dev/api/generate-content',openrouter:'https://openrouter.ai/docs/api/api-reference/chat/send-chat-completion-request',deepseek:'https://api-docs.deepseek.com/api/create-chat-completion',mistral:'https://docs.mistral.ai/api',groq:'https://console.groq.com/docs/api-reference',zhipuai:'https://docs.bigmodel.cn',siliconflow:'https://docs.siliconflow.cn/docs/api/chat-completions-post'};
+const protocolNames={[ApiProtocol.OpenAI]:'chat',[ApiProtocol.Claude]:'anthropic',[ApiProtocol.Gemini]:'gemini'};
 export const ProviderApi=Object.freeze({
- openai:{name:'OpenAI',base:'https://api.openai.com/v1',protocols:['chat'],docs:'https://developers.openai.com/api/reference'},
- anthropic:{name:'Anthropic',base:'https://api.anthropic.com/v1',protocols:['anthropic'],docs:'https://platform.claude.com/docs/en/api/messages/create'},
- google:{name:'Google Gemini',base:'https://generativelanguage.googleapis.com/v1beta',protocols:['gemini'],docs:'https://ai.google.dev/api/generate-content'},
- openrouter:{name:'OpenRouter',base:'https://openrouter.ai/api/v1',protocols:['chat'],docs:'https://openrouter.ai/docs/api/api-reference/chat/send-chat-completion-request'},
- deepseek:{name:'DeepSeek',base:'https://api.deepseek.com/v1',protocols:['chat'],docs:'https://api-docs.deepseek.com/api/create-chat-completion'},
- mistral:{name:'Mistral',base:'https://api.mistral.ai/v1',protocols:['chat'],docs:'https://docs.mistral.ai/api'},
- groq:{name:'Groq',base:'https://api.groq.com/openai/v1',protocols:['chat'],docs:'https://console.groq.com/docs/api-reference'},
- zhipuai:{name:'Zhipu AI',base:'https://open.bigmodel.cn/api/paas/v4',protocols:['chat'],docs:'https://docs.bigmodel.cn'},
- siliconflow:{name:'SiliconFlow',base:'https://api.siliconflow.cn/v1',protocols:['chat'],docs:'https://docs.siliconflow.cn/docs/api/chat-completions-post'},
+ ...Object.fromEntries(Object.entries(providerConnections).map(([id,connection])=>[id,{name:catalog.providers.find(provider=>provider.id===id)?.name||id,base:connection.baseUrl,protocols:[protocolNames[connection.protocol]],docs:docs[id]}])),
  local:{name:'Local',protocols:['chat','ollama']},
 });
 export const ProtocolNames={responses:'OpenAI Responses',chat:'OpenAI-compatible Chat Completions',anthropic:'Anthropic Messages',gemini:'Gemini GenerateContent',ollama:'Ollama native Chat'};

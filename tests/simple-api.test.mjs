@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {spawnSync} from 'node:child_process';
+import {pythonModels} from './python-fixture.mjs';
 import * as byokit from '@byokit/core/catalog';
 const asOf='2026-10-13T13:00:00Z';
 const fixture=()=>JSON.parse(readFileSync('spec/fixtures/catalog.json'));
@@ -44,6 +44,6 @@ test('local URL/model entries bypass hosted metadata filters and never fabricate
 test('simplified list modes and appended local entries agree with Python',()=>{
  const d=JSON.parse(readFileSync('catalog/catalog.json'));
  const queries=['complete','china','non-china',{asOf},{asOf,list:'complete',limit:5,local:[{endpoint:'http://localhost:8080/v1',modelId:'one'}]},{asOf,local:false,filters:{lifecycle:['UNCERTAIN']}}];
- const run=spawnSync('python3',['packages/python/tests/conformance_runner.py','models'],{input:JSON.stringify({data:d,queries}),encoding:'utf8',maxBuffer:16*1024*1024});
+ const run=pythonModels({data:d,queries});
  assert.equal(run.status,0,run.stderr);assert.deepEqual(JSON.parse(run.stdout),queries.map(q=>new byokit.Catalog(d).getModels(q)));
 });

@@ -1,105 +1,55 @@
-# Model inference verification
+# Model call verification
 
-Use [the verification page](https://staff-000.github.io/byokit/verification.html)
-to answer one question: **can these settings make an actual model call?**
+The [verification page](https://staff-000.github.io/byokit/verification.html) uses
+byokit to display the complete model list and run explicit inference checks.
+GitHub sign-in is required. Browsing and copied code do not require sign-in.
 
-## How to verify
+## Use the page
 
-1. Browse the complete LIVE offering list, including provider, model ID, context
-   and tags. Search or filter by provider, then click **Verify** on a model.
-2. Enter that provider's API key. The selected provider and exact request
-   destination are displayed. For Local, enter the server URL and served model ID.
-3. Choose the API protocol. OpenAI offers Responses or Chat Completions; other
-   providers use their documented native or compatible endpoint.
-4. Optionally change the prompt and output token limit. The default prompt is
-   `Reply with exactly: OK`, with a 256-token output limit.
-5. Click **Verify model**. This sends one real, non-streaming inference request
-   directly from your browser. It may consume provider quota. Nothing is sent
-   while you browse, enter a key, or change settings.
-6. A successful nonempty text response is displayed, and a success record is
-   saved in this browser. Failure, cancellation, timeout, or an empty response
-   never creates a successful record. No automatic retries or model substitutions
-   occur. The response does not need to match the word OK; success means visible
-   text generation worked with the chosen settings.
+1. Sign in with GitHub. The website verifies your identity through the auth service.
+2. Select a model and review its tags, provider, endpoint and current settings.
+3. Enter that provider's API key. Your key stays in page memory and goes directly
+   to the provider; refreshing, signing out or leaving clears it.
+4. Click **Verify model**. This small text-generation request may use your quota.
+5. A successful hosted-model call saves a minimal browser record and submits an
+   attributed community report. GitHub Actions validates it, commits/pushes the
+   catalog update, and redeploys the website. The page distinguishes a successful
+   call from a submitted/published contribution.
 
-## Copy the API call
+Local-server checks stay in the browser. Custom IDs or settings that do not match
+an existing catalog offering cannot be published as verification of that offering.
+Failures do not create success records. No provider retry, model substitution or
+quota-consuming test occurs automatically.
 
-Expand **Copy this API call** for JavaScript/TypeScript, Python, or cURL that
-matches the selected endpoint, model ID, protocol, prompt and output limit.
-Examples use an `API_KEY` environment variable and never include the entered key.
-Displaying or copying code makes no request. The code prints the provider’s native
-JSON response. Node.js/Python examples reject redirects to protect credential
-destinations. The README also has complete byokit-query and DeepSeek inference
-examples.
+## Privacy and identity
 
-## API keys and privacy
+AI keys, authentication headers, prompts and generated text never enter GitHub,
+public reports or the verification service. Copies use environment-key callbacks.
+Your public GitHub handle is recorded as the contributor. OAuth access tokens stay
+server-side transiently; the frontend uses a short-lived memory-only session token.
 
-Keys stay only in this page's memory. They are sent in authentication headers
-only to the selected provider, never to a byokit backend, URL, record, log, or
-browser storage. Refreshing/leaving the page clears the key. Switching providers
-or changing a local endpoint clears the key. **Clear API key** removes it now.
-Responses are rendered as text. Prompts and generated text are not persisted.
-The page has no analytics and no server proxy that receives your credentials.
-The provider receives your key and prompt according to its own API policies.
+Signed reports contain only model/offering IDs, protocol, timestamp, latency and
+output budget. Identity comes from GitHub, never a manually typed username.
+Reports describe one contributor's successful call under those settings. They do
+not prove every account has access or override provider retirement metadata.
+Browser-reported inference success cannot be independently proven without moving
+credentials/inference to a server, which this design deliberately avoids.
 
-## What a success record contains
+## Website implementation
 
-- Exact offering/provider/model ID and provider-returned model ID.
-- API protocol and endpoint, output limit, checked time, and latency.
-- Numeric token usage when the provider returns it.
-- `textGeneration` as the verified check and `this-browser` as its scope.
+Discovery/filtering and the hero provider list call `byokit.getModels()`. Inference
+calls `byokit.openAI(...).chat.completions.create(...)`. Provider URLs come from the
+library's shared connection map, not another website-maintained list. JavaScript
+and Python copy examples use SDK-shaped clients; cURL shows native HTTP.
 
-Changing the key, protocol, model, or other settings requires a new check. A saved
-record is evidence of a past call; it does not prove current account access, all
-model capabilities, accurate tags, or continued availability. Tags remain catalog
-metadata until those capabilities are separately tested.
+The homepage also demonstrates `byokit.claude(...).messages.create(...)`.
+Cancellation and the 90-second inference deadline remain active. Browser CORS or
+local-network restrictions can prevent a call; no proxy receives the user's key.
 
-Records are stored locally under `byokit.inference-verifications.v1`, with a
-200-record limit. If storage is unavailable, they stay in memory for the visit.
-Use **Export records** to save a JSON file, or **Clear records** to remove them.
-Exports contain endpoint addresses; review them before sharing private local
-server details. The export includes no credentials, prompt, or generated text.
+## Maintainer activation
 
-## Shared contributor reports
-
-GitHub Pages has no shared write backend. Browser records are **not automatically
-published** or treated as authenticated contributor claims. To contribute, export
-and review a real result, add your contributor identity and reviewable evidence,
-then submit the canonical report shape described in
-[CONTRIBUTING.md](../CONTRIBUTING.md). Reports in
-[catalog/verifications.json](../catalog/verifications.json) are reviewed separately.
-
-## Connection failures
-
-Some providers or local servers block direct browser requests through CORS or
-local-network permissions. Such failures do not establish that a model itself is
-unavailable; the page records no successful verification. Allow your site origin
-in the local server configuration or run the example from an allowed origin.
-Provider authentication, permission, unavailable model, rate limit, and quota
-failures are displayed without exposing a key in the error message.
-
-Reasoning models may spend a small output limit on hidden reasoning and produce
-no visible text. Increase the limit explicitly if you want to try again. Calls
-have a 90-second timeout and a Cancel button. Cancellation cannot refund consumed
-quota.
-
-The website verification flow invokes the stateless library calls. Shared adapters
-live in `packages/core/call.js`; `website/inference.js` adds verification-specific
-record formatting. Authentication headers are transient; no credential store is
-created by the call layer.
-Sources: [OpenAI](https://developers.openai.com/api/reference),
-[Anthropic](https://platform.claude.com/docs/en/api/messages/create),
-[Gemini](https://ai.google.dev/api/generate-content),
-[OpenRouter](https://openrouter.ai/docs/api/api-reference/chat/send-chat-completion-request),
-[DeepSeek](https://api-docs.deepseek.com/api/create-chat-completion),
-[Mistral](https://docs.mistral.ai/api), [Groq](https://console.groq.com/docs/api-reference),
-[Zhipu](https://docs.bigmodel.cn),
-[SiliconFlow](https://docs.siliconflow.cn/docs/api/chat-completions-post),
-[Ollama](https://docs.ollama.com/api/chat).
-
-Internal checks and run records remain in
-[the development tracker](development-verification.md); they are not presented
-as model verification on the website.
-
-JavaScript and Python copied examples use SDK-shaped clients; cURL shows the equivalent
-native HTTP request. The homepage also demonstrates Claude-style `client.messages.create()` responses.
+[GitHub App and auth-service setup](../services/verification/README.md) is required
+before signed-in verification can operate on the public site. Missing configuration
+shows a clear unavailable state and blocks anonymous inference/publication.
+Catalog queries remain offline and use the pinned release snapshot. Refresh the
+catalog and release the application to update model choices without rewriting code.
