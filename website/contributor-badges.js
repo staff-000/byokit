@@ -10,8 +10,8 @@ export function contributorBadges(reports){
   const group=groups.get(identity);group.records.set(report.id,report);
  }
  return [...groups.values()].map(group=>{
-  const records=[...group.records.values()].sort((a,b)=>a.checkedAt.localeCompare(b.checkedAt)),latest=[...records].sort((a,b)=>{const submitted=r=>Date.parse(r.notes?.match(/submitted ([^;]+);/)?.[1]||r.checkedAt);return submitted(a)-submitted(b)}).at(-1),login=latest.contributor.slice(7),path=`badges/${group.identity}.svg`;
-  return {id:'model-verifier',name:'Model Verifier',identity:group.identity,login,profileUrl:`https://github.com/${login}`,firstVerifiedAt:records[0].checkedAt,latestVerifiedAt:latest.checkedAt,verifiedModels:new Set(records.map(r=>r.offeringId)).size,verificationCount:records.length,evidence:latest.evidence,badgePath:path,badgeUrl:site+path,recognitionUrl:site+`verification.html#contributor-${group.identity}`};
+  const records=[...group.records.values()].sort((a,b)=>Date.parse(a.checkedAt)-Date.parse(b.checkedAt)),latest=[...records].sort((a,b)=>{const submitted=r=>Date.parse(r.notes?.match(/submitted ([^;]+);/)?.[1]||r.checkedAt);return submitted(a)-submitted(b)}).at(-1),login=latest.contributor.slice(7),path=`badges/${group.identity}.svg`;
+  return {id:'model-verifier',name:'Model Verifier',identity:group.identity,login,profileUrl:`https://github.com/${login}`,firstVerifiedAt:records[0].checkedAt,latestVerifiedAt:records.at(-1).checkedAt,verifiedModels:new Set(records.map(r=>r.offeringId)).size,verificationCount:records.length,evidence:latest.evidence,badgePath:path,badgeUrl:site+path,recognitionUrl:site+`verification.html#contributor-${group.identity}`};
  }).sort((a,b)=>a.login.toLowerCase().localeCompare(b.login.toLowerCase()));
 }
 export function badgeMarkdown(badge){return `[![byokit Model Verifier — @${badge.login}](${badge.badgeUrl})](${badge.recognitionUrl})`;}

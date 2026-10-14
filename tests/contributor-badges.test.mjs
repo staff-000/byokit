@@ -11,7 +11,7 @@ test('failed, local, staging and non-text checks cannot award badges',()=>{
 test('duplicates and renamed contributors retain one stable award; provider offerings count separately',()=>{
  const first=record(),second=record({id:'website:123:report-two',offeringId:'openrouter/test',checkedAt:'2026-01-02T00:00:00Z',contributor:'github:Renamed'});
  const badges=contributorBadges([first,first,second]);assert.equal(badges.length,1);assert.equal(badges[0].verificationCount,2);assert.equal(badges[0].verifiedModels,2);assert.equal(badges[0].login,'Renamed');assert.equal(badges[0].identity,'github-123');
- const delayed=record({id:'website:123:report-three',contributor:'github:Newest',notes:'submitted 2026-01-04T00:00:00Z; Provider call ran in browser.'});assert.equal(contributorBadges([second,delayed])[0].login,'Newest');
+ const delayed=record({id:'website:123:report-three',contributor:'github:Newest',notes:'submitted 2026-01-04T00:00:00Z; Provider call ran in browser.'});assert.equal(contributorBadges([second,delayed])[0].login,'Newest');assert.equal(contributorBadges([second,delayed])[0].latestVerifiedAt,second.checkedAt);
 });
 test('generated SVG contains only safe public text and no external resources or executable markup',()=>{
  const [badge]=contributorBadges([record()]),svg=contributorBadgeSvg(badge);assert.ok(svg.includes('@Verifier'));assert.ok(svg.includes('Model Verifier'));assert.ok(!/<script|onload=|href=|foreignObject/i.test(svg));assert.throws(()=>contributorBadgeSvg({...badge,login:'<script>'}));assert.deepEqual(contributorBadges([record({contributor:'github:../evil'})]),[]);

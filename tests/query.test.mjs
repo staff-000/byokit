@@ -4,16 +4,20 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
 import {Catalog,validateCatalog,verificationSummary} from '../packages/core/index.js';
-import {getModels} from '@byokit/core/catalog';
+import bundled,{getModels} from '@byokit/core/catalog';
 const fixture=()=>JSON.parse(readFileSync('spec/fixtures/catalog.json'));
 const asOf='2026-10-12T12:00:00Z';
 const report=(fields={})=>({id:'alice-small',offeringId:'test/small',contributor:'github:alice',checkedAt:'2026-10-11T12:00:00Z',result:'passed',checks:['textGeneration'],adapter:'fixture@1.0',evidence:'https://github.com/example/test/blob/commit/evidence.md',...fields});
 
 test('simple query returns a bounded flat list with provider/model metadata and no invented reports',()=>{
- const list=getModels({providerIds:['deepseek'],limit:1});assert.equal(list.length,1);
+ const data=structuredClone(bundled);data.verifications=[];const catalog=new Catalog(data);
+ const list=catalog.getModels({providerIds:['deepseek'],limit:1});assert.equal(list.length,1);
  assert.equal(list[0].provider.id,'deepseek');assert.ok(list[0].apiModelId);assert.ok(list[0].model);
  assert.equal(list[0].verification.status,'unverified');assert.deepEqual(list[0].verification.records,[]);
- assert.deepEqual(getModels({local:false,filters:{verified:true}}),[]);assert.throws(()=>getModels({limit:0}));
+ assert.deepEqual(catalog.getModels({local:false,filters:{verified:true}}),[]);assert.throws(()=>getModels({limit:0}));
+});
+test('bundled provider results preserve real published contributor reports',()=>{
+ const asOf=new Date().toISOString();for(const model of getModels({providerIds:['deepseek'],asOf}))assert.deepEqual(model.verification,verificationSummary(bundled,model.id,{asOf}));
 });
 test('README example matches the bundled catalog',()=>{
  const run=spawnSync('node',['examples/query.mjs'],{encoding:'utf8'});assert.equal(run.status,0,run.stderr);

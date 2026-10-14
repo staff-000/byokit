@@ -3,7 +3,7 @@ import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {createHash} from 'node:crypto';
 import {validateCatalog,deriveTags} from '../packages/core/index.js';
-const [source,...args]=process.argv.slice(2);if(!source)throw new Error('Usage: node scripts/import-catalog.mjs snapshot.json [--out directory]');
+const [source,...args]=process.argv.slice(2);if(!source)throw new Error('Usage: node scripts/import-catalog.mjs snapshot.json [--out directory] [--verifications file]');
 const i=args.indexOf('--out'),out=resolve(i>=0?args[i+1]:'catalog');
 const observedIndex=args.indexOf('--observed-at');
 let observedAt=observedIndex>=0?args[observedIndex+1]:undefined;
@@ -56,7 +56,9 @@ for(const [collection,allowed] of [['models',['origin','openWeights','commercial
  }
 }
 for(const o of catalog.offerings)o.tags=deriveTags(o,catalog.models.find(m=>m.id===o.modelId));
-catalog.verifications=JSON.parse(await readFile(new URL('../catalog/verifications.json',import.meta.url),'utf8'));
+const verificationIndex=args.indexOf('--verifications');
+const verificationFile=verificationIndex>=0?resolve(args[verificationIndex+1]):new URL('../catalog/verifications.json',import.meta.url);
+catalog.verifications=JSON.parse(await readFile(verificationFile,'utf8'));
 const errors=validateCatalog(catalog);if(errors.length)throw new Error(errors.join('; '));
 await mkdir(out,{recursive:true});
 const destination=resolve(out,'catalog.json');
