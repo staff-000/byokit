@@ -1,1 +1,15 @@
-[]
+[
+  {
+    "id": "website:249984446:a57030b3-288a-4810-9276-132b08a527e3",
+    "offeringId": "deepseek/deepseek-flash",
+    "contributor": "github:staff-000",
+    "checkedAt": "2026-10-14T12:18:43.377Z",
+    "result": "passed",
+    "checks": [
+      "textGeneration"
+    ],
+    "adapter": "byokit-website@1",
+    "evidence": "https://github.com/staff-000/byokit/issues/2",
+    "notes": "Community-reported successful chat call. Output budget 256; latency 896 ms. GitHub author ID 249984446; submitted 2026-10-14T12:19:01Z; Provider call ran in the contributor’s browser."
+  }
+]
