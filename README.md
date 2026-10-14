@@ -626,5 +626,7 @@ see [third-party notices](THIRD_PARTY_NOTICES.md).
 Anyone can [test a model on the website](https://staff-000.github.io/byokit/verification.html)
 using their own API key. After success, **Share verification on GitHub** opens a
 prefilled issue. Submit it with your GitHub account; Actions commits the community
-report and updates the website. No separate sign-in service is needed. Keys go only
+report and updates the website. Your first published successful report earns a
+**Model Verifier** badge you can display in your GitHub README. No separate sign-in
+service is needed. Keys go only
 to the provider. See [verification workflow and privacy](docs/verification.md).

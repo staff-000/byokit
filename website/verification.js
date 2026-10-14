@@ -1,3 +1,4 @@
+import {contributorBadges,badgeMarkdown} from './contributor-badges.js';
 import {createReport,issueUrl,PublicationTracker} from './verification-report.js';
 import catalog,* as byokit from './lib/core/catalog.js';
 import {requestExample} from './request-examples.js';
@@ -7,10 +8,10 @@ let activeReport=null,publishedReports=[];
 function publicationStatus(message){$('#publication-status').textContent=message;}
 const tracker=new PublicationTracker(reports=>{
  const errors=byokit.validateVerifications(reports,catalog);if(errors.length)throw new Error('Invalid published verification records.');
- publishedReports=reports;renderModels();
+ publishedReports=reports;renderModels();renderContributors();
 });
 function trackPublication(){if(!activeReport)return;tracker.start(activeReport.operationId,(state,record)=>{
- if(state==='published'){publicationStatus(`Published: community verified by ${record.contributor.replace('github:','@')} on ${new Date(record.checkedAt).toLocaleDateString()}.`);$('#check-publication').hidden=true;}
+ if(state==='published'){publicationStatus(`Published: community verified by ${record.contributor.replace('github:','@')} on ${new Date(record.checkedAt).toLocaleDateString()}.`);$('#check-publication').hidden=true;const badge=contributorBadges(publishedReports).find(b=>b.login.toLowerCase()===record.contributor.slice(7).toLowerCase());if(badge){$('#earned-badge').href=badge.recognitionUrl;$('#earned-badge-image').src='./'+badge.badgePath;$('#earned-badge').hidden=false;publicationStatus($('#publication-status').textContent+' Model Verifier badge earned!');}}
  else publicationStatus(state==='unavailable'?'Publication feed is unavailable. Check again later.':state==='pending'?'Publication is not confirmed yet. Submit the issue on GitHub, or check its workflow and try Check publication.':'Submit the issue on GitHub. Waiting for it to appear on the website…');
 },activeReport.offeringId);}
 $('#share-verification').addEventListener('click',()=>{publicationStatus('The GitHub form is open. Submit new issue there to share your report.');$('#check-publication').hidden=false;trackPublication()});
@@ -19,10 +20,10 @@ const storageKey='byokit.inference-verifications.v1';let records=[],storageAvail
 const models=byokit.getModels(byokit.COMPLETE);let selected=models[0],shown=40,revision=0,controller=null,busy=false,requestLanguage='javascript';
 function settings(){const local=!!selected.local;return {offeringId:selected.id,providerId:selected.providerId,modelId:local?$('#local-model').value.trim():selected.apiModelId,endpoint:local?$('#endpoint').value.trim():undefined,protocol:$('#protocol').value,prompt:$('#prompt').value,maxTokens:Number($('#max-tokens').value)}}
 function status(text,kind){$('#call-status').textContent=text;$('#call-status').dataset.state=kind||''}
-function invalidate(){revision++;controller?.abort();busy=false;$('#verify').disabled=false;tracker.stop();activeReport=null;$('#share-verification').hidden=true;$('#check-publication').hidden=true;publicationStatus('');$('#cancel').hidden=true;$('#response-text').hidden=true;status('Settings changed. Verify this configuration to check it.');}
+function invalidate(){revision++;controller?.abort();busy=false;$('#verify').disabled=false;tracker.stop();activeReport=null;$('#share-verification').hidden=true;$('#check-publication').hidden=true;publicationStatus('');$('#earned-badge').hidden=true;$('#cancel').hidden=true;$('#response-text').hidden=true;status('Settings changed. Verify this configuration to check it.');}
 function renderRequest(){try{$('#request-code').textContent=requestExample(settings(),requestLanguage,{authenticated:selected.providerId!=='local'||!!$('#api-key').value.trim()})}catch{$('#request-code').textContent='Complete valid model settings to see the request.'}}
 function destination(){renderRequest();try{$('#destination').textContent=requestFor({...settings(),prompt:'check'},'display-only').url}catch{$('#destination').textContent=selected.local?'Enter your server URL and model ID.':ProviderApi[selected.providerId]?.base||'Unsupported provider'}}
-function select(model){const changedProvider=selected?.providerId!==model.providerId;invalidate();selected=model;if(changedProvider)$('#api-key').value='';$('#selected-name').textContent=model.name;$('#selected-id').textContent=model.id;const api=ProviderApi[model.providerId];$('#protocol').replaceChildren(...(api?.protocols||[]).map(p=>{const option=el('option',ProtocolNames[p]);option.value=p;return option}));$('#local-fields').hidden=!model.local;$('#key-optional').textContent=model.local?'(optional)':'';$('#provider-docs').hidden=!api?.docs;if(api?.docs)$('#provider-docs').href=api.docs;destination();status('Ready to verify. No call has been made.');}
+function select(model){const changedProvider=selected?.providerId!==model.providerId;invalidate();selected=model;if(changedProvider)$('#api-key').value='';$('#verify').textContent=model.local?'Verify local model ↗':'Verify model · earn a badge ↗';$('#badge-hint').textContent=model.local?'Local checks stay private. Publish a hosted-model report to earn a badge.':'Earn a Model Verifier badge: verify a hosted model, share the success on GitHub, and receive your badge after publication.';$('#selected-name').textContent=model.name;$('#selected-id').textContent=model.id;const api=ProviderApi[model.providerId];$('#protocol').replaceChildren(...(api?.protocols||[]).map(p=>{const option=el('option',ProtocolNames[p]);option.value=p;return option}));$('#local-fields').hidden=!model.local;$('#key-optional').textContent=model.local?'(optional)':'';$('#provider-docs').hidden=!api?.docs;if(api?.docs)$('#provider-docs').href=api.docs;destination();status('Ready to verify. No call has been made.');}
 function renderModels(){
  const search=$('#model-search').value.trim().toLowerCase(),provider=$('#provider-filter').value,only=$('#verified-only').checked;
  const filtered=models.filter(m=>(!provider||m.providerId===provider)&&(!search||[m.name,m.apiModelId,m.provider.name,...m.tags,...m.model.tags].join(' ').toLowerCase().includes(search))&&(!only||records.some(r=>r.offeringId===m.id)));
@@ -40,21 +41,36 @@ function renderModels(){
  $('#models').replaceChildren(...rows);if(!rows.length){const tr=el('tr'),td=el('td','No matching models. Change your search or filter.','empty');td.colSpan=3;tr.append(td);$('#models').append(tr)}
  $('#paging-note').textContent=`Showing ${Math.min(shown,filtered.length)} of ${filtered.length} entries.`;$('#show-more').hidden=shown>=filtered.length;
 }
+function renderContributors(){
+ const list=$('#contributor-list');list.replaceChildren();const badges=contributorBadges(publishedReports);
+ if(!badges.length){list.append(el('p','Be the first to earn a Model Verifier badge by publishing a successful model check.','fine'));return;}
+ for(const badge of badges){
+  const card=el('article',undefined,'contributor-card');card.id='contributor-'+badge.identity;
+  const profile=el('a','@'+badge.login,'contributor-name');profile.href=badge.profileUrl;profile.target='_blank';profile.rel='noopener noreferrer';
+  const image=el('img');image.src='./'+badge.badgePath;image.alt=`byokit Model Verifier — @${badge.login}`;image.loading='lazy';
+  const evidence=el('a','View verification ↗','text-link');evidence.href=badge.evidence;evidence.target='_blank';evidence.rel='noopener noreferrer';
+  const copy=el('button','Copy badge Markdown','small-button');copy.type='button';copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(badgeMarkdown(badge));copy.textContent='Copied'}catch{code.hidden=false;copy.textContent='Select Markdown below'}});
+  const code=el('code',badgeMarkdown(badge),'badge-markdown');code.hidden=true;
+  const actions=el('div',undefined,'record-actions');actions.append(evidence,copy);
+  card.append(profile,image,el('p',`${badge.verifiedModels} ${badge.verifiedModels===1?'model':'models'} verified · first contribution ${new Date(badge.firstVerifiedAt).toLocaleDateString()}`,'fine'),actions,code);list.append(card);
+ }
+ const target=window.location.hash.slice(1);if(target.startsWith('contributor-'))document.getElementById(target)?.scrollIntoView({block:'start'});
+}
 function renderRecords(){const list=$('#records');list.replaceChildren();if(!records.length)list.append(el('div','No successful inference calls recorded in this browser yet.','report'));for(const r of records.slice(0,30)){const card=el('article',undefined,'report');card.append(el('strong',r.offeringId),el('span','Passed','badge passed'),el('p',`${r.checkedAt} · ${ProtocolNames[r.protocol]||r.protocol} · ${r.latencyMs} ms`),el('code',`${r.modelId} · max output ${r.maxTokens}`));if(r.returnedModel!==r.modelId)card.append(el('p',`Provider returned model: ${r.returnedModel}`));list.append(card)}$('#export-records').disabled=!records.length;$('#clear-records').disabled=!records.length;$('#storage-note').textContent=storageAvailable?'Records stay in this browser until you clear or export them.':'Browser storage is unavailable. Records stay in memory for this visit; export them before leaving.';}
 $('#verify-form').addEventListener('submit',async event=>{
  event.preventDefault();if(busy)return;
- const captured=settings(),key=$('#api-key').value,id=++revision;busy=true;controller=new AbortController();$('#verify').disabled=true;$('#cancel').hidden=false;$('#response-text').hidden=true;
- tracker.stop();activeReport=null;$('#share-verification').hidden=true;$('#check-publication').hidden=true;publicationStatus('');
+ const captured=settings(),key=$('#api-key').value.trim(),id=++revision;busy=true;controller=new AbortController();$('#verify').disabled=true;$('#cancel').hidden=false;$('#response-text').hidden=true;
+ tracker.stop();activeReport=null;$('#share-verification').hidden=true;$('#check-publication').hidden=true;publicationStatus('');$('#earned-badge').hidden=true;
  try{
   requestFor(captured,key);
   status('Calling the selected provider…','checking');const result=await verifyInference(captured,key,{signal:controller.signal});if(id!==revision)return;
   const record=successRecord(captured,result,key);records=[record,...records].slice(0,200);try{localStorage.setItem(storageKey,JSON.stringify(records))}catch{storageAvailable=false}
   $('#response-text').textContent=result.text;$('#response-text').hidden=false;status(`Call succeeded in ${result.latencyMs} ms. Recorded ${storageAvailable?'in this browser':'in memory for this visit'}.`,'success');renderRecords();renderModels();
   if(captured.providerId!=='local'){
-   try{activeReport=createReport(captured,result,record.id,key);$('#share-verification').href=issueUrl(activeReport);$('#share-verification').hidden=false;publicationStatus('Share this success through GitHub to add a public community verification.');}
+   try{activeReport=createReport(captured,result,record.id,key);$('#share-verification').href=issueUrl(activeReport);$('#share-verification').hidden=false;publicationStatus('Your call succeeded! Share the report on GitHub to earn your Model Verifier badge after publication.');}
    catch{publicationStatus('The call succeeded, but its report cannot be shared. Your private data was not submitted.');}
   }else publicationStatus('Local-server checks stay in this browser and are not published.');
- }catch(e){if(id===revision){status(e.code==='NETWORK_ERROR'?'The provider could not be reached. Browser/network restrictions may prevent this call. Copy the SDK example to try it locally.':e.message,'error')}}
+ }catch(e){if(id===revision){status(e.code==='PROVIDER_ERROR'&&e.message.includes('HTTP 401')?`${ProviderApi[captured.providerId]?.name||'The selected provider'} rejected this API key (HTTP 401). Use a key issued by this provider and check that it is active. Your key remains private.`:e.code==='NETWORK_ERROR'?'The provider could not be reached. Browser/network restrictions may prevent this call. Copy the SDK example to try it locally.':e.message,'error')}}
  finally{if(id===revision){busy=false;$('#verify').disabled=false;$('#cancel').hidden=true}}
 });
 for(const button of document.querySelectorAll('[data-request-language]'))button.addEventListener('click',()=>{requestLanguage=button.dataset.requestLanguage;for(const b of document.querySelectorAll('[data-request-language]')){b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button))}renderRequest()});
@@ -65,5 +81,5 @@ $('#clear-records').addEventListener('click',()=>{records=[];try{localStorage.re
 document.addEventListener('visibilitychange',()=>{if(document.hidden)tracker.stop();else if(activeReport&&!$('#check-publication').hidden)trackPublication()});
 window.addEventListener('pagehide',()=>{$('#api-key').value='';controller?.abort();tracker.stop();revision++});
 window.addEventListener('pageshow',event=>{if(event.persisted){$('#api-key').value='';invalidate()}});
-select(selected);renderModels();renderRecords();
+select(selected);renderModels();renderRecords();renderContributors();
 void tracker.check('').catch(()=>{});

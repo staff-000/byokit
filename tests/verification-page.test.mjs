@@ -23,20 +23,20 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
   return new Response(JSON.stringify({model:data.model,choices:[{message:{content:'private generated output'}}],usage:{prompt_tokens:5,completion_tokens:4}}));
  };
  try{
-  let source=await readFile('website/verification.js','utf8');for(const [relative,file] of [['./lib/core/catalog.js','packages/core/catalog.js'],['./verification-report.js','website/verification-report.js'],['./request-examples.js','website/request-examples.js'],['./inference.js','website/inference.js']])source=source.replace(`'${relative}'`,JSON.stringify(pathToFileURL(resolve(file)).href));
+  let source=await readFile('website/verification.js','utf8');for(const [relative,file] of [['./lib/core/catalog.js','packages/core/catalog.js'],['./verification-report.js','website/verification-report.js'],['./contributor-badges.js','website/contributor-badges.js'],['./request-examples.js','website/request-examples.js'],['./inference.js','website/inference.js']])source=source.replace(`'${relative}'`,JSON.stringify(pathToFileURL(resolve(file)).href));
   await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
-  assert.equal($('#github-sign-in'),null);assert.equal($('#verify').disabled,false);assert.equal(calls,0);
+  assert.equal($('#github-sign-in'),null);assert.equal($('#verify').disabled,false);assert.equal(calls,0);assert.match($('#verify').textContent,/earn a badge/);assert.equal($('#earned-badge').hidden,true);
   change('provider-filter','deepseek');$('#models button').click();change('api-key','fixture-secret-key');change('prompt','private fixture prompt');
   $('#verify-form').dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true}));await wait(()=>!$('#share-verification').hidden);
-  assert.equal(calls,1);assert.match($('#call-status').textContent,/Call succeeded/);
+  assert.equal(calls,1);assert.match($('#call-status').textContent,/Call succeeded/);assert.equal($('#earned-badge').hidden,true);
   const share=new URL($('#share-verification').href),report=parseIssueReport(share.searchParams.get('body'));
   for(const secret of ['fixture-secret-key','private fixture prompt','private generated output']){assert.ok(!decodeURIComponent(share.href).includes(secret));assert.ok(!localStorage.getItem('byokit.inference-verifications.v1').includes(secret));}
   $('#share-verification').addEventListener('click',e=>e.preventDefault());$('#share-verification').click();await wait(()=>$('#publication-status').textContent.includes('Waiting'));
   assert.equal(calls,1);assert.ok(!$('#publication-status').textContent.includes('Published:'));
   feed=[canonicalReport({report,user:{id:123,login:'fixture-user'},evidence:'https://github.com/staff-000/byokit/issues/42',createdAt:report.checkedAt})];
-  $('#check-publication').click();await wait(()=>$('#publication-status').textContent.startsWith('Published:'));assert.equal(calls,1);assert.match($('#models').textContent,/Community verified by @fixture-user/);
+  $('#check-publication').click();await wait(()=>$('#publication-status').textContent.startsWith('Published:'));assert.equal(calls,1);assert.match($('#models').textContent,/Community verified by @fixture-user/);assert.equal($('#earned-badge').hidden,false);assert.match($('#publication-status').textContent,/badge earned/);assert.match($('#contributor-list').textContent,/@fixture-user/);assert.equal($('#earned-badge-image').getAttribute('src'),'./badges/github-123.svg');
   providerMode='failure';$('#verify-form').dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true}));await wait(()=>$('#call-status').textContent.includes('HTTP 401'));
-  assert.equal(JSON.parse(localStorage.getItem('byokit.inference-verifications.v1')).length,1);assert.equal($('#share-verification').hidden,true);
+  assert.equal(JSON.parse(localStorage.getItem('byokit.inference-verifications.v1')).length,1);assert.equal($('#share-verification').hidden,true);assert.equal($('#earned-badge').hidden,true);
   providerMode='pending';$('#verify-form').dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true}));await wait(()=>resolveProvider);change('prompt','changed settings');
   resolveProvider(new Response(JSON.stringify({choices:[{message:{content:'late'}}]})));await new Promise(r=>setTimeout(r,30));assert.match($('#call-status').textContent,/Settings changed/);assert.equal(JSON.parse(localStorage.getItem('byokit.inference-verifications.v1')).length,1);
   window.dispatchEvent(new dom.window.Event('pagehide'));assert.equal($('#api-key').value,'');

@@ -7,8 +7,8 @@ No byokit login is needed. A small call may consume your provider quota.
 ## Test and share
 
 1. Select the exact provider/model and review its endpoint and settings.
-2. Enter the provider API key and click **Verify model**.
-3. After **Call succeeded**, click **Share verification on GitHub**.
+2. Enter the provider API key and click **Verify model · earn a badge**.
+3. After **Call succeeded**, click **Share on GitHub · claim badge**.
 4. GitHub opens a prefilled issue. Sign in there if necessary, review the report,
    and click **Submit new issue**. Opening or closing the form does not publish it.
 5. GitHub Actions validates the report, commits the catalog update, and deploys Pages.
@@ -64,3 +64,18 @@ the same issue workflow. It is explicitly a pipeline fixture, not a real inferen
 Only a separate staging receipt is committed under `docs/verification-staging/`
 and published in `verification-staging.json`. No model evidence or badge changes.
 Never remove the staging flag to present a fixture as a real model call.
+
+## Contributor badges
+
+Your first published successful hosted-model report earns the **Model Verifier**
+byokit badge. Contributor cards link your GitHub profile and report evidence, and
+provide **Copy badge Markdown** for your GitHub profile README or project. The
+publication bot includes your badge and embed snippet in its success comment.
+Existing published contributors receive the badge automatically at the next build.
+
+Badges are derived from canonical passed text-generation records, not local calls,
+failed calls, pending issues, or staging fixtures. They recognize a contribution
+without claiming universal model access. The milestone remains after the report's
+90-day freshness expires; deleting invalid evidence removes the derived award.
+No extra account permission or credential is needed. The website publishes the
+badge registry in `contributors.json` and individual SVGs under `badges/`.
