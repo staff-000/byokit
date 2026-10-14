@@ -12,7 +12,7 @@ function render(){try{const config=query(),models=byokit.getModels(modes[mode],c
 for(const button of document.querySelectorAll('[data-mode]'))button.addEventListener('click',()=>{mode=button.dataset.mode;shown=12;for(const b of document.querySelectorAll('[data-mode]')){b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button))}render()});
 for(const id of ['search','tools','premium','local'])$('#'+id).addEventListener('input',()=>{shown=12;render()});$('#more').addEventListener('click',()=>{shown+=24;render()});
 for(const button of document.querySelectorAll('[data-copy]'))button.addEventListener('click',async()=>{const text=$(button.dataset.copy).textContent;try{await navigator.clipboard.writeText(text);button.textContent='Copied';setTimeout(()=>button.textContent=button.dataset.copy==='#query'?'Copy query':'Copy',1800)}catch{button.textContent='Select to copy';const range=document.createRange();range.selectNodeContents($(button.dataset.copy));const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range)}});
-let language='typescript',example='query',format='openai';
+let language='typescript',example='inference',format='openai';
 function renderExample(){
  $('#start-code').textContent=tutorials[example==='inference'&&format==='claude'?'claude':example][language];
  const inference=example==='inference';

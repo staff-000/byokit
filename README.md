@@ -12,6 +12,25 @@ an interface or call a selected model. The demo UI is optional.
 
 ## Start with one API call
 
+Supply your selected model, input, and per-call key:
+
+```ts
+import * as byokit from '@byokit/core/catalog';
+
+const [model] = byokit.getModels({
+  providerIds: [byokit.ProviderId.DeepSeek],
+});
+const result = await byokit.call(model, 'Hello', key);
+console.log(result.choices[0].message.content);
+// Hello! (actual model output varies)
+```
+
+Prefer Claude format? Use `byokit.callClaude(model, input, key)`.
+The [call examples below](#call-the-selected-model) show both response formats,
+Python, optional parameters, and runtime checks.
+
+## Get a model list
+
 In this repository, run `npm install` first. Packages are not published yet.
 
 ```js
