@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
-import {Catalog,validateCatalog,verificationSummary} from '../packages/core/index.js';
+import {Catalog,validateCatalog,verificationSummary,COMPLETE} from '../packages/core/index.js';
 import bundled,{getModels} from '@byokit/core/catalog';
 const fixture=()=>JSON.parse(readFileSync('spec/fixtures/catalog.json'));
 const asOf='2026-10-12T12:00:00Z';
@@ -76,4 +76,9 @@ test('catalog namespace includes all helpers used by documented examples',async(
  const byokit=await import('@byokit/core/catalog');
  assert.equal(byokit.Preset.NonChina,'non-china');assert.equal(byokit.githubContributor('example'),'github:example');assert.equal(typeof byokit.checkFit,'function');
  const ui=await import('@byokit/dom');assert.equal(ui.Preset.NonChina,'non-china');assert.equal(typeof ui.discoverLocal,'function');
+});
+
+test('release dates validate actual calendar days; unknown metadata remains nullable',()=>{
+ for(const releaseDate of ['2026-02-30','not-a-date','2026-2-1','0000-01-01']){const data=fixture();data.offerings[0].releaseDate=releaseDate;assert.ok(validateCatalog(data).some(e=>e.includes('releaseDate')));}
+ for(const releaseDate of [null,'2024-02-29']){const data=fixture();data.offerings[0].releaseDate=releaseDate;assert.deepEqual(validateCatalog(data),[]);const result=pythonModels({data,queries:[{list:COMPLETE,asOf,local:false}]});assert.equal(result.status,0,result.stderr);assert.equal(JSON.parse(result.stdout)[0].find(m=>m.id===data.offerings[0].id).releaseDate,releaseDate);}
 });

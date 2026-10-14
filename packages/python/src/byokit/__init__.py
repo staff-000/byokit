@@ -2,6 +2,7 @@
 from .enums import *
 import copy
 import math
+from datetime import date
 
 FEATURE_STATES = {"supported", "unsupported", "conditional", "unknown"}
 
@@ -31,6 +32,10 @@ def validate_catalog(data):
     models = {m["id"] for m in data["models"]}
     for o in data["offerings"]:
         errors.extend(_validate_signals(o))
+        if o.get("releaseDate") is not None:
+            try:
+                if date.fromisoformat(o["releaseDate"]).isoformat() != o["releaseDate"]: raise ValueError()
+            except (ValueError, TypeError): errors.append(f'{o["id"]}: invalid releaseDate')
         if o.get("providerId") not in providers or o.get("modelId") not in models: errors.append(f'{o["id"]}: unresolved reference')
         if o.get("deployment") not in ["hosted", "local", "self-hosted"]: errors.append(f'{o["id"]}: invalid deployment')
         for key, value in o.get("limits", {}).items():

@@ -63,3 +63,6 @@ anthropic.messages.create({messages:[{role:calls.Role.User,content:'Hi'}],max_to
 calls.openAI({model:chosen,apiKey:'key'});
 // @ts-expect-error streaming is not part of the supported SDK subset
 client.chat.completions.create({messages:[{role:calls.Role.User,content:'Hi'}],stream:true});
+
+const modelReleaseDate: string | null | undefined = byokit.getModels()[0].releaseDate;
+const modelTokensPerSecond: number | null | undefined = byokit.getModels()[0].speed?.tokensPerSecond;

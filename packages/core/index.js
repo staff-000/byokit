@@ -22,6 +22,7 @@ export function validateCatalog(data) {
   const providers = new Set(data.providers.map(x=>x.id)), models = new Set(data.models.map(x=>x.id));
   for (const o of data.offerings) {
     errors.push(...validateSignals(o));
+    if(o.releaseDate!==undefined&&o.releaseDate!==null&&!(typeof o.releaseDate==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(o.releaseDate)&&Number(o.releaseDate.slice(0,4))>=1&&Number.isFinite(Date.parse(o.releaseDate))&&new Date(o.releaseDate).toISOString().slice(0,10)===o.releaseDate))errors.push(`${o.id}: invalid releaseDate`);
     if (!providers.has(o.providerId) || !models.has(o.modelId)) errors.push(`${o.id}: unresolved reference`);
     if (!['hosted','local','self-hosted'].includes(o.deployment)) errors.push(`${o.id}: invalid deployment`);
     for (const [key, val] of Object.entries(o.limits || {})) if (key !== 'contextAccounting' && val !== null && !positive(val)) errors.push(`${o.id}: invalid ${key}`);

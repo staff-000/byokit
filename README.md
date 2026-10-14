@@ -12,7 +12,7 @@ an interface or call a selected model. The demo UI is optional.
 
 ## Start with one API call
 
-Choose a model, create a client, and use the familiar OpenAI SDK method:
+Choose a model, pass your prompt and API key, and get an OpenAI-compatible response:
 
 ```ts
 import * as byokit from '@byokit/core/catalog';
@@ -20,15 +20,16 @@ import * as byokit from '@byokit/core/catalog';
 const [model] = byokit.getModels({
   providerIds: [byokit.ProviderId.DeepSeek],
 });
-const client = byokit.openAI({ model, apiKey: () => key });
-const completion = await client.chat.completions.create({
-  model: model.apiModelId,
-  messages: [{ role: byokit.Role.User, content: 'Hello' }],
-});
-console.log(completion.choices[0].message.content);
+const result = await byokit.call(model, 'Hello', api_key);
+console.log(result.choices[0].message.content);
 // Hello! (actual model output varies)
 ```
 
+For structured requests, pass an OpenAI-compatible request object instead of the
+prompt. An optional fourth argument supports cancellation, timeout, and runtime
+checks. The key is used transiently for this call and never stored by the library.
+
+Prefer the client API? Use `byokit.openAI({ model, apiKey: () => key })`.
 Prefer Claude's SDK shape? Use `byokit.claude({ model, apiKey: () => key })`
 and `client.messages.create(...)`. The application supplies the key callback;
 clients read it for each request and never cache the returned key. Construction
@@ -100,6 +101,20 @@ print([model['provider']['id'] for model in models])
 ```
 
 Run the JavaScript example: `node examples/query.mjs`.
+
+## Release dates and inference speed
+
+```ts
+console.log(model.releaseDate);                 // YYYY-MM-DD, or null/undefined
+console.log(model.speed?.tokensPerSecond);      // Measured catalog value, or null
+console.log(model.speed?.timeToFirstTokenMs);   // Catalog latency, or null
+```
+
+Release dates come from the pinned Models.dev snapshot, when available. They are
+separate from the date a contributor verified a call. Speed is provider-specific
+and needs reliable measurement evidence; this snapshot has no measured speed
+values, so byokit reports unknown rather than estimates. A short verification
+call is not a tokens/sec benchmark. Python returns the same JSON field names.
 
 ## Call the selected model
 

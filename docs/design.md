@@ -405,3 +405,28 @@ No OAuth service or GitHub App is involved. Existing verification schemas and
 90-day freshness stay compatible. Provider-specific community status is separate
 from upstream lifecycle. Failures remain browser-local. Staging exercises the
 publication pipeline through separate receipts without adding model evidence.
+
+## Direct calls, model metadata, and batch verification
+
+The concise inference entry point is `byokit.call(model, prompt, api_key)`;
+OpenAI/Claude-shaped clients remain available. Website inference uses this shared
+call adapter, never a separate provider implementation. Catalog offerings expose
+optional `releaseDate` (YYYY-MM-DD/null) from the pinned upstream snapshot and
+provider-specific `speed.tokensPerSecond` with evidence; missing speed is unknown.
+A tiny text verification is not treated as a generation-throughput benchmark.
+
+```mermaid
+flowchart LR
+  Filters[Filters + include outdated] --> Select[Select up to 10 models / one provider]
+  Select --> Confirm[Confirm request count + models + output budget]
+  Confirm --> Queue[Sequential calls / no retries]
+  Queue --> Results[Per-model success, failure, or skipped]
+  Results --> Share[Share successful reports on GitHub]
+```
+
+Canceling confirmation sends no requests. Canceling or editing execution settings
+aborts the running request and remaining queue. Authentication, quota, network,
+and timeout failures stop the queue; unavailable models can fail independently.
+Keys are supplied transiently from the provider's form entry and never saved with
+results. Batch results preserve provider-specific IDs and require explicit sharing
+per successful model; the publication limits and badge rules are unchanged.

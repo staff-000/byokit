@@ -5,7 +5,7 @@ import catalog from '../packages/core/catalog.js';
 import {contributorBadges,contributorBadgeSvg} from '../website/contributor-badges.js';
 const root=resolve(new URL('..',import.meta.url).pathname),out=resolve(root,'dist/site');
 await mkdir(out,{recursive:true});await cp(resolve(root,'website'),out,{recursive:true});
-await writeFile(resolve(out,'inference.js'),(await readFile(resolve(root,'website/inference.js'),'utf8')).replaceAll('../packages/core/','./lib/core/'));
+for(const file of ['inference.js','verification-filters.js'])await writeFile(resolve(out,file),(await readFile(resolve(root,'website',file),'utf8')).replaceAll('../packages/core/','./lib/core/'));
 for(const file of ['verification-config.json','github-verification.js'])await rm(resolve(out,file),{force:true});
 await mkdir(resolve(out,'lib/core'),{recursive:true});
 for(const file of ['index.js','enums.js','catalog.js','call.js','connection.js','sdk.js'])await cp(resolve(root,'packages/core',file),resolve(out,'lib/core',file));

@@ -79,3 +79,21 @@ without claiming universal model access. The milestone remains after the report'
 90-day freshness expires; deleting invalid evidence removes the derived award.
 No extra account permission or credential is needed. The website publishes the
 badge registry in `contributors.json` and individual SVGs under `badges/`.
+
+## Filters and batch checks
+
+The model list defaults to LIVE offerings. **Include outdated models** explicitly
+adds retired offerings; it never substitutes a model if an outdated one is rejected.
+Filter by provider, provider region, supported capability, input modality, weights,
+context, and input price. Sort by release date, price, or known speed. Unknown
+metadata is shown as unknown; local setup entries keep their own URL/protocol.
+
+Select up to ten hosted models from one provider, enter that provider's key, then
+click **Review batch**. The dialog shows the exact model list, maximum request
+count, provider, and per-request output budget. **Send N requests** is required
+before any inference; canceling the dialog sends none. Calls run sequentially,
+without retries. Cancel/editing settings aborts the current call and queued work.
+Authentication, quota/rate-limit, timeout, and network errors stop the queue.
+Already completed successes remain saved. Share each success separately through
+its GitHub link; the existing ten-publications-per-day limit still applies.
+Batch checks never send a provider's key to another provider or save it in records.
