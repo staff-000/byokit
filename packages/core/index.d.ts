@@ -68,3 +68,14 @@ export class CallError extends Error {code:string;diagnostics:Diagnostic[];}
 export function call(model:ModelOption,input:string|ChatInput,key:string,options?:CallOptions):Promise<ChatResult>;
 export function callClaude(model:ModelOption,input:string|ClaudeInput,key:string,options?:CallOptions):Promise<ClaudeResult>;
 export function prepareCall(model:ModelOption,input:string|ChatInput|ClaudeInput,options?:Pick<CallOptions,'runtimeChecks'|'inputTokens'|'overheadTokens'>&{format?:'openai'|'claude'}):{url:string;protocol:import('./enums.js').ApiProtocol;body:Record<string,unknown>;diagnostics:Diagnostic[]};
+
+
+export interface SDKClientOptions extends CallOptions {model:ModelOption;apiKey?:()=>string|Promise<string>;}
+export interface CompletionInput extends ChatInput {model?:string;}
+export interface MessageInput extends ClaudeInput {model?:string;}
+export interface OpenAIClient {chat:{completions:{create(input:CompletionInput,options?:CallOptions):Promise<ChatResult>}};}
+export interface ClaudeClient {messages:{create(input:MessageInput,options?:CallOptions):Promise<ClaudeResult>};}
+export function openAI(options:SDKClientOptions):OpenAIClient;
+export function claude(options:SDKClientOptions):ClaudeClient;
+export class OpenAI implements OpenAIClient {constructor(options:SDKClientOptions);readonly chat:OpenAIClient['chat'];}
+export class Anthropic implements ClaudeClient {constructor(options:SDKClientOptions);readonly messages:ClaudeClient['messages'];}

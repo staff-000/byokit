@@ -27,7 +27,8 @@
     "enums.js",
     "enums.d.ts",
     "call.js",
-    "connection.js"
+    "connection.js",
+    "sdk.js"
   ],
   "sideEffects": false,
   "license": "MIT"

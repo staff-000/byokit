@@ -381,3 +381,5 @@ def _local_groups(config,catalog):
     return [{'provider':provider,'offerings':offerings}]
 
 from .inference import call, call_claude, prepare_call, connection_for, CallError
+
+from .sdk import OpenAI, Anthropic, openAI, claude

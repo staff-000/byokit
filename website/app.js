@@ -18,7 +18,7 @@ function renderExample(){
  const inference=example==='inference';
  $('#example-note').textContent=inference?'Server-side example: set DEEPSEEK_API_KEY in your environment. One call may consume provider credits. Your key is not stored by byokit.':'Catalog queries run offline. No API key or provider request is needed.';
  $('#return-label').textContent=inference?'EXAMPLE GENERATED TEXT':'RETURN (FIRST ENTRY, SELECTED FIELDS)';
- $('#expected-return').textContent=inference?(format==='claude'?'[{ type: "text", text: "OK" }] — actual model output varies.':'OK — actual model output varies.'):JSON.stringify(byokit.getModels().slice(0,1).map(model=>({provider:model.provider.id,model:model.apiModelId,context:model.limits.context})),null,2);
+ $('#expected-return').textContent=inference?(format==='claude'?'[{ type: "text", text: "Hello!" }] — actual model output varies.':'Hello! — actual model output varies.'):JSON.stringify(byokit.getModels().slice(0,1).map(model=>({provider:model.provider.id,model:model.apiModelId,context:model.limits.context})),null,2);
 }
 for(const button of document.querySelectorAll('[data-language]'))button.addEventListener('click',()=>{language=button.dataset.language;for(const b of document.querySelectorAll('[data-language]')){b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button))}renderExample()});
 for(const button of document.querySelectorAll('[data-example]'))button.addEventListener('click',()=>{example=button.dataset.example;for(const b of document.querySelectorAll('[data-example]')){b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button))}renderExample()});

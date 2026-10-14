@@ -341,3 +341,30 @@ Authentication headers use a per-call key transiently. They are excluded from
 results, diagnostics, records and logs. Redirects are blocked. Browser CORS
 restrictions remain provider-owned. Cancellation and a 90-second deadline
 terminate calls without retry; spent provider quota cannot be refunded.
+
+## SDK-shaped clients
+
+Applications create `openAI({model,apiKey:()=>key})` or `claude(...)`. Their methods
+are `client.chat.completions.create(...)` and `client.messages.create(...)`.
+JavaScript constructor aliases are OpenAI/Anthropic; Python uses those classes
+and keyword arguments. These methods wrap the same adapters and validation;
+standalone call helpers remain compatible.
+
+```mermaid
+flowchart LR
+  Model[Discovery model + endpoint] --> Client[SDK-shaped client]
+  Params[Request messages and parameters] --> Snapshot[Capture request settings]
+  Client --> Snapshot
+  Snapshot --> Validate[Validate before reading credentials]
+  Validate --> Accessor[Application-owned key accessor]
+  Accessor --> Request[Transient authenticated call]
+  Request --> Response[OpenAI completion or Claude message]
+```
+
+Clients retain only non-secret model configuration, defaults, and the application's
+key accessor. They do not read credentials at construction or cache returned keys.
+Key rotation takes effect next request. JS key callbacks can be asynchronous and
+are fenced by cancellation/deadline; Python callbacks are synchronous and should
+read already-available keys. Accessor failures are reported without raw errors.
+Requests snapshot model/input settings before credential resolution. Explicit
+custom model IDs retain the provider URL and use unknown fit metadata.

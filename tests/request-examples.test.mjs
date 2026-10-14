@@ -44,16 +44,31 @@ test('local requests without authentication contain no key placeholder',()=>{
  const code=requestExample({...settings,providerId:'local',endpoint:'http://localhost:8080'},'javascript');assert.ok(!code.includes('API_KEY'));assert.ok(!code.includes('Authorization'));
 });
 
-test('copyable high-level snippets use stateless calls and preserve selected settings',async()=>{
+test('copyable SDK snippets preserve selected settings and read keys at request time',async()=>{
  const code=requestExample(settings,'javascript');let calls=0;
- const byokit={ProviderId:{DeepSeek:'deepseek'},Role:{User:'user'},getModels:()=>[{apiModelId:'old',connection:{baseUrl:'https://api.deepseek.com/v1'}}],call:async(model,input,key,options)=>{calls++;assert.equal(model.apiModelId,settings.modelId);assert.equal(input.messages[0].content,settings.prompt);assert.equal(input.max_completion_tokens,128);assert.equal(key,'dummy-env-key');assert.equal(options.runtimeChecks,false);return {choices:[{message:{content:'OK'}}]}}};
+ const byokit={
+  ProviderId:{DeepSeek:'deepseek'}, Role:{User:'user'},
+  getModels:()=>[{apiModelId:'old',connection:{baseUrl:'https://api.deepseek.com/v1'}}],
+  openAI({model,apiKey,runtimeChecks}){
+   const create=async(input)=>{
+    calls++;assert.equal(model.apiModelId,settings.modelId);assert.equal(input.messages[0].content,settings.prompt);
+    assert.equal(input.max_completion_tokens,128);assert.equal(apiKey(),'dummy-env-key');assert.equal(runtimeChecks,false);
+    return {choices:[{message:{content:'OK'}}]};
+   };
+   return {chat:{completions:{create}}};
+  },
+ };
  await new AsyncFunction('byokit','process','console',code.replace(/^import.*;\n/,''))(byokit,{env:{API_KEY:'dummy-env-key'}},{log(){}});assert.equal(calls,1);
  const py=requestExample(settings,'python');const run=spawnSync('python3',['-c',`import sys,json,types,os
 os.environ['API_KEY']='dummy-env-key'
 b=types.ModuleType('byokit');b.ProviderId=types.SimpleNamespace(DEEP_SEEK='deepseek');b.Role=types.SimpleNamespace(USER='user');b.get_models=lambda q:[{'apiModelId':'old'}]
-def call(m,i,k,o):
- assert m['apiModelId']=='selected-model' and k=='dummy-env-key' and o['runtime_checks'] is False
- return {'choices':[{'message':{'content':'OK'}}]}
-b.call=call;sys.modules['byokit']=b
+class OpenAI:
+ def __init__(self,model,api_key,runtime_checks):
+  assert model['apiModelId']=='selected-model' and runtime_checks is False
+  def create(**input):
+   assert api_key()=='dummy-env-key' and input['max_completion_tokens']==128
+   return {'choices':[{'message':{'content':'OK'}}]}
+  self.chat=types.SimpleNamespace(completions=types.SimpleNamespace(create=create))
+b.OpenAI=OpenAI;sys.modules['byokit']=b
 exec(json.loads(sys.stdin.read()))`],{input:JSON.stringify(py),encoding:'utf8'});assert.equal(run.status,0,run.stderr);assert.equal(run.stdout.trim(),'OK');
 });

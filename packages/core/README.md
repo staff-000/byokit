@@ -9,9 +9,9 @@ console.log(models.map(({id,name})=>({id,name})));
 ```
 
 Each result includes provider/model metadata, limits, price, features, tags, logos
-and contributor verification reports. Discovery queries metadata offline. Use `await byokit.call(model, input, key)`
-for an OpenAI-compatible response, or `byokit.callClaude(model, input, key)`
-for Claude format. Keys are per-call arguments and are never cached by calls. The catalog export is optional; importing core alone
+and contributor verification reports. Discovery queries metadata offline. Use `byokit.openAI({model,apiKey:()=>key})` and
+`client.chat.completions.create(...)`, or `byokit.claude(...)` and
+`client.messages.create(...)`. Keys are read per request and never cached by clients. The catalog export is optional; importing core alone
 does not load it. No runtime dependencies.
 
 Use `new byokit.Catalog(customData).getModels(query)` for a custom snapshot.

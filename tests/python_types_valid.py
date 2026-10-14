@@ -13,3 +13,8 @@ byokit.get_models({"local":[{"endpoint":"http://localhost:8000/v1","api":byokit.
 model = byokit.get_models()[0]
 byokit.call(model, "Hi", "key", {"runtime_checks": False})
 byokit.call_claude(model, {"messages": [{"role": byokit.Role.USER, "content": "Hi"}]}, "key")
+
+client = byokit.OpenAI(model=model, api_key=lambda: "application-owned-key")
+client.chat.completions.create(model=model["apiModelId"], messages=[{"role":byokit.Role.USER,"content":"Hi"}], options={"runtime_checks":False})
+anthropic = byokit.Anthropic(model=model, api_key=lambda: "application-owned-key")
+anthropic.messages.create(messages=[{"role":byokit.Role.USER,"content":"Hi"}], max_tokens=100)

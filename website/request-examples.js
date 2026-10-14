@@ -21,11 +21,14 @@ export function requestExample(settings,language='javascript',{authenticated=set
 
 const [base] = byokit.getModels(${query});
 const model = { ...base, apiModelId: ${quote(settings.modelId)} };
-const result = await byokit.call(model, {
+const client = byokit.openAI({
+  model, apiKey: () => ${authenticated?'process.env.API_KEY ?? '+quote(''):quote('')}, runtimeChecks: false,
+});
+const completion = await client.chat.completions.create({
   messages: [{ role: byokit.Role.User, content: ${quote(settings.prompt)} }],
   max_completion_tokens: ${settings.maxTokens},
-}, ${authenticated?'process.env.API_KEY':"''"}, { runtimeChecks: false });
-console.log(result.choices[0].message.content);`;
+});
+console.log(completion.choices[0].message.content);`;
  }
  if(language==='python'){
   const query=local?`{"providerIds": [], "local": [{"endpoint": ${quote(settings.endpoint)}, "api": byokit.LocalApi.${settings.protocol==='ollama'?'OLLAMA':'OPEN_AI'}, "modelId": ${quote(settings.modelId)}}]}`:`{"providerIds": [byokit.ProviderId.${provider[1]}], "local": False}`;
@@ -34,11 +37,14 @@ ${authenticated?'import os\n':''}import json
 
 model = byokit.get_models(${query})[0]
 model = {**model, "apiModelId": ${quote(settings.modelId)}}
-result = byokit.call(model, {
-    "messages": [{"role": byokit.Role.USER, "content": json.loads(${quote(JSON.stringify(settings.prompt))})}],
-    "max_completion_tokens": ${settings.maxTokens},
-}, ${authenticated?'os.environ["API_KEY"]':'""'}, {"runtime_checks": False})
-print(result["choices"][0]["message"]["content"])`;
+client = byokit.OpenAI(
+    model=model, api_key=lambda: ${authenticated?'os.environ["API_KEY"]':'""'}, runtime_checks=False,
+)
+completion = client.chat.completions.create(
+    messages=[{"role": byokit.Role.USER, "content": json.loads(${quote(JSON.stringify(settings.prompt))})}],
+    max_completion_tokens=${settings.maxTokens},
+)
+print(completion["choices"][0]["message"]["content"])`;
  }
  throw new Error('Unknown example language');
 }

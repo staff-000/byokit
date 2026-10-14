@@ -12,7 +12,7 @@ an interface or call a selected model. The demo UI is optional.
 
 ## Start with one API call
 
-Supply your selected model, input, and per-call key:
+Choose a model, create a client, and use the familiar OpenAI SDK method:
 
 ```ts
 import * as byokit from '@byokit/core/catalog';
@@ -20,14 +20,19 @@ import * as byokit from '@byokit/core/catalog';
 const [model] = byokit.getModels({
   providerIds: [byokit.ProviderId.DeepSeek],
 });
-const result = await byokit.call(model, 'Hello', key);
-console.log(result.choices[0].message.content);
+const client = byokit.openAI({ model, apiKey: () => key });
+const completion = await client.chat.completions.create({
+  model: model.apiModelId,
+  messages: [{ role: byokit.Role.User, content: 'Hello' }],
+});
+console.log(completion.choices[0].message.content);
 // Hello! (actual model output varies)
 ```
 
-Prefer Claude format? Use `byokit.callClaude(model, input, key)`.
-The [call examples below](#call-the-selected-model) show both response formats,
-Python, optional parameters, and runtime checks.
+Prefer Claude's SDK shape? Use `byokit.claude({ model, apiKey: () => key })`
+and `client.messages.create(...)`. The application supplies the key callback;
+clients read it for each request and never cache the returned key. Construction
+makes no API request. [More examples](#call-the-selected-model).
 
 ## Get a model list
 
@@ -77,7 +82,7 @@ Existing `{ preset: byokit.Preset.NonChina }` and detailed filters still work.
 Queries run offline, need no API key, and make no network requests. LIVE means
 recent evidence lists this model at this provider; it does not guarantee access
 for your account. The result states whether the evidence is a provider source or
-a Models.dev catalog listing. To generate a response, use `byokit.call(model, input, key)`.
+a Models.dev catalog listing. To generate a response, create a client with `byokit.openAI({ model, apiKey: () => key })`.
 
 Python has the same shortcuts and JSON field names:
 
@@ -98,48 +103,51 @@ Run the JavaScript example: `node examples/query.mjs`.
 
 ## Call the selected model
 
-Choose a model, supply your input and key, and make one call:
+### OpenAI-style client
 
 ```ts
-import * as byokit from '@byokit/core/catalog';
-
-const [model] = byokit.getModels({
-  providerIds: [byokit.ProviderId.DeepSeek],
+const client = byokit.openAI({ model, apiKey: () => key });
+const completion = await client.chat.completions.create({
+  model: model.apiModelId,
+  messages: [{ role: byokit.Role.User, content: 'Hello' }],
 });
-const result = await byokit.call(model, 'Hello', key);
-console.log(result.choices[0].message.content);
+console.log(completion.choices[0].message.content);
 ```
 
-Expected response (provider-generated values vary):
+Expected response (provider-generated fields vary):
 
 ```json
 {
   "id": "…",
   "object": "chat.completion",
   "model": "deepseek-flash",
-  "choices": [{
-    "index": 0,
-    "message": { "role": "assistant", "content": "Hello!" },
-    "finish_reason": "stop"
-  }],
+  "choices": [{ "index": 0, "message": { "role": "assistant", "content": "Hello!" }, "finish_reason": "stop" }],
   "usage": { "prompt_tokens": 4, "completion_tokens": 2, "total_tokens": 6 }
 }
 ```
 
-Prefer Claude's Messages format? The same selected model works:
+### Claude-style client
 
 ```ts
-const message = await byokit.callClaude(model, 'Hello', key);
+const client = byokit.claude({ model, apiKey: () => key });
+const message = await client.messages.create({
+  model: model.apiModelId,
+  messages: [{ role: byokit.Role.User, content: 'Hello' }],
+  max_tokens: 1024,
+});
 console.log(message.content);
 // [{ type: 'text', text: 'Hello!' }]
 ```
 
-`call()` accepts OpenAI-style messages and returns a Chat Completion.
-`callClaude()` accepts Claude-style messages and returns a Message. Adapters
-translate supported fields to the selected provider's native API. These are
-compatible subsets, not replacements for every provider SDK feature.
+Both interfaces work across supported providers, including DeepSeek and local
+servers. `new byokit.OpenAI(options)` and `new byokit.Anthropic(options)` are
+constructor aliases. These are compatible SDK subsets: non-streaming text,
+system messages, sampling parameters and function tools. Tools are returned for
+your application to execute. Unsupported fields, streaming, multimedia and
+native thinking blocks/signatures are rejected explicitly; full provider SDK
+features and automatic retries are outside this interface.
 
-Python uses the same model metadata and corresponding functions:
+### Python
 
 ```python
 import byokit
@@ -147,66 +155,79 @@ import byokit
 model = byokit.get_models({
     "providerIds": [byokit.ProviderId.DEEP_SEEK],
 })[0]
-result = byokit.call(model, "Hello", key)
-print(result["choices"][0]["message"]["content"])
+client = byokit.OpenAI(model=model, api_key=lambda: key)
+completion = client.chat.completions.create(
+    model=model["apiModelId"],
+    messages=[{"role": byokit.Role.USER, "content": "Hello"}],
+)
+print(completion["choices"][0]["message"]["content"])
 
-message = byokit.call_claude(model, "Hello", key)
+client = byokit.Anthropic(model=model, api_key=lambda: key)
+message = client.messages.create(
+    messages=[{"role": byokit.Role.USER, "content": "Hello"}], max_tokens=1024,
+)
 print(message["content"])
 ```
 
 ### Parameters and runtime checks
 
 ```ts
-const result = await byokit.call(model, {
+const client = byokit.openAI({
+  model,
+  apiKey: () => key, // May return a Promise; read fresh for every request
+  runtimeChecks: true,
+});
+const completion = await client.chat.completions.create({
   messages: [{ role: byokit.Role.User, content: 'Summarize this…' }],
   max_completion_tokens: 1024,
-}, key, {
-  runtimeChecks: true,  // Default; false skips model-fit checks
-  inputTokens: 2000,   // Optional declared/countable input budget
+}, {
+  runtimeChecks: false, // Optional per-request override; default is true
+  inputTokens: 2000,
   timeoutMs: 90_000,
   signal: controller.signal,
-  onWarning: diagnostic => console.warn(diagnostic.code),
 });
 ```
 
-Python's fourth argument uses `runtime_checks`, `input_tokens`, `overhead_tokens`,
-`timeout_ms`, `cancel_event` (a `threading.Event`), and `on_warning`.
+Model is optional in each request: the client uses its captured model by default.
+An explicit different model ID stays on the same provider endpoint and has
+unknown limits/capabilities. To retain known fit metadata for another model,
+create a client with that model's discovery object. No model is substituted.
+
+Python accepts keyword arguments for requests and `options={...}` for per-request
+options. The corresponding options are `runtime_checks`, `input_tokens`,
+`overhead_tokens`, `timeout_ms`, `cancel_event` (a `threading.Event`), and
+`on_warning`. Python key callbacks are synchronous; use them to read an already
+available key, since blocking callback work remains application-owned.
 
 The default output budget is 1,024 tokens, capped by a known smaller model limit.
 Runtime checks reject known excessive budgets and unsupported capabilities;
-unknown limits or unavailable input counts produce warnings. Supply a measured
-input token count when you need a reliable context check. Disabling runtime
-checks retains essential request-format and endpoint validation.
+unknown limits or unavailable input counts warn. Disabling checks retains
+request-format and endpoint validation. The 90-second default deadline includes
+key resolution and inference; cancellation fences late key resolution in JS.
 
-Supported: non-streaming text, system messages, sampling parameters, function
-tool definitions, tool calls and tool results. Tools are returned for your
-application to execute. Unsupported fields, streaming, multimedia and native
-thinking blocks/signatures are rejected explicitly. Provider/model-specific
-restrictions can still be rejected by the provider. No retries or model
-substitution happen automatically.
+Every model includes `connection: { baseUrl, protocol }`, using
+`byokit.ApiProtocol`. Local entries need a configured URL and served model ID;
+unauthenticated local clients can omit the key callback. Custom providers may
+supply an explicit connection. Requests use the offering's `apiModelId`.
 
-Each model includes `connection: { baseUrl, protocol }` (protocol uses
-`byokit.ApiProtocol`). Local entries need a configured URL and served model ID;
-pass an empty key for an unauthenticated local server. Custom providers may supply
-an explicit connection. Calls use the offering's `apiModelId`, not its family ID.
-
-Keys are per-call arguments: the call API never stores, caches, logs, or returns
-them. Authentication headers handle the key transiently while the request runs.
-Your application owns any credential storage; never embed production keys in a
-public website. Browser calls also depend on provider CORS and local-network
-permissions. Calls may consume provider quota, including canceled calls.
+Keys stay application-owned. Clients accept a key accessor rather than retaining
+a key string. Returned keys are used transiently for authentication and never
+cached, logged, persisted, or included in results/errors. No inference runs
+on client construction. Browser calls depend on provider CORS and local-network
+permissions. Requests may consume quota even when canceled.
 
 Runnable examples: `node examples/call-model.mjs` or
 `PYTHONPATH=packages/python/src python3 examples/call_model.py`, with
-`DEEPSEEK_API_KEY` supplied by your environment. Packages are not published yet.
+`DEEPSEEK_API_KEY` in your environment. Packages are not published yet.
+The existing `call()` / `callClaude()` helpers remain available for compatibility.
 
 ### Build-time budgets
 
-Declare `budget.maxInputTokens` and `budget.maxOutputTokens` in your byokit build
-configuration (or individual tasks). `byokit check config.json` fails known
-limit violations and warns when budgets or model limits are missing; `--strict`
-also fails warnings. TypeScript validates parameter names/types, not arbitrary
-numeric relationships. Build checks are offline and consume no quota.
+Declare `budget.maxInputTokens` and `budget.maxOutputTokens` in the build
+configuration or individual tasks. `byokit check config.json` fails known limit
+violations and warns when budgets or model limits are missing; `--strict` also
+fails warnings. TypeScript validates parameter names/types, not arbitrary numeric
+relationships. Build checks are offline and consume no quota.
 
 ## Filter the list
 

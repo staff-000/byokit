@@ -1,3 +1,4 @@
+export {openAI,claude,OpenAI,Anthropic} from './sdk.js';
 import {connectionFor} from './connection.js';
 export {call,callClaude,prepareCall,CallError} from './call.js';
 import {FeatureStatus,ContextAccounting,Currency,VerificationStatus,Deployment as DeploymentType,Modality,FeatureName,Deployment,UnknownPolicy,CommercialUse,VerificationCheck,LocalRuntime,Lifecycle,Popularity,PopularityMetric,ModelList,LocalApi,LifecycleBasis} from './enums.js';

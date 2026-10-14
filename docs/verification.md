@@ -101,5 +101,5 @@ Internal checks and run records remain in
 [the development tracker](development-verification.md); they are not presented
 as model verification on the website.
 
-JavaScript and Python copied examples use `byokit.call()`; cURL shows the equivalent
-native HTTP request. The homepage also demonstrates `callClaude()` responses.
+JavaScript and Python copied examples use SDK-shaped clients; cURL shows the equivalent
+native HTTP request. The homepage also demonstrates Claude-style `client.messages.create()` responses.

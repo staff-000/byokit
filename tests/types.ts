@@ -54,3 +54,12 @@ calls.call(chosen,{messages:[{role:calls.Role.User,content:'Hi'}],max_toknes:100
 calls.call(chosen,{messages:[{role:'user',content:'Hi'}]},'key');
 // @ts-expect-error runtime checks must be boolean
 calls.call(chosen,'Hi','key',{runtimeChecks:'false'});
+
+const client=calls.openAI({model:chosen,apiKey:()=> 'application-owned-key'});
+client.chat.completions.create({model:chosen.apiModelId,messages:[{role:calls.Role.User,content:'Hi'}]},{runtimeChecks:false});
+const anthropic=new calls.Anthropic({model:chosen,apiKey:async()=> 'application-owned-key'});
+anthropic.messages.create({messages:[{role:calls.Role.User,content:'Hi'}],max_tokens:100});
+// @ts-expect-error SDK clients require a key accessor, not a retained key string
+calls.openAI({model:chosen,apiKey:'key'});
+// @ts-expect-error streaming is not part of the supported SDK subset
+client.chat.completions.create({messages:[{role:calls.Role.User,content:'Hi'}],stream:true});
