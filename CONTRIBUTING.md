@@ -160,5 +160,15 @@ with `npm run verify -- --browser` and require the site preview.
 
 For actual model calls, continue to submit `catalog/verifications.json` reports
 with reviewable contributor evidence; library/browser checks never establish those.
-See [the tracker](docs/verification.md). Website sources live in `website/`;
+See [the development tracker](docs/development-verification.md). Website sources live in `website/`;
 `npm run site:build` packages them for the GitHub Pages project path `/byokit/`.
+
+## Website inference records
+
+The public verification page runs real, explicit browser-side text inference.
+Successful records are browser-local and exportable; they contain no key, prompt
+or generated text. Export is not a canonical contributor claim: attach your
+GitHub identity, actual evidence and adapter/version details before converting it
+to `catalog/verifications.json`. Maintain provider-specific scope and settings.
+See [model verification](docs/verification.md). Never promote fixtures into call
+reports. Development check outcomes are not shown on the public website.

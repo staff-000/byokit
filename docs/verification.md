@@ -1,79 +1,90 @@
-# Verification tracker
+# Model inference verification
 
-This document tracks the library and website checks separately from actual model
-calls. A passing library test never becomes a contributor model-call report.
+Use [the verification page](https://staff-000.github.io/byokit/verification.html)
+to answer one question: **can these settings make an actual model call?**
 
-## Latest recorded run
+## How to verify
 
-- [Machine-readable latest run](verification/latest.json)
-- [Run history](verification/runs/)
-- [Public verification page](https://staff-000.github.io/byokit/verification.html)
-- [Historical implementation notes](verification-history.md)
+1. Browse the complete LIVE offering list, including provider, model ID, context
+   and tags. Search or filter by provider, then click **Verify** on a model.
+2. Enter that provider's API key. The selected provider and exact request
+   destination are displayed. For Local, enter the server URL and served model ID.
+3. Choose the API protocol. OpenAI offers Responses or Chat Completions; other
+   providers use their documented native or compatible endpoint.
+4. Optionally change the prompt and output token limit. The default prompt is
+   `Reply with exactly: OK`, with a 256-token output limit.
+5. Click **Verify model**. This sends one real, non-streaming inference request
+   directly from your browser. It may consume provider quota. Nothing is sent
+   while you browse, enter a key, or change settings.
+6. A successful nonempty text response is displayed, and a success record is
+   saved in this browser. Failure, cancellation, timeout, or an empty response
+   never creates a successful record. No automatic retries or model substitutions
+   occur. The response does not need to match the word OK; success means visible
+   text generation worked with the chosen settings.
 
-Each run records its UTC start/end, Git commit, whether source changes were
-present, a source SHA-256, platform/architecture, Node version, exact commands,
-exit codes, durations, test totals when available, and output digests. These are
-observed outcomes for the checked source, not promises about future versions.
-Generated run records are committed with changes they verify. Source hashing
-excludes verification reports themselves and ignored build/dependency files.
+## API keys and privacy
 
-## Repeat and record
+Keys stay only in this page's memory. They are sent in authentication headers
+only to the selected provider, never to a byokit backend, URL, record, log, or
+browser storage. Refreshing/leaving the page clears the key. Switching providers
+or changing a local endpoint clears the key. **Clear API key** removes it now.
+Responses are rendered as text. Prompts and generated text are not persisted.
+The page has no analytics and no server proxy that receives your credentials.
+The provider receives your key and prompt according to its own API policies.
 
-```bash
-npm ci
-npm run verify
-```
+## What a success record contains
 
-For Chrome checks, launch the site preview in another terminal:
+- Exact offering/provider/model ID and provider-returned model ID.
+- API protocol and endpoint, output limit, checked time, and latency.
+- Numeric token usage when the provider returns it.
+- `textGeneration` as the verified check and `this-browser` as its scope.
 
-```bash
-npm run site:build
-npm run site:preview
-# In another terminal:
-npm run verify -- --browser
-```
+Changing the key, protocol, model, or other settings requires a new check. A saved
+record is evidence of a past call; it does not prove current account access, all
+model capabilities, accurate tags, or continued availability. Tags remain catalog
+metadata until those capabilities are separately tested.
 
-Set `BYOKIT_CHROME` to an installed Chrome executable on other operating systems.
-Browser checks require a working preview at `/byokit/`. The recorder never runs
-inference or needs provider credentials. Failed commands produce a failed record
-and a nonzero exit; an omitted browser check is recorded as NOT RUN, not passed.
+Records are stored locally under `byokit.inference-verifications.v1`, with a
+200-record limit. If storage is unavailable, they stay in memory for the visit.
+Use **Export records** to save a JSON file, or **Clear records** to remove them.
+Exports contain endpoint addresses; review them before sharing private local
+server details. The export includes no credentials, prompt, or generated text.
 
-| Check | What it establishes |
-|---|---|
-| JavaScript tests | Filtering, lifecycle, exclusions, model reports, ownership of keys, local discovery, UI behavior, CLI and JS/Python parity |
-| Python tests | Native Python behavior and bundled catalog resource loading |
-| TypeScript / Python type checks | Typed enum interface and client examples |
-| Catalog check and sample build | Schema/budget checks and usable generated IDs |
-| Website build | Static assets, browser modules and truthful verification data are packaged |
-| Website Chrome smoke | Actual list queries, filters, search, paging, language tabs, `/byokit/` paths, verification page, mobile layout and resource errors |
+## Shared contributor reports
 
-## Actual provider call verification
+GitHub Pages has no shared write backend. Browser records are **not automatically
+published** or treated as authenticated contributor claims. To contribute, export
+and review a real result, add your contributor identity and reviewable evidence,
+then submit the canonical report shape described in
+[CONTRIBUTING.md](../CONTRIBUTING.md). Reports in
+[catalog/verifications.json](../catalog/verifications.json) are reviewed separately.
 
-Canonical records live in [catalog/verifications.json](../catalog/verifications.json).
-Use [the report template](../catalog/verification.example.json) and follow
-[CONTRIBUTING.md](../CONTRIBUTING.md). Record exact offering ID, contributor,
-checked timestamp, result, checks, adapter version and HTTPS evidence. Contributor
-identity is a submitted claim; maintainers must verify authorship and evidence.
-A source listing, catalog import, browser simulation, or test fixture is not a
-successful provider call. Submit no API keys, tokens or account credentials.
+## Connection failures
 
-The public page renders the submitted reports without converting library tests
-into provider claims. Failed/stale reports remain visible; runtime summaries use
-the library's freshness rules. There are currently no submitted real-call reports.
+Some providers or local servers block direct browser requests through CORS or
+local-network permissions. Such failures do not establish that a model itself is
+unavailable; the page records no successful verification. Allow your site origin
+in the local server configuration or run the example from an allowed origin.
+Provider authentication, permission, unavailable model, rate limit, and quota
+failures are displayed without exposing a key in the error message.
 
-## Open verification work
+Reasoning models may spend a small output limit on hidden reasoning and produce
+no visible text. Increase the limit explicitly if you want to try again. Calls
+have a 90-second timeout and a Cancel button. Cancellation cannot refund consumed
+quota.
 
-- Windows and Linux browser/runtime smoke tests.
-- Real provider calls with each supported adapter and contributor evidence.
-- Local server inference tests for Ollama, vLLM and llama.cpp.
-- Account-specific model access, quota, and context behavior.
-- Objective, sourced popularity rankings.
+The website adapters live in `website/inference.js`; they demonstrate host-owned
+execution without adding inference or credential storage to the catalog library.
+Sources: [OpenAI](https://developers.openai.com/api/reference),
+[Anthropic](https://platform.claude.com/docs/en/api/messages/create),
+[Gemini](https://ai.google.dev/api/generate-content),
+[OpenRouter](https://openrouter.ai/docs/api/api-reference/chat/send-chat-completion-request),
+[DeepSeek](https://api-docs.deepseek.com/api/create-chat-completion),
+[Mistral](https://docs.mistral.ai/api), [Groq](https://console.groq.com/docs/api-reference),
+[Zhipu](https://docs.bigmodel.cn),
+[SiliconFlow](https://docs.siliconflow.cn/docs/api/chat-completions-post),
+[Ollama](https://docs.ollama.com/api/chat).
 
-## Website publishing
-
-`npm run site:build` produces `dist/site` with paths relative to `/byokit/`.
-The [Pages workflow](../.github/workflows/pages.yml) publishes changes on `main`
-to [staff-000.github.io/byokit](https://staff-000.github.io/byokit/).
-GitHub repository Settings → Pages must use **GitHub Actions** as the source.
-Verification JSON is included from the committed latest run; deployment does not
-invent a new passing run or claim tests that were not executed.
+Internal checks and run records remain in
+[the development tracker](development-verification.md); they are not presented
+as model verification on the website.
