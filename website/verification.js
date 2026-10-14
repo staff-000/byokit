@@ -74,7 +74,7 @@ $('#batch-confirm').addEventListener('cancel',()=>{pendingBatch=null});
 $('#batch-cancel').addEventListener('click',()=>batchController?.abort());
 $('#batch-confirm-send').addEventListener('click',async()=>{
  const pending=pendingBatch;if(!pending||pending.revision!==revision||batchController)return;
- pendingBatch=null;$('#batch-confirm').close();const key=$('#api-key').value.trim(),id=++batchSerial,capturedRevision=revision,controller=new AbortController();batchController=controller;
+ pendingBatch=null;$('#batch-confirm').close();tracker.stop();activeReport=null;$('#share-verification').hidden=true;$('#check-publication').hidden=true;$('#earned-badge').hidden=true;publicationStatus('');const key=$('#api-key').value.trim(),id=++batchSerial,capturedRevision=revision,controller=new AbortController();batchController=controller;
  $('#batch-cancel').hidden=false;$('#verify').disabled=true;$('#batch-results').replaceChildren();const cards=new Map();let sent=0;
  for(const job of pending.jobs){const card=el('article',undefined,'report');card.append(el('strong',job.modelId),el('p','Queued','fine'));cards.set(job.offeringId,card);$('#batch-results').append(card)}
  renderModels();$('#batch-status').textContent=`Confirmed ${pending.jobs.length} requests. Starting…`;
@@ -84,7 +84,7 @@ $('#batch-confirm-send').addEventListener('click',async()=>{
    if(entry.status==='running'){sent++;$('#batch-status').textContent=`Request ${sent} of ${pending.jobs.length}: ${job.modelId}`;}
    if(entry.status==='passed'&&capturedRevision===revision&&!controller.signal.aborted){
     const record=successRecord(job,entry.result,key);records=[record,...records].slice(0,200);try{localStorage.setItem(storageKey,JSON.stringify(records))}catch{storageAvailable=false}
-    try{const report=createReport(job,entry.result,record.id,key),share=el('a','Share this success on GitHub · claim badge ↗','text-link');share.href=issueUrl(report);share.target='_blank';share.rel='noopener noreferrer';card.append(share);}catch{card.append(el('p','Call succeeded, but this record cannot be shared safely.','fine'))}renderRecords();
+    try{const report=createReport(job,entry.result,record.id,key),share=el('a','Share this success on GitHub · claim badge ↗','text-link');share.href=issueUrl(report);share.target='_blank';share.rel='noopener noreferrer';share.addEventListener('click',()=>{activeReport=report;$('#check-publication').hidden=false;publicationStatus(`Submit the GitHub issue for ${job.modelId} to publish this result.`);trackPublication()});card.append(share);}catch{card.append(el('p','Call succeeded, but this record cannot be shared safely.','fine'))}renderRecords();
    }
   }});
   if(id===batchSerial)$('#batch-status').textContent=`${controller.signal.aborted?'Batch canceled.':'Batch finished.'} ${sent} requests sent · ${entries.filter(e=>e.status==='passed').length} succeeded · ${entries.filter(e=>e.status==='failed').length} failed · ${entries.filter(e=>e.status==='skipped').length} skipped. Share successful reports individually on GitHub.`;
