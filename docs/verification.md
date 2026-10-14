@@ -1,55 +1,66 @@
 # Model call verification
 
-The [verification page](https://staff-000.github.io/byokit/verification.html) uses
-byokit to display the complete model list and run explicit inference checks.
-GitHub sign-in is required. Browsing and copied code do not require sign-in.
+Use [the verification page](https://staff-000.github.io/byokit/verification.html)
+to select a model and test a real text-generation call with your own API key.
+No byokit login is needed. A small call may consume your provider quota.
 
-## Use the page
+## Test and share
 
-1. Sign in with GitHub. The website verifies your identity through the auth service.
-2. Select a model and review its tags, provider, endpoint and current settings.
-3. Enter that provider's API key. Your key stays in page memory and goes directly
-   to the provider; refreshing, signing out or leaving clears it.
-4. Click **Verify model**. This small text-generation request may use your quota.
-5. A successful hosted-model call saves a minimal browser record and submits an
-   attributed community report. GitHub Actions validates it, commits/pushes the
-   catalog update, and redeploys the website. The page distinguishes a successful
-   call from a submitted/published contribution.
+1. Select the exact provider/model and review its endpoint and settings.
+2. Enter the provider API key and click **Verify model**.
+3. After **Call succeeded**, click **Share verification on GitHub**.
+4. GitHub opens a prefilled issue. Sign in there if necessary, review the report,
+   and click **Submit new issue**. Opening or closing the form does not publish it.
+5. GitHub Actions validates the report, commits the catalog update, and deploys Pages.
+   Return to the website to see **Published**, or use **Check publication**.
 
-Local-server checks stay in the browser. Custom IDs or settings that do not match
-an existing catalog offering cannot be published as verification of that offering.
-Failures do not create success records. No provider retry, model substitution or
-quota-consuming test occurs automatically.
+The page polls the public feed every 15 seconds for up to five minutes after sharing
+or returning to the tab. A pending or failed publication never repeats inference.
+Local-server checks stay private to your browser. Custom model IDs cannot verify a
+different catalog offering. Browser CORS/network restrictions may prevent calls;
+copy the SDK example to run locally. There is no key-bearing proxy.
 
-## Privacy and identity
+## Privacy and meaning
 
-AI keys, authentication headers, prompts and generated text never enter GitHub,
-public reports or the verification service. Copies use environment-key callbacks.
-Your public GitHub handle is recorded as the contributor. OAuth access tokens stay
-server-side transiently; the frontend uses a short-lived memory-only session token.
+Keys stay in page memory and go directly to the AI provider. They are never saved
+in storage, included in issues, or sent to byokit. Refresh, navigation, provider
+changes, and **Clear API key** clear the entry. Prompts and generated text stay out
+of records and issue URLs. Public reports contain only version, report UUID,
+offering/model IDs, protocol, check time, latency, and output budget.
 
-Signed reports contain only model/offering IDs, protocol, timestamp, latency and
-output budget. Identity comes from GitHub, never a manually typed username.
-Reports describe one contributor's successful call under those settings. They do
-not prove every account has access or override provider retirement metadata.
-Browser-reported inference success cannot be independently proven without moving
-credentials/inference to a server, which this design deliberately avoids.
+GitHub supplies the issue author's identity. **Community verified by @user · date**
+means that contributor reported a successful text call. Browser reports cannot
+independently prove inference. Availability remains provider/account-specific:
+a DeepSeek report does not verify its OpenRouter offering. Failures remain local.
+Community verification never overrides upstream LIVE/OUTDATED/UNCERTAIN metadata.
+The existing 90-day freshness window applies; historical reports remain evidence.
 
-## Website implementation
+## Maintainer operation
 
-Discovery/filtering and the hero provider list call `byokit.getModels()`. Inference
-calls `byokit.openAI(...).chat.completions.create(...)`. Provider URLs come from the
-library's shared connection map, not another website-maintained list. JavaScript
-and Python copy examples use SDK-shaped clients; cURL shows native HTTP.
+No GitHub App, OAuth server, or extra deployment secrets are required. The issue
+workflow needs repository Contents write permission, notification Issues write,
+and the existing Pages deployment permissions. Branch rules must allow the
+verification bot's commits. Enable Issues, Actions, and the existing Actions Pages
+publishing source. Normal issues are ignored.
 
-The homepage also demonstrates `byokit.claude(...).messages.create(...)`.
-Cancellation and the 90-second inference deadline remain active. Browser CORS or
-local-network restrictions can prevent a call; no proxy receives the user's key.
+The workflow accepts strict reports checked within 24 hours before issue creation,
+deduplicates by numeric contributor ID/report UUID and source issue, and limits
+contributors to ten reports per day. It checks trusted main code only; issue
+content is data. Concurrent pushes reread/retry without repeating provider calls.
+A successful deployment closes the issue with commit/workflow links. Failures leave
+it open; rerun the workflow after resolving permissions or deployment problems.
+For invalid report content, submit a corrected issue instead of rerunning its
+captured invalid opened event.
 
-## Maintainer activation
+`catalog/verifications.json` is the canonical report store. Catalog generation
+updates JavaScript/Python data and the verification hash in the same commit.
+The website's `verification.json` feed is built from those records. Registry
+packages receive updates on the next release, not immediately after a report.
 
-[GitHub App and auth-service setup](../services/verification/README.md) is required
-before signed-in verification can operate on the public site. Missing configuration
-shows a clear unavailable state and blocks anonymous inference/publication.
-Catalog queries remain offline and use the pinned release snapshot. Refresh the
-catalog and release the application to update model choices without rewriting code.
+## Pipeline staging
+
+The repository owner may submit a generated report with `staging: true` through
+the same issue workflow. It is explicitly a pipeline fixture, not a real inference.
+Only a separate staging receipt is committed under `docs/verification-staging/`
+and published in `verification-staging.json`. No model evidence or badge changes.
+Never remove the staging flag to present a fixture as a real model call.

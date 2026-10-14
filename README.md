@@ -623,7 +623,8 @@ Architecture and data-flow diagrams: [design document](docs/design.md).
 see [third-party notices](THIRD_PARTY_NOTICES.md).
 
 
-Website verification requires GitHub sign-in and publishes successful community
-reports through a signed Actions workflow. Maintainers must first activate the
-[GitHub App/auth service](services/verification/README.md). Provider keys stay in
-the contributor's browser. Model availability remains provider/account-specific.
+Anyone can [test a model on the website](https://staff-000.github.io/byokit/verification.html)
+using their own API key. After success, **Share verification on GitHub** opens a
+prefilled issue. Submit it with your GitHub account; Actions commits the community
+report and updates the website. No separate sign-in service is needed. Keys go only
+to the provider. See [verification workflow and privacy](docs/verification.md).

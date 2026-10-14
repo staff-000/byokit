@@ -173,12 +173,12 @@ to `catalog/verifications.json`. Maintain provider-specific scope and settings.
 See [model verification](docs/verification.md). Never promote fixtures into call
 reports. Development check outcomes are not shown on the public website.
 
-## Signed-in website contributions
+## Website contributions through GitHub Issues
 
-Website calls require GitHub sign-in. Successful catalog-hosted calls submit minimal,
-attributed community reports to a signed GitHub Actions publication workflow. The
-workflow creates the commit and redeploys Pages without a manual model-list edit.
-The contributor identity is authenticated; the model success is contributor-reported,
-not independently tested by the server. No AI key, prompt or output is submitted.
-Manual verification records still require evidence and normal maintainer review.
-See [service setup](services/verification/README.md) and [verification](docs/verification.md).
+Website model calls work without sign-in. After a successful hosted-model call,
+**Share verification on GitHub** opens a report issue. Submitting it supplies your
+GitHub identity; Actions validates the public fields, commits the community report,
+and updates Pages. No key, prompt, or output is submitted. Do not submit fixtures
+as real inference evidence. Maintainer-owned staging fixtures use `staging: true`
+and stay outside the model catalog. Manual records still follow normal review.
+See [verification](docs/verification.md) for permissions, privacy, and recovery.

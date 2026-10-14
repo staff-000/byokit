@@ -1,31 +1,58 @@
-name: Publish authenticated model verification
+name: Publish community model verification
 on:
-  repository_dispatch:
-    types: [byokit-verification]
+  issues:
+    types: [opened]
 permissions:
-  contents: write
-  pages: write
-  id-token: write
+  contents: read
 jobs:
   record:
+    if: contains(github.event.issue.body, '<!-- byokit-verification:v1 -->') && !github.event.issue.pull_request
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     outputs:
+      recognized: ${{ steps.record.outputs.recognized }}
       changed: ${{ steps.record.outputs.changed }}
       ref: ${{ steps.record.outputs.ref }}
+      staging: ${{ steps.record.outputs.staging }}
+      operation: ${{ steps.record.outputs.operation }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: main
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
-      - name: Validate signed report and commit catalog update
+      - name: Validate GitHub issue and commit report
         id: record
         run: node scripts/publish-verification.mjs
-        env:
-          BYOKIT_PUBLICATION_SECRET: ${{ secrets.BYOKIT_PUBLICATION_SECRET }}
   deploy:
     needs: record
-    if: needs.record.outputs.changed == 'true'
+    if: needs.record.outputs.recognized == 'true'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     uses: ./.github/workflows/pages.yml
     with:
       ref: ${{ needs.record.outputs.ref }}
+  notify:
+    needs: [record, deploy]
+    if: always() && needs.record.result != 'skipped'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Confirm public feed and report result
+        run: node scripts/finish-verification.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RECORD_RESULT: ${{ needs.record.result }}
+          RECORD_REF: ${{ needs.record.outputs.ref }}
+          STAGING: ${{ needs.record.outputs.staging }}
+          OPERATION_ID: ${{ needs.record.outputs.operation }}

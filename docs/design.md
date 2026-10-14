@@ -381,3 +381,27 @@ Catalogs are pinned for reproducible offline queries. Catalog refresh + applicat
 release updates model options without changes to model-list code. An application
 must consume an updated catalog/package; this does not claim live background
 refresh or account-level availability guarantees.
+
+## Website verification publication
+
+```mermaid
+sequenceDiagram
+  participant U as Visitor browser
+  participant P as AI provider
+  participant G as GitHub Issues
+  participant A as GitHub Actions
+  participant W as GitHub Pages
+  U->>P: Explicit byokit SDK call with transient key
+  P-->>U: Text response
+  U->>G: Submit prefilled public report (no credentials/payload)
+  G->>A: Issue opened with GitHub author identity
+  A->>A: Validate, deduplicate, commit canonical evidence
+  A->>W: Explicitly rebuild and deploy
+  W-->>U: Public feed and community verification badge
+```
+
+The issue supplies authenticated authorship; inference remains community-reported.
+No OAuth service or GitHub App is involved. Existing verification schemas and
+90-day freshness stay compatible. Provider-specific community status is separate
+from upstream lifecycle. Failures remain browser-local. Staging exercises the
+publication pipeline through separate receipts without adding model evidence.
