@@ -63,6 +63,17 @@ GitHub identity is verified. Inference success is a **community report**, not an
 independent server-side inference proof: a browser client can fabricate a success.
 No community report overrides upstream retirement or account-access information.
 
+## Troubleshooting sign-in
+
+Being signed into github.com does not create a byokit session. Once this service is
+activated, visitors click **Sign in with GitHub** on the verification page to authorize
+byokit; GitHub can reuse their existing login for that flow. Refreshing the page clears
+the memory-only byokit session, so visitors sign in again.
+
+If the page says **Verification is not available yet**, the site service URL is missing
+or failed to load. This is a deployment/setup issue, not a failed visitor login.
+Complete the one-time activation above; do not ask visitors to log in repeatedly.
+
 ## Current activation state
 
 Source, workflow and mocked tests are ready. No GitHub App, hosting deployment,

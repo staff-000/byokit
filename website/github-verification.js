@@ -1,3 +1,22 @@
+// A github.com cookie is not a byokit session; contribution requires site OAuth.
+export function verificationAccountView(client) {
+ if (!client.base) return {
+  heading: 'Verification is not available yet.',
+  description: 'GitHub sign-in is not configured for this site yet. You can still browse models and copy the code.',
+  signInVisible: false, signedIn: false,
+ };
+ if (!client.user) return {
+  heading: 'Sign in to contribute a verification.',
+  description: 'Sign in through this page to connect your GitHub account to byokit, even if you are already signed in on github.com.',
+  signInVisible: true, signedIn: false,
+ };
+ return {
+  heading: `Signed in as @${client.user.login}`,
+  description: 'Successful hosted-model calls will be submitted to GitHub. Your AI key goes only to the provider.',
+  signInVisible: false, signedIn: true,
+ };
+}
+
 // GitHub identity/session tokens stay in page memory. AI keys never enter this module.
 export class GitHubVerification {
  constructor(base,siteOrigin=location.origin){this.base=base?.replace(/\/$/,'')||'';this.siteOrigin=siteOrigin;this.token='';this.user=null;this.popup=null;this.timer=null;this.loginHandler=null;}

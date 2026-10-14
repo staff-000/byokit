@@ -1,4 +1,4 @@
-import {GitHubVerification} from '../website/github-verification.js';
+import {GitHubVerification,verificationAccountView} from '../website/github-verification.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -70,4 +70,18 @@ test('late auth responses cannot overwrite another sign-in session',async()=>{
   const checking=client.check();client.token='new-session';client.user={id:456,login:'new-user'};resolve(new Response(JSON.stringify({user})));
   await assert.rejects(checking,/session changed/);assert.equal(client.token,'new-session');assert.equal(client.user.login,'new-user');
  }finally{globalThis.fetch=original;}
+});
+
+// The deployed service can be absent even while the visitor is signed into GitHub.
+test('account UI distinguishes missing site setup from missing visitor authentication',()=>{
+ const unavailable=verificationAccountView({base:'',user:null});
+ assert.match(unavailable.heading,/not available/);assert.match(unavailable.description,/not configured/);
+ assert.equal(unavailable.signInVisible,false);assert.equal(unavailable.signedIn,false);
+ assert.deepEqual(verificationAccountView({base:'',user}),unavailable);
+ const anonymous=verificationAccountView({base:'https://auth.example',user:null});
+ assert.equal(anonymous.signInVisible,true);assert.equal(anonymous.signedIn,false);
+ assert.match(anonymous.description,/already signed in on github.com/);
+ const connected=verificationAccountView({base:'https://auth.example',user});
+ assert.equal(connected.heading,'Signed in as @contributor');assert.equal(connected.signedIn,true);
+ assert.equal(connected.signInVisible,false);
 });

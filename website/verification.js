@@ -1,4 +1,4 @@
-import {GitHubVerification} from './github-verification.js';
+import {GitHubVerification,verificationAccountView} from './github-verification.js';
 import * as byokit from './lib/core/catalog.js';
 import {requestExample} from './request-examples.js';
 import {ProviderApi,ProtocolNames,verifyInference,successRecord,safeRecords,requestFor} from './inference.js';
@@ -6,11 +6,12 @@ const $=s=>document.querySelector(s),el=(tag,text,cls)=>{const n=document.create
 let authConfig={serviceUrl:''};try{authConfig=await fetch('./verification-config.json',{cache:'no-store'}).then(r=>r.json())}catch{}
 const github=new GitHubVerification(authConfig.serviceUrl);
 function renderAccount(){
- if(!github.user)$('#api-key').value='';
- $('#github-account').textContent=github.user?`Signed in as @${github.user.login}`:'Sign in to contribute a verification.';
- $('#github-status').textContent=github.user?'Successful hosted-model calls will be submitted to GitHub. Your AI key goes only to the provider.':github.base?'GitHub sign-in is required to verify a model and contribute its result.':'Verification is temporarily unavailable. You can browse models and copy the code.';
- $('#github-sign-in').disabled=!github.base;$('#github-sign-in').hidden=!!github.user;$('#github-sign-out').hidden=!github.user;
- $('#verify').disabled=!github.user;$('#api-key').disabled=!github.user;
+ const view=verificationAccountView(github);
+ if(!view.signedIn)$('#api-key').value='';
+ $('#github-account').textContent=view.heading;
+ $('#github-status').textContent=view.description;
+ $('#github-sign-in').disabled=!view.signInVisible;$('#github-sign-in').hidden=!view.signInVisible;$('#github-sign-out').hidden=!view.signedIn;
+ $('#verify').disabled=!view.signedIn;$('#api-key').disabled=!view.signedIn;
 }
 $('#github-sign-in').addEventListener('click',()=>{try{github.signIn(()=>{invalidate();renderAccount()});$('#github-status').textContent='Finish signing in on GitHub.'}catch(e){$('#github-status').textContent=e.message}});
 $('#github-sign-out').addEventListener('click',()=>{github.signOut();$('#api-key').value='';invalidate();renderAccount()});
