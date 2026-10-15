@@ -68,7 +68,6 @@ jobs:
       - name: Run release script (Manual Dispatch)
         if: github.event_name == 'workflow_dispatch'
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         run: |
@@ -89,7 +88,6 @@ jobs:
       - name: Run release script (GitHub Release Published)
         if: github.event_name == 'release'
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         run: |
@@ -125,7 +123,6 @@ jobs:
       - name: Run release script (Scheduled Patch Release)
         if: github.event_name == 'schedule' && steps.check_updates.outputs.has_changes == 'true'
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         run: |

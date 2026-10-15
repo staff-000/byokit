@@ -157,8 +157,10 @@ function parseCliArgs(args) {
     dryRun: false,
     skipTests: false,
     npmOnly: false,
-    pypiOnly: false,
-    npmToken: process.env.NPM_TOKEN || process.env.NODE_AUTH_TOKEN || null,
+    npmToken:
+      process.env.GITHUB_ACTIONS && !args.includes('--npm-token')
+        ? null
+        : process.env.NPM_TOKEN || process.env.NODE_AUTH_TOKEN || null,
     pypiToken:
       process.env.PYPI_TOKEN || process.env.PYPI_API_TOKEN || process.env.TWINE_PASSWORD || null,
     tag: 'latest',

@@ -64,6 +64,15 @@
   },
   "sideEffects": false,
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/staff-000/byokit.git",
+    "directory": "packages/byokit"
+  },
+  "homepage": "https://github.com/staff-000/byokit#readme",
+  "bugs": {
+    "url": "https://github.com/staff-000/byokit/issues"
+  },
   "publishConfig": {
     "access": "public"
   }
