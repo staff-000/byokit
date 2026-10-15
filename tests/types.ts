@@ -67,7 +67,7 @@ client.chat.completions.create({messages:[{role:calls.Role.User,content:'Hi'}],s
 const modelReleaseDate: string | null | undefined = byokit.getModels()[0].releaseDate;
 const modelTokensPerSecond: number | null | undefined = byokit.getModels()[0].speed?.tokensPerSecond;
 
-const sortedModels=byokit.getModels({sort:byokit.ModelSort.Speed,limit:1});
+const sortedModels=byokit.getModels({sort:byokit.ModelSort.SpeedDescend,limit:1});
 byokit.appendModel(sortedModels,{providerId:byokit.customProviderId('acme'),modelId:'custom',baseUrl:'https://example.com/v1',protocol:byokit.ApiProtocol.OpenAI});
 // @ts-expect-error raw sort string is not the enum
 byokit.getModels({sort:'speed'});

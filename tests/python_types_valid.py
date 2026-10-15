@@ -20,7 +20,7 @@ anthropic = byokit.Anthropic(api_key="application-owned-key")
 anthropic.messages.create(model="custom-id", messages=[{"role":byokit.Role.USER,"content":"Hi"}], max_tokens=100).content
 
 import byokit
-byokit.get_models({"sort":byokit.ModelSort.SPEED})
+byokit.get_models({"sort":byokit.ModelSort.SPEED_DESCEND})
 byokit.append_model([],{"providerId":byokit.custom_provider_id("acme"),"modelId":"test","baseUrl":"https://example.com/v1","protocol":byokit.ApiProtocol.OPEN_AI})
 
 client2 = byokit.Byokit(runtime_checks=True, timeout_ms=90000)

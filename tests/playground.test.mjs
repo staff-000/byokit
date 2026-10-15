@@ -14,7 +14,7 @@ async function execute(code){
 test('playground runs the actual compiled catalog and price sorting API',async()=>{
  const messages=await execute(playgroundExamples.price.code);
  assert.equal(messages.at(-1).type,'done');assert.equal(messages.at(-1).id,7);
- const actual=JSON.parse(messages[0].text),expected=byokit.getModels(byokit.COMPLETE,{sort:byokit.ModelSort.Price,limit:5,local:false}).map(model=>({provider:model.provider.name,model:model.apiModelId,inputPrice:model.price.input,context:model.limits.context}));
+ const actual=JSON.parse(messages[0].text),expected=byokit.getModels(byokit.COMPLETE,{sort:byokit.ModelSort.PriceAscend,limit:5,local:false}).map(model=>({provider:model.provider.name,model:model.apiModelId,inputPrice:model.price.input,context:model.limits.context}));
  assert.deepEqual(actual,expected);
 });
 test('all editable examples run offline and preserve custom-model unknown metadata',async()=>{

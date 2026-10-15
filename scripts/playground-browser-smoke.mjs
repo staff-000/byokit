@@ -3,7 +3,7 @@ import * as byokit from '../packages/core/catalog.js';
 export async function playgroundSmoke(page){
  const status=page.locator('#playground-status'),output=page.locator('#playground-output'),editor=page.locator('#playground-code');
  await page.locator('#playground-run').click();await page.getByText('Finished. Output comes from the real byokit catalog.',{exact:true}).waitFor();
- const expected=byokit.getModels(byokit.COMPLETE,{local:false,limit:5,sort:byokit.ModelSort.Price}).map(m=>m.apiModelId);
+ const expected=byokit.getModels(byokit.COMPLETE,{local:false,limit:5,sort:byokit.ModelSort.PriceAscend}).map(m=>m.apiModelId);
  assert.deepEqual(JSON.parse(await output.textContent()).map(m=>m.model),expected);
  await editor.fill('console.log(byokit.getModels({ local: false, limit: 2 }).map(m => m.apiModelId))');await page.locator('#playground-run').click();await page.getByText('Finished. Output comes from the real byokit catalog.',{exact:true}).waitFor();assert.equal(JSON.parse(await output.textContent()).length,2);
  await editor.fill('const = ;');await page.locator('#playground-run').click();await page.getByText('JavaScript error. Edit your code and try again.',{exact:true}).waitFor();assert.ok((await output.textContent()).includes('SyntaxError'));

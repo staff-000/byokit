@@ -9,7 +9,7 @@
 
 <span class="code-muted">const</span> [model] = byokit.<span class="code-lime">getModels</span>({
   providerIds: [byokit.ProviderId.DeepSeek],
-  sort: byokit.ModelSort.Price,
+  sort: byokit.ModelSort.PriceAscend,
   limit: 1, local: false,
 });
 if (!model?.connection) throw new Error('No model');

@@ -1,6 +1,6 @@
 export const playgroundExamples = {
   price: {label:'Sort by price', code:`const models = byokit.getModels(byokit.COMPLETE, {
-  sort: byokit.ModelSort.Price,
+  sort: byokit.ModelSort.PriceAscend,
   limit: 5,
   local: false,
 });
@@ -18,7 +18,7 @@ console.log(models.map(model => ({
   filter: {label:'Filter and exclude tags', code:`const models = byokit.getModels(byokit.COMPLETE, {
   local: false,
   limit: 5,
-  sort: byokit.ModelSort.Alphabetical,
+  sort: byokit.ModelSort.AlphabeticalAscend,
   filters: {
     requiredFeatures: [byokit.FeatureName.FunctionCalling],
     minContextTokens: 32_000,
@@ -31,7 +31,7 @@ console.log(models.map(model => ({
   context: model.limits.context,
 })));`},
   speed: {label:'Sort by speed', code:`const models = byokit.getModels(byokit.COMPLETE, {
-  sort: byokit.ModelSort.Speed,
+  sort: byokit.ModelSort.SpeedDescend,
   limit: 5,
   local: false,
 });

@@ -235,10 +235,16 @@ class Role(str, Enum):
     TOOL = "tool"
 
 class ModelSort(str, Enum):
+    ALPHABETICAL_ASCEND = "alphabeticalAscend"
+    ALPHABETICAL_DESCEND = "alphabeticalDescend"
+    PRICE_ASCEND = "priceAscend"
+    PRICE_DESCEND = "priceDescend"
+    SPEED_ASCEND = "speedAscend"
+    SPEED_DESCEND = "speedDescend"
+    PROVIDER_ORDER = "provider-order"
     ALPHABETICAL = "alphabetical"
     PRICE = "price"
     SPEED = "speed"
-    PROVIDER_ORDER = "provider-order"
 
 DEFAULT=ModelList.DEFAULT
 COMPLETE=ModelList.COMPLETE

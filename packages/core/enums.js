@@ -34,5 +34,5 @@ export const LocalApi=Object.freeze({"OpenAI":"openai-compatible","Ollama":"olla
 export const LifecycleBasis=Object.freeze({"Provider":"provider","CatalogListing":"catalog-listing"});
 export const ApiProtocol=Object.freeze({"OpenAI":"openai-compatible","Claude":"claude","Gemini":"gemini","Ollama":"ollama"});
 export const Role=Object.freeze({"System":"system","Developer":"developer","User":"user","Assistant":"assistant","Tool":"tool"});
-export const ModelSort=Object.freeze({"Alphabetical":"alphabetical","Price":"price","Speed":"speed","ProviderOrder":"provider-order"});
+export const ModelSort=Object.freeze({"AlphabeticalAscend":"alphabeticalAscend","AlphabeticalDescend":"alphabeticalDescend","PriceAscend":"priceAscend","PriceDescend":"priceDescend","SpeedAscend":"speedAscend","SpeedDescend":"speedDescend","ProviderOrder":"provider-order","Alphabetical":"alphabetical","Price":"price","Speed":"speed"});
 export const DEFAULT=ModelList.Default, COMPLETE=ModelList.Complete, CHINA=ModelList.China, GLOBAL=ModelList.Global;

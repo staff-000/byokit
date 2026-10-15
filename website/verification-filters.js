@@ -11,7 +11,7 @@ export function filterModels(state={}){
  if(state.price&&state.price!=='any')filters.maxInputPricePerM=Number(state.price);
  if(state.region==='china')filters.includeTags=[byokit.Tag.OriginChina];
  if(state.excludeTag)filters.excludeTags=[byokit.customTag(state.excludeTag)];
- let models=byokit.getModels(byokit.COMPLETE,{providerIds,local:false,filters,sort:state.sort==='price'?byokit.ModelSort.Price:state.sort==='speed'?byokit.ModelSort.Speed:byokit.ModelSort.ProviderOrder});
+ let models=byokit.getModels(byokit.COMPLETE,{providerIds,local:false,filters,sort:Object.values(byokit.ModelSort).includes(state.sort)?state.sort:byokit.ModelSort.ProviderOrder});
 
  if(!state.provider||state.provider===byokit.ProviderId.Local)models.push(...byokit.getModels().filter(m=>m.local));
  const search=(state.search||'').trim().toLowerCase();if(search)models=models.filter(m=>[m.name,m.apiModelId,m.provider.name,...m.tags,...m.model.tags].join(' ').toLowerCase().includes(search));

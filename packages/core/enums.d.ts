@@ -268,9 +268,18 @@ export declare enum Role {
 }
 
 export declare enum ModelSort {
-  Alphabetical = "alphabetical",
-  Price = "price",
-  Speed = "speed",
+  AlphabeticalAscend = "alphabeticalAscend",
+  AlphabeticalDescend = "alphabeticalDescend",
+  PriceAscend = "priceAscend",
+  PriceDescend = "priceDescend",
+  SpeedAscend = "speedAscend",
+  SpeedDescend = "speedDescend",
   ProviderOrder = "provider-order",
+  /** @deprecated Use an explicit Ascend/Descend member. */
+  Alphabetical = "alphabetical",
+  /** @deprecated Use an explicit Ascend/Descend member. */
+  Price = "price",
+  /** @deprecated Use an explicit Ascend/Descend member. */
+  Speed = "speed",
 }
 export declare const DEFAULT:ModelList.Default, COMPLETE:ModelList.Complete, CHINA:ModelList.China, GLOBAL:ModelList.Global;

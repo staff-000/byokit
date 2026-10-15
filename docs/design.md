@@ -449,8 +449,11 @@ The former NON_CHINA/NonChina API has been removed. Migrate to GLOBAL for an inc
 ## Query ordering and custom catalogs
 
 `getModels` sorts hosted results alphabetically by model name before `limit` by
-default. `ModelSort.Price` sorts input USD/million ascending, `Speed` sorts known
-tokens/sec descending. Unknowns last; ties name/provider/offering ID. Local setup
+default (`ModelSort.AlphabeticalAscend`); `AlphabeticalDescend` reverses names.
+`PriceAscend`/`PriceDescend` sort input USD/million; `SpeedAscend`/`SpeedDescend`
+sort known tokens/sec. Unknowns stay last in both directions; ties use ascending
+name/provider/offering ID. Legacy `Alphabetical`, `Price`, and `Speed` enum members
+and serialized values retain their previous ordering for compatibility. Local setup
 entries remain appended. Shortlist selection still precedes sorting. Explicit
 `ProviderOrder` retains prior ranking for UI use cases. Python follows the same
 ordering and enum values. `appendModel` adds an unverified application-owned model
@@ -488,3 +491,12 @@ output is rendered as text, bounded, and includes errors and returned values.
 Stop, edits, reset, page exit, or a three-second deadline remove the frame and
 terminate its work. Run identity checks fence late messages. CI exercises actual
 Chromium worker execution, errors, stop/timeouts, network blocking, and recovery.
+
+
+Verification selectors live in the table header alongside their data columns:
+provider/model, context, price, speed/release, tags/capabilities and status.
+The header remains visible as a responsive filter grid above mobile result cards;
+it is never removed with the desktop header labels. Missing price, speed and release
+metadata is displayed as unknown. More tags expand on demand. All list filters and
+sort directions delegate to the shared catalog API; newest-release ordering remains
+a website view option. Changing table filters sends no inference request.

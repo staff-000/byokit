@@ -26,6 +26,11 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
   let source=await readFile('website/verification.js','utf8');for(const [relative,file] of [['./lib/core/catalog.js','packages/core/catalog.js'],['./verification-report.js','website/verification-report.js'],['./contributor-badges.js','website/contributor-badges.js'],['./request-examples.js','website/request-examples.js'],['./inference.js','website/inference.js'],['./verification-filters.js','website/verification-filters.js'],['./batch-verification.js','website/batch-verification.js']])source=source.replace(`'${relative}'`,JSON.stringify(pathToFileURL(resolve(file)).href));
   await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
   assert.equal($('#github-sign-in'),null);assert.equal($('#verify').disabled,false);assert.equal(calls,0);assert.match($('#verify').textContent,/earn a badge/);assert.equal($('#earned-badge').hidden,true);
+  for(const id of ['model-search','provider-filter','region-filter','exclude-tag-filter','feature-filter','modality-filter','weights-filter','context-filter','price-filter','sort-filter','include-outdated'])assert.ok($('#'+id).closest('thead'),id+' belongs to the table header');
+  assert.equal(document.querySelectorAll('#models tr:first-child td').length,7);
+  change('sort-filter','priceDescend');const prices=[...document.querySelectorAll('#models tr')].map(tr=>tr.querySelector('td:nth-child(4)')?.textContent);assert.ok(prices.length);
+  change('sort-filter','provider-order');
+  change('model-search','no-such-model-fixture');assert.equal($('#models td').colSpan,7);assert.match($('#models').textContent,/No matching/);change('model-search','');
   change('provider-filter','deepseek');$('#models button').click();change('api-key','fixture-secret-key');change('prompt','private fixture prompt');
   $('#verify-form').dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true}));await wait(()=>!$('#share-verification').hidden);
   assert.equal(calls,1);assert.match($('#call-status').textContent,/Call succeeded/);assert.equal($('#earned-badge').hidden,true);

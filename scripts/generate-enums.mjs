@@ -2,7 +2,7 @@ import {readFile,writeFile} from 'node:fs/promises';
 const spec=JSON.parse(await readFile(new URL('../spec/enums.json',import.meta.url),'utf8'));
 const header='// Generated from spec/enums.json. Run npm run enums:generate.\n';
 const js=header+Object.entries(spec).map(([name,values])=>`export const ${name}=Object.freeze(${JSON.stringify(values)});`).join('\n')+'\n';
-const ts=header+Object.entries(spec).map(([name,values])=>`export declare enum ${name} {\n${Object.entries(values).map(([k,v])=>`  ${k} = ${JSON.stringify(v)},`).join('\n')}\n}`).join('\n\n')+'\n';
+const ts=header+Object.entries(spec).map(([name,values])=>`export declare enum ${name} {\n${Object.entries(values).map(([k,v])=>`  ${name==='ModelSort'&&['Alphabetical','Price','Speed'].includes(k)?'/** @deprecated Use an explicit Ascend/Descend member. */\n  ':''}${k} = ${JSON.stringify(v)},`).join('\n')}\n}`).join('\n\n')+'\n';
 const snake=s=>s.replace(/([a-z0-9])([A-Z])/g,'$1_$2').replace(/([A-Z])([A-Z][a-z])/g,'$1_$2').toUpperCase();
 const py='# Generated from spec/enums.json. Run npm run enums:generate.\nfrom enum import Enum\n\n'+Object.entries(spec).map(([name,values])=>`class ${name}(str, Enum):\n${Object.entries(values).map(([k,v])=>`    ${snake(k)} = ${JSON.stringify(v)}`).join('\n')}`).join('\n\n')+'\n';
 await writeFile(new URL('../packages/core/enums.js',import.meta.url),js+'export const DEFAULT=ModelList.Default, COMPLETE=ModelList.Complete, CHINA=ModelList.China, GLOBAL=ModelList.Global;\n');

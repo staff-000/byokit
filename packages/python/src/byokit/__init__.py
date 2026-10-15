@@ -141,12 +141,23 @@ class Catalog:
                 assets=self.data.get("assets",[])
                 result.append(dict(o,connection=connection_for(o),provider=g["provider"],model=model,family=family,logos={"provider":next((a for a in assets if a["id"]==g["provider"].get("logoId")),None),"family":next((a for a in assets if family and a["id"]==family.get("logoId")),None)},verification=verification_summary(self.data,o["id"],as_of=config.get("asOf"),max_age_days=config.get("filters",{}).get("verifiedWithinDays",90),contributor=config.get("filters",{}).get("verifiedBy"))))
         hosted=[o for o in result if o["deployment"]!="local"]
-        sort=config.get("sort",ModelSort.ALPHABETICAL)
+        sort=config.get("sort",ModelSort.ALPHABETICAL_ASCEND)
+        sort={"alphabetical":ModelSort.ALPHABETICAL_ASCEND,"price":ModelSort.PRICE_ASCEND,"speed":ModelSort.SPEED_DESCEND}.get(sort,sort)
         if sort!=ModelSort.PROVIDER_ORDER:
-            def ordering(o):
-                primary=(o.get("price",{}).get("input") if o.get("price",{}).get("input") is not None and o.get("price",{}).get("currency")=="USD" else math.inf) if sort==ModelSort.PRICE else -(o.get("speed",{}).get("tokensPerSecond") if o.get("speed",{}).get("tokensPerSecond") is not None else -1) if sort==ModelSort.SPEED else 0
-                return (primary,o["name"].lower(),o["providerId"],o["id"])
-            hosted.sort(key=ordering)
+            from functools import cmp_to_key
+            def ordering(a,b):
+                def compare(x,y): return (x>y)-(x<y)
+                result=0
+                if sort in [ModelSort.PRICE_ASCEND,ModelSort.PRICE_DESCEND,ModelSort.SPEED_ASCEND,ModelSort.SPEED_DESCEND]:
+                    price=sort in [ModelSort.PRICE_ASCEND,ModelSort.PRICE_DESCEND]
+                    def value(o):
+                        return o.get("price",{}).get("input") if o.get("price",{}).get("currency")=="USD" else None
+                    x=value(a) if price else (a.get("speed") or {}).get("tokensPerSecond")
+                    y=value(b) if price else (b.get("speed") or {}).get("tokensPerSecond")
+                    if x is None or y is None: result=-1 if x is not None else 1 if y is not None else 0
+                    else: result=compare(x,y)*(1 if sort in [ModelSort.PRICE_ASCEND,ModelSort.SPEED_ASCEND] else -1)
+                return result or compare(a["name"].lower(),b["name"].lower())*(-1 if sort==ModelSort.ALPHABETICAL_DESCEND else 1) or compare(a["providerId"],b["providerId"]) or compare(a["id"],b["id"])
+            hosted.sort(key=cmp_to_key(ordering))
         return copy.deepcopy(hosted[:config.get("limit",len(result))]+[o for o in result if o["deployment"]=="local"])
     def select(self, config=None, options=None):
         return self._select(_normalize_query(config,options))

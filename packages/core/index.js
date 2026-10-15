@@ -89,10 +89,15 @@ function matches(o, m, c, providerTags = []) {
 
 function compareModels(a,b,sort){
  const text=(x,y)=>x<y?-1:x>y?1:0;
+ const numeric=(x,y,direction)=>{
+  const knownX=Number.isFinite(x),knownY=Number.isFinite(y);
+  if(!knownX||!knownY)return knownX?-1:knownY?1:0;
+  return (x<y?-1:x>y?1:0)*direction;
+ };
  let result=0;
- if(sort===ModelSort.Price){const x=a.price?.currency===Currency.USD?(a.price.input??Infinity):Infinity,y=b.price?.currency===Currency.USD?(b.price.input??Infinity):Infinity;result=x<y?-1:x>y?1:0;}
- if(sort===ModelSort.Speed){const x=a.speed?.tokensPerSecond??-1,y=b.speed?.tokensPerSecond??-1;result=x>y?-1:x<y?1:0;}
- return result||text(a.name.toLowerCase(),b.name.toLowerCase())||text(a.providerId,b.providerId)||text(a.id,b.id);
+ if([ModelSort.PriceAscend,ModelSort.PriceDescend].includes(sort))result=numeric(a.price?.currency===Currency.USD?a.price.input:null,b.price?.currency===Currency.USD?b.price.input:null,sort===ModelSort.PriceAscend?1:-1);
+ if([ModelSort.SpeedAscend,ModelSort.SpeedDescend].includes(sort))result=numeric(a.speed?.tokensPerSecond,b.speed?.tokensPerSecond,sort===ModelSort.SpeedAscend?1:-1);
+ return result||text(a.name.toLowerCase(),b.name.toLowerCase())*(sort===ModelSort.AlphabeticalDescend?-1:1)||text(a.providerId,b.providerId)||text(a.id,b.id);
 }
 export class Catalog {
   constructor(data) {
@@ -107,7 +112,7 @@ export class Catalog {
     const config=normalizeQuery(input,options);
     const groups=this._select(config,true);
     const hosted=groups.filter(g=>g.provider.deployment!==Deployment.Local).flatMap(g=>g.offerings.map(o=>[g,o]));
-    const sort=config.sort??ModelSort.Alphabetical;
+    const sort=({alphabetical:ModelSort.AlphabeticalAscend,price:ModelSort.PriceAscend,speed:ModelSort.SpeedDescend})[config.sort]??config.sort??ModelSort.AlphabeticalAscend;
     if(sort!==ModelSort.ProviderOrder)hosted.sort((a,b)=>compareModels({...a[1],providerId:a[0].provider.id},{...b[1],providerId:b[0].provider.id},sort));
     const limited=hosted.slice(0,config.limit);
     const locals=groups.filter(g=>g.provider.deployment===Deployment.Local).flatMap(g=>g.offerings.map(o=>[g,o]));

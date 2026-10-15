@@ -84,8 +84,12 @@ badge registry in `contributors.json` and individual SVGs under `badges/`.
 
 The model list defaults to LIVE offerings. **Include outdated models** explicitly
 adds retired offerings; it never substitutes a model if an outdated one is rejected.
-Filter by provider, provider region, supported capability, input modality, weights,
-context, and input price. Sort by release date, price, or known speed. Unknown
+Use the table-header selectors to filter by provider, origin tags, excluded tag,
+supported capability, input modality, weights, context, and input price. Separate
+columns show context, input/output price, speed/release, tags, and verification
+status. Sort names, price, or known speed in either direction, or show newest
+releases. Unknown numeric values remain last. On mobile, the table header becomes
+a filter grid and results become labeled cards. Unknown
 metadata is shown as unknown; local setup entries keep their own URL/protocol.
 
 Select up to ten hosted models from one provider, enter that provider's key, then

@@ -26,8 +26,9 @@ Models are sorted alphabetically by model name by default. Sort across hosted
 results before applying `limit`:
 
 ```ts
-byokit.getModels(byokit.COMPLETE, { sort: byokit.ModelSort.Price }); // Input price: low → high
-byokit.getModels(byokit.COMPLETE, { sort: byokit.ModelSort.Speed }); // Tokens/sec: high → low
+byokit.getModels(byokit.COMPLETE, { sort: byokit.ModelSort.PriceAscend }); // Input price: low → high
+byokit.getModels(byokit.COMPLETE, { sort: byokit.ModelSort.PriceDescend }); // Input price: high → low
+byokit.getModels(byokit.COMPLETE, { sort: byokit.ModelSort.SpeedDescend }); // Tokens/sec: high → low
 ```
 
 Unknown values and non-USD prices sort last; ties use alphabetical order. Local stays appended.
@@ -123,7 +124,10 @@ include it. Local entries are appended without hosted metadata filtering.
 `prefer.features` and `prefer.lowerCost` guide per-provider shortlist selection;
 use `ModelSort.ProviderOrder` to retain that ranking in returned lists.
 
-`sort` is a top-level enum option: `ModelSort.Alphabetical` (default), `Price`, `Speed`, or `ProviderOrder`.
+`sort` is a top-level enum option: `ModelSort.AlphabeticalAscend` (default),
+`AlphabeticalDescend`, `PriceAscend`, `PriceDescend`, `SpeedAscend`,
+`SpeedDescend`, or `ProviderOrder`. Unknown prices/speeds stay last in either
+direction. Legacy `Alphabetical`, `Price`, and `Speed` names still work.
 
 Each model returns its provider, `apiModelId`, `connection` (URL/protocol),
 capabilities, modalities, limits, prices, tags, logos, lifecycle/popularity
@@ -171,7 +175,8 @@ print(result.choices[0].message.content)
 
 Install locally with `python -m pip install ./packages/python`.
 Python offers `Anthropic`, `call_claude()`, `append_model(models, custom)`,
-and `ModelSort.ALPHABETICAL` / `PRICE` / `SPEED` / `PROVIDER_ORDER` too.
+and the equivalent `ModelSort.ALPHABETICAL_ASCEND`, `PRICE_ASCEND`,
+`PRICE_DESCEND`, `SPEED_ASCEND`, `SPEED_DESCEND`, and `PROVIDER_ORDER` options.
 
 ## Contribute
 
