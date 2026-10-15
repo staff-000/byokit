@@ -193,13 +193,13 @@ Build-time budgets: declare `budget.maxInputTokens` and `maxOutputTokens`, then
 run `byokit check config.json`. Known limit violations fail; missing/unknown
 limits warn. [Design](docs/design.md) · [Integration](docs/integration.md) · [Verification](docs/verification.md)
 
-## Nightly catalog refresh
+## Scheduled releases and catalog refresh
 
-GitHub Actions fetches Models.dev daily at **08:23 UTC**, merges manual additions,
-validates, and uploads a candidate containing the catalog and generated JS/Python
-data. It preserves verification reports. Download and review the artifact before
-committing/releasing; production and package releases are explicit.
-[Workflow](.github/workflows/catalog-review.yml) · [Maintenance guide](docs/custom-catalog.md)
+GitHub Actions checks for updates every 6 hours (`0 */6 * * *`). It fetches the latest
+snapshot from Models.dev, merges manual additions, validates the catalog, and checks
+for any new git commits or catalog updates since the last release tag. When changes
+are detected, it automatically bumps a patch version and publishes to npm and PyPI.
+[Workflow](.github/workflows/release.yml) · [Maintenance guide](docs/custom-catalog.md)
 
 ## Thanks
 

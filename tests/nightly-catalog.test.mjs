@@ -69,13 +69,13 @@ test('manual additions survive repeated imports, preserve native connections, an
   bad.offerings[0].providerId = 'missing';
   assert.throws(() => mergeManualCatalog(base, bad));
 });
-test('nightly workflow fetches only the official source and retains generated packages', async () => {
+test('scheduled release workflow fetches models.dev source, checks for updates, and publishes', async () => {
   const workflow = await readFile(
-    new URL('../.github/workflows/catalog-review.yml', import.meta.url),
+    new URL('../.github/workflows/release.yml', import.meta.url),
     'utf8',
   );
-  assert.ok(workflow.includes('23 8 * * *'));
+  assert.ok(workflow.includes('0 */6 * * *'));
   assert.ok(workflow.includes('https://models.dev/api.json'));
   assert.ok(workflow.includes('packages/byokit/catalog.js'));
-  assert.ok(workflow.includes('contents: read'));
+  assert.ok(workflow.includes('node scripts/release.mjs patch --push'));
 });

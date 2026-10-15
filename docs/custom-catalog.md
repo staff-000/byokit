@@ -85,14 +85,12 @@ Contributor verification records are preserved. The lock records both upstream
 and manual-file hashes. Commit source changes and generated JS/Python catalog
 files together. Never edit generated catalogs directly.
 
-## Nightly refresh
+## Scheduled refresh and auto-release
 
-`.github/workflows/catalog-review.yml` runs at 08:23 UTC daily and supports manual
-dispatch. It fetches only the public Models.dev JSON, imports the current manual
-file, validates and builds, then uploads `nightly-catalog-candidate` for 14 days.
-The candidate contains the diff, lock, catalog, and generated JS/Python data.
-Failures leave production untouched. No provider inference or credentials are
-involved. Review the artifact, commit its files, then release when ready.
-The workflow intentionally has read-only repository permissions and does not
-publish packages or overwrite production. [GitHub may delay scheduled runs](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule); on
-inactive public repositories GitHub can disable schedules after 60 days.
+`.github/workflows/release.yml` runs every 6 hours (`0 */6 * * *`) and supports manual
+dispatch. It fetches the public Models.dev JSON, imports the current manual file,
+validates the catalog, and checks if new commits or upstream catalog differences exist
+relative to the latest release tag. When changes are found, it bumps a patch version,
+commits the updated catalog and package files, tags the release, and publishes to
+both npm and PyPI. [GitHub may delay scheduled runs](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule);
+on inactive public repositories GitHub can disable schedules after 60 days.

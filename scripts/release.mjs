@@ -358,7 +358,9 @@ function publishPypi({ dryRun, repository, pypiToken }) {
 
 function handleGit(newVersion, push = false) {
   console.log(`\n🔖 Creating Git commit and tag v${newVersion}...`);
-  run(`git add package.json packages/*/package.json packages/python/pyproject.toml`);
+  run(
+    `git add package.json packages/*/package.json packages/python/pyproject.toml catalog/ packages/byokit/catalog.js packages/python/src/byokit/data/`,
+  );
   run(`git commit -m "Release v${newVersion}"`);
   run(`git tag -a v${newVersion} -m "Release v${newVersion}"`);
   console.log(`✅ Created commit and tag v${newVersion}`);
