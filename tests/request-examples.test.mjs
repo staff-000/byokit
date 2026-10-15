@@ -98,7 +98,7 @@ test('SDK snippets route exact offering IDs and local URLs across every supporte
  }finally{globalThis.fetch=original}
 });
 
-test('hero and Python client examples execute with constructor keys and model strings',async()=>{
+test('hero call helper and Python SDK examples execute through the library',async()=>{
  const html=await readFile(new URL('../website/index.html',import.meta.url),'utf8');
  const code=html.match(/<pre id="hero-code"><code>([\s\S]*?)<\/code><\/pre>/)[1].replace(/<[^>]+>/g,'');
  const original=globalThis.fetch;let calls=0;
