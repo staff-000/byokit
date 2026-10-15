@@ -1,4 +1,4 @@
-import {Byokit,prepareCall,ApiProtocol} from '../packages/core/index.js';
+import {OpenAI,prepareCall,ApiProtocol} from '../packages/core/index.js';
 // Verification UI: shared library adapters, browser-local records, no stored credentials.
 import {providerConnections} from '../packages/core/connection.js';
 import catalog from '../packages/core/catalog.js';
@@ -33,7 +33,8 @@ export function requestFor(settings,key){
 }
 export async function verifyInference(settings,key,options={}){
  const model=verificationModel(settings),input=verificationInput(settings);
- const started=Date.now(),result=await new Byokit().chat.completions.create({model,...input},{...options,apiKey:key,runtimeChecks:false});
+ const client=new OpenAI({baseURL:model.connection.baseUrl,protocol:model.connection.protocol,apiKey:key,runtimeChecks:false});
+ const started=Date.now(),result=await client.chat.completions.create({model:model.apiModelId,...input},options);
  const text=result.choices[0].message.content;if(!text?.trim())throw new Error('Call returned no visible text. No success recorded.');
  return {text:text.slice(0,10000),checkedAt:new Date().toISOString(),latencyMs:Date.now()-started,returnedModel:result.model,usage:{...(result.usage.prompt_tokens!==undefined?{inputTokens:result.usage.prompt_tokens}:{}),...(result.usage.completion_tokens!==undefined?{outputTokens:result.usage.completion_tokens}:{})},endpoint:prepareCall(model,input,{runtimeChecks:false}).url};
 }

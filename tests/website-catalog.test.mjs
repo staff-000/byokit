@@ -19,5 +19,5 @@ test('website selectors use library vocabularies and tag metadata',async()=>{
  assert.ok(source.includes('Object.values(byokit.FeatureName)'));assert.ok(source.includes('Object.values(byokit.Modality)'));
  assert.ok(source.includes('models.flatMap'));assert.ok(source.includes('m.provider.tags'));
  const home=await readFile(new URL('../website/app.js',import.meta.url),'utf8');assert.ok(home.includes('byokit.getModels(modes[mode],config)'));
- const inference=await readFile(new URL('../website/inference.js',import.meta.url),'utf8');assert.ok(inference.includes('new Byokit().chat.completions.create({model,...input}'));
+ const inference=await readFile(new URL('../website/inference.js',import.meta.url),'utf8');assert.ok(inference.includes('new OpenAI({baseURL:model.connection.baseUrl'));
 });

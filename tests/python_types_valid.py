@@ -14,10 +14,10 @@ model = byokit.get_models()[0]
 byokit.call(model, "Hi", "key", {"runtime_checks": False})
 byokit.call_claude(model, {"messages": [{"role": byokit.Role.USER, "content": "Hi"}]}, "key")
 
-client = byokit.OpenAI(model=model, api_key=lambda: "application-owned-key")
-client.chat.completions.create(model=model["apiModelId"], messages=[{"role":byokit.Role.USER,"content":"Hi"}], options={"runtime_checks":False})
-anthropic = byokit.Anthropic(model=model, api_key=lambda: "application-owned-key")
-anthropic.messages.create(messages=[{"role":byokit.Role.USER,"content":"Hi"}], max_tokens=100)
+client = byokit.OpenAI(base_url=model["connection"]["baseUrl"], api_key="application-owned-key")
+client.chat.completions.create(model=model["apiModelId"], messages=[{"role":byokit.Role.USER,"content":"Hi"}], options={"runtime_checks":False}).choices[0].message.content
+anthropic = byokit.Anthropic(api_key="application-owned-key")
+anthropic.messages.create(model="custom-id", messages=[{"role":byokit.Role.USER,"content":"Hi"}], max_tokens=100).content
 
 import byokit
 byokit.get_models({"sort":byokit.ModelSort.SPEED})

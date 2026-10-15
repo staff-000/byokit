@@ -141,6 +141,7 @@ class _ClaudeOptional(TypedDict,total=False):
 class ClaudeInput(_ClaudeOptional):
     messages: list[ClaudeMessage]
 class CallOptions(TypedDict,total=False):
+    headers: dict[str,str]
     runtime_checks: bool
     timeout_ms: float
     input_tokens: int

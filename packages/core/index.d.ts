@@ -61,7 +61,7 @@ export interface ChatInput {messages:ChatMessage[];max_tokens?:number;max_comple
 export interface ClaudeToolUse {type:'tool_use';id:string;name:string;input:Record<string,unknown>;}
 export interface ClaudeToolResult {type:'tool_result';tool_use_id:string;content:string|TextBlock[];}
 export interface ClaudeInput {messages:{role:import('./enums.js').Role.User|import('./enums.js').Role.Assistant;content:string|(TextBlock|ClaudeToolUse|ClaudeToolResult)[]}[];system?:string|TextBlock[];max_tokens?:number;temperature?:number;top_p?:number;top_k?:number;stop_sequences?:string[];tools?:{name:string;description?:string;input_schema:Record<string,unknown>}[];tool_choice?:{type:'auto'|'any'|'none'}|{type:'tool';name:string};stream?:false;}
-export interface CallOptions {runtimeChecks?:boolean;timeoutMs?:number;signal?:AbortSignal;inputTokens?:number;overheadTokens?:number;onWarning?:(diagnostic:Diagnostic)=>void;fetch?:typeof globalThis.fetch;}
+export interface CallOptions {headers?:Record<string,string>;runtimeChecks?:boolean;timeoutMs?:number;signal?:AbortSignal;inputTokens?:number;overheadTokens?:number;onWarning?:(diagnostic:Diagnostic)=>void;fetch?:typeof globalThis.fetch;}
 export interface ChatResult {id:string;object:'chat.completion';created:number;model:string;choices:{index:number;message:{role:'assistant';content:string|null;tool_calls?:ToolCall[]};finish_reason:string}[];usage:{prompt_tokens?:number;completion_tokens?:number;total_tokens?:number};}
 export interface ClaudeResult {id:string;type:'message';role:'assistant';model:string;content:(TextBlock|ClaudeToolUse)[];stop_reason:'end_turn'|'max_tokens'|'tool_use'|'stop_sequence'|'refusal'|'pause_turn'|'model_context_window_exceeded';stop_sequence:string|null;usage:{input_tokens?:number;output_tokens?:number};}
 export class CallError extends Error {code:string;diagnostics:Diagnostic[];}
@@ -70,25 +70,41 @@ export function callClaude(model:ModelOption,input:string|ClaudeInput,key:string
 export function prepareCall(model:ModelOption,input:string|ChatInput|ClaudeInput,options?:Pick<CallOptions,'runtimeChecks'|'inputTokens'|'overheadTokens'>&{format?:'openai'|'claude'}):{url:string;protocol:import('./enums.js').ApiProtocol;body:Record<string,unknown>;diagnostics:Diagnostic[]};
 
 
+/** @deprecated Legacy bound-model callback constructor. */
 export interface SDKClientOptions extends CallOptions {model:ModelOption;apiKey?:()=>string|Promise<string>;}
 export interface CompletionInput extends ChatInput {model?:string;}
 export interface MessageInput extends ClaudeInput {model?:string;}
 export interface OpenAIClient {chat:{completions:{create(input:CompletionInput,options?:CallOptions):Promise<ChatResult>}};}
 export interface ClaudeClient {messages:{create(input:MessageInput,options?:CallOptions):Promise<ClaudeResult>};}
-/** @deprecated Use new Byokit() and pass model/apiKey on each request. */
+/** @deprecated Use new OpenAI({baseURL, apiKey}). */
 export function openAI(options:SDKClientOptions):OpenAIClient;
-/** @deprecated Use new Byokit().messages.create(). */
+/** @deprecated Use new Anthropic({baseURL, apiKey}). */
 export function claude(options:SDKClientOptions):ClaudeClient;
-/** @deprecated Use new Byokit() and pass model/apiKey on each request. */
-export class OpenAI implements OpenAIClient {constructor(options:SDKClientOptions);readonly chat:OpenAIClient['chat'];}
-/** @deprecated Use new Byokit().messages.create(). */
-export class Anthropic implements ClaudeClient {constructor(options:SDKClientOptions);readonly messages:ClaudeClient['messages'];}
+export interface StandardClientOptions extends CallOptions {
+ apiKey:string;
+ baseURL?:string;
+ defaultHeaders?:Record<string,string>;
+ /** Native wire protocol override; defaults to the named client’s protocol. */
+ protocol?:import('./enums.js').ApiProtocol;
+ /** Optional exact endpoint metadata for model-fit checks. */
+ models?:readonly ModelOption[];
+}
+export interface StandardCompletionInput extends ChatInput {model:string;}
+export interface StandardMessageInput extends ClaudeInput {model:string;}
+export class OpenAI<Options extends StandardClientOptions|SDKClientOptions=StandardClientOptions> {
+ constructor(options:Options);
+ readonly chat:Options extends SDKClientOptions ? OpenAIClient['chat'] : {completions:{create(input:StandardCompletionInput,options?:CallOptions):Promise<ChatResult>}};
+}
+export class Anthropic<Options extends StandardClientOptions|SDKClientOptions=StandardClientOptions> {
+ constructor(options:Options);
+ readonly messages:Options extends SDKClientOptions ? ClaudeClient['messages'] : {create(input:StandardMessageInput,options?:CallOptions):Promise<ClaudeResult>};
+}
 
 export interface ClientOptions {runtimeChecks?:boolean;timeoutMs?:number;}
 export interface RequestOptions extends CallOptions {apiKey?:string;}
 export interface ChatRequest extends ChatInput {model:ModelOption;}
 export interface MessageRequest extends ClaudeInput {model:ModelOption;}
-/** No model or credential is retained by the client. */
+/** @deprecated Use OpenAI or Anthropic with constructor credentials. */
 export class Byokit {
  constructor(options?:ClientOptions);
  readonly chat:{readonly completions:{readonly create:(input:ChatRequest,options?:RequestOptions)=>Promise<ChatResult>}};

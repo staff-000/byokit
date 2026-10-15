@@ -38,52 +38,48 @@ provider order and existing per-provider preference ranking.
 ## Call a model
 
 ```ts
-const models = byokit.getModels({
-  providerIds: [byokit.ProviderId.DeepSeek],
-  limit: 1,
-  local: false,
+const [model] = byokit.getModels({
+  providerIds: [byokit.ProviderId.DeepSeek], limit: 1, local: false,
 });
-const model = models[0];
-if (!model) throw new Error('No matching model');
+if (!model?.connection) throw new Error('No configured model');
 
-const result = await byokit.call(model, 'Hello', api_key);
-console.log(result.choices[0].message.content);
+const client = new byokit.OpenAI({
+  baseURL: model.connection.baseUrl,
+  apiKey,
+});
+const completion = await client.chat.completions.create({
+  model: model.apiModelId,
+  messages: [{ role: byokit.Role.User, content: 'Hello' }],
+});
+console.log(completion.choices[0].message.content);
 // Example: Hello! — actual model output varies.
 ```
 
-`getModels()` always returns an array. `limit: 1` caps hosted results at one;
-it can still return none. `local: false` prevents an extra Local entry.
-Without the limit, a provider query returns all matching models. In an app,
-let the user select one of them.
+Configure the endpoint and key once; reuse the client for multiple requests and
+model IDs at that endpoint. `defaultHeaders` supports attribution headers such as
+`HTTP-Referer` and `X-OpenRouter-Title`. Keys stay in client memory; byokit never
+persists them to disk, browser storage, logs, or telemetry.
 
-For SDK-style calls:
+Use `new byokit.Anthropic({baseURL, apiKey})` and `client.messages.create(...)`
+for Claude-style requests/responses. Python uses `OpenAI` / `Anthropic`,
+`base_url`, `api_key`, and `default_headers`; responses support attribute and dict
+access. [Full examples, official SDK integration, and migration](docs/sdk.md).
 
-```ts
-const client = new byokit.Byokit();
-const completion = await client.chat.completions.create({
-  model,
-  messages: [{ role: byokit.Role.User, content: 'Hello' }],
-}, { apiKey: api_key });
+OpenAI and Anthropic clients default to their named wire protocol. An arbitrary
+base URL must speak that protocol. Byokit's explicit `protocol` extension supports
+native Gemini/Ollama and cross-format adapters; official SDKs do not provide this
+translation. Clients implement non-streaming text, system messages, sampling, and
+tools; unsupported features fail explicitly. Tools are returned for your app to run.
 
-// Claude-style format, across supported providers:
-const message = await client.messages.create({
-  model,
-  messages: [{ role: byokit.Role.User, content: 'Hello' }],
-}, { apiKey: api_key });
-console.log(message.content); // [{ type: 'text', text: 'Hello!' }]
-```
+Defaults: 1,024 output tokens, 90-second timeout, no retries. Optional `models`
+constructor metadata enables known-limit/capability checks for those exact IDs;
+unknown metadata produces warnings. Set `runtimeChecks: false` to skip fit checks;
+request and endpoint validation remain. Browser calls require provider CORS support.
 
-Calls support non-streaming text, system messages, sampling parameters and tools.
-Tools are returned for your app to execute. Unsupported features are rejected.
-Keys are used transiently and never stored by byokit. Browser calls require
-provider CORS support. Defaults: 1,024 output tokens, 90-second timeout, no retries.
-The call helper’s optional fourth argument (or the client’s second argument)
-accepts `signal`, `timeoutMs`, and `runtimeChecks`
-(default true). Disabling model-fit checks retains request/endpoint validation.
-
-Clients retain only non-secret defaults; pass the exact model and key per request.
-The older model-bound `openAI()`, `claude()`, `OpenAI`, and `Anthropic` clients
-are deprecated but continue to work. See [client details](docs/design.md#byokit-client).
+`byokit.call(model, 'Hello', apiKey)` and `callClaude()` remain stateless helpers.
+Legacy callback factories and the per-request `Byokit` client are deprecated and
+continue to work. `getModels()` always returns an array: `limit: 1` caps hosted
+results, `local: false` prevents a Local setup entry, and an empty result is possible.
 
 ## Filter the list
 
@@ -164,12 +160,17 @@ models = byokit.get_models({
 })
 if not models:
     raise ValueError("No matching model")
-result = byokit.call(models[0], "Hello", api_key)
-print(result["choices"][0]["message"]["content"])
+model = models[0]
+client = byokit.OpenAI(base_url=model["connection"]["baseUrl"], api_key=api_key)
+result = client.chat.completions.create(
+    model=model["apiModelId"],
+    messages=[{"role": byokit.Role.USER, "content": "Hello"}],
+)
+print(result.choices[0].message.content)
 ```
 
 Install locally with `python -m pip install ./packages/python`.
-Python offers `Byokit()`, `call_claude()`, `append_model(models, custom)`,
+Python offers `Anthropic`, `call_claude()`, `append_model(models, custom)`,
 and `ModelSort.ALPHABETICAL` / `PRICE` / `SPEED` / `PROVIDER_ORDER` too.
 
 ## Contribute

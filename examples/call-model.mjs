@@ -1,12 +1,17 @@
 import * as byokit from '@byokit/core/catalog';
 
-const [model] = byokit.getModels({
-  providerIds: [byokit.ProviderId.DeepSeek], limit: 1, local: false,
+const models = byokit.getModels({
+  providerIds: [byokit.ProviderId.DeepSeek], local: false,
 });
-if (!model) throw new Error('No matching model');
-const client = new byokit.Byokit();
+const model = models[0]; // Or let the user choose.
+if (!model?.connection) throw new Error('No configured model');
+const client = new byokit.OpenAI({
+  baseURL: model.connection.baseUrl,
+  apiKey: process.env.DEEPSEEK_API_KEY ?? '',
+});
 const completion = await client.chat.completions.create({
-  model,
-  messages: [{ role: byokit.Role.User, content: 'Reply with exactly: OK' }],
-}, { apiKey: process.env.DEEPSEEK_API_KEY ?? '' });
+  model: model.apiModelId,
+  max_tokens: 1024,
+  messages: [{ role: byokit.Role.User, content: 'Hello' }],
+});
 console.log(completion.choices[0].message.content);

@@ -342,57 +342,48 @@ results, diagnostics, records and logs. Redirects are blocked. Browser CORS
 restrictions remain provider-owned. Cancellation and a 90-second deadline
 terminate calls without retry; spent provider quota cannot be refunded.
 
-## Byokit client
+## Reusable protocol clients
 
-`new byokit.Byokit({runtimeChecks: true, timeoutMs: 90000})` stores only
-non-secret execution defaults. `client.chat.completions.create({model,messages},
-{apiKey,signal})` takes an exact model offering and transient credential on each
-request. `client.messages.create(...)` accepts/returns Claude-style messages.
-Python uses `Byokit()` with `model=`, `messages=`, `api_key=`, and an optional
-`options` dict (snake_case execution options). Python cancellation uses
-`options={"cancel_event": event}`; calls remain synchronous.
+The public SDKs are `new byokit.OpenAI({baseURL, apiKey, defaultHeaders})` and
+`new byokit.Anthropic({baseURL, apiKey, defaultHeaders})`. Model IDs belong to each
+request; endpoint, protocol and account belong to the client. Python uses
+`OpenAI`/`Anthropic` with `base_url`, `api_key`, `default_headers` and SDK-style
+attribute responses (also mappings). See [SDK guide](sdk.md) for full contracts,
+optional official SDK integration, validation and migration.
 
 ```mermaid
 flowchart LR
-  Defaults[Non-secret defaults] --> Client[Byokit client]
-  Model[Exact model offering] --> Snapshot[Capture request]
-  Input[Messages and parameters] --> Snapshot
+  Config[Endpoint + protocol + in-memory key] --> Client[OpenAI / Anthropic client]
+  Models[Optional endpoint-scoped model metadata] --> Client
+  Input[API model ID + messages] --> Snapshot[Capture request]
   Client --> Snapshot
-  Snapshot --> Validate[Format, endpoint and model-fit checks]
-  Key[Per-request API key] --> Request[Direct provider transport]
-  Validate --> Request
-  Request --> Response[OpenAI-style completion or Claude-style message]
-  Helpers[call / callClaude helpers] --> Validate
+  Snapshot --> Validate[Format / endpoint / model-fit checks]
+  Validate --> Adapter[Native protocol adapter]
+  Adapter --> Provider[Fixed provider endpoint]
+  Provider --> Result[Requested completion or message format]
 ```
 
-Both resources wrap the same call adapters as standalone `call()`/`callClaude()`.
-The selected offering determines endpoint, native protocol and API model ID; the
-resource determines the public request/response format. No model strings are
-resolved globally or substituted automatically. Custom models use `appendModel()`
-with explicit connection metadata and unknown capabilities unless supplied.
+Clients reuse their key from memory. They perform no persistence or telemetry.
+Headers are validated and copied; auth and transport headers cannot be overridden.
+Redirects are blocked. Per-request destinations and credentials are not accepted.
+Metadata must match the exact endpoint/protocol and model ID; unknown IDs never
+inherit another model's limits. Calls have independent cancellation, no retries,
+and the same default budgets/timeouts as standalone `call()`/`callClaude()`.
 
-The client snapshots model and input at invocation; later caller mutations cannot
-change an admitted request. Requests do not share models, keys, or conversation
-state. Per-request execution options override client defaults. Construction and
-catalog discovery perform no network calls. Keys are used only transiently in the
-transport, not retained on the client or included in results, errors, or diagnostics.
-This is a supported subset of OpenAI/Claude-style formats, not a full replacement
-for their SDKs. Only non-streaming text/system/sampling/tools are supported; tools
-are returned for application execution. Streaming and unsupported parameters fail
-explicitly. Model-fit checks can be disabled; format/endpoint validation remains.
-Timeout, cancellation, blocked redirects, no retries, and output-budget defaults
-are shared with the standalone call pipeline.
+The class chooses the public format, while the named protocol is its wire-format
+default. An explicit `protocol` enum override enables native adapter translation
+for Gemini/Ollama and other supported protocols. This extension is byokit-specific;
+pointing an official SDK at a different native API does not translate protocols.
+Optional official SDKs remain application dependencies; discovery is offline.
 
-Legacy model-bound `openAI()`/`claude()` and `OpenAI`/`Anthropic` wrappers remain
-available with their previous behavior, marked deprecated in TypeScript and docs.
-Migrate the bound model into each request, and replace key callbacks with a key
-argument evaluated by the application at invocation. Never retain a callback or
-credential registry in the new client.
+Legacy callback factories/bound-model constructors and the per-request `Byokit`
+client remain available for migration, marked deprecated in docs/types. The
+stateless convenience helpers remain supported.
 
 ## Website uses the library
 
 The explorer and hero provider list query the bundled `getModels()` API. Browser
-verification uses the same `Byokit` client, adapters and request validator as
+verification uses the same `OpenAI` client, adapters and request validator as
 applications. The website imports provider endpoints from `connection.js`; it
 has no separately maintained endpoint list. Display labels and documentation links
 remain website concerns.
@@ -429,7 +420,7 @@ publication pipeline through separate receipts without adding model evidence.
 ## Direct calls, model metadata, and batch verification
 
 The concise inference entry point is `byokit.call(model, prompt, api_key)`;
-OpenAI/Claude-shaped clients remain available. Website inference uses this shared
+Reusable OpenAI/Anthropic clients use constructor credentials. Website inference uses this shared
 call adapter, never a separate provider implementation. Catalog offerings expose
 optional `releaseDate` (YYYY-MM-DD/null) from the pinned upstream snapshot and
 provider-specific `speed.tokensPerSecond` with evidence; missing speed is unknown.

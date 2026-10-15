@@ -16,7 +16,7 @@ let language='typescript',example='inference',format='openai';
 function renderExample(){
  $('#start-code').textContent=tutorials[example==='inference'&&format==='claude'?'claude':example][language];
  const inference=example==='inference';
- $('#example-note').textContent=inference?'Server-side example: set DEEPSEEK_API_KEY in your environment. One call may consume provider credits. Your key is not stored by byokit.':'Catalog queries run offline. No API key or provider request is needed.';
+ $('#example-note').textContent=inference?`Server-side example: set ${format==='claude'?'ANTHROPIC_API_KEY':'DEEPSEEK_API_KEY'} in your environment. Reuse the client for multiple requests. Keys stay in memory and are never persisted.`:'Catalog queries run offline. No API key or provider request is needed.';
  $('#return-label').textContent=inference?'EXAMPLE GENERATED TEXT':'RETURN (FIRST ENTRY, SELECTED FIELDS)';
  $('#expected-return').textContent=inference?(format==='claude'?'[{ type: "text", text: "Hello!" }] — actual model output varies.':'Hello! — actual model output varies.'):JSON.stringify(byokit.getModels().slice(0,1).map(model=>({provider:model.provider.id,model:model.apiModelId,context:model.limits.context})),null,2);
 }

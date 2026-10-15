@@ -3,6 +3,7 @@ import {tutorials} from '../website/tutorials.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
+import {readFile} from 'node:fs/promises';
 import {requestExample,nativeRequestExample} from '../website/request-examples.js';
 import {requestFor,ProviderApi} from '../website/inference.js';
 const settings={providerId:'deepseek',modelId:'selected-model',protocol:'chat',prompt:`Reply with "OK". Don't execute $(echo nope).\nSecond line.`,maxTokens:128};
@@ -46,7 +47,7 @@ test('local requests without authentication contain no key placeholder',()=>{
  const code=requestExample({...settings,providerId:'local',endpoint:'http://localhost:8080'},'javascript');assert.ok(!code.includes('API_KEY'));assert.ok(!code.includes('Authorization'));
 });
 
-test('copyable SDK snippets preserve exact settings and use per-request keys',async()=>{
+test('copyable SDK snippets preserve exact settings and constructor credentials',async()=>{
  const code=requestExample(settings,'javascript');let calls=0;
  const original=globalThis.fetch;
  try{
@@ -70,10 +71,10 @@ assert Connection.requests[0][2]['Authorization']=='Bearer dummy-env-key'
 test('website client tutorials execute both formats through the real SDK',async()=>{
  const original=globalThis.fetch;let calls=0;
  try{
-  globalThis.fetch=async()=>{calls++;return {ok:true,json:async()=>({choices:[{message:{content:'OK'}}]})}};
+  globalThis.fetch=async(url)=>{calls++;return {ok:true,json:async()=>url.endsWith('/messages')?{content:[{type:'text',text:'OK'}],stop_reason:'end_turn'}:{choices:[{message:{content:'OK'}}]}}};
   for(const kind of ['inference','claude']){
    const logs=[];
-   await new AsyncFunction('byokit','process','console',tutorials[kind].typescript.replace(/^import.*;\n/,''))(byokit,{env:{DEEPSEEK_API_KEY:'dummy'}},{log:value=>logs.push(value)});
+   await new AsyncFunction('byokit','process','console',tutorials[kind].typescript.replace(/^import.*;\n/,''))(byokit,{env:{DEEPSEEK_API_KEY:'dummy',ANTHROPIC_API_KEY:'dummy'}},{log:value=>logs.push(value)});
    assert.deepEqual(logs,[kind==='inference'?'OK':[{type:'text',text:'OK'}]]);
   }
  }finally{globalThis.fetch=original}
@@ -95,4 +96,28 @@ test('SDK snippets route exact offering IDs and local URLs across every supporte
    assert.equal(called,1);
   }
  }finally{globalThis.fetch=original}
+});
+
+test('hero and Python client examples execute with constructor keys and model strings',async()=>{
+ const html=await readFile(new URL('../website/index.html',import.meta.url),'utf8');
+ const code=html.match(/<pre id="hero-code"><code>([\s\S]*?)<\/code><\/pre>/)[1].replace(/<[^>]+>/g,'');
+ const original=globalThis.fetch;let calls=0;
+ try{
+  globalThis.fetch=async(_url,o)=>{calls++;assert.equal(o.headers.Authorization,'Bearer dummy');assert.equal(typeof JSON.parse(o.body).model,'string');return {ok:true,json:async()=>({choices:[{message:{content:'OK'}}]})}};
+  await new AsyncFunction('byokit','apiKey','console',code.replace(/^import[\s\S]*?;\n/,''))(byokit,'dummy',{log(){}});
+ }finally{globalThis.fetch=original}
+ assert.equal(calls,1);
+ for(const kind of ['inference','claude']){
+  const runner=`import sys,json,os
+from unittest.mock import patch
+sys.path.insert(0,'packages/python/src');sys.path.insert(0,'packages/python/tests')
+from test_calls import Connection
+os.environ['DEEPSEEK_API_KEY']='dummy';os.environ['ANTHROPIC_API_KEY']='dummy'
+Connection.requests=[];Connection.response_data=${kind==='claude'?"{'content':[{'type':'text','text':'OK'}],'stop_reason':'end_turn'}":"{'choices':[{'message':{'content':'OK'}}]}"}
+with patch('byokit.inference.http.client.HTTPSConnection',Connection):
+ exec(json.loads(sys.stdin.read()))
+assert len(Connection.requests)==1
+assert isinstance(Connection.requests[0][1]['model'],str)`;
+  const run=spawnSync('python3',['-c',runner],{input:JSON.stringify(tutorials[kind].python),encoding:'utf8'});assert.equal(run.status,0,run.stderr);
+ }
 });

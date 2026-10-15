@@ -85,3 +85,15 @@ branded.chat.completions.create({messages:[]},{apiKey:'key'});
 branded.messages.create({model:chosen,messages:[],stream:true},{apiKey:'key'});
 // @ts-expect-error keys are per-request strings, not client-owned accessors
 branded.chat.completions.create({model:chosen,messages:[]},{apiKey:()=> 'key'});
+
+const standard=new calls.OpenAI({baseURL:'https://openrouter.ai/api/v1',apiKey:'key',defaultHeaders:{'HTTP-Referer':'https://app.example'}});
+standard.chat.completions.create({model:'provider/model',messages:[{role:calls.Role.User,content:'Hi'}]},{runtimeChecks:false});
+new calls.Anthropic({baseURL:'https://claude.example',apiKey:'key'}).messages.create({model:'model-id',max_tokens:1024,messages:[{role:calls.Role.User,content:'Hi'}]});
+// @ts-expect-error constructor key is required for standard clients
+new calls.OpenAI({baseURL:'https://example.com/v1'});
+// @ts-expect-error standard clients require a string model ID
+standard.chat.completions.create({model:chosen,messages:[]});
+// @ts-expect-error standard clients require a model on each request
+standard.chat.completions.create({messages:[]});
+// @ts-expect-error request options cannot change the client account
+standard.chat.completions.create({model:'test',messages:[]},{apiKey:'other'});

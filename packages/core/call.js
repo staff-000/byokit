@@ -7,6 +7,15 @@ const obj=v=>v!==null&&typeof v==='object'&&!Array.isArray(v);
 function keys(v,allowed,label){if(!obj(v))fail(`${label} must be an object.`);if(Object.keys(v).some(k=>!allowed.includes(k)))fail(`Unsupported ${label} parameter.`);}
 function text(v){if(typeof v==='string')return v;if(Array.isArray(v)){return v.map(b=>{keys(b,['type','text'],'text block');if(b.type!=='text'||typeof b.text!=='string')fail('Only text content is supported.');return b.text}).join('');}fail('Expected text content.');}
 function toolCall(t){keys(t,['id','type','function'],'tool call');keys(t.function,['name','arguments'],'tool function');if(typeof t.id!=='string'||!t.id||t.type!=='function'||typeof t.function.name!=='string'||!t.function.name||typeof t.function.arguments!=='string')fail('Invalid tool call.');let args;try{args=JSON.parse(t.function.arguments)}catch{fail('Tool arguments must be JSON.')}if(!obj(args))fail('Tool arguments must be an object.');return structuredClone(t);}
+export function validateHeaders(value){
+ if(!obj(value))fail('Headers must be a string map.');
+ const result={},reserved=['authorization','x-api-key','x-goog-api-key','host','cookie','content-type','content-length','connection','proxy-authorization','transfer-encoding'];
+ for(const [name,v] of Object.entries(value)){
+  if(!/^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/.test(name)||typeof v!=='string'||/[\r\n]/.test(v)||reserved.includes(name.toLowerCase()))fail('Invalid or reserved HTTP header.');
+  result[name.toLowerCase()]=v;
+ }
+ return result;
+}
 function normalize(input,format){
  if(!['openai','claude'].includes(format))fail('Unsupported input format.');
  const p=typeof input==='string'?{messages:[{role:Role.User,content:input}]}:input;
@@ -87,11 +96,13 @@ async function execute(model,input,key,options,format){
  if(!obj(model))fail('Select a configured model.');
  if(!model.local&&!key.trim())fail('Provide a provider API key.');
  if(!Number.isFinite(timeoutMs)||timeoutMs<=0)fail('timeoutMs must be positive.');
+ const extraHeaders=validateHeaders(options?.headers??{});
  const request=prepareCall(model,input,{format,runtimeChecks,inputTokens,overheadTokens});for(const d of request.diagnostics)if(d.severity==='warning'){if(onWarning)onWarning(d);else console.warn(`[byokit] ${d.code}: ${d.message}`);}
  const controller=new AbortController(),abort=()=>controller.abort();if(signal?.aborted)abort();signal?.addEventListener('abort',abort,{once:true});const timer=setTimeout(abort,timeoutMs);
  try{
   if(controller.signal.aborted)throw new CallError('CANCELED','Call canceled.');
   const headers={'Content-Type':'application/json'};if(request.protocol===ApiProtocol.Claude){headers['x-api-key']=key;headers['anthropic-version']='2023-06-01';if(typeof window!=='undefined')headers['anthropic-dangerous-direct-browser-access']='true';}else if(request.protocol===ApiProtocol.Gemini)headers['x-goog-api-key']=key;else if(key)headers.Authorization='Bearer '+key;
+  Object.assign(headers,extraHeaders);
   const response=await fetcher(request.url,{method:'POST',headers,body:JSON.stringify(request.body),signal:controller.signal,redirect:'error',credentials:'omit',cache:'no-store',referrerPolicy:'no-referrer'});
   if(!response.ok)throw new CallError('PROVIDER_ERROR',`Provider rejected the call (HTTP ${response.status}).`);
   let data;try{data=await response.json()}catch{throw new CallError('INVALID_RESPONSE','Provider returned invalid JSON.');}

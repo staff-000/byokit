@@ -233,11 +233,22 @@ def _parse(data,protocol,model):
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self,*args,**kwargs): return None
 
+def validate_headers(value):
+    import re
+    if not isinstance(value, dict): _fail('Headers must be a string map.')
+    result = {}
+    reserved = {'authorization','x-api-key','x-goog-api-key','host','cookie','content-type','content-length','connection','proxy-authorization','transfer-encoding'}
+    for name, v in value.items():
+        if not isinstance(name,str) or not re.fullmatch(r"[!#$%&'*+.^_`|~0-9A-Za-z-]+", name) or not isinstance(v,str) or '\r' in v or '\n' in v or name.lower() in reserved: _fail('Invalid or reserved HTTP header.')
+        result[name.lower()] = v
+    return result
+
 def _execute(model,input,key,options,format):
     options=options or {}
     if not isinstance(key,str) or not model.get('local') and not key: _fail('Provide a per-call API key (empty for unauthenticated local servers).')
     timeout=options.get('timeout_ms',90000)/1000
     if not math.isfinite(timeout) or timeout<=0: _fail('timeout_ms must be positive.')
+    extra_headers=validate_headers(options.get('headers',{}))
     req=prepare_call(model,input,format=format,runtime_checks=options.get('runtime_checks',True),input_tokens=options.get('input_tokens'),overhead_tokens=options.get('overhead_tokens',0))
     for d in req['diagnostics']:
         if d['severity']=='warning':
@@ -247,6 +258,7 @@ def _execute(model,input,key,options,format):
     if req['protocol']==ApiProtocol.CLAUDE: headers.update({'x-api-key':key,'anthropic-version':'2023-06-01'})
     elif req['protocol']==ApiProtocol.GEMINI: headers['x-goog-api-key']=key
     elif key: headers['Authorization']='Bearer '+key
+    headers.update(extra_headers)
     cancel=options.get('cancel_event')
     if cancel and cancel.is_set(): raise CallError('CANCELED','Call canceled.')
     # Native HTTP connection is owned by this call so cancellation can close it.

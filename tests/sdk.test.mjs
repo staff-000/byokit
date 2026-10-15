@@ -105,3 +105,51 @@ test('Byokit local requests can omit authentication without sharing a previous k
  await c.chat.completions.create({...input,model},{apiKey:'hosted-secret',fetch:async()=>response()});
  await c.chat.completions.create({...input,model:local},{fetch:async(_,o)=>{assert.equal(o.headers.Authorization,undefined);return response()}});
 });
+
+
+test('standard OpenAI constructor reuses one account and endpoint across request model IDs',async()=>{
+ let count=0;const seen=[],config={baseURL:'https://openrouter.ai/api/v1/',apiKey:'account-key',defaultHeaders:{'HTTP-Referer':'https://app.example','X-OpenRouter-Title':'App'},runtimeChecks:false,fetch:async(url,o)=>{count++;seen.push({url,body:JSON.parse(o.body),headers:o.headers});return response()}};
+ const c=new byokit.OpenAI(config);assert.equal(count,0);
+ config.apiKey='changed';config.baseURL='https://wrong.example';config.defaultHeaders['X-OpenRouter-Title']='changed';
+ await c.chat.completions.create({...input,model:'provider/model-A'});
+ await c.chat.completions.create({...input,model:'provider/model-B'},{headers:{'x-openrouter-title':'Second call'}});
+ assert.deepEqual(seen.map(r=>[r.url,r.headers.Authorization,r.body.model]),[['https://openrouter.ai/api/v1/chat/completions','Bearer account-key','provider/model-A'],['https://openrouter.ai/api/v1/chat/completions','Bearer account-key','provider/model-B']]);
+ assert.equal(seen[0].headers['http-referer'],'https://app.example');assert.equal(seen[0].headers['x-openrouter-title'],'App');assert.equal(seen[1].headers['x-openrouter-title'],'Second call');
+ assert.ok(!JSON.stringify(c).includes('account-key'));
+});
+test('standard Anthropic uses Claude wire format and normalizes root or /v1 bases',async()=>{
+ for(const baseURL of ['https://api.tokenify.example','https://api.tokenify.example/v1/']){
+  const c=new byokit.Anthropic({baseURL,apiKey:'claude-key',runtimeChecks:false,fetch:async(url,o)=>{
+   assert.equal(url,'https://api.tokenify.example/v1/messages');assert.equal(o.headers['x-api-key'],'claude-key');assert.equal(o.headers.Authorization,undefined);
+   const body=JSON.parse(o.body);assert.equal(body.model,'deepseek/example');assert.equal(body.max_tokens,1024);assert.equal(body.system,'Be concise.');
+   return {ok:true,json:async()=>({content:[{type:'text',text:'B-trees'}],stop_reason:'end_turn'})};
+  }});
+  const r=await c.messages.create({model:'deepseek/example',max_tokens:1024,system:'Be concise.',messages:[{role:byokit.Role.User,content:'Explain B-trees'}]});
+  assert.equal(r.content[0].text,'B-trees');
+ }
+});
+test('standard clients scope metadata to exact endpoint/protocol and never borrow limits',async()=>{
+ const c=new byokit.OpenAI({baseURL:model.connection.baseUrl,apiKey:'dummy',models:[model],fetch:async()=>response()});
+ await assert.rejects(c.chat.completions.create({...input,max_tokens:1e12}),e=>e.code==='MODEL_FIT_FAILED');
+ const warnings=[];await c.chat.completions.create({...input,model:'custom-id',max_tokens:1e12},{onWarning:d=>warnings.push(d)});
+ assert.ok(warnings.some(d=>d.code==='OUTPUT_LIMIT_UNKNOWN'));
+ assert.throws(()=>new byokit.OpenAI({baseURL:'https://wrong.example',apiKey:'dummy',models:[model]}),e=>e.code==='INVALID_REQUEST');
+ assert.throws(()=>new byokit.OpenAI({baseURL:model.connection.baseUrl,apiKey:'dummy',models:[model,model]}),e=>e.code==='INVALID_REQUEST');
+});
+test('standard clients reject credential/destination overrides and malformed headers before sending',async()=>{
+ let requests=0;const c=new byokit.OpenAI({baseURL:'http://localhost:8080/v1',apiKey:'key',runtimeChecks:false,fetch:async()=>{requests++;return response()}});
+ for(const requestOptions of [{apiKey:'other'},{baseURL:'https://other.example'},{headers:{Authorization:'other'}},{headers:{'X-Test':'line\nbreak'}}])await assert.rejects(c.chat.completions.create(input,requestOptions),e=>e.code==='INVALID_REQUEST');
+ for(const params of [{...input,model},{...input,stream:true},{...input,model:''}])await assert.rejects(c.chat.completions.create(params),e=>e.code==='INVALID_REQUEST');
+ for(const config of [{apiKey:'key',baseURL:'https://key@evil.example'},{apiKey:'key',baseURL:'https://example.com?token=key'},{apiKey:'key',defaultHeaders:{Cookie:'session'}},{baseURL:'https://example.com'}])assert.throws(()=>new byokit.OpenAI(config),e=>e.code==='INVALID_REQUEST');
+ assert.equal(requests,0);
+});
+test('standard client concurrent calls have independent cancellation, fixed keys and no retry',async()=>{
+ let requests=0;const c=new byokit.OpenAI({baseURL:model.connection.baseUrl,apiKey:'secret',runtimeChecks:false,fetch:async(_,o)=>{requests++;if(JSON.parse(o.body).model==='wait')return new Promise((resolve,reject)=>o.signal.addEventListener('abort',()=>reject(new Error('secret')),{once:true}));return response()}});
+ const abort=new AbortController(),waiting=c.chat.completions.create({...input,model:'wait'},{signal:abort.signal});
+ const r=await c.chat.completions.create({...input,model:'ready'});abort.abort();await assert.rejects(waiting,e=>e.code==='CANCELED'&&!e.message.includes('secret'));assert.equal(r.choices[0].message.content,'OK');assert.equal(requests,2);
+ const broken=new byokit.OpenAI({apiKey:'secret',runtimeChecks:false,fetch:async()=>{throw new Error('secret')}});await assert.rejects(broken.chat.completions.create(input),e=>e.code==='NETWORK_ERROR'&&!e.message.includes('secret'));
+});
+test('standard clients explicitly support unauthenticated local APIs and native adapter overrides',async()=>{
+ const c=new byokit.OpenAI({baseURL:'http://localhost:11434',protocol:byokit.ApiProtocol.Ollama,apiKey:'',runtimeChecks:false,fetch:async(url,o)=>{assert.equal(url,'http://localhost:11434/api/chat');assert.equal(o.headers.Authorization,undefined);return {ok:true,json:async()=>({message:{content:'Local OK'}})}}});
+ assert.equal((await c.chat.completions.create({...input,model:'my-local'})).choices[0].message.content,'Local OK');
+});
