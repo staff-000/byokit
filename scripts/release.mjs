@@ -341,10 +341,15 @@ function publishPypi({ dryRun, repository, pypiToken }) {
 
   const repoFlag = repository === 'pypi' ? '' : `--repository ${repository}`;
   const env = {};
-  if (pypiToken) {
+  if (pypiToken || process.env.TWINE_PASSWORD) {
     console.log('ℹ Authenticating to PyPI using provided token...');
     env.TWINE_USERNAME = '__token__';
-    env.TWINE_PASSWORD = pypiToken.trim();
+    env.TWINE_PASSWORD = (pypiToken || process.env.TWINE_PASSWORD).trim();
+  } else if (process.env.GITHUB_ACTIONS) {
+    console.log(
+      'ℹ In GitHub Actions without static token: package built in dist/python for PyPI Trusted Publishing.',
+    );
+    return;
   }
 
   run(`python3 -m twine upload dist/python/* ${repoFlag}`.trim(), { env });
