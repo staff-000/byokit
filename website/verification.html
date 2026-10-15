@@ -218,13 +218,15 @@ Reply with exactly: OK</textarea></label
                 <th scope="col" class="identity-column">
                   <span class="column-title">Provider / model</span>
                   <div class="column-filters">
-                    <label
-                      >Search<input
+                    <label class="filter-field"
+                      ><span class="sr-only">Search models</span
+                      ><input
                         id="model-search"
                         type="search"
-                        placeholder="Search model, provider, or tag…" /></label
-                    ><label
-                      >Provider<select id="provider-filter">
+                        placeholder="Search models, tags…" /></label
+                    ><label class="filter-field"
+                      ><span class="sr-only">Provider</span
+                      ><select id="provider-filter">
                         <option value="">All providers</option>
                       </select></label
                     >
@@ -233,9 +235,10 @@ Reply with exactly: OK</textarea></label
                 <th scope="col" class="context-column">
                   <span class="column-title">Context</span>
                   <div class="column-filters">
-                    <label
-                      >Context<select id="context-filter">
-                        <option value="0">Any</option>
+                    <label class="filter-field"
+                      ><span class="sr-only">Context limit</span
+                      ><select id="context-filter">
+                        <option value="0">Any context</option>
                         <option value="32000">32K+</option>
                         <option value="128000">128K+</option>
                         <option value="1000000">1M+</option>
@@ -246,8 +249,9 @@ Reply with exactly: OK</textarea></label
                 <th scope="col" class="price-column">
                   <span class="column-title">Price / 1M tokens</span>
                   <div class="column-filters">
-                    <label
-                      >Input price / 1M<select id="price-filter">
+                    <label class="filter-field"
+                      ><span class="sr-only">Input price</span
+                      ><select id="price-filter">
                         <option value="any">Any price</option>
                         <option value="1">Up to $1</option>
                         <option value="5">Up to $5</option>
@@ -259,8 +263,9 @@ Reply with exactly: OK</textarea></label
                 <th scope="col" class="performance-column">
                   <span class="column-title">Speed / release</span>
                   <div class="column-filters">
-                    <label
-                      >Sort results<select id="sort-filter">
+                    <label class="filter-field"
+                      ><span class="sr-only">Sort results</span
+                      ><select id="sort-filter">
                         <option value="provider-order">Provider order</option>
                         <option value="alphabeticalAscend">Name: A → Z</option>
                         <option value="alphabeticalDescend">Name: Z → A</option>
@@ -275,36 +280,41 @@ Reply with exactly: OK</textarea></label
                 </th>
                 <th scope="col" class="tags-column">
                   <span class="column-title">Tags &amp; capabilities</span>
-                  <div class="column-filters filter-pairs">
-                    <label
-                      >Origin tags<select id="region-filter">
+                  <div class="column-filters filter-grid">
+                    <label class="filter-field"
+                      ><span class="sr-only">Origin tags</span
+                      ><select id="region-filter">
                         <option value="any">Any origin</option>
-                        <option value="china">China-origin tags</option>
+                        <option value="china">China-origin</option>
                       </select></label
-                    ><label
-                      >Exclude tag<select id="exclude-tag-filter">
-                        <option value="">No exclusions</option>
+                    ><label class="filter-field"
+                      ><span class="sr-only">Model weights</span
+                      ><select id="weights-filter">
+                        <option value="any">Any weights</option>
+                        <option value="open">Open weights</option>
+                        <option value="closed">Closed weights</option>
                       </select></label
-                    ><label
-                      >Capability<select id="feature-filter">
+                    ><label class="filter-field"
+                      ><span class="sr-only">Capability</span
+                      ><select id="feature-filter">
                         <option value="any">Any capability</option>
                         <option value="functionCalling">Function calling</option>
                         <option value="jsonSchema">Structured output</option>
                         <option value="thinking">Thinking</option>
                         <option value="promptCaching">Prompt caching</option>
                       </select></label
-                    ><label
-                      >Input<select id="modality-filter">
+                    ><label class="filter-field"
+                      ><span class="sr-only">Input modality</span
+                      ><select id="modality-filter">
                         <option value="any">Any input</option>
                         <option value="image">Image</option>
                         <option value="audio">Audio</option>
                         <option value="video">Video</option>
                       </select></label
-                    ><label
-                      >Weights<select id="weights-filter">
-                        <option value="any">Any weights</option>
-                        <option value="open">Open weights</option>
-                        <option value="closed">Closed weights</option>
+                    ><label class="filter-field filter-field-wide"
+                      ><span class="sr-only">Exclude tag</span
+                      ><select id="exclude-tag-filter">
+                        <option value="">No exclusions</option>
                       </select></label
                     >
                   </div>
@@ -312,9 +322,8 @@ Reply with exactly: OK</textarea></label
                 <th scope="col" class="status-column">
                   <span class="column-title">Status / verification</span>
                   <div class="column-filters">
-                    <label class="checkbox"
-                      ><input id="include-outdated" type="checkbox" /> Include outdated
-                      models</label
+                    <label class="header-checkbox"
+                      ><input id="include-outdated" type="checkbox" /> Include outdated</label
                     >
                   </div>
                 </th>
