@@ -461,3 +461,19 @@ flowchart LR
 Nightly Actions fetches a new snapshot and emits a validated candidate artifact.
 Manual evidence is never freshened by upstream observation timestamps. Production
 publication and package releases remain explicit. See custom-catalog.md.
+
+## JavaScript playground
+
+The website includes editable JS examples for discovery, sorting, filtering,
+custom models, and full metadata. The build uses the existing TypeScript dev
+dependency to compile the same core modules and pinned catalog into a lazy-loaded
+worker source; there is no browser compiler dependency or separate sample catalog.
+
+Each Run starts a fresh Worker inside a sandboxed opaque-origin iframe. Its CSP
+blocks network requests, external scripts, and imports. Inference clients are
+excluded from the exposed byokit namespace; real calls use the verification page.
+Code never runs in the host page, receives no keys, and is not persisted. Console
+output is rendered as text, bounded, and includes errors and returned values.
+Stop, edits, reset, page exit, or a three-second deadline remove the frame and
+terminate its work. Run identity checks fence late messages. CI exercises actual
+Chromium worker execution, errors, stop/timeouts, network blocking, and recovery.

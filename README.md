@@ -3,7 +3,7 @@
 Get providers and models for your BYOK application. Refine the list with filters,
 then call the model your user chooses. TypeScript/JavaScript and Python supported.
 
-[Try the website](https://staff-000.github.io/byokit/) · [Verify models](https://staff-000.github.io/byokit/verification.html) · [Contribute](CONTRIBUTING.md)
+[Try the JavaScript playground](https://staff-000.github.io/byokit/#playground) · [Verify models](https://staff-000.github.io/byokit/verification.html) · [Contribute](CONTRIBUTING.md)
 
 ## Get models
 

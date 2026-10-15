@@ -1,3 +1,4 @@
+import {buildPlaygroundWorker} from './build-playground.mjs';
 import {mkdir,cp,writeFile,readFile,readdir,rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {validateVerifications} from '../packages/core/index.js';
@@ -6,6 +7,7 @@ import {contributorBadges,contributorBadgeSvg} from '../website/contributor-badg
 const root=resolve(new URL('..',import.meta.url).pathname),out=resolve(root,'dist/site');
 await mkdir(out,{recursive:true});await cp(resolve(root,'website'),out,{recursive:true});
 for(const file of ['inference.js','verification-filters.js'])await writeFile(resolve(out,file),(await readFile(resolve(root,'website',file),'utf8')).replaceAll('../packages/core/','./lib/core/'));
+await writeFile(resolve(out,'playground-runtime.js'),'export const workerSource='+JSON.stringify(await buildPlaygroundWorker())+';\n');
 for(const file of ['verification-config.json','github-verification.js'])await rm(resolve(out,file),{force:true});
 await mkdir(resolve(out,'lib/core'),{recursive:true});
 for(const file of ['index.js','enums.js','catalog.js','call.js','connection.js','sdk.js','custom-model.js'])await cp(resolve(root,'packages/core',file),resolve(out,'lib/core',file));
