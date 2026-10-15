@@ -87,6 +87,39 @@ function bumpVersion(current, type) {
   );
 }
 
+function loadEnv() {
+  const envFiles = ['.env.release', '.env'];
+  for (const f of envFiles) {
+    const p = join(rootDir, f);
+    if (existsSync(p)) {
+      try {
+        const content = readFileSync(p, 'utf8');
+        for (const line of content.split('\n')) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith('#')) continue;
+          const eqIdx = trimmed.indexOf('=');
+          if (eqIdx !== -1) {
+            const key = trimmed.slice(0, eqIdx).trim();
+            let val = trimmed.slice(eqIdx + 1).trim();
+            if (
+              (val.startsWith('"') && val.endsWith('"')) ||
+              (val.startsWith("'") && val.endsWith("'"))
+            ) {
+              val = val.slice(1, -1);
+            }
+            if (!process.env[key]) {
+              process.env[key] = val;
+            }
+          }
+        }
+      } catch {}
+      break;
+    }
+  }
+}
+
+loadEnv();
+
 function printHelp() {
   console.log(`
 byokit Release Tool
@@ -102,12 +135,15 @@ Examples:
   npm run release minor --npm-only      # Only publish @byokit/* packages to npm
   npm run release minor --pypi-only     # Only publish byokit to PyPI
   npm run release patch --tag beta      # Publish npm packages under the "beta" tag
+  npm run release patch --npm-token ... --pypi-token ... # Pass credentials directly
 
 Options:
   --dry-run             Simulate publish without publishing to npm, PyPI, or pushing git
   --skip-tests          Skip test execution before releasing
   --npm-only            Only publish npm packages (@byokit/core, assets, dom, cli, react)
   --pypi-only           Only publish the Python package to PyPI
+  --npm-token <token>   npm authentication token (or via NPM_TOKEN in env / .env.release)
+  --pypi-token <token>  PyPI API token (or via PYPI_API_TOKEN in env / .env.release)
   --tag <tag>           npm dist-tag (default: latest)
   --otp <code>          npm 2FA authentication code
   --pypi-repo <repo>    PyPI repository (default: pypi, e.g. testpypi)
@@ -125,6 +161,9 @@ function parseCliArgs(args) {
     skipTests: false,
     npmOnly: false,
     pypiOnly: false,
+    npmToken: process.env.NPM_TOKEN || process.env.NODE_AUTH_TOKEN || null,
+    pypiToken:
+      process.env.PYPI_TOKEN || process.env.PYPI_API_TOKEN || process.env.TWINE_PASSWORD || null,
     tag: 'latest',
     otp: null,
     pypiRepo: 'pypi',
@@ -147,6 +186,8 @@ function parseCliArgs(args) {
     else if (arg === '--tag' && args[i + 1]) options.tag = args[++i];
     else if (arg === '--otp' && args[i + 1]) options.otp = args[++i];
     else if (arg === '--pypi-repo' && args[i + 1]) options.pypiRepo = args[++i];
+    else if (arg === '--npm-token' && args[i + 1]) options.npmToken = args[++i];
+    else if (arg === '--pypi-token' && args[i + 1]) options.pypiToken = args[++i];
     else if (!arg.startsWith('-') && !options.target) options.target = arg;
     else throw new Error(`Unknown option: ${arg}`);
   }
@@ -199,19 +240,37 @@ function runPreflightTests() {
   console.log('✅ All checks passed successfully.');
 }
 
-function publishNpm({ dryRun, tag, otp }) {
+function publishNpm({ dryRun, tag, otp, npmToken }) {
   console.log(`\n📦 Publishing npm packages (tag: ${tag}${dryRun ? ' [dry-run]' : ''})...`);
   const otpFlag = otp ? `--otp ${otp}` : '';
   const dryFlag = dryRun ? '--dry-run' : '';
 
-  for (const pkg of NPM_PACKAGES) {
-    console.log(`\n--> Publishing ${pkg.name}...`);
-    const cmd =
-      `npm publish --workspace ${pkg.name} --access public --tag ${tag} ${otpFlag} ${dryFlag}`
-        .replace(/\s+/g, ' ')
-        .trim();
-    run(cmd);
-    console.log(`  ✓ ${pkg.name} ${dryRun ? '(simulated)' : 'published'}`);
+  let tempNpmrc = null;
+  const env = {};
+
+  if (npmToken) {
+    console.log('ℹ Authenticating to npm using provided token...');
+    tempNpmrc = join(rootDir, `.tmp-npmrc-${Date.now()}`);
+    writeFileSync(tempNpmrc, `//registry.npmjs.org/:_authToken=${npmToken.trim()}\n`, {
+      mode: 0o600,
+    });
+    env.NPM_CONFIG_USERCONFIG = tempNpmrc;
+  }
+
+  try {
+    for (const pkg of NPM_PACKAGES) {
+      console.log(`\n--> Publishing ${pkg.name}...`);
+      const cmd =
+        `npm publish --workspace ${pkg.name} --access public --tag ${tag} ${otpFlag} ${dryFlag}`
+          .replace(/\s+/g, ' ')
+          .trim();
+      run(cmd, { env });
+      console.log(`  ✓ ${pkg.name} ${dryRun ? '(simulated)' : 'published'}`);
+    }
+  } finally {
+    if (tempNpmrc && existsSync(tempNpmrc)) {
+      rmSync(tempNpmrc, { force: true });
+    }
   }
 }
 
@@ -260,7 +319,7 @@ function buildPythonPackage({ dryRun = false } = {}) {
   }
 }
 
-function publishPypi({ dryRun, repository }) {
+function publishPypi({ dryRun, repository, pypiToken }) {
   console.log(
     `\n🚀 Uploading Python package to PyPI (${repository}${dryRun ? ' [dry-run]' : ''})...`,
   );
@@ -293,7 +352,14 @@ function publishPypi({ dryRun, repository }) {
   }
 
   const repoFlag = repository === 'pypi' ? '' : `--repository ${repository}`;
-  run(`python3 -m twine upload dist/python/* ${repoFlag}`.trim());
+  const env = {};
+  if (pypiToken) {
+    console.log('ℹ Authenticating to PyPI using provided token...');
+    env.TWINE_USERNAME = '__token__';
+    env.TWINE_PASSWORD = pypiToken.trim();
+  }
+
+  run(`python3 -m twine upload dist/python/* ${repoFlag}`.trim(), { env });
   console.log(`✅ Uploaded to PyPI repository "${repository}"!`);
 }
 
@@ -360,6 +426,7 @@ async function main() {
         dryRun: options.dryRun,
         tag: options.tag,
         otp: options.otp,
+        npmToken: options.npmToken,
       });
     }
 
@@ -369,6 +436,7 @@ async function main() {
       publishPypi({
         dryRun: options.dryRun,
         repository: options.pypiRepo,
+        pypiToken: options.pypiToken,
       });
     }
 
