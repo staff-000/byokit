@@ -234,6 +234,7 @@ function publishNpm({ dryRun, tag, otp, npmToken }) {
   );
   const otpFlag = otp ? `--otp ${otp}` : '';
   const dryFlag = dryRun ? '--dry-run' : '';
+  const provenanceFlag = process.env.GITHUB_ACTIONS && !dryRun ? '--provenance' : '';
 
   let tempNpmrc = null;
   const env = {};
@@ -245,12 +246,16 @@ function publishNpm({ dryRun, tag, otp, npmToken }) {
       mode: 0o600,
     });
     env.NPM_CONFIG_USERCONFIG = tempNpmrc;
+  } else if (process.env.GITHUB_ACTIONS) {
+    console.log(
+      'ℹ In GitHub Actions without static token: using npm Trusted Publishing (OIDC / provenance).',
+    );
   }
 
   try {
     console.log(`\n--> Publishing ${NPM_PACKAGE.name}...`);
     const cmd =
-      `npm publish --workspace ${NPM_PACKAGE.name} --access public --tag ${tag} ${otpFlag} ${dryFlag}`
+      `npm publish --workspace ${NPM_PACKAGE.name} --access public --tag ${tag} ${provenanceFlag} ${otpFlag} ${dryFlag}`
         .replace(/\s+/g, ' ')
         .trim();
     run(cmd, { env });
