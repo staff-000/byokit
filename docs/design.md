@@ -500,3 +500,10 @@ it is never removed with the desktop header labels. Missing price, speed and rel
 metadata is displayed as unknown. More tags expand on demand. All list filters and
 sort directions delegate to the shared catalog API; newest-release ordering remains
 a website view option. Changing table filters sends no inference request.
+
+
+Website builds version HTML asset references and relative JavaScript module imports
+with one content digest. This keeps cached UI code, enums, adapters, styles, and
+catalog snapshots in the same deployment; it does not trigger live discovery or
+change the public verification feed. Bundled canonical verification records render
+immediately, while successful feed refreshes replace that snapshot.

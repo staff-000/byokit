@@ -1,3 +1,4 @@
+import {createHash} from 'node:crypto';
 import {buildPlaygroundWorker} from './build-playground.mjs';
 import {mkdir,cp,writeFile,readFile,readdir,rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
@@ -24,3 +25,26 @@ await writeFile(resolve(out,'verification-staging.json'),JSON.stringify({receipt
 await cp(resolve(root,'THIRD_PARTY_NOTICES.md'),resolve(out,'THIRD_PARTY_NOTICES.txt'));
 await writeFile(resolve(out,'.nojekyll'),'');
 console.log('Built static website: dist/site (GitHub Pages /byokit/ compatible)');
+
+// A deployment must not mix cached app code with a different catalog/enum build.
+// Keep static paths for Pages, but version entry assets and every relative ESM
+// dependency together; inference and verification feeds remain unchanged.
+async function sourceAssets(dir){
+ const result=[];
+ for(const entry of (await readdir(dir,{withFileTypes:true})).sort((a,b)=>a.name.localeCompare(b.name))){
+  const file=resolve(dir,entry.name);
+  if(entry.isDirectory())result.push(...await sourceAssets(file));
+  else if(/\.(js|css|html)$/.test(entry.name))result.push(file);
+ }
+ return result;
+}
+const assetFiles=await sourceAssets(out),digest=createHash('sha256');
+for(const file of assetFiles){digest.update(file.slice(out.length));digest.update(await readFile(file));}
+const assetVersion=digest.digest('hex').slice(0,16);
+for(const file of assetFiles){
+ let source=await readFile(file,'utf8');
+ if(file.endsWith('.html'))source=source.replace(/((?:src|href)=["'])(\.\/[^"']+\.(?:js|css))(["'])/g,(_all,start,path,end)=>start+path+'?v='+assetVersion+end);
+ if(file.endsWith('.js'))source=source.replace(/(\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)(["'])(\.{1,2}\/[^"'\s]+\.js)\2/g,(_all,start,quote,path)=>start+quote+path+'?v='+assetVersion+quote);
+ await writeFile(file,source);
+}
+console.log('Versioned first-party website assets: '+assetVersion);
