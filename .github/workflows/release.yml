@@ -112,7 +112,7 @@ jobs:
             COMMITS=$(git log "$LATEST_TAG..HEAD" --oneline --invert-grep --grep="^Release v" | wc -l | tr -d ' ')
             echo "New commits since $LATEST_TAG: $COMMITS"
             if [ "$COMMITS" -gt 0 ]; then
-              echo "Found $COMMITS new commits. Triggering scheduled minor release."
+              echo "Found $COMMITS new commits. Triggering scheduled patch release."
               echo "has_changes=true" >> "$GITHUB_OUTPUT"
             else
               echo "No new commits since $LATEST_TAG. Skipping scheduled release."
@@ -120,14 +120,14 @@ jobs:
             fi
           fi
 
-      - name: Run release script (Scheduled Minor Release)
+      - name: Run release script (Scheduled Patch Release)
         if: github.event_name == 'schedule' && steps.check_commits.outputs.has_changes == 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         run: |
-          node scripts/release.mjs minor --push
+          node scripts/release.mjs patch --push
 
       - name: Publish Python package to PyPI (Trusted Publishing / OIDC)
         if: (github.event_name == 'workflow_dispatch' && inputs.dry_run != true && inputs.npm_only != true) || github.event_name == 'release' || (github.event_name == 'schedule' && steps.check_commits.outputs.has_changes == 'true')
