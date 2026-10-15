@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { discoverLocal } from '../packages/dom/local.js';
+import { discoverLocal } from '../packages/byokit/dom/local.js';
 test('local discovery validates origin and requires an explicit remote opt-in', async () => {
   let called = false;
   const fetch = async () => {
@@ -22,7 +22,7 @@ test('local discovery validates origin and requires an explicit remote opt-in', 
 });
 
 test('OpenAI-compatible URL discovery supports vLLM, llama.cpp and Ollama with no doubled /v1', async () => {
-  const { LocalApi } = await import('@byokit/core');
+  const { LocalApi } = await import('@staff-000/byokit');
   for (const [base, path] of [
     ['http://localhost:8000', '/v1/models'],
     ['http://localhost:8080/v1', '/v1/models'],
@@ -42,7 +42,7 @@ test('OpenAI-compatible URL discovery supports vLLM, llama.cpp and Ollama with n
   }
 });
 test('native Ollama can list running models separately from installed models', async () => {
-  const { LocalApi } = await import('@byokit/core');
+  const { LocalApi } = await import('@staff-000/byokit');
   const found = await discoverLocal('http://localhost:11434', {
     api: LocalApi.Ollama,
     runningOnly: true,

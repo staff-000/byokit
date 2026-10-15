@@ -6,7 +6,7 @@ import { resolve } from 'node:path';
 import { JSDOM } from 'jsdom';
 import { parseIssueReport } from '../website/verification-report.js';
 import { canonicalReport } from '../scripts/verification-report.mjs';
-import catalog from '../packages/core/catalog.js';
+import catalog from '../packages/byokit/catalog.js';
 const wait = async (predicate) => {
   for (let n = 0; n < 100; n++) {
     if (predicate()) return;
@@ -69,7 +69,7 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
   try {
     let source = await readFile('website/verification.js', 'utf8');
     for (const [relative, file] of [
-      ['./lib/core/catalog.js', 'packages/core/catalog.js'],
+      ['./lib/core/catalog.js', 'packages/byokit/catalog.js'],
       ['./verification-report.js', 'website/verification-report.js'],
       ['./contributor-badges.js', 'website/contributor-badges.js'],
       ['./request-examples.js', 'website/request-examples.js'],

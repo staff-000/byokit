@@ -1,7 +1,7 @@
-import {Catalog,checkFit,PickerConfig,FeatureName,Modality,Preset,ProviderId,Deployment,UnknownPolicy,LocalRuntime,Locale,githubContributor,customTag,customProviderId} from '@byokit/core';
-import {mountByok} from '@byokit/dom';
-import {discoverLocal} from '@byokit/dom/local';
-import {getModels} from '@byokit/core/catalog';
+import {Catalog,checkFit,PickerConfig,FeatureName,Modality,Preset,ProviderId,Deployment,UnknownPolicy,LocalRuntime,Locale,githubContributor,customTag,customProviderId} from '@staff-000/byokit';
+import {mountByok} from '@staff-000/byokit/dom';
+import {discoverLocal} from '@staff-000/byokit/dom/local';
+import {getModels} from '@staff-000/byokit/catalog';
 const config:PickerConfig={preset:Preset.Global,providerIds:[ProviderId.DeepSeek],filters:{input:[Modality.Image],requiredFeatures:[FeatureName.FunctionCalling],deployment:[Deployment.Hosted],includeTags:[customTag('usecase:summarization')]},unknownPolicy:UnknownPolicy.Exclude};
 declare const catalog:Catalog;
 checkFit(catalog.get('test/model'),{inputTokens:1000});
@@ -20,10 +20,10 @@ getModels({filters:{input:['imag']}});
 // @ts-expect-error named constants must exist
 const bad=FeatureName.FunctionCallling;
 
-import {ProviderId as CatalogProviderId} from '@byokit/core/catalog';
+import {ProviderId as CatalogProviderId} from '@staff-000/byokit/catalog';
 getModels({providerIds:[CatalogProviderId.DeepSeek]});
 
-import * as byokit from '@byokit/core/catalog';
+import * as byokit from '@staff-000/byokit/catalog';
 byokit.getModels({providerIds:[byokit.ProviderId.DeepSeek]});
 
 byokit.getModels({preset:byokit.Preset.Global,filters:{verifiedBy:byokit.githubContributor('example')}});
@@ -44,7 +44,7 @@ byokit.getModels('complete');
 // @ts-expect-error unknown local protocol
 byokit.getModels({local:[{endpoint:'http://localhost:8000',api:'vllm'}]});
 
-import * as calls from '@byokit/core/catalog';
+import * as calls from '@staff-000/byokit/catalog';
 const chosen = calls.getModels({providerIds:[calls.ProviderId.DeepSeek]})[0];
 calls.call(chosen,'Hi','key',{runtimeChecks:false});
 calls.callClaude(chosen,{messages:[{role:calls.Role.User,content:'Hi'}]},'key');

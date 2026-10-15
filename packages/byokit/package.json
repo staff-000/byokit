@@ -1,0 +1,70 @@
+{
+  "name": "@staff-000/byokit",
+  "version": "0.1.0",
+  "description": "Bring-Your-Own-Key model catalog, routing, inference, and UI components",
+  "type": "module",
+  "bin": {
+    "byokit": "bin.mjs"
+  },
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./catalog": {
+      "types": "./catalog.d.ts",
+      "default": "./catalog.js"
+    },
+    "./enums": {
+      "types": "./enums.d.ts",
+      "default": "./enums.js"
+    },
+    "./dom": {
+      "types": "./dom/index.d.ts",
+      "default": "./dom/index.js"
+    },
+    "./dom/styles.css": "./dom/styles.css",
+    "./dom/local": {
+      "types": "./dom/local.d.ts",
+      "default": "./dom/local.js"
+    },
+    "./react": {
+      "types": "./react/index.d.ts",
+      "default": "./react/index.js"
+    },
+    "./assets/manifest": "./assets/manifest.json",
+    "./assets/*": "./assets/*"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "catalog.js",
+    "catalog.d.ts",
+    "enums.js",
+    "enums.d.ts",
+    "call.js",
+    "connection.js",
+    "sdk.js",
+    "custom-model.js",
+    "bin.mjs",
+    "dom",
+    "react",
+    "assets",
+    "NOTICE",
+    "LICENSE",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "sideEffects": false,
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
+}

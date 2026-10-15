@@ -2,7 +2,7 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
-import { Catalog, validateConfig, checkTask } from '@byokit/core';
+import { Catalog, validateConfig, checkTask } from './index.js';
 const [command, file, ...args] = process.argv.slice(2);
 async function run() {
   if (!['check', 'build'].includes(command) || !file) {

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { mergeManualCatalog } from '../scripts/manual-catalog.mjs';
-import { Catalog } from '../packages/core/index.js';
+import { Catalog } from '../packages/byokit/index.js';
 const fixture = async () =>
   JSON.parse(await readFile(new URL('../spec/fixtures/catalog.json', import.meta.url), 'utf8'));
 const evidence = { source: 'https://example.com/models', reviewedAt: '2026-10-14' };
@@ -76,6 +76,6 @@ test('nightly workflow fetches only the official source and retains generated pa
   );
   assert.ok(workflow.includes('23 8 * * *'));
   assert.ok(workflow.includes('https://models.dev/api.json'));
-  assert.ok(workflow.includes('packages/core/catalog.js'));
+  assert.ok(workflow.includes('packages/byokit/catalog.js'));
   assert.ok(workflow.includes('contents: read'));
 });

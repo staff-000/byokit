@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import * as byokit from '../packages/core/catalog.js';
+import * as byokit from '../packages/byokit/catalog.js';
 export async function playgroundSmoke(page) {
   const status = page.locator('#playground-status'),
     output = page.locator('#playground-output'),

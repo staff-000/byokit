@@ -1,4 +1,4 @@
-import type { Offering, LocalRuntime, LocalApi } from '@byokit/core';
+import type { Offering, LocalRuntime, LocalApi } from '../index.js';
 export function discoverLocal(
   endpoint: string,
   options?: {

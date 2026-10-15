@@ -3,21 +3,17 @@
   "private": true,
   "version": "0.1.0",
   "workspaces": [
-    "packages/core",
-    "packages/dom",
-    "packages/react",
-    "packages/cli",
-    "packages/assets"
+    "packages/byokit"
   ],
   "scripts": {
     "test": "node --test tests/*.test.mjs",
     "test:python": "python3 -m unittest discover -s packages/python/tests -v",
-    "check": "node packages/cli/bin.mjs check examples/byok.config.json",
+    "check": "node packages/byokit/bin.mjs check examples/byok.config.json",
     "catalog:import": "node scripts/import-catalog.mjs",
     "demo": "node scripts/serve.mjs",
     "typecheck": "tsc --noEmit",
     "test:browser": "node scripts/browser-smoke.mjs",
-    "build": "node packages/cli/bin.mjs build examples/byok.config.json --out examples/generated/catalog.json",
+    "build": "node packages/byokit/bin.mjs build examples/byok.config.json --out examples/generated/catalog.json",
     "enums:generate": "node scripts/generate-enums.mjs",
     "typecheck:python": "pyright --project pyrightconfig.json",
     "site:build": "node scripts/build-site.mjs",
@@ -26,7 +22,7 @@
     "verify": "node scripts/verify.mjs",
     "release": "node scripts/release.mjs",
     "release:dry-run": "node scripts/release.mjs --dry-run",
-    "check:budget": "node packages/cli/bin.mjs check examples/task.config.json --strict",
+    "check:budget": "node packages/byokit/bin.mjs check examples/task.config.json --strict",
     "lint": "eslint packages/ scripts/ website/ tests/ && prettier --check .",
     "lint:fix": "eslint packages/ scripts/ website/ tests/ --fix && prettier --write .",
     "format": "prettier --write ."

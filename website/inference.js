@@ -1,7 +1,7 @@
-import { OpenAI, prepareCall, ApiProtocol } from '../packages/core/index.js';
+import { OpenAI, prepareCall, ApiProtocol } from '../packages/byokit/index.js';
 // Verification UI: shared library adapters, browser-local records, no stored credentials.
-import { providerConnections } from '../packages/core/connection.js';
-import catalog from '../packages/core/catalog.js';
+import { providerConnections } from '../packages/byokit/connection.js';
+import catalog from '../packages/byokit/catalog.js';
 const docs = {
   openai: 'https://developers.openai.com/api/reference',
   anthropic: 'https://platform.claude.com/docs/en/api/messages/create',

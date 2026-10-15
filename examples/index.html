@@ -72,8 +72,8 @@
   <script type="importmap">
     {
       "imports": {
-        "@byokit/core": "/packages/core/index.js",
-        "@byokit/dom": "/packages/dom/index.js"
+        "@staff-000/byokit": "/packages/byokit/index.js",
+        "@staff-000/byokit/dom": "/packages/byokit/dom/index.js"
       }
     }
   </script>
@@ -100,7 +100,7 @@
     </div>
   </main>
   <script type="module">
-    import * as byokit from '@byokit/dom';
+    import * as byokit from '@staff-000/byokit/dom';
     const data = await fetch('/catalog/catalog.json').then((r) => r.json());
     const assetManifest = await fetch('/assets/manifest.json').then((r) => r.json());
     const assets = Object.fromEntries(

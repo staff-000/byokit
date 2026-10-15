@@ -4,7 +4,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { Catalog, COMPLETE } from '../packages/core/index.js';
+import { Catalog, COMPLETE } from '../packages/byokit/index.js';
 test('import preserves snapshot observation dates, has no per-provider cap, and cannot freshen an unobserved changed file', () => {
   const dir = mkdtempSync(join(tmpdir(), 'byokit-observation-')),
     file = join(dir, 'upstream.json'),

@@ -1,4 +1,4 @@
-import * as byokit from '../packages/core/catalog.js';
+import * as byokit from '../packages/byokit/catalog.js';
 export function filterModels(state = {}) {
   let providerIds = byokit
     .getModels(byokit.COMPLETE, {

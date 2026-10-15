@@ -30,14 +30,11 @@ import { fileURLToPath } from 'node:url';
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const rootDir = resolve(__dirname, '..');
 
-// npm packages in topological dependency order
-const NPM_PACKAGES = [
-  { name: '@byokit/core', file: 'packages/core/package.json' },
-  { name: '@byokit/assets', file: 'packages/assets/package.json' },
-  { name: '@byokit/dom', file: 'packages/dom/package.json', deps: ['@byokit/core'] },
-  { name: '@byokit/cli', file: 'packages/cli/package.json', deps: ['@byokit/core'] },
-  { name: '@byokit/react', file: 'packages/react/package.json', deps: ['@byokit/dom'] },
-];
+// npm package
+const NPM_PACKAGE = {
+  name: '@staff-000/byokit',
+  file: 'packages/byokit/package.json',
+};
 
 const PYTHON_PACKAGE = {
   name: 'byokit',
@@ -205,21 +202,12 @@ function updateManifests(newVersion) {
   writeFileSync(rootPath, JSON.stringify(rootPkg, null, 2) + '\n');
   console.log(`  ✓ package.json -> ${newVersion}`);
 
-  // 2. npm packages
-  for (const pkg of NPM_PACKAGES) {
-    const pkgPath = join(rootDir, pkg.file);
-    const data = JSON.parse(readFileSync(pkgPath, 'utf8'));
-    data.version = newVersion;
-    if (pkg.deps) {
-      for (const dep of pkg.deps) {
-        if (data.dependencies?.[dep]) {
-          data.dependencies[dep] = newVersion;
-        }
-      }
-    }
-    writeFileSync(pkgPath, JSON.stringify(data, null, 2) + '\n');
-    console.log(`  ✓ ${pkg.file} -> ${newVersion}`);
-  }
+  // 2. npm package
+  const pkgPath = join(rootDir, NPM_PACKAGE.file);
+  const data = JSON.parse(readFileSync(pkgPath, 'utf8'));
+  data.version = newVersion;
+  writeFileSync(pkgPath, JSON.stringify(data, null, 2) + '\n');
+  console.log(`  ✓ ${NPM_PACKAGE.file} -> ${newVersion}`);
 
   // 3. Python pyproject.toml
   const tomlPath = join(rootDir, PYTHON_PACKAGE.toml);
@@ -241,7 +229,9 @@ function runPreflightTests() {
 }
 
 function publishNpm({ dryRun, tag, otp, npmToken }) {
-  console.log(`\n📦 Publishing npm packages (tag: ${tag}${dryRun ? ' [dry-run]' : ''})...`);
+  console.log(
+    `\n📦 Publishing npm package ${NPM_PACKAGE.name} (tag: ${tag}${dryRun ? ' [dry-run]' : ''})...`,
+  );
   const otpFlag = otp ? `--otp ${otp}` : '';
   const dryFlag = dryRun ? '--dry-run' : '';
 
@@ -258,15 +248,13 @@ function publishNpm({ dryRun, tag, otp, npmToken }) {
   }
 
   try {
-    for (const pkg of NPM_PACKAGES) {
-      console.log(`\n--> Publishing ${pkg.name}...`);
-      const cmd =
-        `npm publish --workspace ${pkg.name} --access public --tag ${tag} ${otpFlag} ${dryFlag}`
-          .replace(/\s+/g, ' ')
-          .trim();
-      run(cmd, { env });
-      console.log(`  ✓ ${pkg.name} ${dryRun ? '(simulated)' : 'published'}`);
-    }
+    console.log(`\n--> Publishing ${NPM_PACKAGE.name}...`);
+    const cmd =
+      `npm publish --workspace ${NPM_PACKAGE.name} --access public --tag ${tag} ${otpFlag} ${dryFlag}`
+        .replace(/\s+/g, ' ')
+        .trim();
+    run(cmd, { env });
+    console.log(`  ✓ ${NPM_PACKAGE.name} ${dryRun ? '(simulated)' : 'published'}`);
   } finally {
     if (tempNpmrc && existsSync(tempNpmrc)) {
       rmSync(tempNpmrc, { force: true });
@@ -455,8 +443,8 @@ async function main() {
       `🎉 Release v${newVersion} ${options.dryRun ? 'dry-run completed successfully!' : 'completed successfully!'}`,
     );
     if (!options.pypiOnly) {
-      console.log(`npm packages:`);
-      for (const p of NPM_PACKAGES) console.log(`  - https://www.npmjs.com/package/${p.name}`);
+      console.log(`npm package:`);
+      console.log(`  - https://www.npmjs.com/package/${NPM_PACKAGE.name}`);
     }
     if (!options.npmOnly) {
       console.log(`PyPI package:`);

@@ -7,7 +7,7 @@ import type {
   Offering,
   LocalApi,
   Locale,
-} from '@byokit/core';
+} from '../index.js';
 export interface ByokOptions {
   catalog: Catalog | CatalogData;
   config?: PickerConfig;
@@ -27,7 +27,7 @@ export interface ByokOptions {
   discoverLocal?: (
     endpoint: string,
     signal: AbortSignal,
-    options: { api: import('@byokit/core').LocalApi },
+    options: { api: import('../index.js').LocalApi },
   ) => Promise<Offering[]>;
 }
 export function mountByok(
@@ -35,5 +35,5 @@ export function mountByok(
   options: ByokOptions,
 ): { destroy(): void; getSelection(): Selection };
 
-export * from '@byokit/core';
+export * from '../index.js';
 export { discoverLocal } from './local.js';

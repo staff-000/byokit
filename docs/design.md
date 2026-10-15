@@ -38,7 +38,7 @@ login and quota management belong to the application.
 ## Public query
 
 ```ts
-import * as byokit from '@byokit/core/catalog';
+import * as byokit from '@staff-000/byokit/catalog';
 
 const models = byokit.getModels({
   preset: byokit.Preset.Global,

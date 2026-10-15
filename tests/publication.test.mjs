@@ -10,7 +10,7 @@ import {
 } from '../website/verification-report.js';
 import { issueSubmission, canonicalReport } from '../scripts/verification-report.mjs';
 import { addReport } from '../scripts/publish-verification.mjs';
-import { verificationSummary } from '../packages/core/index.js';
+import { verificationSummary } from '../packages/byokit/index.js';
 const catalog = JSON.parse(readFileSync('spec/fixtures/catalog.json'));
 catalog.providers.push({
   id: 'deepseek',

@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import Ajv from 'ajv/dist/2020.js';
-import { validateCatalog } from '../packages/core/index.js';
+import { validateCatalog } from '../packages/byokit/index.js';
 const schema = JSON.parse(
   await readFile(new URL('../catalog/catalog.schema.json', import.meta.url), 'utf8'),
 );

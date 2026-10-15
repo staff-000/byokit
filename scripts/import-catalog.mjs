@@ -3,7 +3,7 @@ import { mergeManualCatalog } from './manual-catalog.mjs';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { createHash } from 'node:crypto';
-import { validateCatalog, deriveTags } from '../packages/core/index.js';
+import { validateCatalog, deriveTags } from '../packages/byokit/index.js';
 const [source, ...args] = process.argv.slice(2);
 if (!source)
   throw new Error(
@@ -351,11 +351,11 @@ console.log(
 );
 
 if (i < 0) {
-  const core = new URL('../packages/core/', import.meta.url),
+  const byokitPkg = new URL('../packages/byokit/', import.meta.url),
     python = new URL('../packages/python/src/byokit/data/', import.meta.url);
   await mkdir(python, { recursive: true });
   await writeFile(
-    new URL('catalog.js', core),
+    new URL('catalog.js', byokitPkg),
     'import {Catalog} from "./index.js";\nconst data=' +
       JSON.stringify(catalog) +
       ';\nexport default data;\nexport * from \"./index.js\";\nexport function getModels(input={},options){return new Catalog(data).getModels(input,options)}\n',

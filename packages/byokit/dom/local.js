@@ -1,4 +1,4 @@
-import { LocalRuntime, LocalApi } from '@byokit/core';
+import { LocalRuntime, LocalApi } from '../index.js';
 /** Explicit discovery only; never called on mount or catalog refresh. */
 export async function discoverLocal(
   endpoint,

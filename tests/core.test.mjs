@@ -12,7 +12,7 @@ import {
   reduceSetup,
   resolveSelection,
   deriveTags,
-} from '../packages/core/index.js';
+} from '../packages/byokit/index.js';
 const data = JSON.parse(readFileSync(new URL('../spec/fixtures/catalog.json', import.meta.url)));
 const catalog = new Catalog(data);
 test('capability filters, unknown policy, limits, origins, open weights and commercial use are distinct', () => {
@@ -121,7 +121,7 @@ test('real bundled catalog validates and each preset respects display cap', () =
 });
 
 test('bundled catalog subpath is usable without network', async () => {
-  const { default: snapshot } = await import('@byokit/core/catalog');
+  const { default: snapshot } = await import('@staff-000/byokit/catalog');
   assert.ok(new Catalog(snapshot).select().length);
 });
 

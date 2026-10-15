@@ -12,7 +12,7 @@ export async function buildPlaygroundWorker() {
   ];
   const entries = [];
   for (const name of files) {
-    const source = await readFile(new URL('../packages/core/' + name, import.meta.url), 'utf8');
+    const source = await readFile(new URL('../packages/byokit/' + name, import.meta.url), 'utf8');
     const compiled = ts.transpileModule(source, {
       compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
       fileName: name,

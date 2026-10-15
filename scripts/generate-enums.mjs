@@ -38,12 +38,12 @@ const py =
     .join('\n\n') +
   '\n';
 await writeFile(
-  new URL('../packages/core/enums.js', import.meta.url),
+  new URL('../packages/byokit/enums.js', import.meta.url),
   js +
     'export const DEFAULT=ModelList.Default, COMPLETE=ModelList.Complete, CHINA=ModelList.China, GLOBAL=ModelList.Global;\n',
 );
 await writeFile(
-  new URL('../packages/core/enums.d.ts', import.meta.url),
+  new URL('../packages/byokit/enums.d.ts', import.meta.url),
   ts +
     'export declare const DEFAULT:ModelList.Default, COMPLETE:ModelList.Complete, CHINA:ModelList.China, GLOBAL:ModelList.Global;\n',
 );

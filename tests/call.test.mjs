@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as byokit from '../packages/core/catalog.js';
-import { providerConnections } from '../packages/core/connection.js';
+import * as byokit from '../packages/byokit/catalog.js';
+import { providerConnections } from '../packages/byokit/connection.js';
 const model = (providerId = 'deepseek') => ({
   id: providerId + '/demo',
   providerId,

@@ -1,4 +1,4 @@
-import * as byokit from '../packages/core/catalog.js';
+import * as byokit from '../packages/byokit/catalog.js';
 import { tutorials } from '../website/tutorials.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
-import * as byokit from '../packages/core/index.js';
+import * as byokit from '../packages/byokit/index.js';
 const fixture = () => {
   const d = JSON.parse(readFileSync('spec/fixtures/catalog.json'));
   for (const o of d.offerings) delete o.lifecycleEvidence;

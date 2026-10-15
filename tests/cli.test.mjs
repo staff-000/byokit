@@ -8,7 +8,7 @@ import { pathToFileURL } from 'node:url';
 test('CLI passes a valid budget and fails an excessive budget before requests', async () => {
   const good = spawnSync(
     'node',
-    ['packages/cli/bin.mjs', 'check', 'examples/task.config.json', '--strict'],
+    ['packages/byokit/bin.mjs', 'check', 'examples/task.config.json', '--strict'],
     { encoding: 'utf8' },
   );
   assert.equal(good.status, 0, good.stdout + good.stderr);
@@ -23,13 +23,13 @@ test('CLI passes a valid budget and fails an excessive budget before requests', 
       ],
     }),
   );
-  const bad = spawnSync('node', ['packages/cli/bin.mjs', 'check', file], { encoding: 'utf8' });
+  const bad = spawnSync('node', ['packages/byokit/bin.mjs', 'check', file], { encoding: 'utf8' });
   assert.equal(bad.status, 1);
   assert.match(bad.stdout, /CONTEXT_BUDGET_EXCEEDED/);
   const built = spawnSync(
     'node',
     [
-      'packages/cli/bin.mjs',
+      'packages/byokit/bin.mjs',
       'build',
       'examples/byok.config.json',
       '--out',
@@ -74,10 +74,12 @@ test('undeclared budgets warn; strict validation fails without performing infere
   const dir = mkdtempSync(join(tmpdir(), 'byokit-budget-')),
     file = join(dir, 'config.json');
   writeFileSync(file, JSON.stringify({ catalog: resolve('spec/fixtures/catalog.json') }));
-  const warning = spawnSync('node', ['packages/cli/bin.mjs', 'check', file], { encoding: 'utf8' });
+  const warning = spawnSync('node', ['packages/byokit/bin.mjs', 'check', file], {
+    encoding: 'utf8',
+  });
   assert.equal(warning.status, 0);
   assert.match(warning.stdout, /BUDGET_UNDECLARED/);
-  const strict = spawnSync('node', ['packages/cli/bin.mjs', 'check', file, '--strict'], {
+  const strict = spawnSync('node', ['packages/byokit/bin.mjs', 'check', file, '--strict'], {
     encoding: 'utf8',
   });
   assert.equal(strict.status, 1);

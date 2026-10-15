@@ -3,8 +3,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
-import { Catalog, validateCatalog, verificationSummary, COMPLETE } from '../packages/core/index.js';
-import bundled, { getModels } from '@byokit/core/catalog';
+import {
+  Catalog,
+  validateCatalog,
+  verificationSummary,
+  COMPLETE,
+} from '../packages/byokit/index.js';
+import bundled, { getModels } from '@staff-000/byokit/catalog';
 const fixture = () => JSON.parse(readFileSync('spec/fixtures/catalog.json'));
 const asOf = '2026-10-12T12:00:00Z';
 const report = (fields = {}) => ({
@@ -167,11 +172,11 @@ test('Global includes every supported provider and preserves local choices', () 
   assert.deepEqual(JSON.parse(run.stdout), [c.getModels({ preset: 'global' })]);
 });
 test('catalog namespace includes all helpers used by documented examples', async () => {
-  const byokit = await import('@byokit/core/catalog');
+  const byokit = await import('@staff-000/byokit/catalog');
   assert.equal(byokit.Preset.Global, 'global');
   assert.equal(byokit.githubContributor('example'), 'github:example');
   assert.equal(typeof byokit.checkFit, 'function');
-  const ui = await import('@byokit/dom');
+  const ui = await import('@staff-000/byokit/dom');
   assert.equal(ui.Preset.Global, 'global');
   assert.equal(typeof ui.discoverLocal, 'function');
 });

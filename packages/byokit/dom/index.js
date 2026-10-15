@@ -1,4 +1,4 @@
-import { Catalog, createMemoryCredentialStore, checkFit, LocalApi } from '@byokit/core';
+import { Catalog, createMemoryCredentialStore, checkFit, LocalApi } from '../index.js';
 const en = {
   provider: 'Provider',
   model: 'Model',
@@ -493,5 +493,5 @@ async function bounded(operation, controller, ms) {
   }
 }
 
-export * from '@byokit/core';
+export * from '../index.js';
 export { discoverLocal } from './local.js';

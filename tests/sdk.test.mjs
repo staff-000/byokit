@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as byokit from '../packages/core/catalog.js';
+import * as byokit from '../packages/byokit/catalog.js';
 const [model] = byokit.getModels({ providerIds: [byokit.ProviderId.DeepSeek] });
 const response = () => ({
   ok: true,

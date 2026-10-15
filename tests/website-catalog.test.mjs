@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import * as byokit from '../packages/core/catalog.js';
+import * as byokit from '../packages/byokit/catalog.js';
 import { filterModels } from '../website/verification-filters.js';
 test('website model list is the library catalog, including metadata and contributor evidence', () => {
   const expected = byokit.getModels(byokit.COMPLETE, {

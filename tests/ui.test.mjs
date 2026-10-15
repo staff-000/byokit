@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { JSDOM } from 'jsdom';
-import { mountByok } from '../packages/dom/index.js';
+import { mountByok } from '../packages/byokit/dom/index.js';
 const data = JSON.parse(readFileSync(new URL('../spec/fixtures/catalog.json', import.meta.url)));
 const tick = () => new Promise((r) => setTimeout(r, 0));
 function setup(options = {}) {

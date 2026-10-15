@@ -2,7 +2,7 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { issueSubmission, canonicalReport } from './verification-report.mjs';
-import { validateCatalog, validateVerifications } from '../packages/core/index.js';
+import { validateCatalog, validateVerifications } from '../packages/byokit/index.js';
 export function addReport(data, reports, submission) {
   const record = canonicalReport(submission);
   if (reports.some((r) => r.id === record.id || r.evidence === record.evidence))
@@ -103,7 +103,7 @@ async function run() {
         JSON.stringify(next.data) + '\n',
       );
       await writeFile(
-        'packages/core/catalog.js',
+        'packages/byokit/catalog.js',
         'import {Catalog} from "./index.js";\nconst data=' +
           JSON.stringify(next.data) +
           ';\nexport default data;\nexport * from "./index.js";\nexport function getModels(input={},options){return new Catalog(data).getModels(input,options)}\n',
@@ -117,7 +117,7 @@ async function run() {
         'catalog/verifications.json',
         'catalog/catalog.json',
         'catalog/catalog.lock.json',
-        'packages/core/catalog.js',
+        'packages/byokit/catalog.js',
         'packages/python/src/byokit/data/catalog.json',
       ];
     }

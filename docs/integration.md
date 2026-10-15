@@ -3,9 +3,9 @@
 ## UI
 
 ```js
-import * as byokit from '@byokit/dom';
-import data from '@byokit/core/catalog';
-import '@byokit/dom/styles.css';
+import * as byokit from '@staff-000/byokit/dom';
+import data from '@staff-000/byokit/catalog';
+import '@staff-000/byokit/dom/styles.css';
 
 const ui = byokit.mountByok(element, {
   catalog: data,
@@ -25,7 +25,7 @@ not the key. Connection checks are explicit and time out after 15 seconds. Provi
 switches keep drafts independent; unmount clears drafts and fences late callbacks.
 `locale: 'zh'` supplies basic Chinese labels; custom labels are supported.
 
-React exports `ByokSettings` from `@byokit/react`. Pass memoized `options` matching
+React exports `ByokSettings` from `@staff-000/byokit/react`. Pass memoized `options` matching
 the DOM options and import its stylesheet separately. Changing options remounts.
 
 ## Advanced catalogs
@@ -37,7 +37,7 @@ an offering by ID. The simple `getModels` helper uses the bundled snapshot.
 ## Budgets
 
 ```js
-import * as byokit from '@byokit/core/catalog';
+import * as byokit from '@staff-000/byokit/catalog';
 const fit = byokit.checkFit(model, {
   inputTokens: 20000,
   outputTokens: 4000,
@@ -52,8 +52,8 @@ Estimates and multimodal overhead must be explicit. There is no model substituti
 or automatic truncation.
 
 ```bash
-node packages/cli/bin.mjs check examples/task.config.json --strict
-node packages/cli/bin.mjs build examples/byok.config.json --out /tmp/byok-catalog.json
+node packages/byokit/bin.mjs check examples/task.config.json --strict
+node packages/byokit/bin.mjs build examples/byok.config.json --out /tmp/byok-catalog.json
 ```
 
 Strict mode fails warnings. CLI exit codes: 0 success, 1 failed checks, 2 invalid config.
@@ -61,7 +61,7 @@ Builds use local snapshots and emit reduced metadata, a lockfile and TS ID union
 
 ## Local discovery and logos
 
-`discoverLocal` from `@byokit/dom/local` supports URL-based Ollama/OpenAI-compatible endpoints.
+`discoverLocal` from `@staff-000/byokit/dom/local` supports URL-based Ollama/OpenAI-compatible endpoints.
 Pass `api: byokit.LocalApi.OpenAI` for Ollama, vLLM, or llama.cpp `/v1/models`;
 pass `api: byokit.LocalApi.Ollama` for native `/api/tags`, optionally `runningOnly: true` for `/api/ps`.
 UI `discoverLocal(endpoint, signal, {api})` callbacks receive the selected protocol.

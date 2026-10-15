@@ -1,4 +1,4 @@
-import * as byokit from '@byokit/core/catalog';
+import * as byokit from '@staff-000/byokit/catalog';
 const models = byokit.getModels();
 console.log(
   JSON.stringify(

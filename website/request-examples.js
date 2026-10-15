@@ -52,7 +52,7 @@ export function requestExample(
     settings.protocol
   ];
   if (language === 'javascript')
-    return `import * as byokit from '@byokit/core/catalog';
+    return `import * as byokit from '@staff-000/byokit/catalog';
 
 const client = new byokit.OpenAI({
   baseURL: ${quote(base)},

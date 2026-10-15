@@ -4,7 +4,7 @@ import vm from 'node:vm';
 import { readFile } from 'node:fs/promises';
 import { buildPlaygroundWorker } from '../scripts/build-playground.mjs';
 import { playgroundExamples } from '../website/playground-examples.js';
-import * as byokit from '../packages/core/catalog.js';
+import * as byokit from '../packages/byokit/catalog.js';
 const source = await buildPlaygroundWorker();
 async function execute(code) {
   const messages = [];

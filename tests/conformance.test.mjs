@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
-import { Catalog, checkFit } from '../packages/core/index.js';
+import { Catalog, checkFit } from '../packages/byokit/index.js';
 const catalog = new Catalog(
   JSON.parse(readFileSync(new URL('../spec/fixtures/catalog.json', import.meta.url))),
 );

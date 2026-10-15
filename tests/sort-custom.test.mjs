@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import * as byokit from '../packages/core/catalog.js';
+import * as byokit from '../packages/byokit/catalog.js';
 import { pythonModels } from './python-fixture.mjs';
 const data = () => JSON.parse(readFileSync('spec/fixtures/catalog.json'));
 const asOf = '2026-10-12T12:00:00Z';

@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
-import * as enums from '../packages/core/enums.js';
-import { getModels } from '@byokit/core/catalog';
+import * as enums from '../packages/byokit/enums.js';
+import { getModels } from '@staff-000/byokit/catalog';
 import {
   ProviderId,
   Preset,
@@ -12,7 +12,7 @@ import {
   customProviderId,
   githubContributor,
   customTag,
-} from '@byokit/core';
+} from '@staff-000/byokit';
 
 test('runtime enum objects match the shared definitions and are immutable', () => {
   const spec = JSON.parse(readFileSync('spec/enums.json'));

@@ -2,8 +2,8 @@ import { createHash } from 'node:crypto';
 import { buildPlaygroundWorker } from './build-playground.mjs';
 import { mkdir, cp, writeFile, readFile, readdir, rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { validateVerifications } from '../packages/core/index.js';
-import catalog from '../packages/core/catalog.js';
+import { validateVerifications } from '../packages/byokit/index.js';
+import catalog from '../packages/byokit/catalog.js';
 import { contributorBadges, contributorBadgeSvg } from '../website/contributor-badges.js';
 const root = resolve(new URL('..', import.meta.url).pathname),
   out = resolve(root, 'dist/site');
@@ -13,7 +13,7 @@ for (const file of ['inference.js', 'verification-filters.js'])
   await writeFile(
     resolve(out, file),
     (await readFile(resolve(root, 'website', file), 'utf8')).replaceAll(
-      '../packages/core/',
+      '../packages/byokit/',
       './lib/core/',
     ),
   );
@@ -33,7 +33,7 @@ for (const file of [
   'sdk.js',
   'custom-model.js',
 ])
-  await cp(resolve(root, 'packages/core', file), resolve(out, 'lib/core', file));
+  await cp(resolve(root, 'packages/byokit', file), resolve(out, 'lib/core', file));
 await mkdir(resolve(out, 'assets'), { recursive: true });
 for (const provider of catalog.providers) {
   try {
