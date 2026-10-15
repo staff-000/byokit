@@ -4,17 +4,17 @@ For manual providers/models and nightly refresh, see [Custom catalog guide](docs
 
 ## Choose the right file
 
-| Change | Source file |
-|---|---|
-| Audience presets/provider shortlist | `catalog/overlays.json` → providers |
-| Providers/models missing upstream | `catalog/manual.json` (additive; survives nightly imports) |
-| Model facts/custom tags | `catalog/overlays.json` → models |
-| Provider-specific capabilities, price, context/custom tags | `catalog/overlays.json` → offerings |
-| Actual contributor call reports | `catalog/verifications.json` |
-| Derived tag rules | `deriveTags` in `packages/core/index.js` and `derive_tags` in Python |
-| Query/filter behavior | `packages/core/index.js`, declarations, Python counterpart |
-| Shared data contract | `catalog/catalog.schema.json` |
-| DOM/React UI | `packages/dom`, `packages/react` |
+| Change                                                     | Source file                                                          |
+| ---------------------------------------------------------- | -------------------------------------------------------------------- |
+| Audience presets/provider shortlist                        | `catalog/overlays.json` → providers                                  |
+| Providers/models missing upstream                          | `catalog/manual.json` (additive; survives nightly imports)           |
+| Model facts/custom tags                                    | `catalog/overlays.json` → models                                     |
+| Provider-specific capabilities, price, context/custom tags | `catalog/overlays.json` → offerings                                  |
+| Actual contributor call reports                            | `catalog/verifications.json`                                         |
+| Derived tag rules                                          | `deriveTags` in `packages/core/index.js` and `derive_tags` in Python |
+| Query/filter behavior                                      | `packages/core/index.js`, declarations, Python counterpart           |
+| Shared data contract                                       | `catalog/catalog.schema.json`                                        |
+| DOM/React UI                                               | `packages/dom`, `packages/react`                                     |
 
 Do not edit catalog/catalog.json, packages/core/catalog.js or the Python bundled
 snapshot directly. They are generated together. Preserve unrelated contributor changes.

@@ -7,7 +7,7 @@ See the project README for setup, examples, metadata semantics, and credential o
 ```js
 import * as byokit from '@byokit/dom';
 import '@byokit/dom/styles.css';
-byokit.mountByok(element, { catalog, onSave: selection => save(selection) });
+byokit.mountByok(element, { catalog, onSave: (selection) => save(selection) });
 ```
 
 Provide application-owned credentialStore, onCheck and discoverLocal callbacks as needed.

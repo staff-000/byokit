@@ -18,26 +18,13 @@
             "minLength": 1
           },
           "auth": {
-            "enum": [
-              "required",
-              "optional",
-              "none"
-            ]
+            "enum": ["required", "optional", "none"]
           },
           "deployment": {
-            "enum": [
-              "hosted",
-              "local",
-              "self-hosted"
-            ]
+            "enum": ["hosted", "local", "self-hosted"]
           }
         },
-        "required": [
-          "id",
-          "name",
-          "auth",
-          "deployment"
-        ]
+        "required": ["id", "name", "auth", "deployment"]
       }
     },
     "models": {
@@ -54,47 +41,27 @@
             "minLength": 1
           },
           "openWeights": {
-            "type": [
-              "boolean",
-              "null"
-            ]
+            "type": ["boolean", "null"]
           },
           "commercialUse": {
-            "enum": [
-              "allowed",
-              "restricted",
-              "unknown"
-            ]
+            "enum": ["allowed", "restricted", "unknown"]
           },
           "license": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "size": {
             "type": "object",
             "properties": {
               "totalParameters": {
-                "type": [
-                  "number",
-                  "null"
-                ],
+                "type": ["number", "null"],
                 "minimum": 0
               },
               "activeParameters": {
-                "type": [
-                  "number",
-                  "null"
-                ],
+                "type": ["number", "null"],
                 "minimum": 0
               },
               "architecture": {
-                "enum": [
-                  "dense",
-                  "moe",
-                  "unknown"
-                ]
+                "enum": ["dense", "moe", "unknown"]
               }
             },
             "required": []
@@ -107,23 +74,14 @@
             }
           }
         },
-        "required": [
-          "id",
-          "name",
-          "openWeights",
-          "commercialUse",
-          "license",
-          "tags"
-        ]
+        "required": ["id", "name", "openWeights", "commercialUse", "license", "tags"]
       }
     },
     "families": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "id"
-        ],
+        "required": ["id"],
         "properties": {
           "id": {
             "type": "string",
@@ -149,10 +107,7 @@
             }
           }
         },
-        "required": [
-          "id",
-          "providerIds"
-        ]
+        "required": ["id", "providerIds"]
       }
     },
     "offerings": {
@@ -180,43 +135,21 @@
             "minLength": 1
           },
           "deployment": {
-            "enum": [
-              "hosted",
-              "local",
-              "self-hosted"
-            ]
+            "enum": ["hosted", "local", "self-hosted"]
           },
           "modalities": {
             "type": "object",
             "properties": {
               "input": {
-                "type": [
-                  "array",
-                  "null"
-                ],
+                "type": ["array", "null"],
                 "items": {
-                  "enum": [
-                    "text",
-                    "image",
-                    "audio",
-                    "video",
-                    "embedding"
-                  ]
+                  "enum": ["text", "image", "audio", "video", "embedding"]
                 }
               },
               "output": {
-                "type": [
-                  "array",
-                  "null"
-                ],
+                "type": ["array", "null"],
                 "items": {
-                  "enum": [
-                    "text",
-                    "image",
-                    "audio",
-                    "video",
-                    "embedding"
-                  ]
+                  "enum": ["text", "image", "audio", "video", "embedding"]
                 }
               }
             },
@@ -226,32 +159,19 @@
             "type": "object",
             "properties": {
               "context": {
-                "type": [
-                  "number",
-                  "null"
-                ],
+                "type": ["number", "null"],
                 "minimum": 0
               },
               "input": {
-                "type": [
-                  "number",
-                  "null"
-                ],
+                "type": ["number", "null"],
                 "minimum": 0
               },
               "output": {
-                "type": [
-                  "number",
-                  "null"
-                ],
+                "type": ["number", "null"],
                 "minimum": 0
               },
               "contextAccounting": {
-                "enum": [
-                  "combined",
-                  "input-only",
-                  "unknown"
-                ]
+                "enum": ["combined", "input-only", "unknown"]
               }
             },
             "required": []
@@ -260,18 +180,11 @@
             "type": "object",
             "additionalProperties": {
               "type": "object",
-              "required": [
-                "status"
-              ],
+              "required": ["status"],
               "properties": {
                 "status": {
                   "type": "string",
-                  "enum": [
-                    "supported",
-                    "unsupported",
-                    "conditional",
-                    "unknown"
-                  ]
+                  "enum": ["supported", "unsupported", "conditional", "unknown"]
                 },
                 "source": {
                   "type": "string"
@@ -293,31 +206,19 @@
                 "minLength": 1
               },
               "input": {
-                "type": [
-                  "number",
-                  "null"
-                ],
+                "type": ["number", "null"],
                 "minimum": 0
               },
               "output": {
-                "type": [
-                  "number",
-                  "null"
-                ],
+                "type": ["number", "null"],
                 "minimum": 0
               },
               "cacheRead": {
-                "type": [
-                  "number",
-                  "null"
-                ],
+                "type": ["number", "null"],
                 "minimum": 0
               },
               "cacheWrite": {
-                "type": [
-                  "number",
-                  "null"
-                ],
+                "type": ["number", "null"],
                 "minimum": 0
               }
             },
@@ -334,11 +235,7 @@
             "type": "object",
             "properties": {
               "status": {
-                "enum": [
-                  "LIVE",
-                  "OUTDATED",
-                  "UNCERTAIN"
-                ]
+                "enum": ["LIVE", "OUTDATED", "UNCERTAIN"]
               },
               "source": {
                 "type": "string",
@@ -349,28 +246,17 @@
                 "pattern": "^\\d{4}-\\d{2}-\\d{2}T.*Z$"
               },
               "basis": {
-                "enum": [
-                  "provider",
-                  "catalog-listing"
-                ]
+                "enum": ["provider", "catalog-listing"]
               }
             },
-            "required": [
-              "status",
-              "source",
-              "checkedAt"
-            ],
+            "required": ["status", "source", "checkedAt"],
             "additionalProperties": false
           },
           "popularityEvidence": {
             "type": "object",
             "properties": {
               "metric": {
-                "enum": [
-                  "requests",
-                  "tokens",
-                  "downloads"
-                ]
+                "enum": ["requests", "tokens", "downloads"]
               },
               "rank": {
                 "type": "integer",
@@ -409,31 +295,20 @@
             "additionalProperties": false
           },
           "releaseDate": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
           },
           "connection": {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "baseUrl",
-              "protocol"
-            ],
+            "required": ["baseUrl", "protocol"],
             "properties": {
               "baseUrl": {
                 "type": "string",
                 "pattern": "^https?://"
               },
               "protocol": {
-                "enum": [
-                  "openai-compatible",
-                  "claude",
-                  "gemini",
-                  "ollama"
-                ]
+                "enum": ["openai-compatible", "claude", "gemini", "ollama"]
               }
             }
           }
@@ -475,11 +350,7 @@
             "minLength": 1
           }
         },
-        "required": [
-          "id",
-          "light",
-          "source"
-        ]
+        "required": ["id", "light", "source"]
       }
     },
     "verifications": {
@@ -515,10 +386,7 @@
             "pattern": "^\\d{4}-\\d{2}-\\d{2}T.*Z$"
           },
           "result": {
-            "enum": [
-              "passed",
-              "failed"
-            ]
+            "enum": ["passed", "failed"]
           },
           "checks": {
             "type": "array",
@@ -558,14 +426,7 @@
       }
     }
   },
-  "required": [
-    "schemaVersion",
-    "providers",
-    "models",
-    "families",
-    "offerings",
-    "presets"
-  ],
+  "required": ["schemaVersion", "providers", "models", "families", "offerings", "presets"],
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "byokit catalog v1"
 }

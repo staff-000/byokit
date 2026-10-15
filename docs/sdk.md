@@ -9,7 +9,7 @@ Discovery remains offline and the standalone call helpers remain available.
 ```ts
 import * as byokit from '@byokit/core/catalog';
 
-const models = byokit.getModels({providerIds: [byokit.ProviderId.OpenRouter], local: false});
+const models = byokit.getModels({ providerIds: [byokit.ProviderId.OpenRouter], local: false });
 const model = models[0]; // Or use the app's selected offering.
 if (!model?.connection) throw new Error('No configured model');
 const client = new byokit.OpenAI({
@@ -24,11 +24,11 @@ const client = new byokit.OpenAI({
 
 const first = await client.chat.completions.create({
   model: model.apiModelId,
-  messages: [{role: byokit.Role.User, content: 'Hello'}],
+  messages: [{ role: byokit.Role.User, content: 'Hello' }],
 });
 const second = await client.chat.completions.create({
   model: model.apiModelId,
-  messages: [{role: byokit.Role.User, content: 'Another question'}],
+  messages: [{ role: byokit.Role.User, content: 'Another question' }],
 });
 console.log(first.choices[0].message.content, second.choices[0].message.content);
 ```
@@ -82,14 +82,14 @@ is required when the selected endpoint natively speaks the SDK's protocol.
 import OpenAI from 'openai';
 import * as byokit from '@byokit/core/catalog';
 
-const [model] = byokit.getModels({providerIds: [byokit.ProviderId.OpenRouter], local: false});
+const [model] = byokit.getModels({ providerIds: [byokit.ProviderId.OpenRouter], local: false });
 if (!model?.connection || model.connection.protocol !== byokit.ApiProtocol.OpenAI) {
   throw new Error('Choose an OpenAI-compatible endpoint');
 }
-const client = new OpenAI({baseURL: model.connection.baseUrl, apiKey});
+const client = new OpenAI({ baseURL: model.connection.baseUrl, apiKey });
 const result = await client.chat.completions.create({
   model: model.apiModelId,
-  messages: [{role: 'user', content: 'Hello'}],
+  messages: [{ role: 'user', content: 'Hello' }],
 });
 console.log(result.choices[0].message.content);
 ```

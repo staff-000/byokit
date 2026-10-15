@@ -2,15 +2,9 @@
   "catalog": "../catalog/catalog.json",
   "preset": "global",
   "filters": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ],
-    "deployment": [
-      "hosted"
-    ]
+    "input": ["text"],
+    "output": ["text"],
+    "deployment": ["hosted"]
   },
   "ui": {
     "maxProviders": 8,

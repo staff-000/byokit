@@ -24,7 +24,10 @@
     "site:preview": "node scripts/serve-site.mjs",
     "site:test": "node scripts/site-smoke.mjs",
     "verify": "node scripts/verify.mjs",
-    "check:budget": "node packages/cli/bin.mjs check examples/task.config.json --strict"
+    "check:budget": "node packages/cli/bin.mjs check examples/task.config.json --strict",
+    "lint": "eslint packages/ scripts/ website/ tests/ && prettier --check .",
+    "lint:fix": "eslint packages/ scripts/ website/ tests/ --fix && prettier --write .",
+    "format": "prettier --write ."
   },
   "engines": {
     "node": ">=20"
@@ -33,8 +36,10 @@
   "type": "module",
   "devDependencies": {
     "ajv": "^8.20.0",
+    "eslint": "^9.39.5",
     "jsdom": "^26.1.0",
     "playwright-core": "^1.64.0",
+    "prettier": "^3.9.10",
     "pyright": "^1.1.414",
     "typescript": "^5.9.3"
   }

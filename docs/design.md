@@ -40,10 +40,13 @@ login and quota management belong to the application.
 ```ts
 import * as byokit from '@byokit/core/catalog';
 
-const models=byokit.getModels({
-  preset:byokit.Preset.Global,
-  limit:10,
-  filters:{input:[byokit.Modality.Text],requiredFeatures:[byokit.FeatureName.FunctionCalling]},
+const models = byokit.getModels({
+  preset: byokit.Preset.Global,
+  limit: 10,
+  filters: {
+    input: [byokit.Modality.Text],
+    requiredFeatures: [byokit.FeatureName.FunctionCalling],
+  },
 });
 ```
 
@@ -492,7 +495,6 @@ Stop, edits, reset, page exit, or a three-second deadline remove the frame and
 terminate its work. Run identity checks fence late messages. CI exercises actual
 Chromium worker execution, errors, stop/timeouts, network blocking, and recovery.
 
-
 Verification selectors live in the table header alongside their data columns:
 provider/model, context, price, speed/release, tags/capabilities and status.
 The header remains visible as a responsive filter grid above mobile result cards;
@@ -500,7 +502,6 @@ it is never removed with the desktop header labels. Missing price, speed and rel
 metadata is displayed as unknown. More tags expand on demand. All list filters and
 sort directions delegate to the shared catalog API; newest-release ordering remains
 a website view option. Changing table filters sends no inference request.
-
 
 Website builds version HTML asset references and relative JavaScript module imports
 with one content digest. This keeps cached UI code, enums, adapters, styles, and

@@ -1,15 +1,29 @@
-import {readFile} from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import ts from 'typescript';
-export async function buildPlaygroundWorker(){
- const files=['enums.js','connection.js','custom-model.js','call.js','sdk.js','index.js','catalog.js'];
- const entries=[];
- for(const name of files){
-  const source=await readFile(new URL('../packages/core/'+name,import.meta.url),'utf8');
-  const compiled=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS},fileName:name}).outputText;
-  entries.push(JSON.stringify(name)+': function(require,module,exports){\n'+compiled+'\n}');
- }
- const runner=await readFile(new URL('../website/playground-worker.js',import.meta.url),'utf8');
- return `const modules={${entries.join(',\n')}};
+export async function buildPlaygroundWorker() {
+  const files = [
+    'enums.js',
+    'connection.js',
+    'custom-model.js',
+    'call.js',
+    'sdk.js',
+    'index.js',
+    'catalog.js',
+  ];
+  const entries = [];
+  for (const name of files) {
+    const source = await readFile(new URL('../packages/core/' + name, import.meta.url), 'utf8');
+    const compiled = ts.transpileModule(source, {
+      compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
+      fileName: name,
+    }).outputText;
+    entries.push(JSON.stringify(name) + ': function(require,module,exports){\n' + compiled + '\n}');
+  }
+  const runner = await readFile(
+    new URL('../website/playground-worker.js', import.meta.url),
+    'utf8',
+  );
+  return `const modules={${entries.join(',\n')}};
 const cache={};
 function require(name){name=name.replace(/^\\.\\//,'');if(!modules[name])throw new Error('External imports are unavailable in this offline playground');if(!cache[name]){cache[name]={exports:{}};modules[name](require,cache[name],cache[name].exports)}return cache[name].exports;}
 const all=require('catalog.js');

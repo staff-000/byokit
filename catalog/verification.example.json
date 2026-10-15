@@ -4,9 +4,7 @@
   "contributor": "github:your-handle",
   "checkedAt": "2026-10-12T12:00:00Z",
   "result": "passed",
-  "checks": [
-    "textGeneration"
-  ],
+  "checks": ["textGeneration"],
   "adapter": "your-provider-adapter@version",
   "evidence": "https://github.com/your-handle/your-repo/blob/commit/tests/model-check.md",
   "notes": "Template only. Replace with an actual test and public evidence."

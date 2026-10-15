@@ -4,8 +4,9 @@ Get a short list of AI models without Node or a network request:
 
 ```python
 import byokit
-models=byokit.get_models()
-print([{'id':m['id'],'name':m['name']} for m in models])
+
+models = byokit.get_models()
+print([{"id": m["id"], "name": m["name"]} for m in models])
 ```
 
 Returns provider/model metadata, limits, price, features, tags, logos and contributor

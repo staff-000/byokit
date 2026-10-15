@@ -1,9 +1,137 @@
-<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>byokit — Bring your own AI</title><link rel="stylesheet" href="/packages/dom/styles.css"><style>body{margin:0;background:#f4f6fb;color:#22283b;font:16px/1.6 system-ui}main{max-width:920px;margin:60px auto;padding:24px}h1{font-size:48px;letter-spacing:-2px;margin:0}header p{max-width:520px;color:#667085}.demo{display:flex;gap:32px;align-items:start;margin-top:30px}.about{max-width:350px}pre{white-space:pre-wrap;background:#e9edf5;padding:16px;border-radius:12px;font-size:12px}button{padding:8px 16px;cursor:pointer}a{color:#5164e4}@media(max-width:680px){main{margin:12px auto}.demo{display:block}.about{margin-top:24px}}@media(prefers-color-scheme:dark){body{background:#151820;color:#edf0f8}pre{background:#272c39}}</style>
-<script type="importmap">{"imports":{"@byokit/core":"/packages/core/index.js","@byokit/dom":"/packages/dom/index.js"}}</script>
-<main><header><h1>byokit<span style="color:#5164e4">.</span></h1><p>A small BYOK setup interface. Curated choices, local models, and your own credential storage.</p><button id="preset">Use China preset</button></header><div class="demo"><div id="picker"></div><aside class="about"><strong>Try it without an API call</strong><p>This demo stores keys in memory only. Save emits a credential reference, never the key. Local model discovery runs only when clicked.</p><pre id="output">Your saved selection appears here.</pre><p>Catalog metadata is a pinned Models.dev snapshot. Unknown capabilities stay unknown.</p></aside></div></main>
-<script type="module">
-import * as byokit from '@byokit/dom';
-const data=await fetch('/catalog/catalog.json').then(r=>r.json());const assetManifest=await fetch('/assets/manifest.json').then(r=>r.json());const assets=Object.fromEntries(Object.entries(assetManifest).map(([id,a])=>[id,'/assets/'+a.light]));const store=byokit.createMemoryCredentialStore();let preset=byokit.Preset.Global,ui;
-function render(){ui?.destroy();ui=byokit.mountByok(document.querySelector('#picker'),{catalog:data,assets,config:{preset,ui:{maxProviders:8,maxModelsPerProvider:4,allowCustomModel:true}},credentialStore:store,discoverLocal:(endpoint,signal,{api})=>byokit.discoverLocal(endpoint,{api,signal}),onSave:selection=>{document.querySelector('#output').textContent=JSON.stringify(selection,null,2)}})}
-render();document.querySelector('#preset').onclick=()=>{preset=preset===byokit.Preset.Global?byokit.Preset.China:byokit.Preset.Global;document.querySelector('#preset').textContent=preset===byokit.Preset.Global?'Use China preset':'Use Global preset';render()};
-</script></html>
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  /><title>byokit — Bring your own AI</title
+  ><link rel="stylesheet" href="/packages/dom/styles.css" /><style>
+    body {
+      margin: 0;
+      background: #f4f6fb;
+      color: #22283b;
+      font: 16px/1.6 system-ui;
+    }
+    main {
+      max-width: 920px;
+      margin: 60px auto;
+      padding: 24px;
+    }
+    h1 {
+      font-size: 48px;
+      letter-spacing: -2px;
+      margin: 0;
+    }
+    header p {
+      max-width: 520px;
+      color: #667085;
+    }
+    .demo {
+      display: flex;
+      gap: 32px;
+      align-items: start;
+      margin-top: 30px;
+    }
+    .about {
+      max-width: 350px;
+    }
+    pre {
+      white-space: pre-wrap;
+      background: #e9edf5;
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 12px;
+    }
+    button {
+      padding: 8px 16px;
+      cursor: pointer;
+    }
+    a {
+      color: #5164e4;
+    }
+    @media (max-width: 680px) {
+      main {
+        margin: 12px auto;
+      }
+      .demo {
+        display: block;
+      }
+      .about {
+        margin-top: 24px;
+      }
+    }
+    @media (prefers-color-scheme: dark) {
+      body {
+        background: #151820;
+        color: #edf0f8;
+      }
+      pre {
+        background: #272c39;
+      }
+    }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "@byokit/core": "/packages/core/index.js",
+        "@byokit/dom": "/packages/dom/index.js"
+      }
+    }
+  </script>
+  <main>
+    <header>
+      <h1>byokit<span style="color: #5164e4">.</span></h1>
+      <p>
+        A small BYOK setup interface. Curated choices, local models, and your own credential
+        storage.
+      </p>
+      <button id="preset">Use China preset</button>
+    </header>
+    <div class="demo">
+      <div id="picker"></div>
+      <aside class="about">
+        <strong>Try it without an API call</strong>
+        <p>
+          This demo stores keys in memory only. Save emits a credential reference, never the key.
+          Local model discovery runs only when clicked.
+        </p>
+        <pre id="output">Your saved selection appears here.</pre>
+        <p>Catalog metadata is a pinned Models.dev snapshot. Unknown capabilities stay unknown.</p>
+      </aside>
+    </div>
+  </main>
+  <script type="module">
+    import * as byokit from '@byokit/dom';
+    const data = await fetch('/catalog/catalog.json').then((r) => r.json());
+    const assetManifest = await fetch('/assets/manifest.json').then((r) => r.json());
+    const assets = Object.fromEntries(
+      Object.entries(assetManifest).map(([id, a]) => [id, '/assets/' + a.light]),
+    );
+    const store = byokit.createMemoryCredentialStore();
+    let preset = byokit.Preset.Global,
+      ui;
+    function render() {
+      ui?.destroy();
+      ui = byokit.mountByok(document.querySelector('#picker'), {
+        catalog: data,
+        assets,
+        config: {
+          preset,
+          ui: { maxProviders: 8, maxModelsPerProvider: 4, allowCustomModel: true },
+        },
+        credentialStore: store,
+        discoverLocal: (endpoint, signal, { api }) =>
+          byokit.discoverLocal(endpoint, { api, signal }),
+        onSave: (selection) => {
+          document.querySelector('#output').textContent = JSON.stringify(selection, null, 2);
+        },
+      });
+    }
+    render();
+    document.querySelector('#preset').onclick = () => {
+      preset = preset === byokit.Preset.Global ? byokit.Preset.China : byokit.Preset.Global;
+      document.querySelector('#preset').textContent =
+        preset === byokit.Preset.Global ? 'Use China preset' : 'Use Global preset';
+      render();
+    };
+  </script>
+</html>

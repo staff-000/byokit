@@ -1,38 +1,216 @@
 // Generated from spec/enums.json. Run npm run enums:generate.
-export const ProviderId=Object.freeze({"OpenAI":"openai","Anthropic":"anthropic","Google":"google","Mistral":"mistral","Groq":"groq","OpenRouter":"openrouter","DeepSeek":"deepseek","ZhipuAI":"zhipuai","SiliconFlow":"siliconflow","Ollama":"ollama","Local":"local"});
-export const Preset=Object.freeze({"Global":"global","China":"china"});
-export const Country=Object.freeze({"China":"cn","UnitedStates":"us","France":"fr"});
-export const Deployment=Object.freeze({"Hosted":"hosted","Local":"local","SelfHosted":"self-hosted"});
-export const AuthRequirement=Object.freeze({"Required":"required","Optional":"optional","None":"none"});
-export const Modality=Object.freeze({"Text":"text","Image":"image","Audio":"audio","Video":"video","Embedding":"embedding"});
-export const FileFormat=Object.freeze({"PDF":"pdf","Text":"txt","Markdown":"md","HTML":"html","JSON":"json","Docx":"docx"});
-export const FeatureName=Object.freeze({"FunctionCalling":"functionCalling","ParallelTools":"parallelTools","ForcedToolChoice":"forcedToolChoice","StrictToolSchema":"strictToolSchema","PromptCaching":"promptCaching","JsonMode":"jsonMode","JsonSchema":"jsonSchema","StrictJsonSchema":"strictJsonSchema","SystemMessages":"systemMessages","DeveloperMessages":"developerMessages","Thinking":"thinking","ThinkingDisable":"thinkingDisable","ThinkingBudget":"thinkingBudget","ThinkingEffort":"thinkingEffort"});
-export const FeatureStatus=Object.freeze({"Supported":"supported","Unsupported":"unsupported","Conditional":"conditional","Unknown":"unknown"});
-export const CommercialUse=Object.freeze({"Allowed":"allowed","Restricted":"restricted","Unknown":"unknown"});
-export const Architecture=Object.freeze({"Dense":"dense","MoE":"moe","Unknown":"unknown"});
-export const ContextAccounting=Object.freeze({"Combined":"combined","InputOnly":"input-only","Unknown":"unknown"});
-export const UnknownPolicy=Object.freeze({"Include":"include","Exclude":"exclude"});
-export const FitStatus=Object.freeze({"Fits":"fits","Exceeds":"exceeds","Unknown":"unknown"});
-export const Certainty=Object.freeze({"Declared":"declared","Measured":"measured","Estimated":"estimated","Unknown":"unknown"});
-export const Currency=Object.freeze({"USD":"USD","EUR":"EUR","CNY":"CNY"});
-export const ModelStatus=Object.freeze({"Stable":"stable","Preview":"preview","Alpha":"alpha","Beta":"beta","Deprecated":"deprecated"});
-export const VerificationResult=Object.freeze({"Passed":"passed","Failed":"failed"});
-export const VerificationStatus=Object.freeze({"Unverified":"unverified","Passed":"passed","Failed":"failed","Stale":"stale"});
-export const VerificationCheck=Object.freeze({"TextGeneration":"textGeneration","FunctionCalling":"functionCalling","ParallelTools":"parallelTools","ForcedToolChoice":"forcedToolChoice","StrictToolSchema":"strictToolSchema","PromptCaching":"promptCaching","JsonMode":"jsonMode","JsonSchema":"jsonSchema","StrictJsonSchema":"strictJsonSchema","SystemMessages":"systemMessages","DeveloperMessages":"developerMessages","Thinking":"thinking","ThinkingDisable":"thinkingDisable","ThinkingBudget":"thinkingBudget","ThinkingEffort":"thinkingEffort"});
-export const LocalRuntime=Object.freeze({"Ollama":"ollama","OpenAICompatible":"openai-compatible"});
-export const Locale=Object.freeze({"English":"en","Chinese":"zh"});
-export const SetupStatus=Object.freeze({"Idle":"idle","Checking":"checking","Ready":"ready","Error":"error"});
-export const SetupEventType=Object.freeze({"Edit":"edit","Checking":"checking","Result":"result"});
-export const Severity=Object.freeze({"Warning":"warning","Error":"error"});
-export const DiagnosticCode=Object.freeze({"CapabilityUnsupported":"CAPABILITY_UNSUPPORTED","CapabilityUnverified":"CAPABILITY_UNVERIFIED","ContextBudgetExceeded":"CONTEXT_BUDGET_EXCEEDED","ContextNearLimit":"CONTEXT_NEAR_LIMIT","ContextUnverified":"CONTEXT_UNVERIFIED","InputBudgetExceeded":"INPUT_BUDGET_EXCEEDED","LocalContextUnknown":"LOCAL_CONTEXT_UNKNOWN","ModalityUnsupported":"MODALITY_UNSUPPORTED","ModalityUnverified":"MODALITY_UNVERIFIED","ModelDeprecated":"MODEL_DEPRECATED","ModelUnverified":"MODEL_UNVERIFIED","NoModels":"NO_MODELS","OutputBudgetExceeded":"OUTPUT_BUDGET_EXCEEDED","OutputLimitUnknown":"OUTPUT_LIMIT_UNKNOWN","TokenCountUnknown":"TOKEN_COUNT_UNKNOWN","TokenEstimate":"TOKEN_ESTIMATE","BUDGET_UNDECLARED":"BUDGET_UNDECLARED"});
-export const Lifecycle=Object.freeze({"Live":"LIVE","Outdated":"OUTDATED","Uncertain":"UNCERTAIN"});
-export const Popularity=Object.freeze({"Popular":"POPULAR","NotPopular":"NOT_POPULAR","Uncertain":"UNCERTAIN"});
-export const PopularityMetric=Object.freeze({"Requests":"requests","Tokens":"tokens","Downloads":"downloads"});
-export const Tag=Object.freeze({"LifecycleLive":"lifecycle:LIVE","LifecycleOutdated":"lifecycle:OUTDATED","LifecycleUncertain":"lifecycle:UNCERTAIN","PopularityPopular":"popularity:POPULAR","PopularityNotPopular":"popularity:NOT_POPULAR","PopularityUncertain":"popularity:UNCERTAIN","PricePremium":"price:premium","WeightsOpen":"weights:open","OriginChina":"origin:cn"});
-export const ModelList=Object.freeze({"Default":"default","Complete":"complete","China":"china","Global":"global"});
-export const LocalApi=Object.freeze({"OpenAI":"openai-compatible","Ollama":"ollama"});
-export const LifecycleBasis=Object.freeze({"Provider":"provider","CatalogListing":"catalog-listing"});
-export const ApiProtocol=Object.freeze({"OpenAI":"openai-compatible","Claude":"claude","Gemini":"gemini","Ollama":"ollama"});
-export const Role=Object.freeze({"System":"system","Developer":"developer","User":"user","Assistant":"assistant","Tool":"tool"});
-export const ModelSort=Object.freeze({"AlphabeticalAscend":"alphabeticalAscend","AlphabeticalDescend":"alphabeticalDescend","PriceAscend":"priceAscend","PriceDescend":"priceDescend","SpeedAscend":"speedAscend","SpeedDescend":"speedDescend","ProviderOrder":"provider-order","Alphabetical":"alphabetical","Price":"price","Speed":"speed"});
-export const DEFAULT=ModelList.Default, COMPLETE=ModelList.Complete, CHINA=ModelList.China, GLOBAL=ModelList.Global;
+export const ProviderId = Object.freeze({
+  OpenAI: 'openai',
+  Anthropic: 'anthropic',
+  Google: 'google',
+  Mistral: 'mistral',
+  Groq: 'groq',
+  OpenRouter: 'openrouter',
+  DeepSeek: 'deepseek',
+  ZhipuAI: 'zhipuai',
+  SiliconFlow: 'siliconflow',
+  Ollama: 'ollama',
+  Local: 'local',
+});
+export const Preset = Object.freeze({ Global: 'global', China: 'china' });
+export const Country = Object.freeze({ China: 'cn', UnitedStates: 'us', France: 'fr' });
+export const Deployment = Object.freeze({
+  Hosted: 'hosted',
+  Local: 'local',
+  SelfHosted: 'self-hosted',
+});
+export const AuthRequirement = Object.freeze({
+  Required: 'required',
+  Optional: 'optional',
+  None: 'none',
+});
+export const Modality = Object.freeze({
+  Text: 'text',
+  Image: 'image',
+  Audio: 'audio',
+  Video: 'video',
+  Embedding: 'embedding',
+});
+export const FileFormat = Object.freeze({
+  PDF: 'pdf',
+  Text: 'txt',
+  Markdown: 'md',
+  HTML: 'html',
+  JSON: 'json',
+  Docx: 'docx',
+});
+export const FeatureName = Object.freeze({
+  FunctionCalling: 'functionCalling',
+  ParallelTools: 'parallelTools',
+  ForcedToolChoice: 'forcedToolChoice',
+  StrictToolSchema: 'strictToolSchema',
+  PromptCaching: 'promptCaching',
+  JsonMode: 'jsonMode',
+  JsonSchema: 'jsonSchema',
+  StrictJsonSchema: 'strictJsonSchema',
+  SystemMessages: 'systemMessages',
+  DeveloperMessages: 'developerMessages',
+  Thinking: 'thinking',
+  ThinkingDisable: 'thinkingDisable',
+  ThinkingBudget: 'thinkingBudget',
+  ThinkingEffort: 'thinkingEffort',
+});
+export const FeatureStatus = Object.freeze({
+  Supported: 'supported',
+  Unsupported: 'unsupported',
+  Conditional: 'conditional',
+  Unknown: 'unknown',
+});
+export const CommercialUse = Object.freeze({
+  Allowed: 'allowed',
+  Restricted: 'restricted',
+  Unknown: 'unknown',
+});
+export const Architecture = Object.freeze({ Dense: 'dense', MoE: 'moe', Unknown: 'unknown' });
+export const ContextAccounting = Object.freeze({
+  Combined: 'combined',
+  InputOnly: 'input-only',
+  Unknown: 'unknown',
+});
+export const UnknownPolicy = Object.freeze({ Include: 'include', Exclude: 'exclude' });
+export const FitStatus = Object.freeze({ Fits: 'fits', Exceeds: 'exceeds', Unknown: 'unknown' });
+export const Certainty = Object.freeze({
+  Declared: 'declared',
+  Measured: 'measured',
+  Estimated: 'estimated',
+  Unknown: 'unknown',
+});
+export const Currency = Object.freeze({ USD: 'USD', EUR: 'EUR', CNY: 'CNY' });
+export const ModelStatus = Object.freeze({
+  Stable: 'stable',
+  Preview: 'preview',
+  Alpha: 'alpha',
+  Beta: 'beta',
+  Deprecated: 'deprecated',
+});
+export const VerificationResult = Object.freeze({ Passed: 'passed', Failed: 'failed' });
+export const VerificationStatus = Object.freeze({
+  Unverified: 'unverified',
+  Passed: 'passed',
+  Failed: 'failed',
+  Stale: 'stale',
+});
+export const VerificationCheck = Object.freeze({
+  TextGeneration: 'textGeneration',
+  FunctionCalling: 'functionCalling',
+  ParallelTools: 'parallelTools',
+  ForcedToolChoice: 'forcedToolChoice',
+  StrictToolSchema: 'strictToolSchema',
+  PromptCaching: 'promptCaching',
+  JsonMode: 'jsonMode',
+  JsonSchema: 'jsonSchema',
+  StrictJsonSchema: 'strictJsonSchema',
+  SystemMessages: 'systemMessages',
+  DeveloperMessages: 'developerMessages',
+  Thinking: 'thinking',
+  ThinkingDisable: 'thinkingDisable',
+  ThinkingBudget: 'thinkingBudget',
+  ThinkingEffort: 'thinkingEffort',
+});
+export const LocalRuntime = Object.freeze({
+  Ollama: 'ollama',
+  OpenAICompatible: 'openai-compatible',
+});
+export const Locale = Object.freeze({ English: 'en', Chinese: 'zh' });
+export const SetupStatus = Object.freeze({
+  Idle: 'idle',
+  Checking: 'checking',
+  Ready: 'ready',
+  Error: 'error',
+});
+export const SetupEventType = Object.freeze({
+  Edit: 'edit',
+  Checking: 'checking',
+  Result: 'result',
+});
+export const Severity = Object.freeze({ Warning: 'warning', Error: 'error' });
+export const DiagnosticCode = Object.freeze({
+  CapabilityUnsupported: 'CAPABILITY_UNSUPPORTED',
+  CapabilityUnverified: 'CAPABILITY_UNVERIFIED',
+  ContextBudgetExceeded: 'CONTEXT_BUDGET_EXCEEDED',
+  ContextNearLimit: 'CONTEXT_NEAR_LIMIT',
+  ContextUnverified: 'CONTEXT_UNVERIFIED',
+  InputBudgetExceeded: 'INPUT_BUDGET_EXCEEDED',
+  LocalContextUnknown: 'LOCAL_CONTEXT_UNKNOWN',
+  ModalityUnsupported: 'MODALITY_UNSUPPORTED',
+  ModalityUnverified: 'MODALITY_UNVERIFIED',
+  ModelDeprecated: 'MODEL_DEPRECATED',
+  ModelUnverified: 'MODEL_UNVERIFIED',
+  NoModels: 'NO_MODELS',
+  OutputBudgetExceeded: 'OUTPUT_BUDGET_EXCEEDED',
+  OutputLimitUnknown: 'OUTPUT_LIMIT_UNKNOWN',
+  TokenCountUnknown: 'TOKEN_COUNT_UNKNOWN',
+  TokenEstimate: 'TOKEN_ESTIMATE',
+  BUDGET_UNDECLARED: 'BUDGET_UNDECLARED',
+});
+export const Lifecycle = Object.freeze({
+  Live: 'LIVE',
+  Outdated: 'OUTDATED',
+  Uncertain: 'UNCERTAIN',
+});
+export const Popularity = Object.freeze({
+  Popular: 'POPULAR',
+  NotPopular: 'NOT_POPULAR',
+  Uncertain: 'UNCERTAIN',
+});
+export const PopularityMetric = Object.freeze({
+  Requests: 'requests',
+  Tokens: 'tokens',
+  Downloads: 'downloads',
+});
+export const Tag = Object.freeze({
+  LifecycleLive: 'lifecycle:LIVE',
+  LifecycleOutdated: 'lifecycle:OUTDATED',
+  LifecycleUncertain: 'lifecycle:UNCERTAIN',
+  PopularityPopular: 'popularity:POPULAR',
+  PopularityNotPopular: 'popularity:NOT_POPULAR',
+  PopularityUncertain: 'popularity:UNCERTAIN',
+  PricePremium: 'price:premium',
+  WeightsOpen: 'weights:open',
+  OriginChina: 'origin:cn',
+});
+export const ModelList = Object.freeze({
+  Default: 'default',
+  Complete: 'complete',
+  China: 'china',
+  Global: 'global',
+});
+export const LocalApi = Object.freeze({ OpenAI: 'openai-compatible', Ollama: 'ollama' });
+export const LifecycleBasis = Object.freeze({
+  Provider: 'provider',
+  CatalogListing: 'catalog-listing',
+});
+export const ApiProtocol = Object.freeze({
+  OpenAI: 'openai-compatible',
+  Claude: 'claude',
+  Gemini: 'gemini',
+  Ollama: 'ollama',
+});
+export const Role = Object.freeze({
+  System: 'system',
+  Developer: 'developer',
+  User: 'user',
+  Assistant: 'assistant',
+  Tool: 'tool',
+});
+export const ModelSort = Object.freeze({
+  AlphabeticalAscend: 'alphabeticalAscend',
+  AlphabeticalDescend: 'alphabeticalDescend',
+  PriceAscend: 'priceAscend',
+  PriceDescend: 'priceDescend',
+  SpeedAscend: 'speedAscend',
+  SpeedDescend: 'speedDescend',
+  ProviderOrder: 'provider-order',
+  Alphabetical: 'alphabetical',
+  Price: 'price',
+  Speed: 'speed',
+});
+export const DEFAULT = ModelList.Default,
+  COMPLETE = ModelList.Complete,
+  CHINA = ModelList.China,
+  GLOBAL = ModelList.Global;

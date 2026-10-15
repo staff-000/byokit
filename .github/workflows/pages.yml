@@ -26,12 +26,12 @@ jobs:
         id: revision
         run: node -e 'const fs=require("node:fs"),cp=require("node:child_process");fs.appendFileSync(process.env.GITHUB_OUTPUT,"commit="+cp.execFileSync("git",["rev-parse","HEAD"],{encoding:"utf8"}).trim()+"\n")'
       - uses: actions/setup-node@v4
-        with: {node-version: '22', cache: npm}
+        with: { node-version: '22', cache: npm }
       - run: npm ci
       - run: npm run site:build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
-        with: {path: dist/site}
+        with: { path: dist/site }
   deploy:
     needs: build
     permissions:

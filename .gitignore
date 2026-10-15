@@ -8,3 +8,4 @@ build/
 dist/
 examples/generated/
 *.tgz
+.ruff_cache/

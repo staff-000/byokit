@@ -7,25 +7,17 @@
   },
   "tasks": [
     {
-      "offeringIds": [
-        "test/small"
-      ],
+      "offeringIds": ["test/small"],
       "budget": {
         "maxInputTokens": 3000,
         "maxOutputTokens": 2000,
         "overheadTokens": 500
       },
       "requires": {
-        "features": [
-          "functionCalling"
-        ],
+        "features": ["functionCalling"],
         "modalities": {
-          "input": [
-            "text"
-          ],
-          "output": [
-            "text"
-          ]
+          "input": ["text"],
+          "output": ["text"]
         }
       }
     }

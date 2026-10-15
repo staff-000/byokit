@@ -4,68 +4,47 @@
     "openai": {
       "origin": "us",
       "rank": 1,
-      "presets": [
-        "global"
-      ]
+      "presets": ["global"]
     },
     "anthropic": {
       "origin": "us",
       "rank": 2,
-      "presets": [
-        "global"
-      ]
+      "presets": ["global"]
     },
     "google": {
       "origin": "us",
       "rank": 3,
-      "presets": [
-        "global"
-      ]
+      "presets": ["global"]
     },
     "mistral": {
       "origin": "fr",
       "rank": 4,
-      "presets": [
-        "global"
-      ]
+      "presets": ["global"]
     },
     "groq": {
       "origin": "us",
       "rank": 5,
-      "presets": [
-        "global"
-      ]
+      "presets": ["global"]
     },
     "openrouter": {
       "origin": "us",
       "rank": 6,
-      "presets": [
-        "global"
-      ]
+      "presets": ["global"]
     },
     "deepseek": {
       "origin": "cn",
       "rank": 1,
-      "presets": [
-        "global",
-        "china"
-      ]
+      "presets": ["global", "china"]
     },
     "zhipuai": {
       "origin": "cn",
       "rank": 2,
-      "presets": [
-        "global",
-        "china"
-      ]
+      "presets": ["global", "china"]
     },
     "siliconflow": {
       "origin": "cn",
       "rank": 3,
-      "presets": [
-        "global",
-        "china"
-      ]
+      "presets": ["global", "china"]
     }
   },
   "notes": "Audience presets are editorial recommendations, not claims of network availability, eligibility, data residency or commercial licensing. Hosting remains unknown. Native endpoints/auth belong in reviewed application adapters, not this catalog.",

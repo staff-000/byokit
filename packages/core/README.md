@@ -4,8 +4,8 @@ Get a short list of models matching your application, using the offline bundled 
 
 ```js
 import * as byokit from '@byokit/core/catalog';
-const models=byokit.getModels();
-console.log(models.map(({id,name})=>({id,name})));
+const models = byokit.getModels();
+console.log(models.map(({ id, name }) => ({ id, name })));
 ```
 
 Each result includes provider/model metadata, limits, price, features, tags, logos

@@ -2,11 +2,11 @@
 
 There are three paths. No path requires an API key in catalog data.
 
-| Need | Where |
-|---|---|
-| Add a model only in your app | `byokit.appendModel(models, custom)` / Python `append_model()` |
-| Add an upstream Models.dev provider | `catalog/overlays.json` → `providers` |
-| Add a provider/model missing from Models.dev | `catalog/manual.json` |
+| Need                                         | Where                                                          |
+| -------------------------------------------- | -------------------------------------------------------------- |
+| Add a model only in your app                 | `byokit.appendModel(models, custom)` / Python `append_model()` |
+| Add an upstream Models.dev provider          | `catalog/overlays.json` → `providers`                          |
+| Add a provider/model missing from Models.dev | `catalog/manual.json`                                          |
 
 ## Application-owned list
 
@@ -50,7 +50,7 @@ records into [catalog/manual.json](../catalog/manual.json), keeping existing rec
   `provenance: { source: "https://…", reviewedAt: "YYYY-MM-DD" }`.
 - **Availability:** to appear in default LIVE queries, supply current
   `lifecycleEvidence: { status: "LIVE", basis: "provider", source: "https://…",
-  checkedAt: "…Z" }` after checking provider documentation. Without evidence it is
+checkedAt: "…Z" }` after checking provider documentation. Without evidence it is
   UNCERTAIN; inspect with `filters.lifecycle: [byokit.Lifecycle.Uncertain]`.
   Nightly fetching does not refresh manual evidence dates automatically.
 - **Shortlists:** manual providers join Global/COMPLETE. To extend another list,

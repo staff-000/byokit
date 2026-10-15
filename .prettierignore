@@ -1,0 +1,17 @@
+node_modules/
+package-lock.json
+catalog/catalog.json
+catalog/catalog.lock.json
+catalog/changes.json
+catalog/verifications.json
+packages/core/catalog.js
+packages/python/
+docs/verification/
+spec/conformance/
+spec/fixtures/
+examples/generated/
+build/
+dist/
+*.egg-info/
+.ruff_cache/
+tests/types.ts

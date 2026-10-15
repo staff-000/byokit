@@ -1,6 +1,39 @@
-import type {Catalog,CatalogData,PickerConfig,Selection,CredentialStore,Offering,LocalApi,Locale} from '@byokit/core';
-export interface ByokOptions {catalog:Catalog|CatalogData;config?:PickerConfig;value?:Selection;credentialStore?:CredentialStore;credentialRef?:string;locale?:Locale;labels?:Record<string,string>;title?:string;assets?:Record<string,string>;onSave:(selection:Selection)=>void|Promise<void>;onChange?:(selection:Selection)=>void;checkTimeoutMs?:number;onCheck?:(request:Selection & {apiKey:string;signal:AbortSignal})=>Promise<{ok:boolean;message?:string}>;discoverLocal?:(endpoint:string,signal:AbortSignal,options:{api:import("@byokit/core").LocalApi})=>Promise<Offering[]>;}
-export function mountByok(container:HTMLElement,options:ByokOptions):{destroy():void;getSelection():Selection};
+import type {
+  Catalog,
+  CatalogData,
+  PickerConfig,
+  Selection,
+  CredentialStore,
+  Offering,
+  LocalApi,
+  Locale,
+} from '@byokit/core';
+export interface ByokOptions {
+  catalog: Catalog | CatalogData;
+  config?: PickerConfig;
+  value?: Selection;
+  credentialStore?: CredentialStore;
+  credentialRef?: string;
+  locale?: Locale;
+  labels?: Record<string, string>;
+  title?: string;
+  assets?: Record<string, string>;
+  onSave: (selection: Selection) => void | Promise<void>;
+  onChange?: (selection: Selection) => void;
+  checkTimeoutMs?: number;
+  onCheck?: (
+    request: Selection & { apiKey: string; signal: AbortSignal },
+  ) => Promise<{ ok: boolean; message?: string }>;
+  discoverLocal?: (
+    endpoint: string,
+    signal: AbortSignal,
+    options: { api: import('@byokit/core').LocalApi },
+  ) => Promise<Offering[]>;
+}
+export function mountByok(
+  container: HTMLElement,
+  options: ByokOptions,
+): { destroy(): void; getSelection(): Selection };
 
 export * from '@byokit/core';
-export {discoverLocal} from './local.js';
+export { discoverLocal } from './local.js';

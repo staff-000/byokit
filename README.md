@@ -14,8 +14,8 @@ const models = byokit.getModels();
 // One LIVE model per default provider, plus a Local setup entry.
 
 byokit.getModels(byokit.COMPLETE); // All LIVE offerings from supported providers
-byokit.getModels(byokit.GLOBAL);   // One LIVE model per supported provider + Local
-byokit.getModels(byokit.CHINA);    // China-provider shortlist + Local
+byokit.getModels(byokit.GLOBAL); // One LIVE model per supported provider + Local
+byokit.getModels(byokit.CHINA); // China-provider shortlist + Local
 ```
 
 Discovery runs offline. The bundled catalog comes from a pinned Models.dev
@@ -40,7 +40,9 @@ provider order and existing per-provider preference ranking.
 
 ```ts
 const [model] = byokit.getModels({
-  providerIds: [byokit.ProviderId.DeepSeek], limit: 1, local: false,
+  providerIds: [byokit.ProviderId.DeepSeek],
+  limit: 1,
+  local: false,
 });
 if (!model?.connection) throw new Error('No configured model');
 
@@ -101,20 +103,20 @@ Global includes China providers. Use exclusions when you want to omit them.
 offering; unknown origin is not a guarantee of exclusion. Origin is not hosting
 location or network availability.
 
-| Filter | Options |
-|---|---|
-| `providerIds`, `limit`, `local` | Provider selection, hosted result cap, local endpoints |
-| `deployment`, `origin` | Hosted/local/self-hosted; known origin |
-| `includeTags`, `excludeTags` | All included tags required; any excluded tag removes a result |
-| `input`, `output`, `fileFormats` | Text/image/audio/video/embedding; document formats |
-| `requiredFeatures` | Function calling, parallel tools, tool choice/schema, prompt caching, JSON/structured output, system/developer messages, thinking controls |
-| `minContextTokens` | Minimum context window |
-| `maxInputPricePerM`, `maxOutputPricePerM` | Maximum USD per million tokens |
-| `openWeights`, `commercialUse`, `maxParameters` | Weight availability, licensing, model size |
-| `minTokensPerSecond`, `maxTimeToFirstTokenMs` | Known speed and latency measurements |
-| `lifecycle`, `includeDeprecated` | LIVE by default; optional OUTDATED/UNCERTAIN |
-| `popularity` | POPULAR / NOT_POPULAR / UNCERTAIN from sourced usage ranks |
-| `verified`, `verifiedBy`, `verifiedWithinDays` | Community call reports and freshness |
+| Filter                                          | Options                                                                                                                                    |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `providerIds`, `limit`, `local`                 | Provider selection, hosted result cap, local endpoints                                                                                     |
+| `deployment`, `origin`                          | Hosted/local/self-hosted; known origin                                                                                                     |
+| `includeTags`, `excludeTags`                    | All included tags required; any excluded tag removes a result                                                                              |
+| `input`, `output`, `fileFormats`                | Text/image/audio/video/embedding; document formats                                                                                         |
+| `requiredFeatures`                              | Function calling, parallel tools, tool choice/schema, prompt caching, JSON/structured output, system/developer messages, thinking controls |
+| `minContextTokens`                              | Minimum context window                                                                                                                     |
+| `maxInputPricePerM`, `maxOutputPricePerM`       | Maximum USD per million tokens                                                                                                             |
+| `openWeights`, `commercialUse`, `maxParameters` | Weight availability, licensing, model size                                                                                                 |
+| `minTokensPerSecond`, `maxTimeToFirstTokenMs`   | Known speed and latency measurements                                                                                                       |
+| `lifecycle`, `includeDeprecated`                | LIVE by default; optional OUTDATED/UNCERTAIN                                                                                               |
+| `popularity`                                    | POPULAR / NOT_POPULAR / UNCERTAIN from sourced usage ranks                                                                                 |
+| `verified`, `verifiedBy`, `verifiedWithinDays`  | Community call reports and freshness                                                                                                       |
 
 Except the first row, these fields belong inside `filters`. Use exported enums
 such as `byokit.Modality.Image`, `byokit.FeatureName.JsonSchema`, and

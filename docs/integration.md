@@ -9,10 +9,14 @@ import '@byokit/dom/styles.css';
 
 const ui = byokit.mountByok(element, {
   catalog: data,
-  config: { preset: byokit.Preset.Global, ui: { maxProviders: 8, maxModelsPerProvider: 4, allowCustomModel: true } },
+  config: {
+    preset: byokit.Preset.Global,
+    ui: { maxProviders: 8, maxModelsPerProvider: 4, allowCustomModel: true },
+  },
   credentialStore: applicationCredentialStore,
-  onSave: selection => saveSelection(selection),
-  onCheck: async ({ providerId, modelId, apiKey, signal }) => checkProvider({ providerId, modelId, apiKey, signal }),
+  onSave: (selection) => saveSelection(selection),
+  onCheck: async ({ providerId, modelId, apiKey, signal }) =>
+    checkProvider({ providerId, modelId, apiKey, signal }),
 });
 ```
 
@@ -34,7 +38,11 @@ an offering by ID. The simple `getModels` helper uses the bundled snapshot.
 
 ```js
 import * as byokit from '@byokit/core/catalog';
-const fit = byokit.checkFit(model, { inputTokens: 20000, outputTokens: 4000, overheadTokens: 2000 });
+const fit = byokit.checkFit(model, {
+  inputTokens: 20000,
+  outputTokens: 4000,
+  overheadTokens: 2000,
+});
 ```
 
 Results are fits/exceeds/unknown, with diagnostics. Context accounting may include

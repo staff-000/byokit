@@ -1,10 +1,68 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>byokit — BYOK in a few lines</title><meta name="description" content="Set up BYOK in a few lines. Discover current AI models, build a shortlist, and call them through a familiar client. Refresh the catalog and ship a release without rewriting model lists."><meta name="theme-color" content="#f7f8fa"><link rel="canonical" href="https://staff-000.github.io/byokit/"><link rel="icon" href="./favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="./style.css"><script type="module" src="./app.js"></script><script type="module" src="./playground.js"></script></head>
-<body><a class="skip" href="#explore">Skip to model explorer</a>
-<header class="nav wrap"><a class="brand" href="./" aria-label="byokit home">byokit<span>.</span></a><nav aria-label="Main navigation"><a href="#explore">Explore</a><a href="#playground">Playground</a><a href="./verification.html">Verification</a><a href="https://github.com/staff-000/byokit#readme">Docs</a><a class="github" href="https://github.com/staff-000/byokit">GitHub <span aria-hidden="true">↗</span></a></nav></header>
-<main>
-<section class="hero wrap"><div class="hero-copy"><p class="eyebrow"><span class="dot"></span> BYOK, WITHOUT THE UPKEEP</p><h1>BYOK in<br>a few lines.<br><span>Keep it current.</span></h1><p class="lede">Add BYOK with a model list and one simple call.<br class="desktop"> Keep your model choices fresh: update the catalog and ship a release. No model-list code to rewrite.</p><div class="cta-row"><a class="button primary" href="#api-examples">See the code <span aria-hidden="true">↓</span></a><a class="text-link" href="https://github.com/staff-000/byokit#call-a-model">Get started <span aria-hidden="true">↗</span></a></div><p class="hero-note">TypeScript · JavaScript · Python <span>/</span> MIT licensed</p></div>
-<div class="hero-demo"><div class="code-window"><div class="window-top"><span class="window-dots" aria-hidden="true">● ● ●</span><span>your-app.ts</span><button class="copy-icon" type="button" data-copy="#hero-code" aria-label="Copy quickstart">Copy</button></div><pre id="hero-code"><code><span class="code-muted">import</span> * as byokit <span class="code-muted">from</span>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>byokit — BYOK in a few lines</title>
+    <meta
+      name="description"
+      content="Set up BYOK in a few lines. Discover current AI models, build a shortlist, and call them through a familiar client. Refresh the catalog and ship a release without rewriting model lists."
+    />
+    <meta name="theme-color" content="#f7f8fa" />
+    <link rel="canonical" href="https://staff-000.github.io/byokit/" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./style.css" />
+    <script type="module" src="./app.js"></script>
+    <script type="module" src="./playground.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#explore">Skip to model explorer</a>
+    <header class="nav wrap">
+      <a class="brand" href="./" aria-label="byokit home">byokit<span>.</span></a>
+      <nav aria-label="Main navigation">
+        <a href="#explore">Explore</a><a href="#playground">Playground</a
+        ><a href="./verification.html">Verification</a
+        ><a href="https://github.com/staff-000/byokit#readme">Docs</a
+        ><a class="github" href="https://github.com/staff-000/byokit"
+          >GitHub <span aria-hidden="true">↗</span></a
+        >
+      </nav>
+    </header>
+    <main>
+      <section class="hero wrap">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="dot"></span> BYOK, WITHOUT THE UPKEEP</p>
+          <h1>BYOK in<br />a few lines.<br /><span>Keep it current.</span></h1>
+          <p class="lede">
+            Add BYOK with a model list and one simple call.<br class="desktop" />
+            Keep your model choices fresh: update the catalog and ship a release. No model-list code
+            to rewrite.
+          </p>
+          <div class="cta-row">
+            <a class="button primary" href="#api-examples"
+              >See the code <span aria-hidden="true">↓</span></a
+            ><a class="text-link" href="https://github.com/staff-000/byokit#call-a-model"
+              >Get started <span aria-hidden="true">↗</span></a
+            >
+          </div>
+          <p class="hero-note">TypeScript · JavaScript · Python <span>/</span> MIT licensed</p>
+        </div>
+        <div class="hero-demo">
+          <div class="code-window">
+            <div class="window-top">
+              <span class="window-dots" aria-hidden="true">● ● ●</span><span>your-app.ts</span
+              ><button
+                class="copy-icon"
+                type="button"
+                data-copy="#hero-code"
+                aria-label="Copy quickstart"
+              >
+                Copy
+              </button>
+            </div>
+            <pre
+              id="hero-code"
+            ><code><span class="code-muted">import</span> * as byokit <span class="code-muted">from</span>
   <span class="code-green">'@byokit/core/catalog'</span>;
 
 <span class="code-muted">const</span> [model] = byokit.<span class="code-lime">getModels</span>({
@@ -16,27 +74,274 @@ if (!model?.connection) throw new Error('No model');
 <span class="code-muted">const</span> result = <span class="code-muted">await</span> byokit.<span class="code-lime">call</span>(
   model, <span class="code-green">'Hello'</span>, apiKey,
 );
-console.log(result.choices[0].message.content);</code></pre><div class="return-label"><span aria-hidden="true">↳</span> Sort by price. Also supports Alphabetical and Speed.</div><div id="hero-providers" class="provider-cloud" aria-label="Default provider list"></div></div><div class="demo-caption"><span>01 / BYOK IN A FEW LINES</span><span>Your app supplies the key.</span></div></div></section>
-<div class="facts-strip"><div class="wrap facts"><span><strong>Simple setup</strong> model, prompt, API key</span><span><strong>Fresh catalog</strong> no hardcoded model lists</span><span><strong>Your app</strong> owns the credentials</span></div></div>
-<section id="explore" class="section wrap"><div class="section-head"><div><p class="eyebrow">01 / TRY IT</p><h2>A shortlist that fits<br>your application.</h2></div><p>These results come from byokit itself.<br>Change the list, add a filter, inspect the return.</p></div>
-<div class="explorer"><div class="explorer-toolbar"><div class="segmented" role="group" aria-label="Model list"><button type="button" class="active" data-mode="default" aria-pressed="true">Default</button><button type="button" data-mode="complete" aria-pressed="false">Complete</button><button type="button" data-mode="china" aria-pressed="false">China</button><button type="button" data-mode="global" aria-pressed="false">Global</button></div><span id="count" class="count" aria-live="polite">Loading catalog…</span></div>
-<div class="filters"><label class="search-label"><span class="sr-only">Search selected results</span><input id="search" type="search" placeholder="Search this result list…"></label><label><input id="tools" type="checkbox"> Function calling</label><label><input id="premium" type="checkbox"> Exclude premium</label><label><input id="exclude-china" type="checkbox"> Exclude China-origin tags</label><label><input id="local" type="checkbox" checked> Append Local</label></div>
-<div class="query-bar"><code id="query">byokit.getModels();</code><button type="button" data-copy="#query" aria-label="Copy explorer query">Copy query</button></div>
-<div id="catalog-error" class="notice" role="alert" hidden>The catalog could not load. Refresh the page to try again.</div>
-<div class="table-scroll"><table class="models"><caption class="sr-only">Models matching the current byokit query</caption><thead><tr><th scope="col">Provider / model</th><th scope="col">Context</th><th scope="col">USD / 1M tokens</th><th scope="col">Evidence</th></tr></thead><tbody id="results"></tbody></table></div><div class="results-footer"><span id="result-note">Hosted results require LIVE listing evidence. Local is a setup entry.</span><button id="more" type="button" class="small-button" hidden>Show more</button></div>
-</div><p class="fine">COMPLETE includes all LIVE text-output offerings from the supported providers in this snapshot. Listing evidence does not guarantee access for your account. Prices are catalog metadata; check the provider before billing.</p></section>
-<section id="playground" class="section wrap playground-section">
-<div class="section-head"><div><p class="eyebrow">PLAY / REAL JAVASCRIPT, REAL CATALOG</p><h2>Make it your own.</h2></div><p>Edit a query. Press Run.<br>See exactly what byokit returns.</p></div>
-<div class="playground-shell">
-<div class="playground-toolbar"><label for="playground-example">Example</label><select id="playground-example"></select><span class="playground-badge">JavaScript</span><span class="playground-import">byokit is already imported</span></div>
-<div class="playground-panes"><div class="playground-editor"><label for="playground-code">YOUR CODE</label><textarea id="playground-code" spellcheck="false" autocomplete="off" autocapitalize="off" aria-describedby="playground-help"></textarea></div><div class="playground-result"><span id="playground-output-label">CONSOLE OUTPUT</span><pre id="playground-output" aria-labelledby="playground-output-label" tabindex="0">Your console output will appear here.</pre></div></div>
-<div class="playground-actions"><button id="playground-run" type="button" class="button primary">Run JavaScript <span aria-hidden="true">▶</span></button><button id="playground-stop" type="button" class="small-button" disabled>Stop</button><button id="playground-reset" type="button" class="text-button">Reset example</button><button id="playground-copy" type="button" class="text-button">Copy code</button><span class="playground-shortcut">⌘ / Ctrl + Enter</span></div>
-<p id="playground-status" role="status">Ready.</p>
-</div><p id="playground-help" class="fine">Runs locally in an isolated sandbox. No API key needed, no provider requests, and no saved code. Supports offline byokit APIs; imports and network access are unavailable. <a href="./verification.html">Try a real model call →</a></p>
-</section>
-<section class="section details-section"><div class="wrap details"><div><p class="eyebrow">02 / BEYOND THE NAME</p><h2>The details your<br>picker needs.</h2><p class="lede small">Set it up once.<br>Let catalog updates handle model changes.</p><a class="text-link" href="https://github.com/staff-000/byokit#filter-the-list">Read the filter reference ↗</a></div><div class="detail-list"><div><span class="number">01</span><h3>Find the right fit</h3><p>Input and output modalities, function calling, structured output, thinking, price, and context window.</p></div><div><span class="number">02</span><h3>Stay current with each release</h3><p>Refresh your byokit catalog and release your app. Provider IDs, models, tags, and limits update together—no hand-maintained model list.</p></div><div><span class="number">03</span><h3>Bring a local server</h3><p>Append a URL, API protocol, and model ID. Use an OpenAI-compatible server or native Ollama.</p></div><div><span class="number">04</span><h3>Check budgets before a call</h3><p>Validate declared context and completion budgets in a build. Unknown limits produce explicit diagnostics.</p></div></div></div></section>
-<section id="verification" class="section wrap"><div class="section-head"><div><p class="eyebrow">03 / TRY A REAL CALL</p><h2>Your model.<br>Your settings. Does it work?</h2></div><p>Browse the complete list and model tags.<br>Verify an inference call with your own key.</p></div><div class="inference-cta"><p>Test a model with your own key, then share a successful hosted-model report on GitHub. Earn a Model Verifier badge and help keep the catalog useful. Your key goes directly to the provider.</p><a class="button primary" href="./verification.html">Verify a model · earn a badge ↗</a></div></section>
-<section id="api-examples" class="start-section"><div class="wrap start"><div><p class="eyebrow">04 / HOW TO CALL THE API</p><h2>Get your list.<br>Then call your model.</h2><p>One library for discovery and SDK-style calls. Your application owns the keys; byokit handles the provider differences.</p><div class="example-purpose" role="group" aria-label="Example purpose"><button type="button" data-example="query" aria-pressed="false">1. Get a model list</button><button type="button" data-example="inference" class="active" aria-pressed="true">2. Call a model</button></div><div class="language-tabs" role="group" aria-label="Response format"><button data-format="openai" class="active" aria-pressed="true">OpenAI format</button><button data-format="claude" aria-pressed="false">Claude format</button></div><p id="example-note" class="fine">Catalog queries run offline. No API key or provider request is needed.</p><a class="text-link" href="https://github.com/staff-000/byokit#call-a-model">Full instructions in README ↗</a><p class="fine"><a class="text-link" href="https://github.com/staff-000/byokit/blob/main/docs/sdk.md#existing-official-sdks">Use your existing OpenAI / Anthropic SDK ↗</a></p></div><div class="start-code"><div class="language-tabs" role="group" aria-label="Quickstart language"><button class="active" data-language="typescript" aria-pressed="true">JavaScript / TS</button><button data-language="python" aria-pressed="false">Python</button><button type="button" class="copy-icon" data-copy="#start-code">Copy</button></div><pre id="start-code"><code>import * as byokit from '@byokit/core/catalog';
+console.log(result.choices[0].message.content);</code></pre>
+            <div class="return-label">
+              <span aria-hidden="true">↳</span> Sort by price. Also supports Alphabetical and Speed.
+            </div>
+            <div
+              id="hero-providers"
+              class="provider-cloud"
+              aria-label="Default provider list"
+            ></div>
+          </div>
+          <div class="demo-caption">
+            <span>01 / BYOK IN A FEW LINES</span><span>Your app supplies the key.</span>
+          </div>
+        </div>
+      </section>
+      <div class="facts-strip">
+        <div class="wrap facts">
+          <span><strong>Simple setup</strong> model, prompt, API key</span
+          ><span><strong>Fresh catalog</strong> no hardcoded model lists</span
+          ><span><strong>Your app</strong> owns the credentials</span>
+        </div>
+      </div>
+      <section id="explore" class="section wrap">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">01 / TRY IT</p>
+            <h2>A shortlist that fits<br />your application.</h2>
+          </div>
+          <p>
+            These results come from byokit itself.<br />Change the list, add a filter, inspect the
+            return.
+          </p>
+        </div>
+        <div class="explorer">
+          <div class="explorer-toolbar">
+            <div class="segmented" role="group" aria-label="Model list">
+              <button type="button" class="active" data-mode="default" aria-pressed="true">
+                Default</button
+              ><button type="button" data-mode="complete" aria-pressed="false">Complete</button
+              ><button type="button" data-mode="china" aria-pressed="false">China</button
+              ><button type="button" data-mode="global" aria-pressed="false">Global</button>
+            </div>
+            <span id="count" class="count" aria-live="polite">Loading catalog…</span>
+          </div>
+          <div class="filters">
+            <label class="search-label"
+              ><span class="sr-only">Search selected results</span
+              ><input id="search" type="search" placeholder="Search this result list…" /></label
+            ><label><input id="tools" type="checkbox" /> Function calling</label
+            ><label><input id="premium" type="checkbox" /> Exclude premium</label
+            ><label><input id="exclude-china" type="checkbox" /> Exclude China-origin tags</label
+            ><label><input id="local" type="checkbox" checked /> Append Local</label>
+          </div>
+          <div class="query-bar">
+            <code id="query">byokit.getModels();</code
+            ><button type="button" data-copy="#query" aria-label="Copy explorer query">
+              Copy query
+            </button>
+          </div>
+          <div id="catalog-error" class="notice" role="alert" hidden>
+            The catalog could not load. Refresh the page to try again.
+          </div>
+          <div class="table-scroll">
+            <table class="models">
+              <caption class="sr-only">
+                Models matching the current byokit query
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Provider / model</th>
+                  <th scope="col">Context</th>
+                  <th scope="col">USD / 1M tokens</th>
+                  <th scope="col">Evidence</th>
+                </tr>
+              </thead>
+              <tbody id="results"></tbody>
+            </table>
+          </div>
+          <div class="results-footer">
+            <span id="result-note"
+              >Hosted results require LIVE listing evidence. Local is a setup entry.</span
+            ><button id="more" type="button" class="small-button" hidden>Show more</button>
+          </div>
+        </div>
+        <p class="fine">
+          COMPLETE includes all LIVE text-output offerings from the supported providers in this
+          snapshot. Listing evidence does not guarantee access for your account. Prices are catalog
+          metadata; check the provider before billing.
+        </p>
+      </section>
+      <section id="playground" class="section wrap playground-section">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">PLAY / REAL JAVASCRIPT, REAL CATALOG</p>
+            <h2>Make it your own.</h2>
+          </div>
+          <p>Edit a query. Press Run.<br />See exactly what byokit returns.</p>
+        </div>
+        <div class="playground-shell">
+          <div class="playground-toolbar">
+            <label for="playground-example">Example</label
+            ><select id="playground-example"></select
+            ><span class="playground-badge">JavaScript</span
+            ><span class="playground-import">byokit is already imported</span>
+          </div>
+          <div class="playground-panes">
+            <div class="playground-editor">
+              <label for="playground-code">YOUR CODE</label
+              ><textarea
+                id="playground-code"
+                spellcheck="false"
+                autocomplete="off"
+                autocapitalize="off"
+                aria-describedby="playground-help"
+              ></textarea>
+            </div>
+            <div class="playground-result">
+              <span id="playground-output-label">CONSOLE OUTPUT</span>
+              <pre id="playground-output" aria-labelledby="playground-output-label" tabindex="0">
+Your console output will appear here.</pre>
+            </div>
+          </div>
+          <div class="playground-actions">
+            <button id="playground-run" type="button" class="button primary">
+              Run JavaScript <span aria-hidden="true">▶</span></button
+            ><button id="playground-stop" type="button" class="small-button" disabled>Stop</button
+            ><button id="playground-reset" type="button" class="text-button">Reset example</button
+            ><button id="playground-copy" type="button" class="text-button">Copy code</button
+            ><span class="playground-shortcut">⌘ / Ctrl + Enter</span>
+          </div>
+          <p id="playground-status" role="status">Ready.</p>
+        </div>
+        <p id="playground-help" class="fine">
+          Runs locally in an isolated sandbox. No API key needed, no provider requests, and no saved
+          code. Supports offline byokit APIs; imports and network access are unavailable.
+          <a href="./verification.html">Try a real model call →</a>
+        </p>
+      </section>
+      <section class="section details-section">
+        <div class="wrap details">
+          <div>
+            <p class="eyebrow">02 / BEYOND THE NAME</p>
+            <h2>The details your<br />picker needs.</h2>
+            <p class="lede small">Set it up once.<br />Let catalog updates handle model changes.</p>
+            <a class="text-link" href="https://github.com/staff-000/byokit#filter-the-list"
+              >Read the filter reference ↗</a
+            >
+          </div>
+          <div class="detail-list">
+            <div>
+              <span class="number">01</span>
+              <h3>Find the right fit</h3>
+              <p>
+                Input and output modalities, function calling, structured output, thinking, price,
+                and context window.
+              </p>
+            </div>
+            <div>
+              <span class="number">02</span>
+              <h3>Stay current with each release</h3>
+              <p>
+                Refresh your byokit catalog and release your app. Provider IDs, models, tags, and
+                limits update together—no hand-maintained model list.
+              </p>
+            </div>
+            <div>
+              <span class="number">03</span>
+              <h3>Bring a local server</h3>
+              <p>
+                Append a URL, API protocol, and model ID. Use an OpenAI-compatible server or native
+                Ollama.
+              </p>
+            </div>
+            <div>
+              <span class="number">04</span>
+              <h3>Check budgets before a call</h3>
+              <p>
+                Validate declared context and completion budgets in a build. Unknown limits produce
+                explicit diagnostics.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section id="verification" class="section wrap">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">03 / TRY A REAL CALL</p>
+            <h2>Your model.<br />Your settings. Does it work?</h2>
+          </div>
+          <p>
+            Browse the complete list and model tags.<br />Verify an inference call with your own
+            key.
+          </p>
+        </div>
+        <div class="inference-cta">
+          <p>
+            Test a model with your own key, then share a successful hosted-model report on GitHub.
+            Earn a Model Verifier badge and help keep the catalog useful. Your key goes directly to
+            the provider.
+          </p>
+          <a class="button primary" href="./verification.html">Verify a model · earn a badge ↗</a>
+        </div>
+      </section>
+      <section id="api-examples" class="start-section">
+        <div class="wrap start">
+          <div>
+            <p class="eyebrow">04 / HOW TO CALL THE API</p>
+            <h2>Get your list.<br />Then call your model.</h2>
+            <p>
+              One library for discovery and SDK-style calls. Your application owns the keys; byokit
+              handles the provider differences.
+            </p>
+            <div class="example-purpose" role="group" aria-label="Example purpose">
+              <button type="button" data-example="query" aria-pressed="false">
+                1. Get a model list</button
+              ><button type="button" data-example="inference" class="active" aria-pressed="true">
+                2. Call a model
+              </button>
+            </div>
+            <div class="language-tabs" role="group" aria-label="Response format">
+              <button data-format="openai" class="active" aria-pressed="true">OpenAI format</button
+              ><button data-format="claude" aria-pressed="false">Claude format</button>
+            </div>
+            <p id="example-note" class="fine">
+              Catalog queries run offline. No API key or provider request is needed.
+            </p>
+            <a class="text-link" href="https://github.com/staff-000/byokit#call-a-model"
+              >Full instructions in README ↗</a
+            >
+            <p class="fine">
+              <a
+                class="text-link"
+                href="https://github.com/staff-000/byokit/blob/main/docs/sdk.md#existing-official-sdks"
+                >Use your existing OpenAI / Anthropic SDK ↗</a
+              >
+            </p>
+          </div>
+          <div class="start-code">
+            <div class="language-tabs" role="group" aria-label="Quickstart language">
+              <button class="active" data-language="typescript" aria-pressed="true">
+                JavaScript / TS</button
+              ><button data-language="python" aria-pressed="false">Python</button
+              ><button type="button" class="copy-icon" data-copy="#start-code">Copy</button>
+            </div>
+            <pre id="start-code"><code>import * as byokit from '@byokit/core/catalog';
 
-const models = byokit.getModels();</code></pre><div class="example-return"><span id="return-label">RETURN</span><pre id="expected-return">An array of provider/model metadata.</pre></div><p class="fine">byokit packages are available in the repository workspace. Public package publishing is pending.</p></div></div></section>
-</main><footer class="wrap footer"><a class="brand" href="./">byokit<span>.</span></a><p>Built on <a href="https://models.dev">Models.dev</a>. Thank you to its maintainers and contributors.</p><a href="https://github.com/staff-000/byokit/blob/main/LICENSE">MIT license ↗</a><a href="./THIRD_PARTY_NOTICES.txt">Third-party notices</a></footer></body></html>
+const models = byokit.getModels();</code></pre>
+            <div class="example-return">
+              <span id="return-label">RETURN</span>
+              <pre id="expected-return">An array of provider/model metadata.</pre>
+            </div>
+            <p class="fine">
+              byokit packages are available in the repository workspace. Public package publishing
+              is pending.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+    <footer class="wrap footer">
+      <a class="brand" href="./">byokit<span>.</span></a>
+      <p>
+        Built on <a href="https://models.dev">Models.dev</a>. Thank you to its maintainers and
+        contributors.
+      </p>
+      <a href="https://github.com/staff-000/byokit/blob/main/LICENSE">MIT license ↗</a
+      ><a href="./THIRD_PARTY_NOTICES.txt">Third-party notices</a>
+    </footer>
+  </body>
+</html>

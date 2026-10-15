@@ -37,14 +37,14 @@ Browser checks require a working preview at `/byokit/`. The recorder never runs
 inference or needs provider credentials. Failed commands produce a failed record
 and a nonzero exit; an omitted browser check is recorded as NOT RUN, not passed.
 
-| Check | What it establishes |
-|---|---|
-| JavaScript tests | Filtering, lifecycle, exclusions, model reports, ownership of keys, local discovery, UI behavior, CLI and JS/Python parity |
-| Python tests | Native Python behavior and bundled catalog resource loading |
-| TypeScript / Python type checks | Typed enum interface and client examples |
-| Catalog check and sample build | Schema/budget checks and usable generated IDs |
-| Website build | Static assets, browser modules and truthful verification data are packaged |
-| Website Chrome smoke | Actual list queries, filters, search, paging, language tabs, `/byokit/` paths, verification page, mobile layout and resource errors |
+| Check                           | What it establishes                                                                                                                 |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| JavaScript tests                | Filtering, lifecycle, exclusions, model reports, ownership of keys, local discovery, UI behavior, CLI and JS/Python parity          |
+| Python tests                    | Native Python behavior and bundled catalog resource loading                                                                         |
+| TypeScript / Python type checks | Typed enum interface and client examples                                                                                            |
+| Catalog check and sample build  | Schema/budget checks and usable generated IDs                                                                                       |
+| Website build                   | Static assets, browser modules and truthful verification data are packaged                                                          |
+| Website Chrome smoke            | Actual list queries, filters, search, paging, language tabs, `/byokit/` paths, verification page, mobile layout and resource errors |
 
 ## Actual provider call verification
 

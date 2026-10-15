@@ -20,9 +20,7 @@
       "openWeights": null,
       "commercialUse": "unknown",
       "license": null,
-      "tags": [
-        "usecase:general"
-      ],
+      "tags": ["usecase:general"],
       "provenance": {
         "source": "https://api.example.com/docs",
         "reviewedAt": "2026-10-14"
@@ -43,12 +41,8 @@
         "protocol": "openai-compatible"
       },
       "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
+        "input": ["text"],
+        "output": ["text"]
       },
       "limits": {
         "context": null,

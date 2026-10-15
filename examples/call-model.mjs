@@ -1,7 +1,8 @@
 import * as byokit from '@byokit/core/catalog';
 
 const models = byokit.getModels({
-  providerIds: [byokit.ProviderId.DeepSeek], local: false,
+  providerIds: [byokit.ProviderId.DeepSeek],
+  local: false,
 });
 const model = models[0]; // Or let the user choose.
 if (!model?.connection) throw new Error('No configured model');

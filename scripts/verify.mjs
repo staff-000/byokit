@@ -1,14 +1,116 @@
-import {spawnSync} from 'node:child_process';
-import {readFile,writeFile,mkdir,readdir} from 'node:fs/promises';
-import {createHash} from 'node:crypto';
-import {resolve} from 'node:path';
-const root=resolve(new URL('..',import.meta.url).pathname),browser=process.argv.includes('--browser'),startedAt=new Date().toISOString();
-const git=args=>spawnSync('git',args,{cwd:root,encoding:'utf8'});
-const files=git(['ls-files','--cached','--others','--exclude-standard','-z']).stdout.split('\0').filter(Boolean).filter(f=>!f.startsWith('docs/verification/')&&f!=='docs/verification.md');
-const hash=createHash('sha256');for(const file of [...new Set(files)].sort()){try{hash.update(file+'\0');hash.update(await readFile(resolve(root,file)))}catch{}}
-const specs=[['javascript','JavaScript tests',[process.execPath,'--test','--test-reporter=spec',...(await readdir(resolve(root,'tests'))).filter(f=>f.endsWith('.test.mjs')).sort().map(f=>'tests/'+f)]],['python','Python tests',['python3','-m','unittest','discover','-s','packages/python/tests','-v']],['typescript','TypeScript types',['npm','run','typecheck']],['python-types','Python types',['npm','run','typecheck:python']],['catalog','Catalog and budget check',['npm','run','check']],['budget','Strict task budget check',['npm','run','check:budget']],['sample-build','Sample catalog build',['npm','run','build']],['website-build','Static website build',['npm','run','site:build']],['website-browser','Website Chrome smoke',[process.execPath,'scripts/site-smoke.mjs']]];
-const checks=[];for(const [id,name,command] of specs){if(id==='website-browser'&&(!browser||checks.some(c=>c.id==='website-build'&&c.status==='failed'))){checks.push({id,name,command:['node',...command.slice(1)],status:'not-run',durationMs:0,exitCode:null});continue}const start=Date.now();const result=spawnSync(command[0],command.slice(1),{cwd:root,encoding:'utf8',maxBuffer:20*1024*1024,env:process.env});const output=(result.stdout||'')+(result.stderr||'');const nodeTotal=output.match(/^(?:#|ℹ) tests (\d+)/m),nodePassed=output.match(/^(?:#|ℹ) pass (\d+)/m),py=output.match(/Ran (\d+) tests?/);const tests=nodeTotal?{total:Number(nodeTotal[1]),passed:Number(nodePassed?.[1]||0)}:py?{total:Number(py[1]),passed:result.status===0?Number(py[1]):null}:undefined;checks.push({id,name,command:[command[0]===process.execPath?'node':command[0],...command.slice(1)],status:result.status===0?'passed':'failed',durationMs:Date.now()-start,exitCode:result.status,...(tests?{tests}:{}),outputSha256:createHash('sha256').update(output).digest('hex')});console.log(`${result.status===0?'PASS':'FAIL'} ${name}${tests?` (${tests.passed}/${tests.total})`:''}`);if(result.status!==0)console.error(output.slice(-6000));}
-const completedAt=new Date().toISOString(),record={schemaVersion:1,id:completedAt.replace(/[:.]/g,'-'),startedAt,completedAt,commit:git(['rev-parse','HEAD']).stdout.trim(),sourceDirty:!!git(['status','--porcelain']).stdout.trim(),sourceDigest:hash.digest('hex'),platform:process.platform,architecture:process.arch,nodeVersion:process.version,checks};
-const dir=resolve(root,'docs/verification');await mkdir(resolve(dir,'runs'),{recursive:true});const body=JSON.stringify(record,null,2)+'\n';await writeFile(resolve(dir,'latest.json'),body);await writeFile(resolve(dir,'runs',record.id+'.json'),body);
-const rebuild=spawnSync('npm',['run','site:build'],{cwd:root,encoding:'utf8'});if(rebuild.status!==0)throw new Error('Could not rebuild website with recorded evidence');
-console.log('Recorded docs/verification/latest.json and dated run history.');if(checks.some(c=>c.status==='failed'))process.exitCode=1;
+import { spawnSync } from 'node:child_process';
+import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { resolve } from 'node:path';
+const root = resolve(new URL('..', import.meta.url).pathname),
+  browser = process.argv.includes('--browser'),
+  startedAt = new Date().toISOString();
+const git = (args) => spawnSync('git', args, { cwd: root, encoding: 'utf8' });
+const files = git(['ls-files', '--cached', '--others', '--exclude-standard', '-z'])
+  .stdout.split('\0')
+  .filter(Boolean)
+  .filter((f) => !f.startsWith('docs/verification/') && f !== 'docs/verification.md');
+const hash = createHash('sha256');
+for (const file of [...new Set(files)].sort()) {
+  try {
+    hash.update(file + '\0');
+    hash.update(await readFile(resolve(root, file)));
+  } catch {}
+}
+const specs = [
+  [
+    'javascript',
+    'JavaScript tests',
+    [
+      process.execPath,
+      '--test',
+      '--test-reporter=spec',
+      ...(await readdir(resolve(root, 'tests')))
+        .filter((f) => f.endsWith('.test.mjs'))
+        .sort()
+        .map((f) => 'tests/' + f),
+    ],
+  ],
+  [
+    'python',
+    'Python tests',
+    ['python3', '-m', 'unittest', 'discover', '-s', 'packages/python/tests', '-v'],
+  ],
+  ['typescript', 'TypeScript types', ['npm', 'run', 'typecheck']],
+  ['python-types', 'Python types', ['npm', 'run', 'typecheck:python']],
+  ['catalog', 'Catalog and budget check', ['npm', 'run', 'check']],
+  ['budget', 'Strict task budget check', ['npm', 'run', 'check:budget']],
+  ['sample-build', 'Sample catalog build', ['npm', 'run', 'build']],
+  ['website-build', 'Static website build', ['npm', 'run', 'site:build']],
+  ['website-browser', 'Website Chrome smoke', [process.execPath, 'scripts/site-smoke.mjs']],
+];
+const checks = [];
+for (const [id, name, command] of specs) {
+  if (
+    id === 'website-browser' &&
+    (!browser || checks.some((c) => c.id === 'website-build' && c.status === 'failed'))
+  ) {
+    checks.push({
+      id,
+      name,
+      command: ['node', ...command.slice(1)],
+      status: 'not-run',
+      durationMs: 0,
+      exitCode: null,
+    });
+    continue;
+  }
+  const start = Date.now();
+  const result = spawnSync(command[0], command.slice(1), {
+    cwd: root,
+    encoding: 'utf8',
+    maxBuffer: 20 * 1024 * 1024,
+    env: process.env,
+  });
+  const output = (result.stdout || '') + (result.stderr || '');
+  const nodeTotal = output.match(/^(?:#|ℹ) tests (\d+)/m),
+    nodePassed = output.match(/^(?:#|ℹ) pass (\d+)/m),
+    py = output.match(/Ran (\d+) tests?/);
+  const tests = nodeTotal
+    ? { total: Number(nodeTotal[1]), passed: Number(nodePassed?.[1] || 0) }
+    : py
+      ? { total: Number(py[1]), passed: result.status === 0 ? Number(py[1]) : null }
+      : undefined;
+  checks.push({
+    id,
+    name,
+    command: [command[0] === process.execPath ? 'node' : command[0], ...command.slice(1)],
+    status: result.status === 0 ? 'passed' : 'failed',
+    durationMs: Date.now() - start,
+    exitCode: result.status,
+    ...(tests ? { tests } : {}),
+    outputSha256: createHash('sha256').update(output).digest('hex'),
+  });
+  console.log(
+    `${result.status === 0 ? 'PASS' : 'FAIL'} ${name}${tests ? ` (${tests.passed}/${tests.total})` : ''}`,
+  );
+  if (result.status !== 0) console.error(output.slice(-6000));
+}
+const completedAt = new Date().toISOString(),
+  record = {
+    schemaVersion: 1,
+    id: completedAt.replace(/[:.]/g, '-'),
+    startedAt,
+    completedAt,
+    commit: git(['rev-parse', 'HEAD']).stdout.trim(),
+    sourceDirty: !!git(['status', '--porcelain']).stdout.trim(),
+    sourceDigest: hash.digest('hex'),
+    platform: process.platform,
+    architecture: process.arch,
+    nodeVersion: process.version,
+    checks,
+  };
+const dir = resolve(root, 'docs/verification');
+await mkdir(resolve(dir, 'runs'), { recursive: true });
+const body = JSON.stringify(record, null, 2) + '\n';
+await writeFile(resolve(dir, 'latest.json'), body);
+await writeFile(resolve(dir, 'runs', record.id + '.json'), body);
+const rebuild = spawnSync('npm', ['run', 'site:build'], { cwd: root, encoding: 'utf8' });
+if (rebuild.status !== 0) throw new Error('Could not rebuild website with recorded evidence');
+console.log('Recorded docs/verification/latest.json and dated run history.');
+if (checks.some((c) => c.status === 'failed')) process.exitCode = 1;

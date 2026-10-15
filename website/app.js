@@ -1,28 +1,240 @@
 import * as byokit from './lib/core/catalog.js';
-import {tutorials} from './tutorials.js';
-const $=selector=>document.querySelector(selector);
-const modes={default:byokit.DEFAULT,complete:byokit.COMPLETE,china:byokit.CHINA,'global':byokit.GLOBAL};
-let mode='default',shown=12;
-const el=(tag,text,cls)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;if(cls)node.className=cls;return node};
-const compact=n=>n==null?'Unknown':n>=1e6?`${Number((n/1e6).toFixed(2))}M`:n>=1000?`${Number((n/1000).toFixed(1))}K`:String(n);
-function query(){const config={sort:byokit.ModelSort.ProviderOrder};if(!$('#local').checked)config.local=false;const filters={};if($('#tools').checked)filters.requiredFeatures=[byokit.FeatureName.FunctionCalling];const excluded=[];if($('#premium').checked)excluded.push(byokit.Tag.PricePremium);if($('#exclude-china').checked)excluded.push(byokit.Tag.OriginChina);if(excluded.length)filters.excludeTags=excluded;if(Object.keys(filters).length)config.filters=filters;return config}
-function snippet(config){const name=mode==='default'?'':`byokit.${mode.toUpperCase()}`;const parts=['sort: byokit.ModelSort.ProviderOrder'],filters=[];if(config.local===false)parts.push('local: false');if(config.filters?.requiredFeatures)filters.push('requiredFeatures: [byokit.FeatureName.FunctionCalling]');if(config.filters?.excludeTags)filters.push('excludeTags: ['+config.filters.excludeTags.map(tag=>'byokit.Tag.'+Object.keys(byokit.Tag).find(key=>byokit.Tag[key]===tag)).join(', ')+']');if(filters.length)parts.push('filters: { '+filters.join(', ')+' }');return `byokit.getModels(${[name,parts.length?`{ ${parts.join(', ')} }`:''].filter(Boolean).join(', ')});`}
-function row(model){const tr=el('tr'),cell=el('td'),group=el('div',undefined,'model-cell');const icon=model.local?el('span','↳','provider-icon icon-fallback'):el('img',undefined,'provider-icon');if(!model.local){icon.alt='';icon.src=`./assets/${model.providerId}.svg`;icon.addEventListener('error',()=>icon.replaceWith(el('span',model.provider.name.slice(0,2), 'provider-icon icon-fallback')),{once:true})}const title=el('div');title.append(el('span',model.provider.name,'provider-name'),el('div',model.name,'model-name'),el('code',model.apiModelId||'URL + API protocol + model ID','model-id'));group.append(icon,title);cell.append(group);tr.append(cell,el('td',compact(model.limits.context)));const price=el('td',model.price.input==null?'Unknown':`$${model.price.input} in`,'price');if(model.price.output!=null)price.append(el('span',`$${model.price.output} out`));tr.append(price);const evidence=el('td');evidence.append(el('span',model.local?'LOCAL SETUP':model.lifecycle.status,`badge ${model.local?'uncertain':'live'}`),el('span',model.local?'User-configured server':model.lifecycle.evidence?.basis==='catalog-listing'?'Catalog listing':'Provider evidence','evidence-note'));tr.append(evidence);return tr}
-function render(){try{const config=query(),models=byokit.getModels(modes[mode],config),search=$('#search').value.trim().toLowerCase(),matches=models.filter(m=>`${m.name} ${m.apiModelId} ${m.provider.name}`.toLowerCase().includes(search));$('#query').textContent=snippet(config);$('#results').replaceChildren(...matches.slice(0,shown).map(row));if(!matches.length){const tr=el('tr'),td=el('td','No matching results. Try Complete or change your filters.','empty');td.colSpan=4;tr.append(td);$('#results').append(tr)}$('#count').textContent=`${matches.length} ${matches.length===1?'entry':'entries'}${search?' match your search':''}`;$('#more').hidden=matches.length<=shown;$('#more').textContent=`Show more (${matches.length-shown} remaining)`;$('#result-note').textContent=`Showing ${Math.min(shown,matches.length)} of ${matches.length}. Hosted entries require LIVE evidence; Local is a setup entry.`;$('#catalog-error').hidden=true}catch{$('#catalog-error').hidden=false}}
-for(const button of document.querySelectorAll('[data-mode]'))button.addEventListener('click',()=>{mode=button.dataset.mode;shown=12;for(const b of document.querySelectorAll('[data-mode]')){b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button))}render()});
-for(const id of ['search','tools','premium','exclude-china','local'])$('#'+id).addEventListener('input',()=>{shown=12;render()});$('#more').addEventListener('click',()=>{shown+=24;render()});
-for(const button of document.querySelectorAll('[data-copy]'))button.addEventListener('click',async()=>{const text=$(button.dataset.copy).textContent;try{await navigator.clipboard.writeText(text);button.textContent='Copied';setTimeout(()=>button.textContent=button.dataset.copy==='#query'?'Copy query':'Copy',1800)}catch{button.textContent='Select to copy';const range=document.createRange();range.selectNodeContents($(button.dataset.copy));const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range)}});
-let language='typescript',example='inference',format='openai';
-function renderExample(){
- $('#start-code').textContent=tutorials[example==='inference'&&format==='claude'?'claude':example][language];
- const inference=example==='inference';
- $('#example-note').textContent=inference?`Server-side example: set ${format==='claude'?'ANTHROPIC_API_KEY':'DEEPSEEK_API_KEY'} in your environment. Reuse the client for multiple requests. Keys stay in memory and are never persisted.`:'Catalog queries run offline. No API key or provider request is needed.';
- $('#return-label').textContent=inference?'EXAMPLE GENERATED TEXT':'RETURN (FIRST ENTRY, SELECTED FIELDS)';
- $('#expected-return').textContent=inference?(format==='claude'?'[{ type: "text", text: "Hello!" }] — actual model output varies.':'Hello! — actual model output varies.'):JSON.stringify(byokit.getModels().slice(0,1).map(model=>({provider:model.provider.id,model:model.apiModelId,context:model.limits.context})),null,2);
+import { tutorials } from './tutorials.js';
+const $ = (selector) => document.querySelector(selector);
+const modes = {
+  default: byokit.DEFAULT,
+  complete: byokit.COMPLETE,
+  china: byokit.CHINA,
+  global: byokit.GLOBAL,
+};
+let mode = 'default',
+  shown = 12;
+const el = (tag, text, cls) => {
+  const node = document.createElement(tag);
+  if (text !== undefined) node.textContent = text;
+  if (cls) node.className = cls;
+  return node;
+};
+const compact = (n) =>
+  n == null
+    ? 'Unknown'
+    : n >= 1e6
+      ? `${Number((n / 1e6).toFixed(2))}M`
+      : n >= 1000
+        ? `${Number((n / 1000).toFixed(1))}K`
+        : String(n);
+function query() {
+  const config = { sort: byokit.ModelSort.ProviderOrder };
+  if (!$('#local').checked) config.local = false;
+  const filters = {};
+  if ($('#tools').checked) filters.requiredFeatures = [byokit.FeatureName.FunctionCalling];
+  const excluded = [];
+  if ($('#premium').checked) excluded.push(byokit.Tag.PricePremium);
+  if ($('#exclude-china').checked) excluded.push(byokit.Tag.OriginChina);
+  if (excluded.length) filters.excludeTags = excluded;
+  if (Object.keys(filters).length) config.filters = filters;
+  return config;
 }
-for(const button of document.querySelectorAll('[data-language]'))button.addEventListener('click',()=>{language=button.dataset.language;for(const b of document.querySelectorAll('[data-language]')){b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button))}renderExample()});
-for(const button of document.querySelectorAll('[data-example]'))button.addEventListener('click',()=>{example=button.dataset.example;for(const b of document.querySelectorAll('[data-example]')){b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button))}renderExample()});
-for(const button of document.querySelectorAll('[data-format]'))button.addEventListener('click',()=>{format=button.dataset.format;for(const b of document.querySelectorAll('[data-format]')){b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button))}renderExample()});
-$('#hero-providers').replaceChildren(...byokit.getModels().map(model=>el('span',model.provider.name)));
+function snippet(config) {
+  const name = mode === 'default' ? '' : `byokit.${mode.toUpperCase()}`;
+  const parts = ['sort: byokit.ModelSort.ProviderOrder'],
+    filters = [];
+  if (config.local === false) parts.push('local: false');
+  if (config.filters?.requiredFeatures)
+    filters.push('requiredFeatures: [byokit.FeatureName.FunctionCalling]');
+  if (config.filters?.excludeTags)
+    filters.push(
+      'excludeTags: [' +
+        config.filters.excludeTags
+          .map(
+            (tag) => 'byokit.Tag.' + Object.keys(byokit.Tag).find((key) => byokit.Tag[key] === tag),
+          )
+          .join(', ') +
+        ']',
+    );
+  if (filters.length) parts.push('filters: { ' + filters.join(', ') + ' }');
+  return `byokit.getModels(${[name, parts.length ? `{ ${parts.join(', ')} }` : ''].filter(Boolean).join(', ')});`;
+}
+function row(model) {
+  const tr = el('tr'),
+    cell = el('td'),
+    group = el('div', undefined, 'model-cell');
+  const icon = model.local
+    ? el('span', '↳', 'provider-icon icon-fallback')
+    : el('img', undefined, 'provider-icon');
+  if (!model.local) {
+    icon.alt = '';
+    icon.src = `./assets/${model.providerId}.svg`;
+    icon.addEventListener(
+      'error',
+      () =>
+        icon.replaceWith(
+          el('span', model.provider.name.slice(0, 2), 'provider-icon icon-fallback'),
+        ),
+      { once: true },
+    );
+  }
+  const title = el('div');
+  title.append(
+    el('span', model.provider.name, 'provider-name'),
+    el('div', model.name, 'model-name'),
+    el('code', model.apiModelId || 'URL + API protocol + model ID', 'model-id'),
+  );
+  group.append(icon, title);
+  cell.append(group);
+  tr.append(cell, el('td', compact(model.limits.context)));
+  const price = el(
+    'td',
+    model.price.input == null ? 'Unknown' : `$${model.price.input} in`,
+    'price',
+  );
+  if (model.price.output != null) price.append(el('span', `$${model.price.output} out`));
+  tr.append(price);
+  const evidence = el('td');
+  evidence.append(
+    el(
+      'span',
+      model.local ? 'LOCAL SETUP' : model.lifecycle.status,
+      `badge ${model.local ? 'uncertain' : 'live'}`,
+    ),
+    el(
+      'span',
+      model.local
+        ? 'User-configured server'
+        : model.lifecycle.evidence?.basis === 'catalog-listing'
+          ? 'Catalog listing'
+          : 'Provider evidence',
+      'evidence-note',
+    ),
+  );
+  tr.append(evidence);
+  return tr;
+}
+function render() {
+  try {
+    const config = query(),
+      models = byokit.getModels(modes[mode], config),
+      search = $('#search').value.trim().toLowerCase(),
+      matches = models.filter((m) =>
+        `${m.name} ${m.apiModelId} ${m.provider.name}`.toLowerCase().includes(search),
+      );
+    $('#query').textContent = snippet(config);
+    $('#results').replaceChildren(...matches.slice(0, shown).map(row));
+    if (!matches.length) {
+      const tr = el('tr'),
+        td = el('td', 'No matching results. Try Complete or change your filters.', 'empty');
+      td.colSpan = 4;
+      tr.append(td);
+      $('#results').append(tr);
+    }
+    $('#count').textContent =
+      `${matches.length} ${matches.length === 1 ? 'entry' : 'entries'}${search ? ' match your search' : ''}`;
+    $('#more').hidden = matches.length <= shown;
+    $('#more').textContent = `Show more (${matches.length - shown} remaining)`;
+    $('#result-note').textContent =
+      `Showing ${Math.min(shown, matches.length)} of ${matches.length}. Hosted entries require LIVE evidence; Local is a setup entry.`;
+    $('#catalog-error').hidden = true;
+  } catch {
+    $('#catalog-error').hidden = false;
+  }
+}
+for (const button of document.querySelectorAll('[data-mode]'))
+  button.addEventListener('click', () => {
+    mode = button.dataset.mode;
+    shown = 12;
+    for (const b of document.querySelectorAll('[data-mode]')) {
+      b.classList.toggle('active', b === button);
+      b.setAttribute('aria-pressed', String(b === button));
+    }
+    render();
+  });
+for (const id of ['search', 'tools', 'premium', 'exclude-china', 'local'])
+  $('#' + id).addEventListener('input', () => {
+    shown = 12;
+    render();
+  });
+$('#more').addEventListener('click', () => {
+  shown += 24;
+  render();
+});
+for (const button of document.querySelectorAll('[data-copy]'))
+  button.addEventListener('click', async () => {
+    const text = $(button.dataset.copy).textContent;
+    try {
+      await navigator.clipboard.writeText(text);
+      button.textContent = 'Copied';
+      setTimeout(
+        () => (button.textContent = button.dataset.copy === '#query' ? 'Copy query' : 'Copy'),
+        1800,
+      );
+    } catch {
+      button.textContent = 'Select to copy';
+      const range = document.createRange();
+      range.selectNodeContents($(button.dataset.copy));
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  });
+let language = 'typescript',
+  example = 'inference',
+  format = 'openai';
+function renderExample() {
+  $('#start-code').textContent =
+    tutorials[example === 'inference' && format === 'claude' ? 'claude' : example][language];
+  const inference = example === 'inference';
+  $('#example-note').textContent = inference
+    ? `Server-side example: set ${format === 'claude' ? 'ANTHROPIC_API_KEY' : 'DEEPSEEK_API_KEY'} in your environment. Reuse the client for multiple requests. Keys stay in memory and are never persisted.`
+    : 'Catalog queries run offline. No API key or provider request is needed.';
+  $('#return-label').textContent = inference
+    ? 'EXAMPLE GENERATED TEXT'
+    : 'RETURN (FIRST ENTRY, SELECTED FIELDS)';
+  $('#expected-return').textContent = inference
+    ? format === 'claude'
+      ? '[{ type: "text", text: "Hello!" }] — actual model output varies.'
+      : 'Hello! — actual model output varies.'
+    : JSON.stringify(
+        byokit
+          .getModels()
+          .slice(0, 1)
+          .map((model) => ({
+            provider: model.provider.id,
+            model: model.apiModelId,
+            context: model.limits.context,
+          })),
+        null,
+        2,
+      );
+}
+for (const button of document.querySelectorAll('[data-language]'))
+  button.addEventListener('click', () => {
+    language = button.dataset.language;
+    for (const b of document.querySelectorAll('[data-language]')) {
+      b.classList.toggle('active', b === button);
+      b.setAttribute('aria-pressed', String(b === button));
+    }
+    renderExample();
+  });
+for (const button of document.querySelectorAll('[data-example]'))
+  button.addEventListener('click', () => {
+    example = button.dataset.example;
+    for (const b of document.querySelectorAll('[data-example]')) {
+      b.classList.toggle('active', b === button);
+      b.setAttribute('aria-pressed', String(b === button));
+    }
+    renderExample();
+  });
+for (const button of document.querySelectorAll('[data-format]'))
+  button.addEventListener('click', () => {
+    format = button.dataset.format;
+    for (const b of document.querySelectorAll('[data-format]')) {
+      b.classList.toggle('active', b === button);
+      b.setAttribute('aria-pressed', String(b === button));
+    }
+    renderExample();
+  });
+$('#hero-providers').replaceChildren(
+  ...byokit.getModels().map((model) => el('span', model.provider.name)),
+);
 renderExample();
 render();
