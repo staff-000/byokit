@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { pythonModels } from './python-fixture.mjs';
-import * as byokit from '@staff-000/byokit/catalog';
+import * as byokit from 'byokit/catalog';
 const asOf = '2026-10-13T13:00:00Z';
 const fixture = () => JSON.parse(readFileSync('spec/fixtures/catalog.json'));
 test('default list is one LIVE hosted model per requested provider followed by Local', () => {

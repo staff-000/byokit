@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import * as enums from '../packages/byokit/enums.js';
-import { getModels } from '@staff-000/byokit/catalog';
+import { getModels } from 'byokit/catalog';
 import {
   ProviderId,
   Preset,
@@ -12,7 +12,7 @@ import {
   customProviderId,
   githubContributor,
   customTag,
-} from '@staff-000/byokit';
+} from 'byokit';
 
 test('runtime enum objects match the shared definitions and are immutable', () => {
   const spec = JSON.parse(readFileSync('spec/enums.json'));

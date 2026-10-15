@@ -8,7 +8,7 @@ then call the model your user chooses. TypeScript/JavaScript and Python supporte
 ## Get models
 
 ```ts
-import * as byokit from '@staff-000/byokit/catalog';
+import * as byokit from 'byokit/catalog';
 
 const models = byokit.getModels();
 // One LIVE model per default provider, plus a Local setup entry.

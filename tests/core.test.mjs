@@ -121,7 +121,7 @@ test('real bundled catalog validates and each preset respects display cap', () =
 });
 
 test('bundled catalog subpath is usable without network', async () => {
-  const { default: snapshot } = await import('@staff-000/byokit/catalog');
+  const { default: snapshot } = await import('byokit/catalog');
   assert.ok(new Catalog(snapshot).select().length);
 });
 

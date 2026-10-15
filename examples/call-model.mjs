@@ -1,4 +1,4 @@
-import * as byokit from '@staff-000/byokit/catalog';
+import * as byokit from 'byokit/catalog';
 
 const models = byokit.getModels({
   providerIds: [byokit.ProviderId.DeepSeek],

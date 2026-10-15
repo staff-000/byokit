@@ -32,7 +32,7 @@ const rootDir = resolve(__dirname, '..');
 
 // npm package
 const NPM_PACKAGE = {
-  name: '@staff-000/byokit',
+  name: 'byokit',
   file: 'packages/byokit/package.json',
 };
 

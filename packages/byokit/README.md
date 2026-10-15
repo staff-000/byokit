@@ -1,11 +1,11 @@
-# @staff-000/byokit
+# byokit
 
 Bring-Your-Own-Key model catalog, routing, inference, and UI components for web and Node.js.
 
 ## Installation
 
 ```bash
-npm install @staff-000/byokit
+npm install byokit
 ```
 
 ## Quick Start
@@ -13,7 +13,7 @@ npm install @staff-000/byokit
 ### 1. Catalog & Client Discovery
 
 ```js
-import * as byokit from '@staff-000/byokit/catalog';
+import * as byokit from 'byokit/catalog';
 
 // Discover models matching criteria
 const models = byokit.getModels({
@@ -37,11 +37,11 @@ console.log(response.choices[0].message.content);
 ### 2. DOM Key Picker & Settings UI
 
 ```js
-import { mountByok } from '@staff-000/byokit/dom';
-import '@staff-000/byokit/dom/styles.css';
+import { mountByok } from 'byokit/dom';
+import 'byokit/dom/styles.css';
 
 const ui = mountByok(document.getElementById('picker'), {
-  catalog: (await import('@staff-000/byokit/catalog')).default,
+  catalog: (await import('byokit/catalog')).default,
   onSave: (selection) => {
     console.log('Selected model:', selection);
   },
@@ -51,8 +51,8 @@ const ui = mountByok(document.getElementById('picker'), {
 ### 3. React Component
 
 ```jsx
-import { ByokSettings } from '@staff-000/byokit/react';
-import '@staff-000/byokit/dom/styles.css';
+import { ByokSettings } from 'byokit/react';
+import 'byokit/dom/styles.css';
 
 function Settings() {
   return (
@@ -69,18 +69,18 @@ function Settings() {
 ### 4. CLI
 
 ```bash
-npx @staff-000/byokit check config.json --strict
+npx byokit check config.json --strict
 ```
 
 ## Exports
 
-- `@staff-000/byokit`: Core APIs (`Catalog`, `createByokClient`, `callModel`, validation)
-- `@staff-000/byokit/catalog`: Bundled model catalog, SDK client wrappers (`OpenAI`, `Anthropic`, `GoogleGenAI`), `getModels()`
-- `@staff-000/byokit/enums`: Type-safe enums (`ProviderId`, `Modality`, `Role`, etc.)
-- `@staff-000/byokit/dom`: Vanilla DOM modal / picker interface (`mountByok`, `discoverLocal`)
-- `@staff-000/byokit/dom/styles.css`: CSS styling for modal and picker
-- `@staff-000/byokit/react`: React wrapper component (`ByokSettings`)
-- `@staff-000/byokit/assets/*`: Provider SVGs and metadata
+- `byokit`: Core APIs (`Catalog`, `createByokClient`, `callModel`, validation)
+- `byokit/catalog`: Bundled model catalog, SDK client wrappers (`OpenAI`, `Anthropic`, `GoogleGenAI`), `getModels()`
+- `byokit/enums`: Type-safe enums (`ProviderId`, `Modality`, `Role`, etc.)
+- `byokit/dom`: Vanilla DOM modal / picker interface (`mountByok`, `discoverLocal`)
+- `byokit/dom/styles.css`: CSS styling for modal and picker
+- `byokit/react`: React wrapper component (`ByokSettings`)
+- `byokit/assets/*`: Provider SVGs and metadata
 
 ## License
 

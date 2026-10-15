@@ -22,7 +22,7 @@ test('local discovery validates origin and requires an explicit remote opt-in', 
 });
 
 test('OpenAI-compatible URL discovery supports vLLM, llama.cpp and Ollama with no doubled /v1', async () => {
-  const { LocalApi } = await import('@staff-000/byokit');
+  const { LocalApi } = await import('byokit');
   for (const [base, path] of [
     ['http://localhost:8000', '/v1/models'],
     ['http://localhost:8080/v1', '/v1/models'],
@@ -42,7 +42,7 @@ test('OpenAI-compatible URL discovery supports vLLM, llama.cpp and Ollama with n
   }
 });
 test('native Ollama can list running models separately from installed models', async () => {
-  const { LocalApi } = await import('@staff-000/byokit');
+  const { LocalApi } = await import('byokit');
   const found = await discoverLocal('http://localhost:11434', {
     api: LocalApi.Ollama,
     runningOnly: true,

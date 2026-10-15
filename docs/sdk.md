@@ -7,7 +7,7 @@ Discovery remains offline and the standalone call helpers remain available.
 ## JavaScript / TypeScript
 
 ```ts
-import * as byokit from '@staff-000/byokit/catalog';
+import * as byokit from 'byokit/catalog';
 
 const models = byokit.getModels({ providerIds: [byokit.ProviderId.OpenRouter], local: false });
 const model = models[0]; // Or use the app's selected offering.
@@ -80,7 +80,7 @@ is required when the selected endpoint natively speaks the SDK's protocol.
 
 ```ts
 import OpenAI from 'openai';
-import * as byokit from '@staff-000/byokit/catalog';
+import * as byokit from 'byokit/catalog';
 
 const [model] = byokit.getModels({ providerIds: [byokit.ProviderId.OpenRouter], local: false });
 if (!model?.connection || model.connection.protocol !== byokit.ApiProtocol.OpenAI) {
