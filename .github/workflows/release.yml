@@ -57,6 +57,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          npm install -g npm@latest
           npm ci
           python3 -m pip install --upgrade pip build twine
 
