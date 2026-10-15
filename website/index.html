@@ -7,7 +7,10 @@
 <div class="hero-demo"><div class="code-window"><div class="window-top"><span class="window-dots" aria-hidden="true">● ● ●</span><span>your-app.ts</span><button class="copy-icon" type="button" data-copy="#hero-code" aria-label="Copy quickstart">Copy</button></div><pre id="hero-code"><code><span class="code-muted">import</span> * as byokit <span class="code-muted">from</span>
   <span class="code-green">'@byokit/core/catalog'</span>;
 
-<span class="code-muted">const</span> [model] = byokit.<span class="code-lime">getModels</span>({ limit: 1, local: false });
+<span class="code-muted">const</span> [model] = byokit.<span class="code-lime">getModels</span>({
+  sort: byokit.ModelSort.Price,
+  limit: 1, local: false,
+});
 if (!model) throw new Error('No matching model');
 <span class="code-muted">const</span> result = <span class="code-muted">await</span> byokit.<span class="code-lime">call</span>(
   model, <span class="code-green">'Hello'</span>, api_key,
@@ -15,7 +18,7 @@ if (!model) throw new Error('No matching model');
 
 console.log(
   result.choices[0].message.content,
-);</code></pre><div class="return-label"><span aria-hidden="true">↳</span> Pick a model. Pass a prompt and your key.</div><div id="hero-providers" class="provider-cloud" aria-label="Default provider list"></div></div><div class="demo-caption"><span>01 / BYOK IN A FEW LINES</span><span>Your app supplies the key.</span></div></div></section>
+);</code></pre><div class="return-label"><span aria-hidden="true">↳</span> Sort by price. Also supports Alphabetical and Speed.</div><div id="hero-providers" class="provider-cloud" aria-label="Default provider list"></div></div><div class="demo-caption"><span>01 / BYOK IN A FEW LINES</span><span>Your app supplies the key.</span></div></div></section>
 <div class="facts-strip"><div class="wrap facts"><span><strong>Simple setup</strong> model, prompt, API key</span><span><strong>Fresh catalog</strong> no hardcoded model lists</span><span><strong>Your app</strong> owns the credentials</span></div></div>
 <section id="explore" class="section wrap"><div class="section-head"><div><p class="eyebrow">01 / TRY IT</p><h2>A shortlist that fits<br>your application.</h2></div><p>These results come from byokit itself.<br>Change the list, add a filter, inspect the return.</p></div>
 <div class="explorer"><div class="explorer-toolbar"><div class="segmented" role="group" aria-label="Model list"><button type="button" class="active" data-mode="default" aria-pressed="true">Default</button><button type="button" data-mode="complete" aria-pressed="false">Complete</button><button type="button" data-mode="china" aria-pressed="false">China</button><button type="button" data-mode="global" aria-pressed="false">Global</button></div><span id="count" class="count" aria-live="polite">Loading catalog…</span></div>
