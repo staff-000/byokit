@@ -22,6 +22,7 @@
     "verify": "node scripts/verify.mjs",
     "release": "node scripts/release.mjs",
     "release:dry-run": "node scripts/release.mjs --dry-run",
+    "release:trigger": "node scripts/trigger-release.mjs",
     "check:budget": "node packages/byokit/bin.mjs check examples/task.config.json --strict",
     "lint": "eslint packages/ scripts/ website/ tests/ && prettier --check .",
     "lint:fix": "eslint packages/ scripts/ website/ tests/ --fix && prettier --write .",

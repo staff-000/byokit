@@ -27,6 +27,10 @@ on:
   release:
     types: [published]
 
+  schedule:
+    # Every 6 hours (at minute 0 of hour 0, 6, 12, 18 UTC)
+    - cron: '0 */6 * * *'
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -94,8 +98,39 @@ jobs:
           VERSION="${TAG#v}"
           node scripts/release.mjs "$VERSION" --no-git
 
+      - name: Check for new commits since last release (Scheduled)
+        id: check_commits
+        if: github.event_name == 'schedule'
+        run: |
+          git fetch --tags
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LATEST_TAG" ]; then
+            echo "Initial release tag does not exist yet. Please run the initial release first."
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Latest release tag: $LATEST_TAG"
+            COMMITS=$(git log "$LATEST_TAG..HEAD" --oneline --invert-grep --grep="^Release v" | wc -l | tr -d ' ')
+            echo "New commits since $LATEST_TAG: $COMMITS"
+            if [ "$COMMITS" -gt 0 ]; then
+              echo "Found $COMMITS new commits. Triggering scheduled minor release."
+              echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "No new commits since $LATEST_TAG. Skipping scheduled release."
+              echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
+      - name: Run release script (Scheduled Minor Release)
+        if: github.event_name == 'schedule' && steps.check_commits.outputs.has_changes == 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          node scripts/release.mjs minor --push
+
       - name: Publish Python package to PyPI (Trusted Publishing / OIDC)
-        if: (github.event_name == 'workflow_dispatch' && inputs.dry_run != true && inputs.npm_only != true) || github.event_name == 'release'
+        if: (github.event_name == 'workflow_dispatch' && inputs.dry_run != true && inputs.npm_only != true) || github.event_name == 'release' || (github.event_name == 'schedule' && steps.check_commits.outputs.has_changes == 'true')
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist/python/
