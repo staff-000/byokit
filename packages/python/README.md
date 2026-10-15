@@ -1,6 +1,14 @@
 # byokit for Python
 
-Get a short list of AI models without Node or a network request:
+Add BYOK with a model list and one simple call. Keep your model choices fresh.
+
+## Installation
+
+```bash
+pip install byokit
+```
+
+## Quick Start
 
 ```python
 import byokit

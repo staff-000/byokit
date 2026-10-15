@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "byokit"
 version = "0.0.1"
-description = "Curated BYOK catalogs and compatibility checks"
+description = "Add BYOK with a model list and one simple call. Keep your model choices fresh."
 requires-python = ">=3.10"
 license = "MIT"
 readme = "README.md"

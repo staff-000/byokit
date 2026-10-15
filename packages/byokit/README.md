@@ -1,6 +1,6 @@
 # byokit
 
-Bring-Your-Own-Key model catalog, routing, inference, and UI components for web and Node.js.
+Add BYOK with a model list and one simple call. Keep your model choices fresh.
 
 ## Installation
 

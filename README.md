@@ -1,14 +1,24 @@
 # byokit
 
-Get providers and models for your BYOK application. Refine the list with filters,
-then call the model your user chooses. TypeScript/JavaScript and Python supported.
+Add BYOK with a model list and one simple call. Keep your model choices fresh.
+TypeScript/JavaScript and Python supported.
 
 [Try the JavaScript playground](https://staff-000.github.io/byokit/#playground) · [Verify models](https://staff-000.github.io/byokit/verification.html) · [Contribute](CONTRIBUTING.md)
+
+## Install
+
+```sh
+# npm
+npm install byokit
+
+# Python
+pip install byokit
+```
 
 ## Get models
 
 ```ts
-import * as byokit from 'byokit/catalog';
+import * as byokit from 'byokit';
 
 const models = byokit.getModels();
 // One LIVE model per default provider, plus a Local setup entry.
@@ -19,8 +29,7 @@ byokit.getModels(byokit.CHINA); // China-provider shortlist + Local
 ```
 
 Discovery runs offline. The bundled catalog comes from a pinned Models.dev
-snapshot; update it and release your app to refresh model choices. Packages are
-currently repository workspaces, not published to npm/PyPI.
+snapshot; update it and release your app to refresh model choices.
 
 Models are sorted alphabetically by model name by default. Sort across hosted
 results before applying `limit`:
@@ -175,7 +184,7 @@ result = client.chat.completions.create(
 print(result.choices[0].message.content)
 ```
 
-Install locally with `python -m pip install ./packages/python`.
+Install with `pip install byokit`.
 Python offers `Anthropic`, `call_claude()`, `append_model(models, custom)`,
 and the equivalent `ModelSort.ALPHABETICAL_ASCEND`, `PRICE_ASCEND`,
 `PRICE_DESCEND`, `SPEED_ASCEND`, `SPEED_DESCEND`, and `PROVIDER_ORDER` options.

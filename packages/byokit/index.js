@@ -1,4 +1,5 @@
 export { Byokit, openAI, claude, OpenAI, Anthropic } from './sdk.js';
+export { getModels } from './catalog.js';
 import { validateConnection } from './custom-model.js';
 import { connectionFor } from './connection.js';
 export { appendModel } from './custom-model.js';
