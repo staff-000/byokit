@@ -1,5 +1,5 @@
 from typing import TypedDict, NewType, Literal, Callable
-from .enums import (FeatureStatus,Modality,Preset,ProviderId,Deployment,Country,CommercialUse,FeatureName,UnknownPolicy,FileFormat,Lifecycle,Popularity,Tag,ModelList,LocalApi)
+from .enums import (FeatureStatus,Modality,Preset,ProviderId,Deployment,Country,CommercialUse,FeatureName,UnknownPolicy,FileFormat,Lifecycle,Popularity,Tag,ModelList,LocalApi,ModelSort)
 
 CustomProviderId=NewType("CustomProviderId",str)
 CustomCountryCode=NewType("CustomCountryCode",str)
@@ -60,6 +60,7 @@ class _LocalOptional(TypedDict,total=False):
 class LocalEndpoint(_LocalOptional):
     endpoint: str
 class PickerConfig(TypedDict, total=False):
+    sort: ModelSort
     list: ModelList
     local: list[LocalEndpoint] | Literal[False]
     preset: Preset
@@ -146,3 +147,14 @@ class CallOptions(TypedDict,total=False):
     overhead_tokens: int
     cancel_event: Event
     on_warning: Callable[[dict],None]
+
+class _CustomModelOptional(TypedDict,total=False):
+    providerName: str
+    name: str
+    deployment: Deployment
+    limits: dict
+class CustomModel(_CustomModelOptional):
+    providerId: ProviderId | CustomProviderId
+    modelId: str
+    baseUrl: str
+    protocol: ApiProtocol

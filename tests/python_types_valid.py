@@ -18,3 +18,7 @@ client = byokit.OpenAI(model=model, api_key=lambda: "application-owned-key")
 client.chat.completions.create(model=model["apiModelId"], messages=[{"role":byokit.Role.USER,"content":"Hi"}], options={"runtime_checks":False})
 anthropic = byokit.Anthropic(model=model, api_key=lambda: "application-owned-key")
 anthropic.messages.create(messages=[{"role":byokit.Role.USER,"content":"Hi"}], max_tokens=100)
+
+import byokit
+byokit.get_models({"sort":byokit.ModelSort.SPEED})
+byokit.append_model([],{"providerId":byokit.custom_provider_id("acme"),"modelId":"test","baseUrl":"https://example.com/v1","protocol":byokit.ApiProtocol.OPEN_AI})

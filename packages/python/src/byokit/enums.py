@@ -234,6 +234,12 @@ class Role(str, Enum):
     ASSISTANT = "assistant"
     TOOL = "tool"
 
+class ModelSort(str, Enum):
+    ALPHABETICAL = "alphabetical"
+    PRICE = "price"
+    SPEED = "speed"
+    PROVIDER_ORDER = "provider-order"
+
 DEFAULT=ModelList.DEFAULT
 COMPLETE=ModelList.COMPLETE
 CHINA=ModelList.CHINA

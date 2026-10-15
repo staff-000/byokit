@@ -21,7 +21,7 @@ test('bundled provider results preserve real published contributor reports',()=>
 });
 test('README example matches the bundled catalog',()=>{
  const run=spawnSync('node',['examples/query.mjs'],{encoding:'utf8'});assert.equal(run.status,0,run.stderr);
- assert.deepEqual(JSON.parse(run.stdout),['openai','anthropic','google','openrouter','deepseek','local']);
+ assert.deepEqual(JSON.parse(run.stdout),['anthropic','deepseek','google','openai','openrouter','local']);
 });
 test('reports retain author and evidence, but never promote unknown capabilities',()=>{
  const data=fixture();data.verifications=[report()];const c=new Catalog(data);

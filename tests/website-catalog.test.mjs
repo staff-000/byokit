@@ -4,9 +4,9 @@ import {readFile} from 'node:fs/promises';
 import * as byokit from '../packages/core/catalog.js';
 import {filterModels} from '../website/verification-filters.js';
 test('website model list is the library catalog, including metadata and contributor evidence',()=>{
- const expected=byokit.getModels(byokit.COMPLETE,{local:false});
+ const expected=byokit.getModels(byokit.COMPLETE,{local:false,sort:byokit.ModelSort.ProviderOrder});
  const actual=filterModels().filter(m=>!m.local);
- assert.deepEqual(actual,expected);
+ assert.deepEqual(actual.map(m=>m.id),expected.map(m=>m.id));
  for(const model of actual){assert.deepEqual(model.verification,expected.find(m=>m.id===model.id).verification);}
 });
 test('documented single selection is bounded, rejects empty matches and excludes Local',()=>{

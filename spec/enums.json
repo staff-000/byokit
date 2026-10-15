@@ -231,5 +231,11 @@
     "User": "user",
     "Assistant": "assistant",
     "Tool": "tool"
+  },
+  "ModelSort": {
+    "Alphabetical": "alphabetical",
+    "Price": "price",
+    "Speed": "speed",
+    "ProviderOrder": "provider-order"
   }
 }

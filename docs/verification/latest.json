@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "id": "2026-10-14T16-58-28-748Z",
-  "startedAt": "2026-10-14T16:58:24.948Z",
-  "completedAt": "2026-10-14T16:58:28.748Z",
-  "commit": "84e03751730c89af21416cb529089342257c9df4",
+  "id": "2026-10-15T06-20-09-695Z",
+  "startedAt": "2026-10-15T06:20:06.030Z",
+  "completedAt": "2026-10-15T06:20:09.695Z",
+  "commit": "eebf8b3c8f1aa4a5082b52872522b35a7fcf9230",
   "sourceDirty": true,
-  "sourceDigest": "526c4851324b42445d17e9c5f3fc178b5067fd0cdaa533c604c1510f01a79706",
+  "sourceDigest": "fdbbcf8dcbf1cc98d85a0acabca1e2142e2f1e6e507a23b9903661825859ce73",
   "platform": "darwin",
   "architecture": "arm64",
   "nodeVersion": "v23.7.0",
@@ -26,6 +26,7 @@
         "tests/enums.test.mjs",
         "tests/import-lifecycle.test.mjs",
         "tests/local.test.mjs",
+        "tests/nightly-catalog.test.mjs",
         "tests/publication.test.mjs",
         "tests/query.test.mjs",
         "tests/request-examples.test.mjs",
@@ -33,19 +34,20 @@
         "tests/sdk.test.mjs",
         "tests/signals.test.mjs",
         "tests/simple-api.test.mjs",
+        "tests/sort-custom.test.mjs",
         "tests/ui.test.mjs",
         "tests/verification-page.test.mjs",
         "tests/website-catalog.test.mjs",
         "tests/website-inference.test.mjs"
       ],
       "status": "passed",
-      "durationMs": 1803,
+      "durationMs": 1739,
       "exitCode": 0,
       "tests": {
-        "total": 100,
-        "passed": 100
+        "total": 104,
+        "passed": 104
       },
-      "outputSha256": "f9b8fb16e10933eee9f76d8648f16db7ee5cbfd68ad433ea9018c2c0cf464a08"
+      "outputSha256": "91aaf6c689dc7d168d449956a2c9abf68a599a83a75df430892e97c4ac593132"
     },
     {
       "id": "python",
@@ -60,13 +62,13 @@
         "-v"
       ],
       "status": "passed",
-      "durationMs": 314,
+      "durationMs": 312,
       "exitCode": 0,
       "tests": {
-        "total": 16,
-        "passed": 16
+        "total": 17,
+        "passed": 17
       },
-      "outputSha256": "ecda16397d08aa3940f737d14f5c7a76dc371aa62c23980c2e00f237fe40d609"
+      "outputSha256": "402406e05430067808a93ba30c745a923fc51ca827dc0a907f2a90d988062df0"
     },
     {
       "id": "typescript",
@@ -77,7 +79,7 @@
         "typecheck"
       ],
       "status": "passed",
-      "durationMs": 400,
+      "durationMs": 388,
       "exitCode": 0,
       "outputSha256": "d601c28abd2d19809b0ed1aa75a30bcac8df46f32550187f6075b16aea41f403"
     },
@@ -90,7 +92,7 @@
         "typecheck:python"
       ],
       "status": "passed",
-      "durationMs": 503,
+      "durationMs": 504,
       "exitCode": 0,
       "outputSha256": "06eea4eb5c4a0f9d89771ef5316d6c6641b0c245c2084f66dd700d63319741a7"
     },
@@ -103,7 +105,7 @@
         "check"
       ],
       "status": "passed",
-      "durationMs": 172,
+      "durationMs": 202,
       "exitCode": 0,
       "outputSha256": "f17e98a1545719cb589f57882d5514accdc5815fd7b40dc0331805ae7f03da08"
     },
@@ -116,7 +118,7 @@
         "check:budget"
       ],
       "status": "passed",
-      "durationMs": 140,
+      "durationMs": 144,
       "exitCode": 0,
       "outputSha256": "a02f7c198b4a6193494e25845f6f2af59868addf72cc78f74b76c8f5e6bce3e0"
     },
@@ -129,7 +131,7 @@
         "build"
       ],
       "status": "passed",
-      "durationMs": 174,
+      "durationMs": 171,
       "exitCode": 0,
       "outputSha256": "f7eaf24daf2e0c87afae4549c6931d00d5e518f7833ffc85190d65c4c1643c8d"
     },
@@ -142,7 +144,7 @@
         "site:build"
       ],
       "status": "passed",
-      "durationMs": 176,
+      "durationMs": 169,
       "exitCode": 0,
       "outputSha256": "ff8b55adbf6dd093eb5478f3b45fc52c6917031da03a2a903eaeecde6f2d0a7c"
     },

@@ -7,7 +7,7 @@ const asOf='2026-10-13T13:00:00Z';
 const fixture=()=>JSON.parse(readFileSync('spec/fixtures/catalog.json'));
 test('default list is one LIVE hosted model per requested provider followed by Local',()=>{
  const list=byokit.getModels({asOf});
- assert.deepEqual(list.map(o=>o.providerId),['openai','anthropic','google','openrouter','deepseek','local']);
+ assert.deepEqual(list.map(o=>o.providerId),['anthropic','deepseek','google','openai','openrouter','local']);
  assert.ok(list.slice(0,-1).every(o=>o.lifecycle.status===byokit.Lifecycle.Live));
  assert.equal(list.at(-1).local.configured,false);assert.equal(list.at(-1).apiModelId,'');
 });
@@ -15,7 +15,7 @@ test('COMPLETE removes shortlist limits and CHINA selects China providers',()=>{
  const full=byokit.getModels(byokit.COMPLETE,{asOf,local:false});
  assert.ok(full.length>500);assert.ok(full.every(o=>o.lifecycle.status===byokit.Lifecycle.Live));
  assert.ok(full.filter(o=>o.providerId==='openrouter').length>24);
- assert.deepEqual(byokit.getModels(byokit.CHINA,{asOf}).map(o=>o.providerId),['deepseek','zhipuai','siliconflow','local']);
+ assert.deepEqual(byokit.getModels(byokit.CHINA,{asOf,sort:byokit.ModelSort.ProviderOrder}).map(o=>o.providerId),['deepseek','zhipuai','siliconflow','local']);
  assert.ok(byokit.getModels(byokit.GLOBAL,{asOf,local:false}).some(o=>o.provider.origin==='cn'));
  assert.ok(byokit.getModels(byokit.COMPLETE,{asOf,local:false,filters:{excludeTags:[byokit.Tag.OriginChina]}}).every(o=>!o.tags.includes('origin:cn')&&!o.provider.tags.includes('origin:cn')));
  assert.equal(byokit.getModels(byokit.COMPLETE,{asOf,limit:2}).length,3);

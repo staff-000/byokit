@@ -1,24 +1,41 @@
-name: Upstream catalog review
+name: Nightly catalog refresh
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 8 * * 1'
+    - cron: '23 8 * * *'
 permissions:
   contents: read
+concurrency:
+  group: nightly-catalog-refresh
+  cancel-in-progress: false
 jobs:
   report:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
-      - run: curl --fail --location --max-time 60 https://models.dev/api.json -o /tmp/models.json
-      - run: node scripts/import-catalog.mjs /tmp/models.json --observed-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: npm ci
+      - name: Fetch Models.dev snapshot
+        run: curl --fail --location --proto '=https' --max-time 60 --max-filesize 52428800 https://models.dev/api.json -o /tmp/models.json
+      - name: Generate candidate (preserving manual entries and contributor reports)
+        run: node scripts/import-catalog.mjs /tmp/models.json --observed-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+      - run: npm run typecheck
+      - run: npm run typecheck:python
+      - run: node --test tests/nightly-catalog.test.mjs
+      - run: npm run site:build
       - uses: actions/upload-artifact@v4
         with:
-          name: reviewed-catalog-candidate
+          name: nightly-catalog-candidate
+          retention-days: 14
           path: |
             catalog/catalog.json
             catalog/catalog.lock.json
             catalog/changes.json
-# Deliberately produces a review artifact. Publishing/changing recommendations is explicit.
+            packages/core/catalog.js
+            packages/python/src/byokit/data/catalog.json
+      - name: Explain publication
+        run: echo 'Nightly fetch and validation succeeded. Download the candidate artifact, review changes, and release. No automatic package release or production overwrite.' >> "$GITHUB_STEP_SUMMARY"

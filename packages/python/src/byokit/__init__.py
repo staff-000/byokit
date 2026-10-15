@@ -36,6 +36,9 @@ def validate_catalog(data):
             try:
                 if date.fromisoformat(o["releaseDate"]).isoformat() != o["releaseDate"]: raise ValueError()
             except (ValueError, TypeError): errors.append(f'{o["id"]}: invalid releaseDate')
+        if "connection" in o:
+            try: validate_connection(o["connection"])
+            except ValueError: errors.append(o["id"]+": invalid connection")
         if o.get("providerId") not in providers or o.get("modelId") not in models: errors.append(f'{o["id"]}: unresolved reference')
         if o.get("deployment") not in ["hosted", "local", "self-hosted"]: errors.append(f'{o["id"]}: invalid deployment')
         for key, value in o.get("limits", {}).items():
@@ -51,6 +54,7 @@ def validate_catalog(data):
 
 def validate_config(config):
     errors=[]
+    if 'sort' in config and config['sort'] not in {v.value for v in ModelSort}: errors.append('Unknown model sort')
     if 'list' in config and config['list'] not in {v.value for v in ModelList}: errors.append('Unknown model list')
     if 'local' in config and config['local'] is not False:
         if not isinstance(config['local'],list): errors.append('local must be false or an array')
@@ -58,7 +62,7 @@ def validate_config(config):
             for entry in config['local']:
                 try: _validate_local(entry)
                 except ValueError as error: errors.append(str(error))
-    allowed={"root":["list","local","limit","asOf","unknownPolicy","schemaVersion","catalog","preset","providerIds","filters","prefer","ui","budget","tasks"],"filters":["deployment","origin","openWeights","commercialUse","input","output","requiredFeatures","minContextTokens","maxInputPricePerM","maxOutputPricePerM","maxParameters","maxTimeToFirstTokenMs","minTokensPerSecond","fileFormats","includeTags","excludeTags","lifecycle","popularity","includeDeprecated","verified","verifiedBy","verifiedWithinDays"],"prefer":["features","lowerCost"],"ui":["maxProviders","maxModelsPerProvider","allowCustomModel"],"budget":["maxInputTokens","maxOutputTokens","overheadTokens"]}
+    allowed={"root":["sort","list","local","limit","asOf","unknownPolicy","schemaVersion","catalog","preset","providerIds","filters","prefer","ui","budget","tasks"],"filters":["deployment","origin","openWeights","commercialUse","input","output","requiredFeatures","minContextTokens","maxInputPricePerM","maxOutputPricePerM","maxParameters","maxTimeToFirstTokenMs","minTokensPerSecond","fileFormats","includeTags","excludeTags","lifecycle","popularity","includeDeprecated","verified","verifiedBy","verifiedWithinDays"],"prefer":["features","lowerCost"],"ui":["maxProviders","maxModelsPerProvider","allowCustomModel"],"budget":["maxInputTokens","maxOutputTokens","overheadTokens"]}
     for group,keys in allowed.items():
         for key in (config if group=="root" else config.get(group,{}) or {}):
             if key not in keys: errors.append(f"Unknown {group}.{key}")
@@ -136,7 +140,14 @@ class Catalog:
                 family=next((f for f in self.data["families"] if f["id"]==model.get("familyId")),None)
                 assets=self.data.get("assets",[])
                 result.append(dict(o,connection=connection_for(o),provider=g["provider"],model=model,family=family,logos={"provider":next((a for a in assets if a["id"]==g["provider"].get("logoId")),None),"family":next((a for a in assets if family and a["id"]==family.get("logoId")),None)},verification=verification_summary(self.data,o["id"],as_of=config.get("asOf"),max_age_days=config.get("filters",{}).get("verifiedWithinDays",90),contributor=config.get("filters",{}).get("verifiedBy"))))
-        return copy.deepcopy([o for o in result if o["deployment"]!="local"][:config.get("limit",len(result))]+[o for o in result if o["deployment"]=="local"])
+        hosted=[o for o in result if o["deployment"]!="local"]
+        sort=config.get("sort",ModelSort.ALPHABETICAL)
+        if sort!=ModelSort.PROVIDER_ORDER:
+            def ordering(o):
+                primary=(o.get("price",{}).get("input") if o.get("price",{}).get("input") is not None and o.get("price",{}).get("currency")=="USD" else math.inf) if sort==ModelSort.PRICE else -(o.get("speed",{}).get("tokensPerSecond") if o.get("speed",{}).get("tokensPerSecond") is not None else -1) if sort==ModelSort.SPEED else 0
+                return (primary,o["name"].lower(),o["providerId"],o["id"])
+            hosted.sort(key=ordering)
+        return copy.deepcopy(hosted[:config.get("limit",len(result))]+[o for o in result if o["deployment"]=="local"])
     def select(self, config=None, options=None):
         return self._select(_normalize_query(config,options))
     def _select(self, config=None, uncapped=False):
@@ -388,3 +399,5 @@ def _local_groups(config,catalog):
 from .inference import call, call_claude, prepare_call, connection_for, CallError
 
 from .sdk import OpenAI, Anthropic, openAI, claude
+
+from .custom_model import append_model, validate_connection

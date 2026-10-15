@@ -22,6 +22,19 @@ Discovery runs offline. The bundled catalog comes from a pinned Models.dev
 snapshot; update it and release your app to refresh model choices. Packages are
 currently repository workspaces, not published to npm/PyPI.
 
+Models are sorted alphabetically by model name by default. Sort across hosted
+results before applying `limit`:
+
+```ts
+byokit.getModels(byokit.COMPLETE, { sort: byokit.ModelSort.Price }); // Input price: low → high
+byokit.getModels(byokit.COMPLETE, { sort: byokit.ModelSort.Speed }); // Tokens/sec: high → low
+```
+
+Unknown values and non-USD prices sort last; ties use alphabetical order. Local stays appended.
+Default/Global/China first pick their recommended model per provider; use COMPLETE
+or `providerIds` to sort every matching offering. `ModelSort.ProviderOrder` retains
+provider order and existing per-provider preference ranking.
+
 ## Call a model
 
 ```ts
@@ -102,7 +115,10 @@ such as `byokit.Modality.Image`, `byokit.FeatureName.JsonSchema`, and
 `byokit.Lifecycle.Outdated`. Custom tags use `byokit.customTag('usecase:coding')`.
 Unknown metadata fails requirements by default; `unknownPolicy` can explicitly
 include it. Local entries are appended without hosted metadata filtering.
-`prefer.features` and `prefer.lowerCost` rank results within each provider.
+`prefer.features` and `prefer.lowerCost` guide per-provider shortlist selection;
+use `ModelSort.ProviderOrder` to retain that ranking in returned lists.
+
+`sort` is a top-level enum option: `ModelSort.Alphabetical` (default), `Price`, `Speed`, or `ProviderOrder`.
 
 Each model returns its provider, `apiModelId`, `connection` (URL/protocol),
 capabilities, modalities, limits, prices, tags, logos, lifecycle/popularity
@@ -110,6 +126,24 @@ evidence, and contributor verification records. `releaseDate` and `speed` are
 included where known; current catalog speed measurements are unknown.
 LIVE is listing evidence, not an account-access guarantee. Community verification
 means a contributor reported a successful call for that exact provider/model.
+
+## Append your own model
+
+```ts
+const models = byokit.appendModel(byokit.getModels(), {
+  providerId: byokit.customProviderId('acme'),
+  providerName: 'Acme',
+  modelId: 'my-model',
+  baseUrl: 'https://api.example.com/v1',
+  protocol: byokit.ApiProtocol.OpenAI,
+});
+// models.at(-1) can be passed to byokit.call().
+```
+
+Returns a new list; never changes the catalog or stores a key. Custom entries are
+unverified with unknown capabilities/limits unless you supply limits. Duplicate
+offering IDs are rejected. Appending is explicit and happens after query filters,
+sorting, and limits. [Add providers/models to the shared catalog](docs/custom-catalog.md).
 
 ## Python
 
@@ -126,7 +160,8 @@ print(result["choices"][0]["message"]["content"])
 ```
 
 Install locally with `python -m pip install ./packages/python`.
-Python offers `call_claude()`, `OpenAI`, and `Anthropic` too.
+Python offers `call_claude()`, `OpenAI`, `Anthropic`, `append_model(models, custom)`,
+and `ModelSort.ALPHABETICAL` / `PRICE` / `SPEED` / `PROVIDER_ORDER` too.
 
 ## Contribute
 
@@ -140,6 +175,14 @@ attribute the contributor and award a Model Verifier badge. API keys never enter
 Build-time budgets: declare `budget.maxInputTokens` and `maxOutputTokens`, then
 run `byokit check config.json`. Known limit violations fail; missing/unknown
 limits warn. [Design](docs/design.md) · [Integration](docs/integration.md) · [Verification](docs/verification.md)
+
+## Nightly catalog refresh
+
+GitHub Actions fetches Models.dev daily at **08:23 UTC**, merges manual additions,
+validates, and uploads a candidate containing the catalog and generated JS/Python
+data. It preserves verification reports. Download and review the artifact before
+committing/releasing; production and package releases are explicit.
+[Workflow](.github/workflows/catalog-review.yml) · [Maintenance guide](docs/custom-catalog.md)
 
 ## Thanks
 

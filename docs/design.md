@@ -434,3 +434,30 @@ per successful model; the publication limits and badge rules are unchanged.
 Global includes all supported providers. Exclude origin:cn with filters.excludeTags to omit China-origin providers/models; missing origin remains unknown.
 
 The former NON_CHINA/NonChina API has been removed. Migrate to GLOBAL for an inclusive shortlist or COMPLETE with filters.excludeTags: [Tag.OriginChina] for origin exclusions. Both languages use the same catalog and enum vocabulary.
+
+## Query ordering and custom catalogs
+
+`getModels` sorts hosted results alphabetically by model name before `limit` by
+default. `ModelSort.Price` sorts input USD/million ascending, `Speed` sorts known
+tokens/sec descending. Unknowns last; ties name/provider/offering ID. Local setup
+entries remain appended. Shortlist selection still precedes sorting. Explicit
+`ProviderOrder` retains prior ranking for UI use cases. Python follows the same
+ordering and enum values. `appendModel` adds an unverified application-owned model
+to an immutable list without applying filters or catalog evidence.
+
+```mermaid
+flowchart LR
+  Upstream[Models.dev snapshot] --> Import
+  Manual[catalog/manual.json] --> Import
+  Import --> Overlays[Evidence-backed corrections]
+  Overlays --> Validate[Schema and reference validation]
+  Validate --> Catalog[JS and Python catalog]
+  Catalog --> Query[Filter and shortlist]
+  Query --> Sort[Sort then limit]
+  Sort --> Local[Append Local setup]
+  Local --> Custom[Optional appendModel]
+```
+
+Nightly Actions fetches a new snapshot and emits a validated candidate artifact.
+Manual evidence is never freshened by upstream observation timestamps. Production
+publication and package releases remain explicit. See custom-catalog.md.

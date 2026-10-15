@@ -1,10 +1,13 @@
 # Contributing to byokit
 
+For manual providers/models and nightly refresh, see [Custom catalog guide](docs/custom-catalog.md).
+
 ## Choose the right file
 
 | Change | Source file |
 |---|---|
 | Audience presets/provider shortlist | `catalog/overlays.json` → providers |
+| Providers/models missing upstream | `catalog/manual.json` (additive; survives nightly imports) |
 | Model facts/custom tags | `catalog/overlays.json` → models |
 | Provider-specific capabilities, price, context/custom tags | `catalog/overlays.json` → offerings |
 | Actual contributor call reports | `catalog/verifications.json` |

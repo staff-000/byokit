@@ -3,6 +3,7 @@
   "source": "https://models.dev/api.json",
   "sha256": "d1c1747dea2ec7cd1173e6007c272ecfabcf62852fa4eef0c718eccb24e96785",
   "overlaySha256": "283e375aca50239c2519facdb6494fb0afa4acf78a4cde291db133b5bcd5c4de",
+  "manualSha256": "987ca990d7c59c317ce67aa2a21c81601341fecf321bf171a6a5e461a40245be",
   "verificationsSha256": "9aa8ded5a89a3f25de62797c5dfbdf79344bfae019466c1f1dc5dde0f3029904",
   "observedAt": "2026-10-13T12:02:26Z",
   "generatedAt": "2026-10-14"

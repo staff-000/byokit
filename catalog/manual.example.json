@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "providers": [
+    {
+      "id": "acme",
+      "name": "Acme",
+      "auth": "required",
+      "deployment": "hosted",
+      "tags": [],
+      "provenance": {
+        "source": "https://api.example.com/docs",
+        "reviewedAt": "2026-10-14"
+      }
+    }
+  ],
+  "models": [
+    {
+      "id": "acme/my-model",
+      "name": "My model",
+      "openWeights": null,
+      "commercialUse": "unknown",
+      "license": null,
+      "tags": [
+        "usecase:general"
+      ],
+      "provenance": {
+        "source": "https://api.example.com/docs",
+        "reviewedAt": "2026-10-14"
+      }
+    }
+  ],
+  "families": [],
+  "offerings": [
+    {
+      "id": "acme/my-model",
+      "providerId": "acme",
+      "modelId": "acme/my-model",
+      "apiModelId": "my-model",
+      "name": "My model",
+      "deployment": "hosted",
+      "connection": {
+        "baseUrl": "https://api.example.com/v1",
+        "protocol": "openai-compatible"
+      },
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "limits": {
+        "context": null,
+        "input": null,
+        "output": null,
+        "contextAccounting": "unknown"
+      },
+      "features": {},
+      "price": {
+        "currency": "USD",
+        "input": null,
+        "output": null
+      },
+      "tags": [],
+      "provenance": {
+        "source": "https://api.example.com/docs",
+        "reviewedAt": "2026-10-14"
+      }
+    }
+  ],
+  "assets": [],
+  "presets": []
+}

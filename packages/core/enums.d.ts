@@ -266,4 +266,11 @@ export declare enum Role {
   Assistant = "assistant",
   Tool = "tool",
 }
+
+export declare enum ModelSort {
+  Alphabetical = "alphabetical",
+  Price = "price",
+  Speed = "speed",
+  ProviderOrder = "provider-order",
+}
 export declare const DEFAULT:ModelList.Default, COMPLETE:ModelList.Complete, CHINA:ModelList.China, GLOBAL:ModelList.Global;

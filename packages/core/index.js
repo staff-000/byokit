@@ -1,7 +1,9 @@
 export {openAI,claude,OpenAI,Anthropic} from './sdk.js';
+import {validateConnection} from './custom-model.js';
 import {connectionFor} from './connection.js';
+export {appendModel} from './custom-model.js';
 export {call,callClaude,prepareCall,CallError} from './call.js';
-import {FeatureStatus,ContextAccounting,Currency,VerificationStatus,Deployment as DeploymentType,Modality,FeatureName,Deployment,UnknownPolicy,CommercialUse,VerificationCheck,LocalRuntime,Lifecycle,Popularity,PopularityMetric,ModelList,LocalApi,LifecycleBasis} from './enums.js';
+import {FeatureStatus,ContextAccounting,Currency,VerificationStatus,Deployment as DeploymentType,Modality,FeatureName,Deployment,UnknownPolicy,CommercialUse,VerificationCheck,LocalRuntime,Lifecycle,Popularity,PopularityMetric,ModelList,LocalApi,LifecycleBasis,ModelSort} from './enums.js';
 export * from './enums.js';
 /** Framework-independent catalog, selection and preflight rules. No network or storage. */
 const finite = n => typeof n === 'number' && Number.isFinite(n) && n >= 0;
@@ -21,6 +23,7 @@ export function validateCatalog(data) {
   }
   const providers = new Set(data.providers.map(x=>x.id)), models = new Set(data.models.map(x=>x.id));
   for (const o of data.offerings) {
+    if(o.connection!==undefined)try{validateConnection(o.connection)}catch{errors.push(`${o.id}: invalid connection`)}
     errors.push(...validateSignals(o));
     if(o.releaseDate!==undefined&&o.releaseDate!==null&&!(typeof o.releaseDate==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(o.releaseDate)&&Number(o.releaseDate.slice(0,4))>=1&&Number.isFinite(Date.parse(o.releaseDate))&&new Date(o.releaseDate).toISOString().slice(0,10)===o.releaseDate))errors.push(`${o.id}: invalid releaseDate`);
     if (!providers.has(o.providerId) || !models.has(o.modelId)) errors.push(`${o.id}: unresolved reference`);
@@ -35,12 +38,13 @@ export function validateCatalog(data) {
 }
 export function validateConfig(c = {}) {
   const errors = [];
+  if(c.sort!==undefined&&!Object.values(ModelSort).includes(c.sort))errors.push('Unknown model sort');
   if(c.list!==undefined&&!Object.values(ModelList).includes(c.list))errors.push('Unknown model list');
   if(c.local!==undefined&&c.local!==false){
     if(!Array.isArray(c.local))errors.push('local must be false or an array');
     else for(const entry of c.local)try{validateLocal(entry)}catch(e){errors.push(e.message)}
   }
-  const allowed={root:['list','local','limit','asOf','unknownPolicy','schemaVersion','catalog','preset','providerIds','filters','prefer','ui','budget','tasks'],filters:['deployment','origin','openWeights','commercialUse','input','output','requiredFeatures','minContextTokens','maxInputPricePerM','maxOutputPricePerM','maxParameters','maxTimeToFirstTokenMs','minTokensPerSecond','fileFormats','includeTags','excludeTags','lifecycle','popularity','includeDeprecated','verified','verifiedBy','verifiedWithinDays'],prefer:['features','lowerCost'],ui:['maxProviders','maxModelsPerProvider','allowCustomModel'],budget:['maxInputTokens','maxOutputTokens','overheadTokens']};
+  const allowed={root:['sort','list','local','limit','asOf','unknownPolicy','schemaVersion','catalog','preset','providerIds','filters','prefer','ui','budget','tasks'],filters:['deployment','origin','openWeights','commercialUse','input','output','requiredFeatures','minContextTokens','maxInputPricePerM','maxOutputPricePerM','maxParameters','maxTimeToFirstTokenMs','minTokensPerSecond','fileFormats','includeTags','excludeTags','lifecycle','popularity','includeDeprecated','verified','verifiedBy','verifiedWithinDays'],prefer:['features','lowerCost'],ui:['maxProviders','maxModelsPerProvider','allowCustomModel'],budget:['maxInputTokens','maxOutputTokens','overheadTokens']};
   for(const [group,keys] of Object.entries(allowed))for(const key of Object.keys(group==='root'?c:c[group] || {}))if(!keys.includes(key))errors.push(`Unknown ${group}.${key}`);
   for(const key of ['deployment','origin','input','output','requiredFeatures','fileFormats','includeTags','excludeTags','lifecycle','popularity'])if(c.filters?.[key]!==undefined&&(!Array.isArray(c.filters[key])||c.filters[key].some(v=>typeof v!=='string')))errors.push(`filters.${key} must be a string array`);
   for (const key of ['minContextTokens','maxInputPricePerM','maxOutputPricePerM','maxParameters','maxTimeToFirstTokenMs','minTokensPerSecond']) if (c.filters?.[key] !== undefined && !finite(c.filters[key])) errors.push(`filters.${key} must be a nonnegative finite number`);
@@ -82,6 +86,14 @@ function matches(o, m, c, providerTags = []) {
   if (!f.includeDeprecated && o.status === 'deprecated') return false;
   return true;
 }
+
+function compareModels(a,b,sort){
+ const text=(x,y)=>x<y?-1:x>y?1:0;
+ let result=0;
+ if(sort===ModelSort.Price){const x=a.price?.currency===Currency.USD?(a.price.input??Infinity):Infinity,y=b.price?.currency===Currency.USD?(b.price.input??Infinity):Infinity;result=x<y?-1:x>y?1:0;}
+ if(sort===ModelSort.Speed){const x=a.speed?.tokensPerSecond??-1,y=b.speed?.tokensPerSecond??-1;result=x>y?-1:x<y?1:0;}
+ return result||text(a.name.toLowerCase(),b.name.toLowerCase())||text(a.providerId,b.providerId)||text(a.id,b.id);
+}
 export class Catalog {
   constructor(data) {
     const errors=validateCatalog(data); if(errors.length) throw new Error(errors.join('; '));
@@ -94,9 +106,12 @@ export class Catalog {
   getModels(input = {},options) {
     const config=normalizeQuery(input,options);
     const groups=this._select(config,true);
-    const hosted=groups.filter(g=>g.provider.deployment!==Deployment.Local).flatMap(g=>g.offerings.map(o=>[g,o])).slice(0,config.limit);
+    const hosted=groups.filter(g=>g.provider.deployment!==Deployment.Local).flatMap(g=>g.offerings.map(o=>[g,o]));
+    const sort=config.sort??ModelSort.Alphabetical;
+    if(sort!==ModelSort.ProviderOrder)hosted.sort((a,b)=>compareModels({...a[1],providerId:a[0].provider.id},{...b[1],providerId:b[0].provider.id},sort));
+    const limited=hosted.slice(0,config.limit);
     const locals=groups.filter(g=>g.provider.deployment===Deployment.Local).flatMap(g=>g.offerings.map(o=>[g,o]));
-    return structuredClone([...hosted,...locals].map(([g,o])=>{
+    return structuredClone([...limited,...locals].map(([g,o])=>{
       const model=this.models.get(o.modelId) || {id:o.modelId,name:o.name,openWeights:null,commercialUse:CommercialUse.Unknown,license:null,tags:[]},family=this.data.families.find(f=>f.id===model?.familyId);
       return {...o,connection:connectionFor(o),provider:g.provider,model,family:family || null,
         logos:{provider:this.data.assets?.find(a=>a.id===g.provider.logoId)||null,family:this.data.assets?.find(a=>a.id===family?.logoId)||null},

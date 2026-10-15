@@ -11,6 +11,7 @@ export const providerConnections=Object.freeze({
  siliconflow:{baseUrl:'https://api.siliconflow.cn/v1',protocol:ApiProtocol.OpenAI},
 });
 export function connectionFor(model){
+ if(model.connection)return {...model.connection};
  if(model.local){let baseUrl=model.local.endpoint?.replace(/\/$/,'')||'';const protocol=model.local.api==='ollama'?ApiProtocol.Ollama:ApiProtocol.OpenAI;if(baseUrl&&protocol===ApiProtocol.OpenAI&&!baseUrl.endsWith('/v1'))baseUrl+='/v1';if(protocol===ApiProtocol.Ollama)baseUrl=baseUrl.replace(/\/v1$/,'');return {baseUrl,protocol};}
  return providerConnections[model.providerId]?{...providerConnections[model.providerId]}:null;
 }

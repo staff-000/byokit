@@ -8,7 +8,7 @@ await mkdir(out,{recursive:true});await cp(resolve(root,'website'),out,{recursiv
 for(const file of ['inference.js','verification-filters.js'])await writeFile(resolve(out,file),(await readFile(resolve(root,'website',file),'utf8')).replaceAll('../packages/core/','./lib/core/'));
 for(const file of ['verification-config.json','github-verification.js'])await rm(resolve(out,file),{force:true});
 await mkdir(resolve(out,'lib/core'),{recursive:true});
-for(const file of ['index.js','enums.js','catalog.js','call.js','connection.js','sdk.js'])await cp(resolve(root,'packages/core',file),resolve(out,'lib/core',file));
+for(const file of ['index.js','enums.js','catalog.js','call.js','connection.js','sdk.js','custom-model.js'])await cp(resolve(root,'packages/core',file),resolve(out,'lib/core',file));
 await mkdir(resolve(out,'assets'),{recursive:true});
 for(const provider of catalog.providers){try{await cp(resolve(root,'assets','provider_'+provider.id+'.svg'),resolve(out,'assets',provider.id+'.svg'))}catch{}}
 const reports=catalog.verifications||[],errors=validateVerifications(reports,catalog);if(errors.length)throw new Error('Invalid contributor verification records');

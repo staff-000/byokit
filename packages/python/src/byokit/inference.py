@@ -31,6 +31,7 @@ class CallError(Exception):
         self.diagnostics = diagnostics or []
 
 def connection_for(model):
+    if model.get("connection"): return dict(model["connection"])
     if model.get('local'):
         local = model['local']; base = local.get('endpoint', '').rstrip('/')
         protocol = ApiProtocol.OLLAMA if local.get('api') == 'ollama' else ApiProtocol.OPEN_AI

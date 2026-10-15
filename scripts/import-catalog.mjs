@@ -1,4 +1,5 @@
 /** Explicit local snapshot import. Does not download or change a trusted endpoint. */
+import {mergeManualCatalog} from './manual-catalog.mjs';
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {createHash} from 'node:crypto';
@@ -10,7 +11,7 @@ let observedAt=observedIndex>=0?args[observedIndex+1]:undefined;
 if(observedAt!==undefined&&(!/^\d{4}-\d{2}-\d{2}T.*Z$/.test(observedAt)||!Number.isFinite(Date.parse(observedAt))))throw new Error('Invalid snapshot observation timestamp');
 const raw=await readFile(resolve(source)),upstream=JSON.parse(raw),overlay=JSON.parse(await readFile(new URL('../catalog/overlays.json',import.meta.url)));
 if(!observedAt){try{const previous=JSON.parse(await readFile(resolve(out,'catalog.lock.json'),'utf8'));if(previous.sha256===createHash('sha256').update(raw).digest('hex'))observedAt=previous.observedAt}catch{}}
-const catalog={schemaVersion:1,provenance:{source:'https://models.dev/api.json',reviewedAt:new Date().toISOString().slice(0,10)},providers:[],families:[],models:[],offerings:[],presets:[{id:'default',providerIds:['openai','anthropic','google','openrouter','deepseek']},{id:'global',providerIds:[]},{id:'china',providerIds:[]}],assets:[]};
+let catalog={schemaVersion:1,provenance:{source:'https://models.dev/api.json',reviewedAt:new Date().toISOString().slice(0,10)},providers:[],families:[],models:[],offerings:[],presets:[{id:'default',providerIds:['openai','anthropic','google','openrouter','deepseek']},{id:'global',providerIds:[]},{id:'china',providerIds:[]}],assets:[]};
 const known=new Set(),families=new Set();
 const feature=(value)=>({status:value===true?'supported':value===false?'unsupported':'unknown',source:'models.dev'});
 const number=n=>typeof n==='number'&&Number.isFinite(n)&&n>=0?n:null;
@@ -42,6 +43,9 @@ for(const id of ['ollama','local']){
  catalog.offerings.push({id:modelId,providerId:id,modelId,apiModelId:'',name:'Enter an installed model ID',deployment:'local',modalities:{input:null,output:null},limits:{context:null,input:null,output:null,contextAccounting:'unknown'},features:{},price:{currency:'USD',input:null,output:null},tags:['deployment:local']});
  for(const p of catalog.presets)if(id==='local'||p.id!=='default')p.providerIds.push(id);
 }
+const manualIndex=args.indexOf('--manual');
+const manual=JSON.parse(await readFile(manualIndex>=0?resolve(args[manualIndex+1]):new URL('../catalog/manual.json',import.meta.url),'utf8'));
+catalog=mergeManualCatalog(catalog,manual);
 // Explicit evidence-backed overlays; identities/endpoints/auth cannot be overridden.
 for(const [collection,allowed] of [['models',['origin','openWeights','commercialUse','license','size','tags']],['offerings',['modalities','fileFormats','limits','features','price','tags','speed','hosting','rank','status','releaseDate','lifecycleEvidence','popularityEvidence']]]){
  for(const [id,override] of Object.entries(overlay[collection] || {})){
@@ -65,7 +69,7 @@ const destination=resolve(out,'catalog.json');
 let previous;try{previous=JSON.parse(await readFile(destination,'utf8'))}catch{}
 if(previous){const old=new Map(previous.offerings.map(o=>[o.id,o])),next=new Map(catalog.offerings.map(o=>[o.id,o]));const diff={added:[...next.keys()].filter(id=>!old.has(id)),removed:[...old.keys()].filter(id=>!next.has(id)),changed:[...next].filter(([id,o])=>old.has(id)&&JSON.stringify(o.limits)+JSON.stringify(o.price)!==JSON.stringify(old.get(id).limits)+JSON.stringify(old.get(id).price)).map(([id])=>id)};await writeFile(resolve(out,'changes.json'),JSON.stringify(diff,null,2)+'\n')}
 await writeFile(destination,JSON.stringify(catalog,null,2)+'\n');
-await writeFile(resolve(out,'catalog.lock.json'),JSON.stringify({schemaVersion:1,source:'https://models.dev/api.json',sha256:createHash('sha256').update(raw).digest('hex'),overlaySha256:createHash('sha256').update(JSON.stringify(overlay)).digest('hex'),verificationsSha256:createHash('sha256').update(JSON.stringify(catalog.verifications)).digest('hex'),observedAt:observedAt||null,generatedAt:catalog.provenance.reviewedAt},null,2)+'\n');
+await writeFile(resolve(out,'catalog.lock.json'),JSON.stringify({schemaVersion:1,source:'https://models.dev/api.json',sha256:createHash('sha256').update(raw).digest('hex'),overlaySha256:createHash('sha256').update(JSON.stringify(overlay)).digest('hex'),manualSha256:createHash('sha256').update(JSON.stringify(manual)).digest('hex'),verificationsSha256:createHash('sha256').update(JSON.stringify(catalog.verifications)).digest('hex'),observedAt:observedAt||null,generatedAt:catalog.provenance.reviewedAt},null,2)+'\n');
 console.log(`Imported ${catalog.providers.length} providers and ${catalog.offerings.length} offerings`);
 
 if(i<0){
