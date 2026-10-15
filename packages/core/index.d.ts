@@ -75,10 +75,25 @@ export interface CompletionInput extends ChatInput {model?:string;}
 export interface MessageInput extends ClaudeInput {model?:string;}
 export interface OpenAIClient {chat:{completions:{create(input:CompletionInput,options?:CallOptions):Promise<ChatResult>}};}
 export interface ClaudeClient {messages:{create(input:MessageInput,options?:CallOptions):Promise<ClaudeResult>};}
+/** @deprecated Use new Byokit() and pass model/apiKey on each request. */
 export function openAI(options:SDKClientOptions):OpenAIClient;
+/** @deprecated Use new Byokit().messages.create(). */
 export function claude(options:SDKClientOptions):ClaudeClient;
+/** @deprecated Use new Byokit() and pass model/apiKey on each request. */
 export class OpenAI implements OpenAIClient {constructor(options:SDKClientOptions);readonly chat:OpenAIClient['chat'];}
+/** @deprecated Use new Byokit().messages.create(). */
 export class Anthropic implements ClaudeClient {constructor(options:SDKClientOptions);readonly messages:ClaudeClient['messages'];}
+
+export interface ClientOptions {runtimeChecks?:boolean;timeoutMs?:number;}
+export interface RequestOptions extends CallOptions {apiKey?:string;}
+export interface ChatRequest extends ChatInput {model:ModelOption;}
+export interface MessageRequest extends ClaudeInput {model:ModelOption;}
+/** No model or credential is retained by the client. */
+export class Byokit {
+ constructor(options?:ClientOptions);
+ readonly chat:{readonly completions:{readonly create:(input:ChatRequest,options?:RequestOptions)=>Promise<ChatResult>}};
+ readonly messages:{readonly create:(input:MessageRequest,options?:RequestOptions)=>Promise<ClaudeResult>};
+}
 
 export interface CustomModel {providerId:ProviderId|CustomProviderId;providerName?:string;modelId:string;name?:string;baseUrl:string;protocol:import('./enums.js').ApiProtocol;deployment?:Deployment;limits?:Partial<Offering['limits']>;}
 /** Append one explicit, unverified model; does not mutate input, query the network, or re-sort. */

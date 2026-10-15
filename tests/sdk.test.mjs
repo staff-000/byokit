@@ -41,3 +41,67 @@ test('unauthenticated local SDK clients can omit the key callback',async()=>{
  const c=byokit.openAI({model:local,runtimeChecks:false,fetch:async(_,options)=>{assert.equal(options.headers.Authorization,undefined);return response()}});
  assert.equal((await c.chat.completions.create({messages:[{role:byokit.Role.User,content:'Hi'}]})).choices[0].message.content,'OK');
 });
+
+
+test('Byokit is credential-free and supports both formats on one client',async()=>{
+ const c=new byokit.Byokit({runtimeChecks:false});let calls=0;
+ const opts={apiKey:'per-call-secret',fetch:async(_,o)=>{calls++;assert.equal(o.headers.Authorization,'Bearer per-call-secret');return response()}};
+ assert.equal(calls,0);
+ assert.equal((await c.chat.completions.create({...input,model},opts)).choices[0].message.content,'OK');
+ assert.deepEqual((await c.messages.create({...input,model},opts)).content,[{type:'text',text:'OK'}]);
+ assert.equal(calls,2);assert.ok(!JSON.stringify(c).includes('per-call-secret'));
+ assert.throws(()=>new byokit.Byokit({apiKey:'per-call-secret'}),e=>e.code==='INVALID_REQUEST'&&!e.message.includes('per-call-secret'));
+});
+test('one Byokit client isolates concurrent providers, keys, models and input snapshots',async()=>{
+ const c=new byokit.Byokit({runtimeChecks:false}),seen=[];let release;
+ const gate=new Promise(r=>release=r);
+ const other=byokit.appendModel([],{providerId:byokit.customProviderId('acme'),modelId:'acme-model',baseUrl:'https://acme.example/v1',protocol:byokit.ApiProtocol.OpenAI})[0];
+ const fetch=async(url,o)=>{seen.push({url,headers:o.headers,body:JSON.parse(o.body)});await gate;return response()};
+ const a={model:structuredClone(model),messages:[{role:byokit.Role.User,content:'A'}]};
+ const b={model:other,messages:[{role:byokit.Role.User,content:'B'}]};
+ const jobs=[c.chat.completions.create(a,{apiKey:'key-A',fetch}),c.chat.completions.create(b,{apiKey:'key-B',fetch})];
+ a.model.apiModelId='mutated';a.messages[0].content='mutated';b.model.connection.baseUrl='https://wrong.example';release();await Promise.all(jobs);
+ assert.deepEqual(seen.map(r=>[r.headers.Authorization,r.body.model,r.body.messages[0].content]),[['Bearer key-A',model.apiModelId,'A'],['Bearer key-B','acme-model','B']]);
+ assert.ok(seen[0].url.startsWith(model.connection.baseUrl));assert.equal(seen[1].url,'https://acme.example/v1/chat/completions');
+});
+test('Byokit defaults, fit checks, per-request overrides and format validation',async()=>{
+ const c=new byokit.Byokit();let requests=0;const opts={apiKey:'dummy',fetch:async()=>{requests++;return response()}};
+ await assert.rejects(c.chat.completions.create({...input,model},{...opts,inputTokens:1e12}),e=>e.code==='MODEL_FIT_FAILED');
+ await c.chat.completions.create({...input,model},{...opts,inputTokens:1e12,runtimeChecks:false});
+ await assert.rejects(c.chat.completions.create({...input,model,stream:true},{...opts,runtimeChecks:false}),e=>e.code==='INVALID_REQUEST');
+ await assert.rejects(c.chat.completions.create({...input,model:'a-string'},opts),e=>e.code==='INVALID_REQUEST');
+ await assert.rejects(c.chat.completions.create({...input,model},{...opts,runtimeChecks:'no'}),e=>e.code==='INVALID_REQUEST');
+ await assert.rejects(c.chat.completions.create({...input,model},{...opts,arbitrary:'x'}),e=>e.code==='INVALID_REQUEST');
+ await assert.rejects(c.chat.completions.create({...input,model},{fetch:opts.fetch}),e=>e.code==='INVALID_REQUEST');
+ await assert.rejects(c.chat.completions.create({...input,model},{...opts,apiKey:()=> 'dummy'}),e=>e.code==='INVALID_REQUEST');
+ assert.equal(requests,1);
+});
+test('Byokit routes both public formats identically to helpers across native protocols',async()=>{
+ const c=new byokit.Byokit({runtimeChecks:false});
+ for(const provider of [byokit.ProviderId.DeepSeek,byokit.ProviderId.Anthropic,byokit.ProviderId.Google]){
+  const [offering]=byokit.getModels({providerIds:[provider],local:false});
+  const data=provider===byokit.ProviderId.Anthropic?{content:[{type:'text',text:'OK'}],stop_reason:'end_turn'}:provider===byokit.ProviderId.Google?{candidates:[{content:{parts:[{text:'OK'}]},finishReason:'STOP'}]}:{choices:[{message:{content:'OK'}}]};
+  for(const format of ['openai','claude']){
+   const seen=[],opts={apiKey:'dummy',runtimeChecks:false,fetch:async(url,o)=>{seen.push({url,body:JSON.parse(o.body),headers:o.headers});return {ok:true,json:async()=>data}}};
+   const params={messages:[{role:byokit.Role.User,content:'Hi'}]};
+   const actual=await (format==='openai'?c.chat.completions:c.messages).create({model:offering,...params},opts);
+   const expected=await (format==='openai'?byokit.call:byokit.callClaude)(offering,params,'dummy',opts);
+   assert.deepEqual(seen[0],seen[1]);assert.deepEqual(Object.keys(actual),Object.keys(expected));
+   assert.equal(format==='openai'?actual.choices[0].message.content:actual.content[0].text,'OK');
+  }
+ }
+});
+test('Byokit cancellation and deadlines propagate; failures cannot expose keys',async()=>{
+ const c=new byokit.Byokit({runtimeChecks:false,timeoutMs:5});
+ const fetch=async(_,o)=>new Promise((resolve,reject)=>{if(o.signal.aborted)reject(new Error('secret'));o.signal.addEventListener('abort',()=>reject(new Error('secret')),{once:true})});
+ await assert.rejects(c.chat.completions.create({...input,model},{apiKey:'secret',fetch}),e=>e.code==='TIMEOUT'&&!e.message.includes('secret'));
+ const controller=new AbortController(),job=c.chat.completions.create({...input,model},{apiKey:'secret',fetch,signal:controller.signal,timeoutMs:1000});controller.abort();await assert.rejects(job,e=>e.code==='CANCELED');
+ await assert.rejects(c.chat.completions.create({...input,model},{apiKey:'secret',fetch:async()=>{throw new Error('secret')}}),e=>e.code==='NETWORK_ERROR'&&!e.message.includes('secret'));
+ const r=await c.chat.completions.create({...input,model},{apiKey:'secret',fetch:async()=>({ok:true,json:async()=>({choices:[{message:{content:'secret'}}]})})});assert.equal(r.choices[0].message.content,'[redacted]');
+});
+test('Byokit local requests can omit authentication without sharing a previous key',async()=>{
+ const [local]=byokit.getModels({providerIds:[],local:[{endpoint:'http://localhost:8080/v1',modelId:'local-model'}]});
+ const c=new byokit.Byokit({runtimeChecks:false});
+ await c.chat.completions.create({...input,model},{apiKey:'hosted-secret',fetch:async()=>response()});
+ await c.chat.completions.create({...input,model:local},{fetch:async(_,o)=>{assert.equal(o.headers.Authorization,undefined);return response()}});
+});

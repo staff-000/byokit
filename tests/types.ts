@@ -71,3 +71,17 @@ const sortedModels=byokit.getModels({sort:byokit.ModelSort.Speed,limit:1});
 byokit.appendModel(sortedModels,{providerId:byokit.customProviderId('acme'),modelId:'custom',baseUrl:'https://example.com/v1',protocol:byokit.ApiProtocol.OpenAI});
 // @ts-expect-error raw sort string is not the enum
 byokit.getModels({sort:'speed'});
+
+const branded=new calls.Byokit({runtimeChecks:true,timeoutMs:90000});
+branded.chat.completions.create({model:chosen,messages:[{role:calls.Role.User,content:'Hi'}]},{apiKey:'key',runtimeChecks:false});
+branded.messages.create({model:chosen,messages:[{role:calls.Role.User,content:'Hi'}]},{apiKey:'key'});
+// @ts-expect-error client defaults must never accept credentials
+new calls.Byokit({apiKey:'key'});
+// @ts-expect-error exact offering metadata is required, not a bare model string
+branded.chat.completions.create({model:'a-model',messages:[]},{apiKey:'key'});
+// @ts-expect-error a model must be supplied on every request
+branded.chat.completions.create({messages:[]},{apiKey:'key'});
+// @ts-expect-error streaming is not yet supported
+branded.messages.create({model:chosen,messages:[],stream:true},{apiKey:'key'});
+// @ts-expect-error keys are per-request strings, not client-owned accessors
+branded.chat.completions.create({model:chosen,messages:[]},{apiKey:()=> 'key'});

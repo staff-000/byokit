@@ -30,6 +30,6 @@ test('runner reports syntax/errors, awaits returned values and bounds output',as
  assert.equal((await execute(''))[0].empty,true);
 });
 test('playground only exposes offline library APIs and uses an opaque sandbox with no connections',async()=>{
- assert.equal((await execute('console.log(typeof byokit.call, typeof byokit.openAI)'))[0].text,'undefined undefined');
+ assert.equal((await execute('console.log(typeof byokit.call, typeof byokit.openAI, typeof byokit.Byokit)'))[0].text,'undefined undefined undefined');
  const ui=await readFile(new URL('../website/playground.js',import.meta.url),'utf8');assert.ok(ui.includes("setAttribute('sandbox','allow-scripts')"));assert.ok(ui.includes("connect-src 'none'"));assert.ok(ui.includes('3000'));assert.ok(ui.includes('frame?.remove()'));
 });

@@ -73,3 +73,55 @@ def openAI(**config) -> OpenAI:
     return OpenAI(**config)
 def claude(**config) -> Anthropic:
     return Anthropic(**config)
+
+
+class _ByokitRequest:
+    def __init__(self, defaults: CallOptions, format: str):
+        self._defaults = dict(defaults)
+        self._format = format
+
+    def _create(self, params: dict, model: dict, api_key: str | None, options: CallOptions | None) -> dict:
+        if not isinstance(model, dict): _invalid('Provide a model object from get_models().')
+        if options is not None: _check_options(options)
+        # Capture the exact offering and input, never retain either on the client.
+        try: selected, params = copy.deepcopy(model), copy.deepcopy(params)
+        except Exception: raise CallError('INVALID_REQUEST', 'Request and model must contain copyable data.') from None
+        opts = {**self._defaults, **(options or {})}
+        if 'runtime_checks' in opts and not isinstance(opts['runtime_checks'], bool): _invalid('runtime_checks must be boolean.')
+        import math
+        timeout = opts.get('timeout_ms', 90000)
+        if not isinstance(timeout, (int, float)) or isinstance(timeout, bool) or not math.isfinite(timeout) or timeout <= 0: _invalid('timeout_ms must be positive.')
+        return (call_claude if self._format == 'claude' else call)(selected, params, '' if api_key is None else api_key, opts)
+
+class _ByokitCompletions(_ByokitRequest):
+    def create(self, *, model: dict, messages: list[ChatMessage], api_key: str | None = None,
+               max_tokens: int | None = None, max_completion_tokens: int | None = None,
+               temperature: float | None = None, top_p: float | None = None,
+               stop: str | list[str] | None = None, tools: list[FunctionTool] | None = None,
+               tool_choice: Literal['auto','none','required'] | dict | None = None,
+               stream: Literal[False] = False, options: CallOptions | None = None) -> dict:
+        params = {k:v for k,v in locals().items() if k not in ['self','model','api_key','options'] and v is not None}
+        return self._create(params, model, api_key, options)
+
+class _ByokitMessages(_ByokitRequest):
+    def create(self, *, model: dict, messages: list[ClaudeMessage], api_key: str | None = None,
+               system: str | list[TextBlock] | None = None, max_tokens: int | None = None,
+               temperature: float | None = None, top_p: float | None = None, top_k: int | None = None,
+               stop_sequences: list[str] | None = None, tools: list[ClaudeTool] | None = None,
+               tool_choice: dict | None = None, stream: Literal[False] = False,
+               options: CallOptions | None = None) -> dict:
+        params = {k:v for k,v in locals().items() if k not in ['self','model','api_key','options'] and v is not None}
+        return self._create(params, model, api_key, options)
+
+class _ByokitChat:
+    def __init__(self, completions: _ByokitCompletions): self.completions = completions
+
+class Byokit:
+    """One client, exact per-request models and transient keys; no credential store."""
+    def __init__(self, *, runtime_checks: bool = True, timeout_ms: float = 90000):
+        import math
+        if not isinstance(runtime_checks, bool): _invalid('runtime_checks must be boolean.')
+        if not isinstance(timeout_ms, (int, float)) or isinstance(timeout_ms, bool) or not math.isfinite(timeout_ms) or timeout_ms <= 0: _invalid('timeout_ms must be positive.')
+        defaults: CallOptions = {'runtime_checks': runtime_checks, 'timeout_ms': timeout_ms}
+        self.chat = _ByokitChat(_ByokitCompletions(defaults, 'openai'))
+        self.messages = _ByokitMessages(defaults, 'claude')

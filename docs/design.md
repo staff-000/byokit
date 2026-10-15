@@ -342,37 +342,57 @@ results, diagnostics, records and logs. Redirects are blocked. Browser CORS
 restrictions remain provider-owned. Cancellation and a 90-second deadline
 terminate calls without retry; spent provider quota cannot be refunded.
 
-## SDK-shaped clients
+## Byokit client
 
-Applications create `openAI({model,apiKey:()=>key})` or `claude(...)`. Their methods
-are `client.chat.completions.create(...)` and `client.messages.create(...)`.
-JavaScript constructor aliases are OpenAI/Anthropic; Python uses those classes
-and keyword arguments. These methods wrap the same adapters and validation;
-standalone call helpers remain compatible.
+`new byokit.Byokit({runtimeChecks: true, timeoutMs: 90000})` stores only
+non-secret execution defaults. `client.chat.completions.create({model,messages},
+{apiKey,signal})` takes an exact model offering and transient credential on each
+request. `client.messages.create(...)` accepts/returns Claude-style messages.
+Python uses `Byokit()` with `model=`, `messages=`, `api_key=`, and an optional
+`options` dict (snake_case execution options). Python cancellation uses
+`options={"cancel_event": event}`; calls remain synchronous.
 
 ```mermaid
 flowchart LR
-  Model[Discovery model + endpoint] --> Client[SDK-shaped client]
-  Params[Request messages and parameters] --> Snapshot[Capture request settings]
+  Defaults[Non-secret defaults] --> Client[Byokit client]
+  Model[Exact model offering] --> Snapshot[Capture request]
+  Input[Messages and parameters] --> Snapshot
   Client --> Snapshot
-  Snapshot --> Validate[Validate before reading credentials]
-  Validate --> Accessor[Application-owned key accessor]
-  Accessor --> Request[Transient authenticated call]
-  Request --> Response[OpenAI completion or Claude message]
+  Snapshot --> Validate[Format, endpoint and model-fit checks]
+  Key[Per-request API key] --> Request[Direct provider transport]
+  Validate --> Request
+  Request --> Response[OpenAI-style completion or Claude-style message]
+  Helpers[call / callClaude helpers] --> Validate
 ```
 
-Clients retain only non-secret model configuration, defaults, and the application's
-key accessor. They do not read credentials at construction or cache returned keys.
-Key rotation takes effect next request. JS key callbacks can be asynchronous and
-are fenced by cancellation/deadline; Python callbacks are synchronous and should
-read already-available keys. Accessor failures are reported without raw errors.
-Requests snapshot model/input settings before credential resolution. Explicit
-custom model IDs retain the provider URL and use unknown fit metadata.
+Both resources wrap the same call adapters as standalone `call()`/`callClaude()`.
+The selected offering determines endpoint, native protocol and API model ID; the
+resource determines the public request/response format. No model strings are
+resolved globally or substituted automatically. Custom models use `appendModel()`
+with explicit connection metadata and unknown capabilities unless supplied.
+
+The client snapshots model and input at invocation; later caller mutations cannot
+change an admitted request. Requests do not share models, keys, or conversation
+state. Per-request execution options override client defaults. Construction and
+catalog discovery perform no network calls. Keys are used only transiently in the
+transport, not retained on the client or included in results, errors, or diagnostics.
+This is a supported subset of OpenAI/Claude-style formats, not a full replacement
+for their SDKs. Only non-streaming text/system/sampling/tools are supported; tools
+are returned for application execution. Streaming and unsupported parameters fail
+explicitly. Model-fit checks can be disabled; format/endpoint validation remains.
+Timeout, cancellation, blocked redirects, no retries, and output-budget defaults
+are shared with the standalone call pipeline.
+
+Legacy model-bound `openAI()`/`claude()` and `OpenAI`/`Anthropic` wrappers remain
+available with their previous behavior, marked deprecated in TypeScript and docs.
+Migrate the bound model into each request, and replace key callbacks with a key
+argument evaluated by the application at invocation. Never retain a callback or
+credential registry in the new client.
 
 ## Website uses the library
 
 The explorer and hero provider list query the bundled `getModels()` API. Browser
-verification uses the same `openAI()` client, adapters and request validator as
+verification uses the same `Byokit` client, adapters and request validator as
 applications. The website imports provider endpoints from `connection.js`; it
 has no separately maintained endpoint list. Display labels and documentation links
 remain website concerns.

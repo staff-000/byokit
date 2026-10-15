@@ -10,14 +10,11 @@ print([{'id':m['id'],'name':m['name']} for m in models])
 
 Returns provider/model metadata, limits, price, features, tags, logos and contributor
 verification reports. `byokit.Catalog(custom_data).get_models(query)` uses a custom snapshot.
-Pure Python, with no runtime dependencies. Use `byokit.OpenAI(model=model,api_key=lambda:key)` and
-`client.chat.completions.create(...)`, or `byokit.Anthropic(...)` and
-`client.messages.create(...)`. Keys are read per request and never cached by clients. See the repository README for filters and CONTRIBUTING.md for
-metadata and call-report submissions.
+Pure Python, with no runtime dependencies. Use `client = byokit.Byokit()` and
+`client.chat.completions.create(model=model, messages=messages, api_key=key)`.
+Use `client.messages.create(...)` for Claude-style formats. Models and keys belong
+to each request; the client retains only non-secret defaults. The older
+model-bound `OpenAI`, `Anthropic`, `openAI`, and `claude` clients are deprecated
+and continue to work.
 
-```bash
-python -m pip install ./packages/python
-byokit check examples/byok.config.json
-```
-
-Use `byokit.get_models(byokit.COMPLETE)` for all LIVE offerings, or `byokit.CHINA` for China providers. `local` accepts URL/API/model entries appended without metadata filtering.
+See the [repository README](https://github.com/staff-000/byokit#readme) for full examples.

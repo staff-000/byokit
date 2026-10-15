@@ -1,3 +1,5 @@
+import * as byokit from '../packages/core/catalog.js';
+import {tutorials} from '../website/tutorials.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
@@ -44,31 +46,53 @@ test('local requests without authentication contain no key placeholder',()=>{
  const code=requestExample({...settings,providerId:'local',endpoint:'http://localhost:8080'},'javascript');assert.ok(!code.includes('API_KEY'));assert.ok(!code.includes('Authorization'));
 });
 
-test('copyable SDK snippets preserve selected settings and read keys at request time',async()=>{
+test('copyable SDK snippets preserve exact settings and use per-request keys',async()=>{
  const code=requestExample(settings,'javascript');let calls=0;
- const byokit={
-  ProviderId:{DeepSeek:'deepseek'}, Role:{User:'user'},
-  getModels:()=>[{apiModelId:'old',connection:{baseUrl:'https://api.deepseek.com/v1'}}],
-  openAI({model,apiKey,runtimeChecks}){
-   const create=async(input)=>{
-    calls++;assert.equal(model.apiModelId,settings.modelId);assert.equal(input.messages[0].content,settings.prompt);
-    assert.equal(input.max_completion_tokens,128);assert.equal(apiKey(),'dummy-env-key');assert.equal(runtimeChecks,false);
-    return {choices:[{message:{content:'OK'}}]};
-   };
-   return {chat:{completions:{create}}};
-  },
- };
- await new AsyncFunction('byokit','process','console',code.replace(/^import.*;\n/,''))(byokit,{env:{API_KEY:'dummy-env-key'}},{log(){}});assert.equal(calls,1);
- const py=requestExample(settings,'python');const run=spawnSync('python3',['-c',`import sys,json,types,os
+ const original=globalThis.fetch;
+ try{
+  globalThis.fetch=async(url,o)=>{calls++;const expected=requestFor(settings,'dummy-env-key');assert.equal(url,expected.url);assert.deepEqual(JSON.parse(o.body),expected.body);assert.equal(o.headers.Authorization,'Bearer dummy-env-key');return {ok:true,json:async()=>({choices:[{message:{content:'OK'}}]})}};
+  await new AsyncFunction('byokit','process','console',code.replace(/^import.*;\n/,''))(byokit,{env:{API_KEY:'dummy-env-key'}},{log(){}});
+ }finally{globalThis.fetch=original}
+ assert.equal(calls,1);
+ const py=requestExample(settings,'python');const run=spawnSync('python3',['-c',`import sys,json,os
+from unittest.mock import patch
+sys.path.insert(0,'packages/python/src');sys.path.insert(0,'packages/python/tests')
+from test_calls import Connection
 os.environ['API_KEY']='dummy-env-key'
-b=types.ModuleType('byokit');b.ProviderId=types.SimpleNamespace(DEEP_SEEK='deepseek');b.Role=types.SimpleNamespace(USER='user');b.get_models=lambda q:[{'apiModelId':'old'}]
-class OpenAI:
- def __init__(self,model,api_key,runtime_checks):
-  assert model['apiModelId']=='selected-model' and runtime_checks is False
-  def create(**input):
-   assert api_key()=='dummy-env-key' and input['max_completion_tokens']==128
-   return {'choices':[{'message':{'content':'OK'}}]}
-  self.chat=types.SimpleNamespace(completions=types.SimpleNamespace(create=create))
-b.OpenAI=OpenAI;sys.modules['byokit']=b
-exec(json.loads(sys.stdin.read()))`],{input:JSON.stringify(py),encoding:'utf8'});assert.equal(run.status,0,run.stderr);assert.equal(run.stdout.trim(),'OK');
+Connection.requests=[];Connection.response_data={'choices':[{'message':{'content':'OK'}}]}
+with patch('byokit.inference.http.client.HTTPSConnection',Connection):
+ exec(json.loads(sys.stdin.read()))
+assert Connection.requests[0][1]['model']=='selected-model'
+assert Connection.requests[0][1]['messages'][0]['content']==${JSON.stringify(settings.prompt)}
+assert Connection.requests[0][2]['Authorization']=='Bearer dummy-env-key'
+`],{input:JSON.stringify(py),encoding:'utf8'});assert.equal(run.status,0,run.stderr);assert.equal(run.stdout.trim(),'OK');
+});
+test('website client tutorials execute both formats through the real SDK',async()=>{
+ const original=globalThis.fetch;let calls=0;
+ try{
+  globalThis.fetch=async()=>{calls++;return {ok:true,json:async()=>({choices:[{message:{content:'OK'}}]})}};
+  for(const kind of ['inference','claude']){
+   const logs=[];
+   await new AsyncFunction('byokit','process','console',tutorials[kind].typescript.replace(/^import.*;\n/,''))(byokit,{env:{DEEPSEEK_API_KEY:'dummy'}},{log:value=>logs.push(value)});
+   assert.deepEqual(logs,[kind==='inference'?'OK':[{type:'text',text:'OK'}]]);
+  }
+ }finally{globalThis.fetch=original}
+ assert.equal(calls,2);
+});
+
+test('SDK snippets route exact offering IDs and local URLs across every supported protocol',async()=>{
+ const original=globalThis.fetch;
+ try{
+  for(const [providerId,provider] of Object.entries(ProviderApi))for(const protocol of provider.protocols){
+   const selected={...settings,providerId,protocol,endpoint:'http://localhost:8080/v1'},expected=requestFor(selected,'dummy-env-key');let called=0;
+   globalThis.fetch=async(url,o)=>{
+    called++;assert.equal(url,expected.url);assert.deepEqual(JSON.parse(o.body),expected.body);
+    for(const [key,value] of Object.entries(expected.headers))if(key!=='anthropic-dangerous-direct-browser-access')assert.equal(o.headers[key],value);
+    const data=protocol==='anthropic'?{content:[{type:'text',text:'OK'}],stop_reason:'end_turn'}:protocol==='gemini'?{candidates:[{content:{parts:[{text:'OK'}]}}]}:protocol==='ollama'?{message:{content:'OK'}}:{choices:[{message:{content:'OK'}}]};
+    return {ok:true,json:async()=>data};
+   };
+   await new AsyncFunction('byokit','process','console',requestExample(selected,'javascript',{authenticated:true}).replace(/^import.*;\n/,''))(byokit,{env:{API_KEY:'dummy-env-key'}},{log(){}});
+   assert.equal(called,1);
+  }
+ }finally{globalThis.fetch=original}
 });

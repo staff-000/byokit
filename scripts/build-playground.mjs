@@ -13,7 +13,7 @@ export async function buildPlaygroundWorker(){
 const cache={};
 function require(name){name=name.replace(/^\\.\\//,'');if(!modules[name])throw new Error('External imports are unavailable in this offline playground');if(!cache[name]){cache[name]={exports:{}};modules[name](require,cache[name],cache[name].exports)}return cache[name].exports;}
 const all=require('catalog.js');
-const unavailable=['call','callClaude','openAI','claude','OpenAI','Anthropic'];
+const unavailable=['call','callClaude','Byokit','openAI','claude','OpenAI','Anthropic'];
 const byokit=Object.freeze(Object.fromEntries(Object.entries(all).filter(([key])=>!unavailable.includes(key))));
 ${runner}`;
 }

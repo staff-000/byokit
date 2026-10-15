@@ -1,4 +1,4 @@
-export {openAI,claude,OpenAI,Anthropic} from './sdk.js';
+export {Byokit,openAI,claude,OpenAI,Anthropic} from './sdk.js';
 import {validateConnection} from './custom-model.js';
 import {connectionFor} from './connection.js';
 export {appendModel} from './custom-model.js';

@@ -42,3 +42,50 @@ class SDKTests(unittest.TestCase):
         event=threading.Event();event.set()
         with self.assertRaises(byokit.CallError) as e: c.chat.completions.create(messages=[{"role":byokit.Role.USER,"content":"Hi"}],options={"cancel_event":event})
         self.assertEqual(e.exception.code,"CANCELED");self.assertEqual(reads,[])
+
+
+class ByokitTests(unittest.TestCase):
+    def setUp(self):
+        Connection.requests=[]
+        Connection.response_data={"choices":[{"message":{"content":"OK"},"finish_reason":"stop"}]}
+
+    def test_request_keys_both_formats_and_exact_models(self):
+        c=byokit.Byokit(runtime_checks=False)
+        self.assertEqual(Connection.requests,[])
+        other=byokit.append_model([], {"providerId":byokit.custom_provider_id("acme"),"modelId":"other","baseUrl":"https://acme.example/v1","protocol":byokit.ApiProtocol.OPEN_AI})[0]
+        with patch("byokit.inference.http.client.HTTPSConnection",Connection):
+            r=c.chat.completions.create(model=model(),messages=[{"role":byokit.Role.USER,"content":"A"}],api_key="key-A")
+            m=c.messages.create(model=other,messages=[{"role":byokit.Role.USER,"content":"B"}],api_key="key-B")
+        self.assertEqual(r["choices"][0]["message"]["content"],"OK")
+        self.assertEqual(m["content"],[{"type":"text","text":"OK"}])
+        self.assertEqual([x[2]["Authorization"] for x in Connection.requests],["Bearer key-A","Bearer key-B"])
+        self.assertEqual([x[1]["model"] for x in Connection.requests],[model()["apiModelId"],"other"])
+        self.assertNotIn("key-A",repr(vars(c.chat.completions)))
+        self.assertNotIn("key-B",repr(vars(c.messages)))
+
+    def test_validation_checks_and_override(self):
+        c=byokit.Byokit()
+        with self.assertRaises(TypeError): byokit.Byokit(api_key="secret")
+        with self.assertRaises(byokit.CallError): byokit.Byokit(runtime_checks="no")
+        with self.assertRaises(byokit.CallError): c.chat.completions.create(model="bare-id",messages=[],api_key="secret")
+        with self.assertRaises(byokit.CallError): c.chat.completions.create(model=model(),messages=[{"role":byokit.Role.USER,"content":"Hi"}],api_key="secret",stream=True,options={"runtime_checks":False})
+        selected=model();selected["limits"]={"context":100,"output":50,"input":100,"contextAccounting":"shared"}
+        with self.assertRaises(byokit.CallError) as e:
+            c.chat.completions.create(model=selected,messages=[{"role":byokit.Role.USER,"content":"Hi"}],api_key="secret",options={"input_tokens":10000})
+        self.assertEqual(e.exception.code,"MODEL_FIT_FAILED")
+        with patch("byokit.inference.http.client.HTTPSConnection",Connection):
+            c.chat.completions.create(model=selected,messages=[{"role":byokit.Role.USER,"content":"Hi"}],api_key="secret",options={"input_tokens":10000,"runtime_checks":False})
+        self.assertEqual(len(Connection.requests),1)
+
+    def test_cancel_and_unauthenticated_local(self):
+        import threading
+        c=byokit.Byokit(runtime_checks=False)
+        event=threading.Event();event.set()
+        with patch("byokit.inference.http.client.HTTPSConnection",Connection):
+            with self.assertRaises(byokit.CallError) as e: c.chat.completions.create(model=model(),messages=[{"role":byokit.Role.USER,"content":"Hi"}],api_key="secret",options={"cancel_event":event})
+            self.assertEqual(e.exception.code,"CANCELED")
+            self.assertEqual(Connection.requests,[])
+            local=byokit.get_models({"providerIds":[],"local":[{"endpoint":"http://localhost:8080/v1","modelId":"local"}]})[0]
+            with patch("byokit.inference.http.client.HTTPConnection",Connection):
+                c.chat.completions.create(model=local,messages=[{"role":byokit.Role.USER,"content":"Hi"}])
+        self.assertNotIn("Authorization",Connection.requests[0][2])

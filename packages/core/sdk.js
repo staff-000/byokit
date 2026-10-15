@@ -43,8 +43,40 @@ function createClient(config,format){
  };
  return format==='claude'?Object.freeze({messages:Object.freeze({create})}):Object.freeze({chat:Object.freeze({completions:Object.freeze({create})})});
 }
-/** OpenAI-style SDK surface; inference still uses the selected provider’s adapter. */
+/** @deprecated Use new Byokit() with per-request models and keys. */
 export function openAI(config){return createClient(config,'openai');}
+/** @deprecated Use new Byokit().messages.create(). */
 export function claude(config){return createClient(config,'claude');}
+/** @deprecated Use new Byokit(). */
 export class OpenAI {constructor(config){this.chat=openAI(config).chat;Object.freeze(this);}}
+/** @deprecated Use new Byokit().messages.create(). */
 export class Anthropic {constructor(config){this.messages=claude(config).messages;Object.freeze(this);}}
+
+// The branded client retains only non-secret defaults. Every request owns its
+// exact offering and transient key; no model/key registry or key accessor exists.
+function clientDefaults(config={}){
+ if(!object(config)||Object.keys(config).some(k=>!['runtimeChecks','timeoutMs'].includes(k)))invalid('Provide only runtimeChecks and timeoutMs client defaults.');
+ if(config.runtimeChecks!==undefined&&typeof config.runtimeChecks!=='boolean')invalid('runtimeChecks must be boolean.');
+ if(config.timeoutMs!==undefined&&(!Number.isFinite(config.timeoutMs)||config.timeoutMs<=0))invalid('timeoutMs must be positive.');
+ return {...config};
+}
+function createRequest(defaults,format){
+ return async(params,requestOptions={})=>{
+  if(!object(params)||!object(params.model))invalid('Provide a model object and structured request.');
+  if(!object(requestOptions)||Object.keys(requestOptions).some(k=>!['apiKey',...optionKeys].includes(k)))invalid('Unsupported client request option.');
+  let captured;try{captured=structuredClone(params)}catch{invalid('Request and model must contain cloneable data.');}
+  const {model,...input}=captured,{apiKey='',...execution}=requestOptions;
+  const opts={...defaults,...execution};
+  if(opts.runtimeChecks!==undefined&&typeof opts.runtimeChecks!=='boolean')invalid('runtimeChecks must be boolean.');
+  // call()/callClaude() validate and build the wire request before yielding.
+  return (format==='claude'?callClaude:call)(model,input,apiKey,opts);
+ };
+}
+export class Byokit {
+ constructor(config={}){
+  const defaults=clientDefaults(config);
+  this.chat=Object.freeze({completions:Object.freeze({create:createRequest(defaults,'openai')})});
+  this.messages=Object.freeze({create:createRequest(defaults,'claude')});
+  Object.freeze(this);
+ }
+}

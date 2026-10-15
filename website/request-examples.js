@@ -1,4 +1,4 @@
-import {requestFor} from './inference.js';
+import {requestFor,ProviderApi} from './inference.js';
 const quote=value=>JSON.stringify(value);
 const shellQuote=value=>"'"+value.replace(/'/g,"'\"'\"'")+"'";
 export function nativeRequestExample(settings,language='javascript',{authenticated=settings.providerId!=='local'}={}){
@@ -17,32 +17,48 @@ export function requestExample(settings,language='javascript',{authenticated=set
  const provider=providerEnum[settings.providerId],local=settings.providerId==='local';
  if(language==='javascript'){
   const query=local?`{ providerIds: [], local: [{ endpoint: ${quote(settings.endpoint)}, api: byokit.LocalApi.${settings.protocol==='ollama'?'Ollama':'OpenAI'}, modelId: ${quote(settings.modelId)} }] }`:`{ providerIds: [byokit.ProviderId.${provider[0]}], local: false }`;
+  const base=local?settings.endpoint:ProviderApi[settings.providerId].base;
+  const protocol={chat:'OpenAI',anthropic:'Claude',gemini:'Gemini',ollama:'Ollama'}[settings.protocol];
   return `import * as byokit from '@byokit/core/catalog';
 
-const [base] = byokit.getModels(${query});
-const model = { ...base, apiModelId: ${quote(settings.modelId)} };
-const client = byokit.openAI({
-  model, apiKey: () => ${authenticated?'process.env.API_KEY ?? '+quote(''):quote('')}, runtimeChecks: false,
-});
+const models = byokit.getModels(${query});
+const model = models.find(m => m.apiModelId === ${quote(settings.modelId)})
+  ?? byokit.appendModel([], {
+    providerId: ${local?"byokit.customProviderId('local')":'byokit.ProviderId.'+provider[0]},
+    modelId: ${quote(settings.modelId)},
+    baseUrl: ${quote(base)},
+    protocol: byokit.ApiProtocol.${protocol},
+  })[0];
+const client = new byokit.Byokit({ runtimeChecks: false });
 const completion = await client.chat.completions.create({
+  model,
   messages: [{ role: byokit.Role.User, content: ${quote(settings.prompt)} }],
   max_completion_tokens: ${settings.maxTokens},
-});
+}, { apiKey: ${authenticated?'process.env.API_KEY ?? '+quote(''):quote('')} });
 console.log(completion.choices[0].message.content);`;
  }
  if(language==='python'){
   const query=local?`{"providerIds": [], "local": [{"endpoint": ${quote(settings.endpoint)}, "api": byokit.LocalApi.${settings.protocol==='ollama'?'OLLAMA':'OPEN_AI'}, "modelId": ${quote(settings.modelId)}}]}`:`{"providerIds": [byokit.ProviderId.${provider[1]}], "local": False}`;
+  const base=settings.providerId==='local'?settings.endpoint:ProviderApi[settings.providerId].base;
+  const protocol={chat:'OPEN_AI',anthropic:'CLAUDE',gemini:'GEMINI',ollama:'OLLAMA'}[settings.protocol];
   return `import byokit
 ${authenticated?'import os\n':''}import json
 
-model = byokit.get_models(${query})[0]
-model = {**model, "apiModelId": ${quote(settings.modelId)}}
-client = byokit.OpenAI(
-    model=model, api_key=lambda: ${authenticated?'os.environ["API_KEY"]':'""'}, runtime_checks=False,
-)
+models = byokit.get_models(${query})
+model = next((m for m in models if m["apiModelId"] == ${quote(settings.modelId)}), None)
+if model is None:
+    model = byokit.append_model([], {
+        "providerId": ${local?"byokit.custom_provider_id('local')":'byokit.ProviderId.'+provider[1]},
+        "modelId": ${quote(settings.modelId)},
+        "baseUrl": ${quote(base)},
+        "protocol": byokit.ApiProtocol.${protocol},
+    })[0]
+client = byokit.Byokit(runtime_checks=False)
 completion = client.chat.completions.create(
+    model=model,
     messages=[{"role": byokit.Role.USER, "content": json.loads(${quote(JSON.stringify(settings.prompt))})}],
     max_completion_tokens=${settings.maxTokens},
+    api_key=${authenticated?'os.environ["API_KEY"]':'""'},
 )
 print(completion["choices"][0]["message"]["content"])`;
  }

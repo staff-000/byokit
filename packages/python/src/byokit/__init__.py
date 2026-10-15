@@ -398,6 +398,6 @@ def _local_groups(config,catalog):
 
 from .inference import call, call_claude, prepare_call, connection_for, CallError
 
-from .sdk import OpenAI, Anthropic, openAI, claude
+from .sdk import Byokit, OpenAI, Anthropic, openAI, claude
 
 from .custom_model import append_model, validate_connection

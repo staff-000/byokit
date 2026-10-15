@@ -22,3 +22,7 @@ anthropic.messages.create(messages=[{"role":byokit.Role.USER,"content":"Hi"}], m
 import byokit
 byokit.get_models({"sort":byokit.ModelSort.SPEED})
 byokit.append_model([],{"providerId":byokit.custom_provider_id("acme"),"modelId":"test","baseUrl":"https://example.com/v1","protocol":byokit.ApiProtocol.OPEN_AI})
+
+client2 = byokit.Byokit(runtime_checks=True, timeout_ms=90000)
+client2.chat.completions.create(model=model, messages=[{"role":byokit.Role.USER,"content":"Hi"}], api_key="key", options={"runtime_checks":False})
+client2.messages.create(model=model, messages=[{"role":byokit.Role.USER,"content":"Hi"}], api_key="key")

@@ -59,13 +59,17 @@ let the user select one of them.
 For SDK-style calls:
 
 ```ts
-const client = byokit.openAI({ model, apiKey: () => api_key });
+const client = new byokit.Byokit();
 const completion = await client.chat.completions.create({
+  model,
   messages: [{ role: byokit.Role.User, content: 'Hello' }],
-});
+}, { apiKey: api_key });
 
-// Claude-compatible format, across supported providers:
-const message = await byokit.callClaude(model, 'Hello', api_key);
+// Claude-style format, across supported providers:
+const message = await client.messages.create({
+  model,
+  messages: [{ role: byokit.Role.User, content: 'Hello' }],
+}, { apiKey: api_key });
 console.log(message.content); // [{ type: 'text', text: 'Hello!' }]
 ```
 
@@ -73,8 +77,13 @@ Calls support non-streaming text, system messages, sampling parameters and tools
 Tools are returned for your app to execute. Unsupported features are rejected.
 Keys are used transiently and never stored by byokit. Browser calls require
 provider CORS support. Defaults: 1,024 output tokens, 90-second timeout, no retries.
-An optional fourth argument accepts `signal`, `timeoutMs`, and `runtimeChecks`
+The call helper’s optional fourth argument (or the client’s second argument)
+accepts `signal`, `timeoutMs`, and `runtimeChecks`
 (default true). Disabling model-fit checks retains request/endpoint validation.
+
+Clients retain only non-secret defaults; pass the exact model and key per request.
+The older model-bound `openAI()`, `claude()`, `OpenAI`, and `Anthropic` clients
+are deprecated but continue to work. See [client details](docs/design.md#byokit-client).
 
 ## Filter the list
 
@@ -160,7 +169,7 @@ print(result["choices"][0]["message"]["content"])
 ```
 
 Install locally with `python -m pip install ./packages/python`.
-Python offers `call_claude()`, `OpenAI`, `Anthropic`, `append_model(models, custom)`,
+Python offers `Byokit()`, `call_claude()`, `append_model(models, custom)`,
 and `ModelSort.ALPHABETICAL` / `PRICE` / `SPEED` / `PROVIDER_ORDER` too.
 
 ## Contribute

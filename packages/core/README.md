@@ -9,12 +9,12 @@ console.log(models.map(({id,name})=>({id,name})));
 ```
 
 Each result includes provider/model metadata, limits, price, features, tags, logos
-and contributor verification reports. Discovery queries metadata offline. Use `byokit.openAI({model,apiKey:()=>key})` and
-`client.chat.completions.create(...)`, or `byokit.claude(...)` and
-`client.messages.create(...)`. Keys are read per request and never cached by clients. The catalog export is optional; importing core alone
-does not load it. No runtime dependencies.
+and contributor verification reports. Discovery queries metadata offline. Use `new byokit.Byokit()` with
+`client.chat.completions.create({model,messages}, {apiKey})`, or
+`client.messages.create({model,messages}, {apiKey})` for Claude-style formats.
+The model and key belong to each request; the client retains only non-secret
+defaults. `byokit.call(model, 'Hello', key)` remains the concise helper.
+Legacy model-bound clients remain supported and are deprecated.
 
-Use `new byokit.Catalog(customData).getModels(query)` for a custom snapshot.
-See the project README and CONTRIBUTING.md for all filters and tag/report updates.
-
-Use `byokit.getModels(byokit.COMPLETE)` for all LIVE offerings, or `byokit.CHINA` for China providers. LIVE is per provider/offering. Local URL entries are appended without hosted metadata filtering.
+See the [repository README](https://github.com/staff-000/byokit#readme) for filters,
+sorting, custom models, validation, and full examples.
