@@ -1,6 +1,6 @@
 {
   "name": "byokit",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "Bring-Your-Own-Key model catalog, routing, inference, and UI components",
   "type": "module",
   "bin": {
