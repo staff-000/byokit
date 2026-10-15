@@ -291,7 +291,7 @@ function normalizeQuery(input={},options) {
  const config=mode?{...(options||{}),list:input}:{...input};
  if(config.list===undefined && config.preset===undefined && config.providerIds===undefined)config.list=ModelList.Default;
  if(config.list===ModelList.China)config.preset='china';
- if(config.list===ModelList.NonChina)config.preset='non-china';
+ if(config.list===ModelList.Global)config.preset='global';
  return config;
 }
 function validateLocal(entry) {

@@ -8,7 +8,6 @@ calls. A passing library test never becomes a contributor model-call report.
 - [Machine-readable latest run](verification/latest.json)
 - [Run history](verification/runs/)
 - [Public verification page](https://staff-000.github.io/byokit/verification.html)
-- [Historical implementation notes](verification-history.md)
 
 Each run records its UTC start/end, Git commit, whether source changes were
 present, a source SHA-256, platform/architecture, Node version, exact commands,

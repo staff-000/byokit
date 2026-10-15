@@ -19,6 +19,8 @@ test('canceling prevents queued requests and fences a late result',async()=>{
 });
 test('verification selectors preserve LIVE defaults and explicitly include outdated offerings',()=>{
  const live=filterModels({provider:'openai'}),all=filterModels({provider:'openai',includeOutdated:true});assert.ok(live.length);assert.ok(all.length>live.length);assert.ok(live.every(m=>m.lifecycle.status==='LIVE'));assert.ok(all.some(m=>m.lifecycle.status==='OUTDATED'));
- const china=filterModels({region:'china'});assert.ok(china.every(m=>m.local||m.provider.origin==='cn'));
+ const china=filterModels({region:'china'});assert.ok(china.every(m=>m.local||m.tags.includes('origin:cn')||m.provider.tags.includes('origin:cn')));
  const tools=filterModels({feature:'functionCalling',context:'128000',price:'5',weights:'open',modality:'image'});assert.ok(tools.every(m=>m.local||m.features.functionCalling.status==='supported'&&m.limits.context>=128000&&m.price.input<=5&&m.model.openWeights===true&&m.modalities.input.includes('image')));
 });
+
+test('China exclusions use library tags, not a separate audience',()=>{const models=filterModels({excludeTag:'origin:cn'});assert.ok(models.length);assert.ok(models.every(m=>m.local||![...m.tags,...m.model.tags,...m.provider.tags].includes('origin:cn')))});

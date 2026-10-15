@@ -16,7 +16,6 @@ export declare enum ProviderId {
 export declare enum Preset {
   Global = "global",
   China = "china",
-  NonChina = "non-china",
 }
 
 export declare enum Country {
@@ -233,13 +232,14 @@ export declare enum Tag {
   PopularityUncertain = "popularity:UNCERTAIN",
   PricePremium = "price:premium",
   WeightsOpen = "weights:open",
+  OriginChina = "origin:cn",
 }
 
 export declare enum ModelList {
   Default = "default",
   Complete = "complete",
   China = "china",
-  NonChina = "non-china",
+  Global = "global",
 }
 
 export declare enum LocalApi {
@@ -266,4 +266,4 @@ export declare enum Role {
   Assistant = "assistant",
   Tool = "tool",
 }
-export declare const DEFAULT:ModelList.Default, COMPLETE:ModelList.Complete, CHINA:ModelList.China, NON_CHINA:ModelList.NonChina;
+export declare const DEFAULT:ModelList.Default, COMPLETE:ModelList.Complete, CHINA:ModelList.China, GLOBAL:ModelList.Global;

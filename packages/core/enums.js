@@ -1,6 +1,6 @@
 // Generated from spec/enums.json. Run npm run enums:generate.
 export const ProviderId=Object.freeze({"OpenAI":"openai","Anthropic":"anthropic","Google":"google","Mistral":"mistral","Groq":"groq","OpenRouter":"openrouter","DeepSeek":"deepseek","ZhipuAI":"zhipuai","SiliconFlow":"siliconflow","Ollama":"ollama","Local":"local"});
-export const Preset=Object.freeze({"Global":"global","China":"china","NonChina":"non-china"});
+export const Preset=Object.freeze({"Global":"global","China":"china"});
 export const Country=Object.freeze({"China":"cn","UnitedStates":"us","France":"fr"});
 export const Deployment=Object.freeze({"Hosted":"hosted","Local":"local","SelfHosted":"self-hosted"});
 export const AuthRequirement=Object.freeze({"Required":"required","Optional":"optional","None":"none"});
@@ -28,10 +28,10 @@ export const DiagnosticCode=Object.freeze({"CapabilityUnsupported":"CAPABILITY_U
 export const Lifecycle=Object.freeze({"Live":"LIVE","Outdated":"OUTDATED","Uncertain":"UNCERTAIN"});
 export const Popularity=Object.freeze({"Popular":"POPULAR","NotPopular":"NOT_POPULAR","Uncertain":"UNCERTAIN"});
 export const PopularityMetric=Object.freeze({"Requests":"requests","Tokens":"tokens","Downloads":"downloads"});
-export const Tag=Object.freeze({"LifecycleLive":"lifecycle:LIVE","LifecycleOutdated":"lifecycle:OUTDATED","LifecycleUncertain":"lifecycle:UNCERTAIN","PopularityPopular":"popularity:POPULAR","PopularityNotPopular":"popularity:NOT_POPULAR","PopularityUncertain":"popularity:UNCERTAIN","PricePremium":"price:premium","WeightsOpen":"weights:open"});
-export const ModelList=Object.freeze({"Default":"default","Complete":"complete","China":"china","NonChina":"non-china"});
+export const Tag=Object.freeze({"LifecycleLive":"lifecycle:LIVE","LifecycleOutdated":"lifecycle:OUTDATED","LifecycleUncertain":"lifecycle:UNCERTAIN","PopularityPopular":"popularity:POPULAR","PopularityNotPopular":"popularity:NOT_POPULAR","PopularityUncertain":"popularity:UNCERTAIN","PricePremium":"price:premium","WeightsOpen":"weights:open","OriginChina":"origin:cn"});
+export const ModelList=Object.freeze({"Default":"default","Complete":"complete","China":"china","Global":"global"});
 export const LocalApi=Object.freeze({"OpenAI":"openai-compatible","Ollama":"ollama"});
 export const LifecycleBasis=Object.freeze({"Provider":"provider","CatalogListing":"catalog-listing"});
 export const ApiProtocol=Object.freeze({"OpenAI":"openai-compatible","Claude":"claude","Gemini":"gemini","Ollama":"ollama"});
 export const Role=Object.freeze({"System":"system","Developer":"developer","User":"user","Assistant":"assistant","Tool":"tool"});
-export const DEFAULT=ModelList.Default, COMPLETE=ModelList.Complete, CHINA=ModelList.China, NON_CHINA=ModelList.NonChina;
+export const DEFAULT=ModelList.Default, COMPLETE=ModelList.Complete, CHINA=ModelList.China, GLOBAL=ModelList.Global;

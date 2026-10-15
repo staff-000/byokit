@@ -14,8 +14,7 @@
   },
   "Preset": {
     "Global": "global",
-    "China": "china",
-    "NonChina": "non-china"
+    "China": "china"
   },
   "Country": {
     "China": "cn",
@@ -203,13 +202,14 @@
     "PopularityNotPopular": "popularity:NOT_POPULAR",
     "PopularityUncertain": "popularity:UNCERTAIN",
     "PricePremium": "price:premium",
-    "WeightsOpen": "weights:open"
+    "WeightsOpen": "weights:open",
+    "OriginChina": "origin:cn"
   },
   "ModelList": {
     "Default": "default",
     "Complete": "complete",
     "China": "china",
-    "NonChina": "non-china"
+    "Global": "global"
   },
   "LocalApi": {
     "OpenAI": "openai-compatible",

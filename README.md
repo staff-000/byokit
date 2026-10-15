@@ -1,647 +1,147 @@
 # byokit
 
-**Get a list of providers and models for your BYOK application, then refine it into a short list with your filters.**
+Get providers and models for your BYOK application. Refine the list with filters,
+then call the model your user chooses. TypeScript/JavaScript and Python supported.
 
-Filter by region preset, capabilities, price, context window, local execution,
-and contributor-tested calls. Each result includes the metadata needed to build
-an interface or call a selected model. The demo UI is optional.
+[Try the website](https://staff-000.github.io/byokit/) · [Verify models](https://staff-000.github.io/byokit/verification.html) · [Contribute](CONTRIBUTING.md)
 
-[Website & model explorer](https://staff-000.github.io/byokit/) ·
-[Verification tracker](docs/verification.md) ·
-[Contributing](CONTRIBUTING.md)
-
-## Start with one API call
-
-Choose a model, pass your prompt and API key, and get an OpenAI-compatible response:
+## Get models
 
 ```ts
-import * as byokit from '@byokit/core/catalog';
-
-const [model] = byokit.getModels({
-  providerIds: [byokit.ProviderId.DeepSeek],
-});
-const result = await byokit.call(model, 'Hello', api_key);
-console.log(result.choices[0].message.content);
-// Hello! (actual model output varies)
-```
-
-For structured requests, pass an OpenAI-compatible request object instead of the
-prompt. An optional fourth argument supports cancellation, timeout, and runtime
-checks. The key is used transiently for this call and never stored by the library.
-
-Prefer the client API? Use `byokit.openAI({ model, apiKey: () => key })`.
-Prefer Claude's SDK shape? Use `byokit.claude({ model, apiKey: () => key })`
-and `client.messages.create(...)`. The application supplies the key callback;
-clients read it for each request and never cache the returned key. Construction
-makes no API request. [More examples](#call-the-selected-model).
-
-## Get a model list
-
-In this repository, run `npm install` first. Packages are not published yet.
-
-```js
 import * as byokit from '@byokit/core/catalog';
 
 const models = byokit.getModels();
-console.log(models.map(model => model.provider.id));
+// One LIVE model per default provider, plus a Local setup entry.
+
+byokit.getModels(byokit.COMPLETE); // All LIVE offerings from supported providers
+byokit.getModels(byokit.GLOBAL);   // One LIVE model per supported provider + Local
+byokit.getModels(byokit.CHINA);    // China-provider shortlist + Local
 ```
 
-Expected output:
+Discovery runs offline. The bundled catalog comes from a pinned Models.dev
+snapshot; update it and release your app to refresh model choices. Packages are
+currently repository workspaces, not published to npm/PyPI.
 
-```json
-["openai", "anthropic", "google", "openrouter", "deepseek", "local"]
-```
-
-The default is one LIVE hosted model per provider: OpenAI, Anthropic (Claude),
-Google (Gemini), OpenRouter, and DeepSeek, followed by one Local setup entry.
-Providers without a matching LIVE model are omitted. Every result contains its
-provider, API model ID, capabilities, limits, prices, and evidence; the example
-prints just provider IDs.
-
-```js
-byokit.getModels();                       // Small default list + Local
-byokit.getModels(byokit.COMPLETE);        // Every LIVE hosted offering in this catalog + Local
-byokit.getModels(byokit.CHINA);           // One LIVE model per China provider + Local
-byokit.getModels(byokit.NON_CHINA);       // One LIVE model per non-China provider + Local
-
-// All LIVE offerings from a specific provider:
-byokit.getModels({ providerIds: [byokit.ProviderId.DeepSeek] });
-
-// A shortcut plus extra options:
-byokit.getModels(byokit.COMPLETE, { local: false, limit: 20 });
-```
-
-COMPLETE covers all **supported providers in the bundled snapshot**, currently
-nine hosted providers plus local adapters. It is not every provider worldwide.
-The importer retains every text-output offering for these providers; COMPLETE
-has no per-provider or overall limit unless you specify one. Default/region
-queries choose one model per provider, so the first provider cannot fill the list.
-Use `ui.maxModelsPerProvider` to request more per provider. `limit` caps hosted
-results; the Local entry is appended afterward. `local: false` removes Local.
-Existing `{ preset: byokit.Preset.NonChina }` and detailed filters still work.
-
-Queries run offline, need no API key, and make no network requests. LIVE means
-recent evidence lists this model at this provider; it does not guarantee access
-for your account. The result states whether the evidence is a provider source or
-a Models.dev catalog listing. To generate a response, create a client with `byokit.openAI({ model, apiKey: () => key })`.
-
-Python has the same shortcuts and JSON field names:
-
-```bash
-python -m pip install ./packages/python
-```
-
-```python
-import byokit
-
-models = byokit.get_models()
-all_models = byokit.get_models(byokit.COMPLETE)
-china_models = byokit.get_models(byokit.CHINA)
-print([model['provider']['id'] for model in models])
-```
-
-Run the JavaScript example: `node examples/query.mjs`.
-
-## Release dates and inference speed
+## Call a model
 
 ```ts
-console.log(model.releaseDate);                 // YYYY-MM-DD, or null/undefined
-console.log(model.speed?.tokensPerSecond);      // Measured catalog value, or null
-console.log(model.speed?.timeToFirstTokenMs);   // Catalog latency, or null
+const models = byokit.getModels({
+  providerIds: [byokit.ProviderId.DeepSeek],
+  limit: 1,
+  local: false,
+});
+const model = models[0];
+if (!model) throw new Error('No matching model');
+
+const result = await byokit.call(model, 'Hello', api_key);
+console.log(result.choices[0].message.content);
+// Example: Hello! — actual model output varies.
 ```
 
-Release dates come from the pinned Models.dev snapshot, when available. They are
-separate from the date a contributor verified a call. Speed is provider-specific
-and needs reliable measurement evidence; this snapshot has no measured speed
-values, so byokit reports unknown rather than estimates. A short verification
-call is not a tokens/sec benchmark. Python returns the same JSON field names.
+`getModels()` always returns an array. `limit: 1` caps hosted results at one;
+it can still return none. `local: false` prevents an extra Local entry.
+Without the limit, a provider query returns all matching models. In an app,
+let the user select one of them.
 
-## Call the selected model
-
-### OpenAI-style client
+For SDK-style calls:
 
 ```ts
-const client = byokit.openAI({ model, apiKey: () => key });
+const client = byokit.openAI({ model, apiKey: () => api_key });
 const completion = await client.chat.completions.create({
-  model: model.apiModelId,
   messages: [{ role: byokit.Role.User, content: 'Hello' }],
 });
-console.log(completion.choices[0].message.content);
+
+// Claude-compatible format, across supported providers:
+const message = await byokit.callClaude(model, 'Hello', api_key);
+console.log(message.content); // [{ type: 'text', text: 'Hello!' }]
 ```
 
-Expected response (provider-generated fields vary):
-
-```json
-{
-  "id": "…",
-  "object": "chat.completion",
-  "model": "deepseek-flash",
-  "choices": [{ "index": 0, "message": { "role": "assistant", "content": "Hello!" }, "finish_reason": "stop" }],
-  "usage": { "prompt_tokens": 4, "completion_tokens": 2, "total_tokens": 6 }
-}
-```
-
-### Claude-style client
-
-```ts
-const client = byokit.claude({ model, apiKey: () => key });
-const message = await client.messages.create({
-  model: model.apiModelId,
-  messages: [{ role: byokit.Role.User, content: 'Hello' }],
-  max_tokens: 1024,
-});
-console.log(message.content);
-// [{ type: 'text', text: 'Hello!' }]
-```
-
-Both interfaces work across supported providers, including DeepSeek and local
-servers. `new byokit.OpenAI(options)` and `new byokit.Anthropic(options)` are
-constructor aliases. These are compatible SDK subsets: non-streaming text,
-system messages, sampling parameters and function tools. Tools are returned for
-your application to execute. Unsupported fields, streaming, multimedia and
-native thinking blocks/signatures are rejected explicitly; full provider SDK
-features and automatic retries are outside this interface.
-
-### Python
-
-```python
-import byokit
-
-model = byokit.get_models({
-    "providerIds": [byokit.ProviderId.DEEP_SEEK],
-})[0]
-client = byokit.OpenAI(model=model, api_key=lambda: key)
-completion = client.chat.completions.create(
-    model=model["apiModelId"],
-    messages=[{"role": byokit.Role.USER, "content": "Hello"}],
-)
-print(completion["choices"][0]["message"]["content"])
-
-client = byokit.Anthropic(model=model, api_key=lambda: key)
-message = client.messages.create(
-    messages=[{"role": byokit.Role.USER, "content": "Hello"}], max_tokens=1024,
-)
-print(message["content"])
-```
-
-### Parameters and runtime checks
-
-```ts
-const client = byokit.openAI({
-  model,
-  apiKey: () => key, // May return a Promise; read fresh for every request
-  runtimeChecks: true,
-});
-const completion = await client.chat.completions.create({
-  messages: [{ role: byokit.Role.User, content: 'Summarize this…' }],
-  max_completion_tokens: 1024,
-}, {
-  runtimeChecks: false, // Optional per-request override; default is true
-  inputTokens: 2000,
-  timeoutMs: 90_000,
-  signal: controller.signal,
-});
-```
-
-Model is optional in each request: the client uses its captured model by default.
-An explicit different model ID stays on the same provider endpoint and has
-unknown limits/capabilities. To retain known fit metadata for another model,
-create a client with that model's discovery object. No model is substituted.
-
-Python accepts keyword arguments for requests and `options={...}` for per-request
-options. The corresponding options are `runtime_checks`, `input_tokens`,
-`overhead_tokens`, `timeout_ms`, `cancel_event` (a `threading.Event`), and
-`on_warning`. Python key callbacks are synchronous; use them to read an already
-available key, since blocking callback work remains application-owned.
-
-The default output budget is 1,024 tokens, capped by a known smaller model limit.
-Runtime checks reject known excessive budgets and unsupported capabilities;
-unknown limits or unavailable input counts warn. Disabling checks retains
-request-format and endpoint validation. The 90-second default deadline includes
-key resolution and inference; cancellation fences late key resolution in JS.
-
-Every model includes `connection: { baseUrl, protocol }`, using
-`byokit.ApiProtocol`. Local entries need a configured URL and served model ID;
-unauthenticated local clients can omit the key callback. Custom providers may
-supply an explicit connection. Requests use the offering's `apiModelId`.
-
-Keys stay application-owned. Clients accept a key accessor rather than retaining
-a key string. Returned keys are used transiently for authentication and never
-cached, logged, persisted, or included in results/errors. No inference runs
-on client construction. Browser calls depend on provider CORS and local-network
-permissions. Requests may consume quota even when canceled.
-
-Runnable examples: `node examples/call-model.mjs` or
-`PYTHONPATH=packages/python/src python3 examples/call_model.py`, with
-`DEEPSEEK_API_KEY` in your environment. Packages are not published yet.
-The existing `call()` / `callClaude()` helpers remain available for compatibility.
-
-### Build-time budgets
-
-Declare `budget.maxInputTokens` and `budget.maxOutputTokens` in the build
-configuration or individual tasks. `byokit check config.json` fails known limit
-violations and warns when budgets or model limits are missing; `--strict` also
-fails warnings. TypeScript validates parameter names/types, not arbitrary numeric
-relationships. Build checks are offline and consume no quota.
+Calls support non-streaming text, system messages, sampling parameters and tools.
+Tools are returned for your app to execute. Unsupported features are rejected.
+Keys are used transiently and never stored by byokit. Browser calls require
+provider CORS support. Defaults: 1,024 output tokens, 90-second timeout, no retries.
+An optional fourth argument accepts `signal`, `timeoutMs`, and `runtimeChecks`
+(default true). Disabling model-fit checks retains request/endpoint validation.
 
 ## Filter the list
 
-```js
-import * as byokit from '@byokit/core/catalog';
-
-const models = byokit.getModels({
-  preset: byokit.Preset.NonChina,
-  limit: 10,
+```ts
+const models = byokit.getModels(byokit.COMPLETE, {
+  local: false,
   filters: {
-    deployment: [byokit.Deployment.Hosted, byokit.Deployment.Local],
-    input: [byokit.Modality.Text, byokit.Modality.Image],
-    output: [byokit.Modality.Text],
     requiredFeatures: [byokit.FeatureName.FunctionCalling],
-    minContextTokens: 32000,
+    minContextTokens: 32_000,
     maxInputPricePerM: 2,
-  },
-  prefer: { lowerCost: true },
-});
-```
-
-All hosted requirements must match. Local entries are appended without metadata filtering. Unknown hosted values fail requirements by default;
-`unknownPolicy: byokit.UnknownPolicy.Include` explicitly allows unknown metadata. Conditional support
-still does not meet an unconditional feature requirement. Empty hosted results mean no hosted
-models meet the rules; byokit never relaxes a rule to fill the list.
-
-| Option | What it selects |
-|---|---|
-| `preset` | `non-china` audience shortlist (other presets remain available) |
-| `providerIds` | Explicit provider IDs, overriding the preset shortlist |
-| `limit` | Cap hosted results before appending Local; maximum explicit limit 1,000 |
-| `filters.deployment` | `hosted`, `local`, or `self-hosted` |
-| `filters.origin` | Known model-maker origin, such as `cn` or `us` |
-| `filters.input`, `filters.output` | Required modalities: text, image, audio, video, embedding |
-| `filters.fileFormats` | Required file formats, such as `pdf` |
-| `filters.requiredFeatures` | Features that must have `supported` status |
-| `filters.minContextTokens` | Minimum advertised context window |
-| `filters.maxInputPricePerM`, `maxOutputPricePerM` | Maximum USD price per million tokens in the shipped catalog |
-| `filters.openWeights` | Whether model weights are available |
-| `filters.commercialUse` | `allowed`, `restricted`, or `unknown`; distinct from open weights |
-| `filters.maxParameters` | Maximum total parameter count, when known |
-| `filters.maxTimeToFirstTokenMs`, `minTokensPerSecond` | Sourced speed measurements, when available |
-| `filters.includeTags`, `excludeTags` | Match provider/model/offering tags; all included tags required, any excluded tag removes a result |
-| `filters.lifecycle` | Defaults to LIVE for hosted entries; explicitly request Outdated/Uncertain for inspection |
-| `filters.popularity` | `byokit.Popularity.Popular`, `.NotPopular`, `.Uncertain` |
-| `filters.includeDeprecated` | Include deprecated entries present in your catalog; default false |
-| `filters.verified`, `verifiedBy`, `verifiedWithinDays` | Filter contributor reports; explained below |
-| `prefer.features` | Rank models with these features higher without excluding others |
-| `prefer.lowerCost` | Rank by lower input-token price within each provider |
-
-Provider order follows the preset or `providerIds`; ranking happens within each
-provider. For a price comparison across providers, sort the returned list yourself.
-The non-China preset selects providers based outside China plus local runtimes.
-Those providers may serve models originating elsewhere; use origin filters when
-the underlying model maker matters. Presets are recommendations for an audience, not guarantees of network
-access or data residency. Origin is separate from hosting. Speed and model size
-remain unknown until a source or measurement supplies them.
-
-Feature names include `functionCalling`, `parallelTools`, `forcedToolChoice`,
-`strictToolSchema`, `promptCaching`, `jsonMode`, `jsonSchema`, `strictJsonSchema`,
-`systemMessages`, `developerMessages`, `thinking`, `thinkingDisable`,
-`thinkingBudget`, and `thinkingEffort`.
-
-## Catch API typos at build time
-
-Use enum members for fixed API choices. With TypeScript strict checking enabled, the compiler rejects raw literals and unknown
-members before deployment:
-
-```ts
-byokit.getModels({filters:{input:[byokit.Modality.Image]}}); // valid
-// TypeScript error: raw string is not a Modality enum member
-byokit.getModels({filters:{input:['image']}});
-// TypeScript error: this enum member does not exist
-byokit.getModels({filters:{requiredFeatures:[byokit.FeatureName.FunctionCallling]}});
-```
-
-The same constants are available to JavaScript and as Python enums. JavaScript/JSON
-inputs are validated at runtime; Python type checkers use the typed query configuration.
-JSON catalogs/overlays still store enum values as text. Model IDs, URLs, and contributor
-notes are open-ended data. Use `byokit.customProviderId`, `byokit.customCountryCode`, `byokit.customFileFormat`,
-`byokit.customTag`, or `byokit.githubContributor` for explicit custom query values.
-
-Fixed enum definitions live in `spec/enums.json`; run `npm run enums:generate` after changing them.
-
-`npm run build` additionally emits runtime model/offering enums and matching TS types
-in `examples/generated/catalog.json.ids.js`. These describe the pinned build snapshot:
-
-```ts
-import * as byokit from './examples/generated/catalog.json.ids.js';
-const id=OfferingId['deepseek/deepseek-flash']; // when included in that build
-```
-
-## What each model returns
-
-A result represents one model served by one provider. The same underlying model
-served by two providers is two results because prices and features may differ.
-
-| Field | Contents |
-|---|---|
-| `id`, `name` | Stable offering ID and display name |
-| `apiModelId` | Model ID sent to the selected provider |
-| `connection` | Provider base URL and native API protocol; null if not configured |
-| `provider` | Provider ID, name, docs, authentication requirement, deployment type |
-| `model`, `family` | Underlying model, family, openness, license, parameter counts |
-| `modalities`, `fileFormats` | Supported input/output types and document formats |
-| `features` | Status, source, and optional details for each capability |
-| `limits` | Context, input, output limits and context-accounting rule |
-| `price` | Currency, input/output/cache prices per million tokens, optional tiers |
-| `speed`, `hosting` | Known measurements/location or explicit unknown fields |
-| `tags` | Derived labels and contributor-maintained custom tags |
-| `logos` | Provider and family asset metadata, or null; family may use a provider fallback |
-| `provenance` | Source and review date for offering metadata |
-| `verification` | Contributor call reports, latest text-call result, and freshness |
-
-For example:
-
-```js
-const model = models[0];
-model.apiModelId;                      // 'deepseek-flash'
-model.limits.context;                 // 1000000 in this snapshot
-model.features.functionCalling.status; // 'supported' from catalog metadata
-model.verification.status;            // 'unverified': no submitted call report
-```
-
-Capabilities use `supported`, `unsupported`, `conditional`, or `unknown`. Unknown
-numeric facts use null. Metadata support does not establish that your account has
-access, and a successful text call does not verify tools or strict JSON output.
-Logos are metadata only; queries never download images or send credentials.
-
-## Which calls have contributors verified?
-
-```js
-import * as byokit from '@byokit/core/catalog';
-
-const models = byokit.getModels({
-  filters: {
-    verified: true,
-    verifiedBy: byokit.githubContributor('alice'),
-    verifiedWithinDays: 30,
+    excludeTags: [byokit.Tag.OriginChina, byokit.Tag.PricePremium],
   },
 });
 ```
 
-The current catalog ships **no contributor verification claims**, so this returns
-an empty list until actual reports are contributed.
+Global includes China providers. Use exclusions when you want to omit them.
+`OriginChina` excludes entries tagged `origin:cn` on their provider, model, or
+offering; unknown origin is not a guarantee of exclusion. Origin is not hosting
+location or network availability.
 
-Each report identifies the exact provider/model pairing, contributor, UTC test
-time, adapter/version, checks, result, and public evidence. `verification.records`
-returns all matching reports; `verification.latest` is the newest eligible
-`textGeneration` report. `verification.status` is `passed`, `failed`, `stale`, or
-`unverified`. The default freshness window is 90 days. Future-dated reports do not
-establish verification. A later failed call supersedes an earlier successful one.
-
-`verifiedBy` restricts reports to that contributor. Without it, the newest text
-report across contributors determines status. Setting `verified: false` selects
-results without a current passing report. Set `asOf` to a UTC ISO timestamp for
-reproducible checks. Reports are contributor observations reviewed through pull
-requests, not proof of identity, current entitlement, or universal availability.
-
-### Exclude tags and select live, popular models
-
-```ts
-import * as byokit from '@byokit/core/catalog';
-
-const models = byokit.getModels({
-  preset: byokit.Preset.NonChina,
-  filters: {
-    excludeTags: [byokit.Tag.PricePremium, byokit.customTag('usecase:experimental')],
-    lifecycle: [byokit.Lifecycle.Live],
-    popularity: [byokit.Popularity.Popular],
-  },
-});
-```
-
-`excludeTags` removes a result if **any** listed tag occurs on its provider,
-model, or offering. It wins over `includeTags`. Tags are exact matches, not
-wildcards. Use `byokit.Tag` for built-in labels and `byokit.customTag()` for
-other namespaced labels. You can also exclude `byokit.Tag.LifecycleOutdated`
-while keeping entries whose lifecycle is uncertain.
-
-Each result includes `lifecycle: { status, evidence }` and
-`popularity: { status, evidence }`, plus equivalent `lifecycle:*` and
-`popularity:*` tags. These refer to the **model at this provider**, since its
-availability and usage can differ between providers.
-
-| Label | Meaning |
+| Filter | Options |
 |---|---|
-| LIVE | Recent provider evidence or an explicitly dated Models.dev listing names this offering as active |
-| OUTDATED | Dated evidence explicitly identifies this offering as deprecated, retired, or superseded |
-| UNCERTAIN lifecycle | Evidence missing, future-dated, or more than 90 days old |
-| POPULAR | Rank is in the top 10% (`rank <= ceil(population × 0.1)`) of a cited usage dataset |
-| NOT_POPULAR | Ranked outside that dataset's top 10%; does not mean globally unpopular |
-| UNCERTAIN popularity | No usable ranking, future-dated window, or window ended more than 30 days ago |
+| `providerIds`, `limit`, `local` | Provider selection, hosted result cap, local endpoints |
+| `deployment`, `origin` | Hosted/local/self-hosted; known origin |
+| `includeTags`, `excludeTags` | All included tags required; any excluded tag removes a result |
+| `input`, `output`, `fileFormats` | Text/image/audio/video/embedding; document formats |
+| `requiredFeatures` | Function calling, parallel tools, tool choice/schema, prompt caching, JSON/structured output, system/developer messages, thinking controls |
+| `minContextTokens` | Minimum context window |
+| `maxInputPricePerM`, `maxOutputPricePerM` | Maximum USD per million tokens |
+| `openWeights`, `commercialUse`, `maxParameters` | Weight availability, licensing, model size |
+| `minTokensPerSecond`, `maxTimeToFirstTokenMs` | Known speed and latency measurements |
+| `lifecycle`, `includeDeprecated` | LIVE by default; optional OUTDATED/UNCERTAIN |
+| `popularity` | POPULAR / NOT_POPULAR / UNCERTAIN from sourced usage ranks |
+| `verified`, `verifiedBy`, `verifiedWithinDays` | Community call reports and freshness |
 
-Popularity evidence includes `metric` (requests, tokens, or downloads), `rank`,
-`population`, `scope`, `windowStart`, `windowEnd`, and an HTTPS `source`.
-Only compare rankings within the same metric, population, platform, and window.
-Quality benchmarks, picker order, model age, and GitHub stars are not usage metrics.
-A truncated leaderboard cannot establish the full population or label absent models
-NOT_POPULAR. Local downloads indicate downloads, not active installations.
+Except the first row, these fields belong inside `filters`. Use exported enums
+such as `byokit.Modality.Image`, `byokit.FeatureName.JsonSchema`, and
+`byokit.Lifecycle.Outdated`. Custom tags use `byokit.customTag('usecase:coding')`.
+Unknown metadata fails requirements by default; `unknownPolicy` can explicitly
+include it. Local entries are appended without hosted metadata filtering.
+`prefer.features` and `prefer.lowerCost` rank results within each provider.
 
-The bundled snapshot includes dated Models.dev **catalog-listing** evidence per
-provider/offering; it has no sourced popularity rankings, so popularity is
-UNCERTAIN and the strict popular-model example returns only the Local setup
-entry. Add `local: false` for hosted results only. Provider evidence can override
-listings. `lifecycle.evidence.basis` distinguishes `catalog-listing` from `provider`.
-Release `status` and contributor `verification` remain separate. A provider's
-retired model can remain LIVE on OpenRouter; labels never transfer between them.
-LIVE is the default hosted filter; use an explicit lifecycle array to inspect
-OUTDATED or UNCERTAIN. Deprecated entries additionally need `includeDeprecated`.
-Unknown-policy relaxation does not override lifecycle filters. Queries evaluate
-freshness when called; use `asOf` for reproducible builds. Catalog imports preserve
-recorded observation times instead of making evidence fresh on every build.
+Each model returns its provider, `apiModelId`, `connection` (URL/protocol),
+capabilities, modalities, limits, prices, tags, logos, lifecycle/popularity
+evidence, and contributor verification records. `releaseDate` and `speed` are
+included where known; current catalog speed measurements are unknown.
+LIVE is listing evidence, not an account-access guarantee. Community verification
+means a contributor reported a successful call for that exact provider/model.
 
-## Append your local server
+## Python
 
-```ts
-import * as byokit from '@byokit/core/catalog';
+```python
+import byokit
 
-const models = byokit.getModels({
-  local: [{
-    endpoint: 'http://localhost:8000/v1',
-    api: byokit.LocalApi.OpenAI,
-    modelId: 'my-served-model',
-  }],
-});
+models = byokit.get_models({
+    "providerIds": [byokit.ProviderId.DEEP_SEEK], "limit": 1, "local": False,
+})
+if not models:
+    raise ValueError("No matching model")
+result = byokit.call(models[0], "Hello", api_key)
+print(result["choices"][0]["message"]["content"])
 ```
 
-The configured entry replaces the empty Local setup entry and is appended after
-hosted results. Tag, price, popularity, capability, and lifecycle filters apply
-to hosted entries. `local: false`, `local: []`, or a hosted-only deployment filter
-removes local entries. Explicit hosted `providerIds` also omit the placeholder;
-providing `local` explicitly appends your server to any provider list.
+Install locally with `python -m pip install ./packages/python`.
+Python offers `call_claude()`, `OpenAI`, and `Anthropic` too.
 
-URL + API protocol + model ID is enough to configure the host application's
-client. Ollama, vLLM, and llama.cpp offer OpenAI-compatible servers; use
-`byokit.LocalApi.OpenAI` and their `/v1` base URL. Ollama's native API uses
-`byokit.LocalApi.Ollama` and its root URL. Protocol compatibility does not prove
-support for tools, vision, structured output, or a context size. These stay
-unknown until your application checks them. A Local setup entry is not marked
-LIVE and is not a hosted model.
+## Contribute
 
-Optional discovery is explicit and makes a network request:
+Edit provider metadata and model tags in [catalog/overlays.json](catalog/overlays.json).
+Refresh the pinned source using the [catalog guide](CONTRIBUTING.md#regenerate-and-validate).
+Run `npm install` and `npm run verify` before proposing a change.
+[CONTRIBUTING.md](CONTRIBUTING.md) covers tags and call verification.
+Successful website checks can be shared through GitHub Issues; published records
+attribute the contributor and award a Model Verifier badge. API keys never enter reports.
 
-```ts
-import * as byokit from '@byokit/core/catalog';
-import * as byokitLocal from '@byokit/dom/local';
+Build-time budgets: declare `budget.maxInputTokens` and `maxOutputTokens`, then
+run `byokit check config.json`. Known limit violations fail; missing/unknown
+limits warn. [Design](docs/design.md) · [Integration](docs/integration.md) · [Verification](docs/verification.md)
 
-const installed = await byokitLocal.discoverLocal('http://localhost:8080/v1', {
-  api: byokit.LocalApi.OpenAI,
-});
-// Pick the served model, or offer a selector when the server returns several.
-const models = byokit.getModels({
-  local: installed.slice(0, 1).map(model => ({
-    endpoint: model.local!.endpoint,
-    api: model.local!.api,
-    modelId: model.apiModelId,
-  })),
-});
-```
+## Thanks
 
-The `/v1/models` endpoint can report more than one served model. Native Ollama
-`/api/tags` lists installed models, while `runningOnly: true` uses `/api/ps` for
-currently loaded models. Zero discovery results means no configured local model;
-byokit never invents a model ID or selects another model silently.
-
-## Contribute: update model tags or capabilities
-
-1. Run `npm install` from the repository root.
-2. Edit **`catalog/overlays.json`**, not generated catalog files.
-3. Add the exact offering ID under `offerings`, or an underlying model ID under
-   `models`. Include a source and review date.
-4. Regenerate the catalog, run checks, and submit the changes with their evidence.
-
-Example overlay entry (add it to the existing `offerings` object):
-
-```json
-"deepseek/deepseek-flash": {
-  "source": "https://provider.example/official-capability-docs",
-  "reviewedAt": "2026-10-12",
-  "fields": {
-    "tags": ["usecase:summarization"],
-    "features": {
-      "functionCalling": {
-        "status": "supported",
-        "source": "https://provider.example/official-capability-docs"
-      }
-    }
-  }
-}
-```
-
-This is a template: replace the source and claim with real evidence. Change a
-structured feature field to update capability tags. Do not manually add
-`cap:functionCalling` while leaving that feature unsupported.
-
-| Tag prefix | How it is updated |
-|---|---|
-| `cap:` | Derived from supported feature fields |
-| `input:`, `output:` | Derived from modalities |
-| `context:` | Derived from the context limit |
-| `price:` | Derived from USD input/output prices |
-| `weights:`, `origin:` | Derived from underlying model fields |
-| `deployment:` | Derived from deployment type |
-| `usecase:` or your own namespace | Add to `fields.tags` with supporting evidence |
-
-Derived prefixes are reserved and recomputed. Custom `fields.tags` replaces the
-previous custom tag list, so keep existing custom tags you want to retain.
-Price labels use 1,000 input + 1,000 output tokens: budget ≤ $0.002, mid ≤ $0.02,
-premium above that. A zero token rate does not imply a free service.
-
-```bash
-curl --fail --location https://models.dev/api.json -o /tmp/models.json
-node scripts/import-catalog.mjs /tmp/models.json
-npm test
-npm run test:python
-npm run typecheck
-npm run typecheck:python
-npm run check
-```
-
-The importer updates the catalog, bundled JS/Python snapshots, lockfile and change
-report. Review those diffs together. Missing overlay targets fail import. Identity,
-authentication, and endpoint fields cannot be overridden.
-
-To change a preset, edit `providers.<id>.presets` in the same overlay. New provider
-integration also needs the provider in the upstream snapshot. To change code:
-JS/TS behavior lives in `packages/core`, Python behavior in `packages/python`,
-UI behavior in `packages/dom` and `packages/react`. Add tests for changed behavior;
-cross-language changes must pass the shared conformance checks. More detail:
-[contributor guide](CONTRIBUTING.md).
-
-## Contribute: record a tested model call
-
-Copy `catalog/verification.example.json`, replace every placeholder, and append
-the record to **`catalog/verifications.json`** after running an actual test:
-
-```json
-{
-  "id": "alice-deepseek-text-2026-10-12",
-  "offeringId": "deepseek/deepseek-flash",
-  "contributor": "github:alice",
-  "checkedAt": "2026-10-12T12:00:00Z",
-  "result": "passed",
-  "checks": ["textGeneration"],
-  "adapter": "your-provider-adapter@version",
-  "evidence": "https://github.com/alice/example/blob/commit/model-test.md"
-}
-```
-
-This is an example, not an actual verification. Evidence should explain the test,
-expected response and observed result. Include only checks actually exercised;
-record failed calls too. Never include keys, authorization headers, private prompts
-or personal data. Extra fields such as `apiKey` are rejected.
-
-Regenerate and test using the commands above. Reviewers should compare the claimed
-contributor with the pull request author and inspect evidence; the library cannot
-authenticate a GitHub handle merely because it appears in JSON. Reports remain
-separate from capability metadata; adding a passing report never upgrades a tag.
-
-## Optional tools and demo
-
-- **Context checks:** `checkFit` and `preflight` from `@byokit/core`, plus the CLI.
-  Declared budgets can be checked during builds; dynamic requests need a supplied
-  token counter. Unknown accounting rules or estimated counts stay explicit.
-- **UI:** DOM settings panel and React wrapper, with application-owned key storage.
-- **Local discovery:** `@byokit/dom/local` queries an explicitly selected Ollama or
-  OpenAI-compatible endpoint; unverified local limits remain unknown.
-- **Logos:** optional `@byokit/assets` package with local provider SVGs and notices.
-
-```bash
-npm run demo      # http://127.0.0.1:4173/examples/index.html
-npm run build     # small catalog + pinned TypeScript IDs
-```
-
-The demo uses memory-only keys and makes no hosted AI calls. See
-[the integration guide](docs/integration.md) for UI, budget and local-runtime examples.
-
-## Thank you, Models.dev
-
-A huge thank-you to the maintainers and contributors of [Models.dev](https://models.dev)
-and its [open-source catalog](https://github.com/anomalyco/models.dev). Their work makes
-provider/model metadata accessible and saves byokit from maintaining a complete model
-database. byokit builds a curated filtering layer on top of that foundation. We appreciate
-the community keeping the catalog useful and current; contribute upstream facts there
-when possible. 
-
-Architecture and data-flow diagrams: [design document](docs/design.md).
-
-## License
-
-[MIT](LICENSE). Catalog metadata and selected logos come from Models.dev;
-see [third-party notices](THIRD_PARTY_NOTICES.md).
-
-
-Anyone can [test a model on the website](https://staff-000.github.io/byokit/verification.html)
-using their own API key. After success, **Share verification on GitHub** opens a
-prefilled issue. Submit it with your GitHub account; Actions commits the community
-report and updates the website. Your first published successful report earns a
-**Model Verifier** badge you can display in your GitHub README. No separate sign-in
-service is needed. Keys go only
-to the provider. See [verification workflow and privacy](docs/verification.md).
+Built on [Models.dev](https://models.dev). Thank you to its maintainers and
+contributors for the catalog that makes byokit possible. [MIT license](LICENSE).

@@ -2,7 +2,7 @@ import {Catalog,checkFit,PickerConfig,FeatureName,Modality,Preset,ProviderId,Dep
 import {mountByok} from '@byokit/dom';
 import {discoverLocal} from '@byokit/dom/local';
 import {getModels} from '@byokit/core/catalog';
-const config:PickerConfig={preset:Preset.NonChina,providerIds:[ProviderId.DeepSeek],filters:{input:[Modality.Image],requiredFeatures:[FeatureName.FunctionCalling],deployment:[Deployment.Hosted],includeTags:[customTag('usecase:summarization')]},unknownPolicy:UnknownPolicy.Exclude};
+const config:PickerConfig={preset:Preset.Global,providerIds:[ProviderId.DeepSeek],filters:{input:[Modality.Image],requiredFeatures:[FeatureName.FunctionCalling],deployment:[Deployment.Hosted],includeTags:[customTag('usecase:summarization')]},unknownPolicy:UnknownPolicy.Exclude};
 declare const catalog:Catalog;
 checkFit(catalog.get('test/model'),{inputTokens:1000});
 mountByok(document.createElement('div'),{catalog,config,locale:Locale.English,onSave:selection=>{console.log(selection.credentialRef)}});
@@ -26,7 +26,7 @@ getModels({providerIds:[CatalogProviderId.DeepSeek]});
 import * as byokit from '@byokit/core/catalog';
 byokit.getModels({providerIds:[byokit.ProviderId.DeepSeek]});
 
-byokit.getModels({preset:byokit.Preset.NonChina,filters:{verifiedBy:byokit.githubContributor('example')}});
+byokit.getModels({preset:byokit.Preset.Global,filters:{verifiedBy:byokit.githubContributor('example')}});
 
 byokit.getModels({filters:{excludeTags:[byokit.Tag.PricePremium],lifecycle:[byokit.Lifecycle.Live],popularity:[byokit.Popularity.Popular]}});
 // @ts-expect-error lifecycle values require enums

@@ -89836,6 +89836,8 @@
         "groq",
         "openrouter",
         "deepseek",
+        "zhipuai",
+        "siliconflow",
         "ollama",
         "local"
       ]
@@ -89846,19 +89848,6 @@
         "deepseek",
         "zhipuai",
         "siliconflow",
-        "ollama",
-        "local"
-      ]
-    },
-    {
-      "id": "non-china",
-      "providerIds": [
-        "openai",
-        "anthropic",
-        "google",
-        "mistral",
-        "groq",
-        "openrouter",
         "ollama",
         "local"
       ]

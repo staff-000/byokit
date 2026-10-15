@@ -17,7 +17,6 @@ class ProviderId(str, Enum):
 class Preset(str, Enum):
     GLOBAL = "global"
     CHINA = "china"
-    NON_CHINA = "non-china"
 
 class Country(str, Enum):
     CHINA = "cn"
@@ -206,12 +205,13 @@ class Tag(str, Enum):
     POPULARITY_UNCERTAIN = "popularity:UNCERTAIN"
     PRICE_PREMIUM = "price:premium"
     WEIGHTS_OPEN = "weights:open"
+    ORIGIN_CHINA = "origin:cn"
 
 class ModelList(str, Enum):
     DEFAULT = "default"
     COMPLETE = "complete"
     CHINA = "china"
-    NON_CHINA = "non-china"
+    GLOBAL = "global"
 
 class LocalApi(str, Enum):
     OPEN_AI = "openai-compatible"
@@ -237,4 +237,4 @@ class Role(str, Enum):
 DEFAULT=ModelList.DEFAULT
 COMPLETE=ModelList.COMPLETE
 CHINA=ModelList.CHINA
-NON_CHINA=ModelList.NON_CHINA
+GLOBAL=ModelList.GLOBAL

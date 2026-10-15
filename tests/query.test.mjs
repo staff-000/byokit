@@ -63,19 +63,19 @@ test('explicit provider queries return all non-deprecated matches unless a limit
  assert.equal(run.status,0,run.stderr);assert.deepEqual(JSON.parse(run.stdout).map(x=>x.length),[125,5,2]);
 });
 
-test('non-China preset excludes China-based providers and preserves local choices',()=>{
+test('Global includes every supported provider and preserves local choices',()=>{
  const data=JSON.parse(readFileSync('catalog/catalog.json'));
- const preset=data.presets.find(p=>p.id==='non-china');assert.ok(preset);
- for(const id of preset.providerIds){const p=data.providers.find(p=>p.id===id);assert.ok(p.deployment==='local'||p.origin!=='cn');}
- assert.ok(preset.providerIds.includes('ollama'));assert.ok(!preset.providerIds.includes('deepseek'));
- const c=new Catalog(data);assert.ok(c.getModels({preset:'non-china'}).length);
- const run=pythonModels({data,queries:[{preset:'non-china'}]});
- assert.equal(run.status,0,run.stderr);assert.deepEqual(JSON.parse(run.stdout),[c.getModels({preset:'non-china'})]);
+ const preset=data.presets.find(p=>p.id==='global');assert.ok(preset);
+ assert.deepEqual(new Set(preset.providerIds),new Set(data.providers.map(p=>p.id)));
+ assert.ok(preset.providerIds.includes('ollama'));assert.ok(preset.providerIds.includes('deepseek'));
+ const c=new Catalog(data);assert.ok(c.getModels({preset:'global'}).length);
+ const run=pythonModels({data,queries:[{preset:'global'}]});
+ assert.equal(run.status,0,run.stderr);assert.deepEqual(JSON.parse(run.stdout),[c.getModels({preset:'global'})]);
 });
 test('catalog namespace includes all helpers used by documented examples',async()=>{
  const byokit=await import('@byokit/core/catalog');
- assert.equal(byokit.Preset.NonChina,'non-china');assert.equal(byokit.githubContributor('example'),'github:example');assert.equal(typeof byokit.checkFit,'function');
- const ui=await import('@byokit/dom');assert.equal(ui.Preset.NonChina,'non-china');assert.equal(typeof ui.discoverLocal,'function');
+ assert.equal(byokit.Preset.Global,'global');assert.equal(byokit.githubContributor('example'),'github:example');assert.equal(typeof byokit.checkFit,'function');
+ const ui=await import('@byokit/dom');assert.equal(ui.Preset.Global,'global');assert.equal(typeof ui.discoverLocal,'function');
 });
 
 test('release dates validate actual calendar days; unknown metadata remains nullable',()=>{

@@ -41,7 +41,7 @@ login and quota management belong to the application.
 import * as byokit from '@byokit/core/catalog';
 
 const models=byokit.getModels({
-  preset:byokit.Preset.NonChina,
+  preset:byokit.Preset.Global,
   limit:10,
   filters:{input:[byokit.Modality.Text],requiredFeatures:[byokit.FeatureName.FunctionCalling]},
 });
@@ -268,7 +268,7 @@ not label models missing from a ranking as unpopular.
 
 `getModels()` chooses one LIVE offering from OpenAI, Anthropic, Google,
 OpenRouter, and DeepSeek, then appends a Local setup entry. Typed `COMPLETE`,
-`CHINA`, and `NON_CHINA` shortcuts accept an optional second options argument.
+`CHINA`, and `GLOBAL` shortcuts accept an optional second options argument.
 COMPLETE considers every text-output offering from all supported providers, not
 just a truncated per-provider snapshot. Explicit provider queries are unbounded;
 region/default queries use one model per provider. A hosted limit applies before
@@ -430,3 +430,7 @@ and timeout failures stop the queue; unavailable models can fail independently.
 Keys are supplied transiently from the provider's form entry and never saved with
 results. Batch results preserve provider-specific IDs and require explicit sharing
 per successful model; the publication limits and badge rules are unchanged.
+
+Global includes all supported providers. Exclude origin:cn with filters.excludeTags to omit China-origin providers/models; missing origin remains unknown.
+
+The former NON_CHINA/NonChina API has been removed. Migrate to GLOBAL for an inclusive shortlist or COMPLETE with filters.excludeTags: [Tag.OriginChina] for origin exclusions. Both languages use the same catalog and enum vocabulary.

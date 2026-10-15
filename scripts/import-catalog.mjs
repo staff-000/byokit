@@ -10,7 +10,7 @@ let observedAt=observedIndex>=0?args[observedIndex+1]:undefined;
 if(observedAt!==undefined&&(!/^\d{4}-\d{2}-\d{2}T.*Z$/.test(observedAt)||!Number.isFinite(Date.parse(observedAt))))throw new Error('Invalid snapshot observation timestamp');
 const raw=await readFile(resolve(source)),upstream=JSON.parse(raw),overlay=JSON.parse(await readFile(new URL('../catalog/overlays.json',import.meta.url)));
 if(!observedAt){try{const previous=JSON.parse(await readFile(resolve(out,'catalog.lock.json'),'utf8'));if(previous.sha256===createHash('sha256').update(raw).digest('hex'))observedAt=previous.observedAt}catch{}}
-const catalog={schemaVersion:1,provenance:{source:'https://models.dev/api.json',reviewedAt:new Date().toISOString().slice(0,10)},providers:[],families:[],models:[],offerings:[],presets:[{id:'default',providerIds:['openai','anthropic','google','openrouter','deepseek']},{id:'global',providerIds:[]},{id:'china',providerIds:[]},{id:'non-china',providerIds:[]}],assets:[]};
+const catalog={schemaVersion:1,provenance:{source:'https://models.dev/api.json',reviewedAt:new Date().toISOString().slice(0,10)},providers:[],families:[],models:[],offerings:[],presets:[{id:'default',providerIds:['openai','anthropic','google','openrouter','deepseek']},{id:'global',providerIds:[]},{id:'china',providerIds:[]}],assets:[]};
 const known=new Set(),families=new Set();
 const feature=(value)=>({status:value===true?'supported':value===false?'unsupported':'unknown',source:'models.dev'});
 const number=n=>typeof n==='number'&&Number.isFinite(n)&&n>=0?n:null;

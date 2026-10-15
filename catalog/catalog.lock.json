@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "source": "https://models.dev/api.json",
   "sha256": "d1c1747dea2ec7cd1173e6007c272ecfabcf62852fa4eef0c718eccb24e96785",
-  "overlaySha256": "73af51f45039c7159fa4782b3fe9ebdcbedeb34508be7e529a8d6603346b4d26",
+  "overlaySha256": "283e375aca50239c2519facdb6494fb0afa4acf78a4cde291db133b5bcd5c4de",
   "verificationsSha256": "9aa8ded5a89a3f25de62797c5dfbdf79344bfae019466c1f1dc5dde0f3029904",
   "observedAt": "2026-10-13T12:02:26Z",
   "generatedAt": "2026-10-14"

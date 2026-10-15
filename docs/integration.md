@@ -9,7 +9,7 @@ import '@byokit/dom/styles.css';
 
 const ui = byokit.mountByok(element, {
   catalog: data,
-  config: { preset: byokit.Preset.NonChina, ui: { maxProviders: 8, maxModelsPerProvider: 4, allowCustomModel: true } },
+  config: { preset: byokit.Preset.Global, ui: { maxProviders: 8, maxModelsPerProvider: 4, allowCustomModel: true } },
   credentialStore: applicationCredentialStore,
   onSave: selection => saveSelection(selection),
   onCheck: async ({ providerId, modelId, apiKey, signal }) => checkProvider({ providerId, modelId, apiKey, signal }),

@@ -16,7 +16,8 @@ test('COMPLETE removes shortlist limits and CHINA selects China providers',()=>{
  assert.ok(full.length>500);assert.ok(full.every(o=>o.lifecycle.status===byokit.Lifecycle.Live));
  assert.ok(full.filter(o=>o.providerId==='openrouter').length>24);
  assert.deepEqual(byokit.getModels(byokit.CHINA,{asOf}).map(o=>o.providerId),['deepseek','zhipuai','siliconflow','local']);
- assert.ok(byokit.getModels(byokit.NON_CHINA,{asOf,local:false}).every(o=>o.provider.origin!=='cn'));
+ assert.ok(byokit.getModels(byokit.GLOBAL,{asOf,local:false}).some(o=>o.provider.origin==='cn'));
+ assert.ok(byokit.getModels(byokit.COMPLETE,{asOf,local:false,filters:{excludeTags:[byokit.Tag.OriginChina]}}).every(o=>!o.tags.includes('origin:cn')&&!o.provider.tags.includes('origin:cn')));
  assert.equal(byokit.getModels(byokit.COMPLETE,{asOf,limit:2}).length,3);
  assert.throws(()=>byokit.getModels('nonsense'));assert.throws(()=>byokit.getModels({},{limit:1}));
 });
@@ -43,7 +44,7 @@ test('local URL/model entries bypass hosted metadata filters and never fabricate
 });
 test('simplified list modes and appended local entries agree with Python',()=>{
  const d=JSON.parse(readFileSync('catalog/catalog.json'));
- const queries=['complete','china','non-china',{asOf},{asOf,list:'complete',limit:5,local:[{endpoint:'http://localhost:8080/v1',modelId:'one'}]},{asOf,local:false,filters:{lifecycle:['UNCERTAIN']}}];
+ const queries=['complete','china','global',{asOf},{asOf,list:'complete',limit:5,local:[{endpoint:'http://localhost:8080/v1',modelId:'one'}]},{asOf,local:false,filters:{lifecycle:['UNCERTAIN']}}];
  const run=pythonModels({data:d,queries});
  assert.equal(run.status,0,run.stderr);assert.deepEqual(JSON.parse(run.stdout),queries.map(q=>new byokit.Catalog(d).getModels(q)));
 });

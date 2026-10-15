@@ -1,6 +1,6 @@
 {
   "catalog": "../catalog/catalog.json",
-  "preset": "non-china",
+  "preset": "global",
   "filters": {
     "input": [
       "text"
