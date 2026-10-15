@@ -1,0 +1,59 @@
+name: Sync Models.dev Catalog
+
+on:
+  schedule:
+    # Every 12 hours, at 03:00 and 15:00 UTC (3 hours before 06:00 and 18:00 release checks)
+    - cron: '0 3,15 * * *'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          python3 -m pip install --upgrade pip build twine
+
+      - name: Configure Git
+        run: |
+          git config user.name "staff-000"
+          git config user.email "staffhacker.000@gmail.com"
+
+      - name: Fetch Models.dev snapshot
+        run: |
+          curl --fail --location --proto '=https' --max-time 60 --max-filesize 52428800 https://models.dev/api.json -o /tmp/models.json
+          node scripts/import-catalog.mjs /tmp/models.json --observed-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+      - name: Check for catalog changes and commit
+        run: |
+          CATALOG_DIFF=$(git status --porcelain catalog/ packages/byokit/catalog.js packages/python/src/byokit/data/ | wc -l | tr -d ' ')
+          if [ "$CATALOG_DIFF" -gt 0 ]; then
+            echo "Catalog updates detected ($CATALOG_DIFF files changed). Running verification..."
+            npm run verify
+            git add catalog/ packages/byokit/catalog.js packages/python/src/byokit/data/ docs/verification/
+            git commit -m "chore(catalog): sync upstream models.dev snapshot"
+            git push origin main
+            echo "Successfully synced and committed new models.dev catalog updates."
+          else
+            echo "No changes from models.dev snapshot."
+          fi

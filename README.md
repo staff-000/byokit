@@ -195,11 +195,11 @@ limits warn. [Design](docs/design.md) · [Integration](docs/integration.md) · [
 
 ## Scheduled releases and catalog refresh
 
-GitHub Actions checks for updates every 6 hours (`0 */6 * * *`). It fetches the latest
-snapshot from Models.dev, merges manual additions, validates the catalog, and checks
-for any new git commits or catalog updates since the last release tag. When changes
-are detected, it automatically bumps a patch version and publishes to npm and PyPI.
-[Workflow](.github/workflows/release.yml) · [Maintenance guide](docs/custom-catalog.md)
+Catalog synchronization and release publishing are decoupled into separate workflows:
+
+- **Models.dev Sync**: Runs every 12 hours (`0 3,15 * * *`, 3 hours before release checks). It fetches the latest snapshot from Models.dev, merges manual additions, validates the catalog, and commits updates to `main`.
+- **Scheduled Releases**: Runs every 6 hours (`0 */6 * * *`). It checks for new commits since the last release tag. If new commits exist, it automatically bumps a patch version and publishes to npm and PyPI.
+  [Sync Workflow](.github/workflows/catalog-sync.yml) · [Release Workflow](.github/workflows/release.yml) · [Maintenance guide](docs/custom-catalog.md)
 
 ## Thanks
 

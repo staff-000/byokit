@@ -98,12 +98,6 @@ jobs:
           VERSION="${TAG#v}"
           node scripts/release.mjs "$VERSION" --no-git
 
-      - name: Fetch Models.dev snapshot (Scheduled)
-        if: github.event_name == 'schedule'
-        run: |
-          curl --fail --location --proto '=https' --max-time 60 --max-filesize 52428800 https://models.dev/api.json -o /tmp/models.json
-          node scripts/import-catalog.mjs /tmp/models.json --observed-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-
       - name: Check for updates (Scheduled)
         id: check_updates
         if: github.event_name == 'schedule'
@@ -118,16 +112,14 @@ jobs:
 
           echo "Latest release tag: $LATEST_TAG"
           COMMITS=$(git log "$LATEST_TAG..HEAD" --oneline --invert-grep --grep="^Release v" | wc -l | tr -d ' ')
-          CATALOG_DIFF=$(git status --porcelain catalog/ packages/byokit/catalog.js packages/python/src/byokit/data/ | wc -l | tr -d ' ')
 
           echo "New commits since $LATEST_TAG: $COMMITS"
-          echo "Catalog changes from models.dev: $CATALOG_DIFF"
 
-          if [ "$COMMITS" -gt 0 ] || [ "$CATALOG_DIFF" -gt 0 ]; then
-            echo "Found updates to release! (commits: $COMMITS, catalog changes: $CATALOG_DIFF)"
+          if [ "$COMMITS" -gt 0 ]; then
+            echo "Found $COMMITS new commits since $LATEST_TAG! Triggering scheduled release."
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
           else
-            echo "No new commits and no models.dev catalog changes. Skipping scheduled release."
+            echo "No new commits since $LATEST_TAG. Skipping scheduled release."
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
           fi
 
