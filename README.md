@@ -207,7 +207,7 @@ limits warn. [Design](docs/design.md) · [Integration](docs/integration.md) · [
 Catalog synchronization and release publishing are decoupled into separate workflows:
 
 - **Models.dev Sync**: Runs every 12 hours (`0 3,15 * * *`, 3 hours before release checks). It fetches the latest snapshot from Models.dev, merges manual additions, validates the catalog, and commits updates to `main`.
-- **Scheduled Releases**: Runs every 6 hours (`0 */6 * * *`). It checks for new commits since the last release tag. If new commits exist, it automatically bumps a patch version and publishes to npm and PyPI.
+- **Scheduled Releases**: Runs daily (`0 18 * * *`). It checks for new commits since the last release tag. If more than 20 new commits exist, it automatically bumps a patch version, publishes to npm and PyPI, and deploys the updated website.
   [Sync Workflow](.github/workflows/catalog-sync.yml) · [Release Workflow](.github/workflows/release.yml) · [Maintenance guide](docs/custom-catalog.md)
 
 ## Thanks

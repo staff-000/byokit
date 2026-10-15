@@ -89,7 +89,7 @@ files together. Never edit generated catalogs directly.
 
 Catalog synchronization and release publishing are decoupled into two distinct workflows:
 
-- `.github/workflows/catalog-sync.yml` runs every 12 hours (`0 3,15 * * *`, 3 hours prior to release checks) and supports manual dispatch. It fetches the public Models.dev JSON, imports manual records, validates the catalog, and commits changes to `main`. Failures or timeouts during fetch never affect the release pipeline.
-- `.github/workflows/release.yml` runs every 6 hours (`0 */6 * * *`) and supports manual dispatch. It checks whether new commits exist relative to the latest release tag. When changes are found, it bumps a patch version, tags the release, and publishes to both npm and PyPI.
+- `.github/workflows/catalog-sync.yml` runs every 12 hours (`0 3,15 * * *`) and supports manual dispatch. It fetches the public Models.dev JSON, imports manual records, validates the catalog, and commits changes to `main`. Failures or timeouts during fetch never affect the release pipeline.
+- `.github/workflows/release.yml` runs daily (`0 18 * * *`) and supports manual dispatch. It checks whether new commits exist relative to the latest release tag. When more than 20 new commits are found, it bumps a patch version, tags the release, publishes to both npm and PyPI, and deploys the updated website.
 
 [GitHub may delay scheduled runs](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule); on inactive public repositories GitHub can disable schedules after 60 days.

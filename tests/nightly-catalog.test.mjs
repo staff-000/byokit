@@ -79,11 +79,12 @@ test('catalog sync workflow fetches models.dev source every 12 hours decoupled f
   assert.ok(workflow.includes('packages/byokit/catalog.js'));
 });
 
-test('scheduled release workflow checks for commits every 6 hours and publishes patch', async () => {
+test('scheduled release workflow runs daily and requires >20 commits to publish patch', async () => {
   const workflow = await readFile(
     new URL('../.github/workflows/release.yml', import.meta.url),
     'utf8',
   );
-  assert.ok(workflow.includes('0 */6 * * *'));
+  assert.ok(workflow.includes('0 18 * * *'));
+  assert.ok(workflow.includes('COMMITS" -gt 20'));
   assert.ok(workflow.includes('node scripts/release.mjs patch --push'));
 });

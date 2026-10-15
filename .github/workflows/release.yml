@@ -28,8 +28,8 @@ on:
     types: [published]
 
   schedule:
-    # Every 6 hours (at minute 0 of hour 0, 6, 12, 18 UTC)
-    - cron: '0 */6 * * *'
+    # Daily at 18:00 UTC (3 hours after 15:00 UTC catalog sync)
+    - cron: '0 18 * * *'
 
 jobs:
   release:
@@ -113,13 +113,13 @@ jobs:
           echo "Latest release tag: $LATEST_TAG"
           COMMITS=$(git log "$LATEST_TAG..HEAD" --oneline --invert-grep --grep="^Release v" | wc -l | tr -d ' ')
 
-          echo "New commits since $LATEST_TAG: $COMMITS"
+          echo "New commits since $LATEST_TAG: $COMMITS (required: >20)"
 
-          if [ "$COMMITS" -gt 0 ]; then
-            echo "Found $COMMITS new commits since $LATEST_TAG! Triggering scheduled release."
+          if [ "$COMMITS" -gt 20 ]; then
+            echo "Found $COMMITS new commits since $LATEST_TAG (>20 threshold reached). Triggering scheduled patch release."
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
           else
-            echo "No new commits since $LATEST_TAG. Skipping scheduled release."
+            echo "Only $COMMITS new commits since $LATEST_TAG (threshold is >20). Skipping scheduled release."
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
           fi
 
