@@ -32,5 +32,8 @@
     "custom-model.js"
   ],
   "sideEffects": false,
-  "license": "MIT"
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
 }

@@ -20,5 +20,8 @@
   "peerDependencies": {
     "react": ">=18"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
 }

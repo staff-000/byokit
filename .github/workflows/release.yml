@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Version bump (patch, minor, major) or explicit version (e.g. 0.2.0)'
+        required: true
+        default: 'patch'
+        type: string
+      dry_run:
+        description: 'Dry run (simulate publishing and rollback)'
+        required: false
+        default: false
+        type: boolean
+      npm_only:
+        description: 'Only publish to npm'
+        required: false
+        default: false
+        type: boolean
+      pypi_only:
+        description: 'Only publish to PyPI'
+        required: false
+        default: false
+        type: boolean
+
+  release:
+    types: [published]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          python3 -m pip install --upgrade pip build twine
+
+      - name: Configure Git
+        run: |
+          git config user.name "staff-000"
+          git config user.email "staffhacker.000@gmail.com"
+
+      - name: Run release script (Manual Dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          ARGS="${{ inputs.target }}"
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            ARGS="$ARGS --dry-run"
+          else
+            ARGS="$ARGS --push"
+          fi
+          if [ "${{ inputs.npm_only }}" = "true" ]; then
+            ARGS="$ARGS --npm-only"
+          fi
+          if [ "${{ inputs.pypi_only }}" = "true" ]; then
+            ARGS="$ARGS --pypi-only"
+          fi
+          node scripts/release.mjs $ARGS
+
+      - name: Run release script (GitHub Release Published)
+        if: github.event_name == 'release'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          VERSION="${TAG#v}"
+          node scripts/release.mjs "$VERSION" --no-git
