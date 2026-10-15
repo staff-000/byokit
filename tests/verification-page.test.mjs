@@ -6,6 +6,7 @@ import {resolve} from 'node:path';
 import {JSDOM} from 'jsdom';
 import {parseIssueReport} from '../website/verification-report.js';
 import {canonicalReport} from '../scripts/verification-report.mjs';
+import catalog from '../packages/core/catalog.js';
 const wait=async predicate=>{for(let n=0;n<100;n++){if(predicate())return;await new Promise(r=>setTimeout(r,10))}throw new Error('Page state did not arrive.');};
 test('anonymous page verifies, shares safely, fences stale calls and only confirms public evidence',async()=>{
  const html=await readFile('website/verification.html','utf8'),dom=new JSDOM(html,{url:'https://staff-000.github.io/byokit/verification.html',pretendToBeVisual:true});
@@ -13,9 +14,10 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
  globalThis.document=dom.window.document;globalThis.window=dom.window;globalThis.localStorage=dom.window.localStorage;
  dom.window.HTMLElement.prototype.scrollIntoView=function(){};dom.window.HTMLDialogElement.prototype.showModal=function(){this.open=true};dom.window.HTMLDialogElement.prototype.close=function(){this.open=false};
  const $=s=>document.querySelector(s),change=(id,value)=>{$('#'+id).value=value;$('#'+id).dispatchEvent(new dom.window.Event('input',{bubbles:true}))};
- let calls=0,feed=[],providerMode='success',resolveProvider;
+ let calls=0,feed=[],providerMode='success',resolveProvider,resolveInitialFeed;
+ let initialFeedPending=true;const initialFeed=new Promise(resolve=>resolveInitialFeed=resolve);
  globalThis.fetch=async(url,options={})=>{
-  if(url==='./verification.json')return new Response(JSON.stringify({reports:feed}));
+  if(url==='./verification.json')return initialFeedPending?initialFeed:new Response(JSON.stringify({reports:feed}));
   assert.ok(String(url).startsWith('https://api.deepseek.com/'));calls++;assert.equal(options.headers.Authorization,'Bearer fixture-secret-key');
   const data=JSON.parse(options.body);assert.equal(data.messages[0].content,'private fixture prompt');
   if(providerMode==='pending')return new Promise(r=>resolveProvider=r);
@@ -31,7 +33,10 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
   change('sort-filter','priceDescend');const prices=[...document.querySelectorAll('#models tr')].map(tr=>tr.querySelector('td:nth-child(4)')?.textContent);assert.ok(prices.length);
   change('sort-filter','provider-order');
   change('model-search','no-such-model-fixture');assert.equal($('#models td').colSpan,7);assert.match($('#models').textContent,/No matching/);change('model-search','');
-  change('provider-filter','deepseek');$('#models button').click();change('api-key','fixture-secret-key');change('prompt','private fixture prompt');
+  const contributor=catalog.verifications[0]?.contributor;if(contributor)assert.ok($('#contributor-list').textContent.includes(contributor.replace('github:','@')));
+  change('provider-filter','deepseek');initialFeedPending=false;resolveInitialFeed(new Response(JSON.stringify({reports:[]})));await new Promise(resolve=>setTimeout(resolve,0));
+  if(contributor)assert.ok($('#contributor-list').textContent.includes(contributor.replace('github:','@')),'filter changes preserve bundled badges while a feed request is canceled');
+  $('#models button').click();change('api-key','fixture-secret-key');change('prompt','private fixture prompt');
   $('#verify-form').dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true}));await wait(()=>!$('#share-verification').hidden);
   assert.equal(calls,1);assert.match($('#call-status').textContent,/Call succeeded/);assert.equal($('#earned-badge').hidden,true);
   const share=new URL($('#share-verification').href),report=parseIssueReport(share.searchParams.get('body'));

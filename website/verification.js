@@ -6,7 +6,9 @@ import catalog,* as byokit from './lib/core/catalog.js';
 import {requestExample} from './request-examples.js';
 import {ProviderApi,ProtocolNames,verifyInference,successRecord,safeRecords,requestFor} from './inference.js';
 const $=s=>document.querySelector(s),el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n};
-let activeReport=null,publishedReports=[];
+// Render canonical bundled evidence immediately; canceling a pending feed refresh
+// while changing filters must not erase existing contributor badges.
+let activeReport=null,publishedReports=catalog.verifications??[];
 function publicationStatus(message){$('#publication-status').textContent=message;}
 const tracker=new PublicationTracker(reports=>{
  const errors=byokit.validateVerifications(reports,catalog);if(errors.length)throw new Error('Invalid published verification records.');
