@@ -103,7 +103,7 @@ try {
   assert.equal(await page.locator('#feature-filter').count(), 1);
   assert.equal(await page.locator('.verification-models thead select').count(), 9);
   assert.equal(await page.locator('.verification-models thead #include-outdated').count(), 1);
-  assert.equal(await page.locator('#models tr').first().locator('td').count(), 7);
+  assert.equal(await page.locator('#models tr').first().locator('td').count(), 8);
   await page.locator('#sort-filter').selectOption('priceDescend');
   assert.ok((await page.locator('#models tr').first().textContent()).includes('Input $'));
   await page.locator('#sort-filter').selectOption('provider-order');

@@ -974,6 +974,11 @@ h3 {
   font: 11px var(--mono);
   color: var(--muted);
 }
+.call-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 .call-fields {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1641,7 +1646,7 @@ dialog .record-actions {
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
 }
 .verification-table .verification-models {
-  min-width: 1140px;
+  min-width: 1240px;
   width: 100%;
   table-layout: fixed;
   border-collapse: separate;
@@ -1684,19 +1689,22 @@ dialog .record-actions {
   padding-top: 14px;
 }
 .verification-models .identity-column {
-  width: 240px;
+  width: 230px;
 }
 .verification-models .context-column {
-  width: 115px;
+  width: 110px;
 }
 .verification-models .price-column {
-  width: 120px;
+  width: 115px;
 }
 .verification-models .performance-column {
-  width: 165px;
+  width: 155px;
+}
+.verification-models .input-column {
+  width: 105px;
 }
 .verification-models .tags-column {
-  width: 330px;
+  width: 290px;
 }
 .verification-models .status-column {
   width: 175px;
@@ -1710,9 +1718,6 @@ dialog .record-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
-}
-.column-filters .filter-field-wide {
-  grid-column: 1 / -1;
 }
 .column-filters .filter-field {
   display: block;
@@ -1837,6 +1842,22 @@ dialog .record-actions {
   flex-wrap: wrap;
   gap: 4px;
 }
+.verification-models .tag.modality-text {
+  background: #f1f5f9;
+  color: #475569;
+}
+.verification-models .tag.modality-image {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+.verification-models .tag.modality-audio {
+  background: #fef3c7;
+  color: #b45309;
+}
+.verification-models .tag.modality-video {
+  background: #fce7f3;
+  color: #be185d;
+}
 .verification-models .table-tags {
   width: 100%;
   font: 10px var(--mono);
@@ -1901,7 +1922,8 @@ dialog .record-actions {
   .verification-models .identity-column,
   .verification-models .tags-column,
   .verification-models .performance-column,
-  .verification-models .status-column {
+  .verification-models .status-column,
+  .verification-models .input-column {
     grid-column: 1 / -1;
   }
   .verification-models .identity-column .column-filters {

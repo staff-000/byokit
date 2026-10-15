@@ -98,7 +98,7 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
       'include-outdated',
     ])
       assert.ok($('#' + id).closest('thead'), id + ' belongs to the table header');
-    assert.equal(document.querySelectorAll('#models tr:first-child td').length, 7);
+    assert.equal(document.querySelectorAll('#models tr:first-child td').length, 8);
     change('sort-filter', 'priceDescend');
     const prices = [...document.querySelectorAll('#models tr')].map(
       (tr) => tr.querySelector('td:nth-child(4)')?.textContent,
@@ -106,7 +106,7 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
     assert.ok(prices.length);
     change('sort-filter', 'provider-order');
     change('model-search', 'no-such-model-fixture');
-    assert.equal($('#models td').colSpan, 7);
+    assert.equal($('#models td').colSpan, 8);
     assert.match($('#models').textContent, /No matching/);
     change('model-search', '');
     const contributor = catalog.verifications[0]?.contributor;

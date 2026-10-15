@@ -40,9 +40,18 @@
             <h2 id="selected-name">Loading catalog…</h2>
             <code id="selected-id"></code>
           </div>
-          <a id="provider-docs" class="text-link" target="_blank" rel="noopener noreferrer"
-            >Provider docs ↗</a
-          >
+          <div class="call-heading-actions">
+            <button
+              id="next-unverified"
+              type="button"
+              class="small-button"
+              title="Skip to next unverified model"
+            >
+              Next unverified ↻</button
+            ><a id="provider-docs" class="text-link" target="_blank" rel="noopener noreferrer"
+              >Provider docs ↗</a
+            >
+          </div>
         </div>
         <form id="verify-form">
           <div class="call-fields">
@@ -144,6 +153,8 @@ Reply with exactly: OK</textarea></label
             rel="noopener noreferrer"
             hidden
             >Share on GitHub · claim badge ↗</a
+          ><button id="next-unverified-advance" class="button secondary" type="button" hidden>
+            Next unverified model →</button
           ><button id="check-publication" class="small-button" type="button" hidden>
             Check publication
           </button>
@@ -278,6 +289,20 @@ Reply with exactly: OK</textarea></label
                     >
                   </div>
                 </th>
+                <th scope="col" class="input-column">
+                  <span class="column-title">Input</span>
+                  <div class="column-filters">
+                    <label class="filter-field"
+                      ><span class="sr-only">Input modality</span
+                      ><select id="modality-filter">
+                        <option value="any">Any input</option>
+                        <option value="image">Image</option>
+                        <option value="audio">Audio</option>
+                        <option value="video">Video</option>
+                      </select></label
+                    >
+                  </div>
+                </th>
                 <th scope="col" class="tags-column">
                   <span class="column-title">Tags &amp; capabilities</span>
                   <div class="column-filters filter-grid">
@@ -304,14 +329,6 @@ Reply with exactly: OK</textarea></label
                         <option value="promptCaching">Prompt caching</option>
                       </select></label
                     ><label class="filter-field"
-                      ><span class="sr-only">Input modality</span
-                      ><select id="modality-filter">
-                        <option value="any">Any input</option>
-                        <option value="image">Image</option>
-                        <option value="audio">Audio</option>
-                        <option value="video">Video</option>
-                      </select></label
-                    ><label class="filter-field filter-field-wide"
                       ><span class="sr-only">Exclude tag</span
                       ><select id="exclude-tag-filter">
                         <option value="">No exclusions</option>

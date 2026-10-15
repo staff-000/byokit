@@ -81,7 +81,25 @@ try {
 const models = byokit.getModels(byokit.COMPLETE, {
   filters: { lifecycle: Object.values(byokit.Lifecycle), includeDeprecated: true },
 });
-let selected = filterModels()[0] || models[0],
+function isUnverified(m) {
+  if (!m || m.local) return false;
+  if (records.some((r) => r.offeringId === m.id)) return false;
+  const summary = byokit.verificationSummary({ verifications: publishedReports }, m.id);
+  return summary.status !== 'passed';
+}
+function nextUnverifiedModel(fromModel, list = models) {
+  const candidates = list.filter((m) => !m.local);
+  if (!candidates.length) return null;
+  const fromIdx = fromModel ? candidates.findIndex((m) => m.id === fromModel.id) : -1;
+  for (let i = fromIdx + 1; i < candidates.length; i++) {
+    if (isUnverified(candidates[i])) return candidates[i];
+  }
+  for (let i = 0; i <= fromIdx && i < candidates.length; i++) {
+    if (isUnverified(candidates[i])) return candidates[i];
+  }
+  return candidates[0];
+}
+let selected = nextUnverifiedModel(null, models) || filterModels()[0] || models[0],
   shown = 40,
   revision = 0,
   controller = null,
@@ -118,6 +136,7 @@ function invalidate() {
   tracker.stop();
   activeReport = null;
   $('#share-verification').hidden = true;
+  $('#next-unverified-advance')?.setAttribute('hidden', '');
   $('#check-publication').hidden = true;
   publicationStatus('');
   $('#earned-badge').hidden = true;
@@ -244,10 +263,16 @@ function renderModels() {
       ),
       el('span', 'Released ' + (m.releaseDate || 'unknown'), 'evidence-note'),
     );
+    const inputCell = el('td');
+    inputCell.dataset.label = 'Input';
+    const inputTags = el('div', undefined, 'model-tags');
+    for (const mod of m.modalities?.input || ['text']) {
+      inputTags.append(el('span', mod, 'tag modality-' + mod));
+    }
+    inputCell.append(inputTags);
     const metadata = el('td');
     metadata.dataset.label = 'Tags & capabilities';
     metadata.append(
-      el('span', 'Input: ' + (m.modalities.input?.join(', ') || 'unknown'), 'evidence-note'),
       el(
         'span',
         m.model.openWeights === true
@@ -313,14 +338,14 @@ function renderModels() {
     });
     action.append(button);
     pick.dataset.label = 'Batch';
-    tr.append(pick, name, context, price, performance, metadata, action);
+    tr.append(pick, name, context, price, performance, inputCell, metadata, action);
     return tr;
   });
   $('#models').replaceChildren(...rows);
   if (!rows.length) {
     const tr = el('tr'),
       td = el('td', 'No matching models. Change your search or filter.', 'empty');
-    td.colSpan = 7;
+    td.colSpan = 8;
     tr.append(td);
     $('#models').append(tr);
   }
@@ -628,6 +653,15 @@ $('#verify-form').addEventListener('submit', async (event) => {
         activeReport = createReport(captured, result, record.id, key);
         $('#share-verification').href = issueUrl(activeReport);
         $('#share-verification').hidden = false;
+        const advanceBtn = $('#next-unverified-advance');
+        const nextModel = nextUnverifiedModel(
+          captured,
+          filteredModels().filter((m) => m.providerId === captured.providerId),
+        );
+        if (advanceBtn && nextModel && nextModel.id !== captured.id) {
+          advanceBtn.textContent = `Next unverified (${nextModel.name}) →`;
+          advanceBtn.hidden = false;
+        }
         publicationStatus(
           'Your call succeeded! Share the report on GitHub to earn your Model Verifier badge after publication.',
         );
@@ -748,13 +782,33 @@ for (const id of [
       invalidate();
       $('#api-key').value = '';
       batchSelection.clear();
-      const model = filteredModels().find((m) => !m.local) || filteredModels()[0];
+      const model =
+        nextUnverifiedModel(null, filteredModels()) ||
+        filteredModels().find((m) => !m.local) ||
+        filteredModels()[0];
       if (model) select(model);
     }
     if (batchController) invalidate();
     shown = 40;
     renderModels();
   });
+function advanceToNextUnverified() {
+  const currentProvider = selected?.providerId;
+  const providerModels = filteredModels().filter((m) => m.providerId === currentProvider);
+  const next =
+    nextUnverifiedModel(selected, providerModels.length > 1 ? providerModels : filteredModels()) ||
+    nextUnverifiedModel(selected, models);
+  if (next) {
+    const keepKey = selected && selected.providerId === next.providerId;
+    const currentKey = $('#api-key').value;
+    select(next);
+    if (keepKey && currentKey) $('#api-key').value = currentKey;
+    $('#call-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    $('#api-key').focus({ preventScroll: true });
+  }
+}
+$('#next-unverified')?.addEventListener('click', advanceToNextUnverified);
+$('#next-unverified-advance')?.addEventListener('click', advanceToNextUnverified);
 $('#show-more').addEventListener('click', () => {
   shown += 40;
   renderModels();
