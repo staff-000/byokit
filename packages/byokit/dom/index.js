@@ -202,7 +202,9 @@ export function mountByok(container, options) {
       return;
     }
     const m = catalog.models.get(o.modelId),
-      family = catalog.data.families.find((f) => f.id === m?.familyId);
+      family =
+        catalog.families?.get(m?.familyId) ||
+        catalog.data.families.find((f) => f.id === m?.familyId);
     const src = options.assets?.[family?.logoId];
     if (src) {
       familyLogo.src = src;

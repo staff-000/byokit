@@ -452,6 +452,7 @@ export interface ClaudeResult {
 export class CallError extends Error {
   code: string;
   diagnostics: Diagnostic[];
+  status?: number;
 }
 export function call(
   model: ModelOption,

@@ -2,11 +2,12 @@ import { ApiProtocol, FeatureName, Role } from './enums.js';
 import { connectionFor } from './connection.js';
 import { checkFit } from './index.js';
 export class CallError extends Error {
-  constructor(code, message, diagnostics = []) {
+  constructor(code, message, diagnostics = [], status) {
     super(message);
     this.name = 'CallError';
     this.code = code;
     this.diagnostics = diagnostics;
+    if (status !== undefined) this.status = status;
   }
 }
 const fail = (message) => {
@@ -696,6 +697,8 @@ async function execute(model, input, key, options, format) {
       throw new CallError(
         'PROVIDER_ERROR',
         `Provider rejected the call (HTTP ${response.status}).`,
+        [],
+        response.status,
       );
     let data;
     try {

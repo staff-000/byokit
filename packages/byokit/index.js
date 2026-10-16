@@ -386,6 +386,27 @@ export class Catalog {
     this.providers = new Map(this.data.providers.map((x) => [x.id, x]));
     this.models = new Map(this.data.models.map((x) => [x.id, x]));
     this.offerings = new Map(this.data.offerings.map((x) => [x.id, x]));
+    this.families = new Map(this.data.families.map((x) => [x.id, x]));
+    this.assets = new Map((this.data.assets || []).map((x) => [x.id, x]));
+    this.offeringsByProvider = new Map();
+    for (const o of this.data.offerings) {
+      let list = this.offeringsByProvider.get(o.providerId);
+      if (!list) {
+        list = [];
+        this.offeringsByProvider.set(o.providerId, list);
+      }
+      list.push(o);
+    }
+    this.verificationsByOffering = new Map();
+    for (const v of this.data.verifications || []) {
+      let list = this.verificationsByOffering.get(v.offeringId);
+      if (!list) {
+        list = [];
+        this.verificationsByOffering.set(v.offeringId, list);
+      }
+      list.push(v);
+    }
+    this.data._verificationsByOffering = this.verificationsByOffering;
   }
   get(id) {
     return this.offerings.get(id);
@@ -426,7 +447,7 @@ export class Catalog {
             license: null,
             tags: [],
           },
-          family = this.data.families.find((f) => f.id === model?.familyId);
+          family = this.families.get(model?.familyId);
         return {
           ...o,
           connection: connectionFor(o),
@@ -435,8 +456,8 @@ export class Catalog {
           model,
           family: family || null,
           logos: {
-            provider: this.data.assets?.find((a) => a.id === g.provider.logoId) || null,
-            family: this.data.assets?.find((a) => a.id === family?.logoId) || null,
+            provider: this.assets.get(g.provider.logoId) || null,
+            family: this.assets.get(family?.logoId) || null,
           },
           verification: verificationSummary(this.data, o.id, {
             asOf: config.asOf,
@@ -474,8 +495,9 @@ export class Catalog {
       config.list === ModelList.Default && preset.offeringIds ? new Set(preset.offeringIds) : null;
     for (const id of ids) {
       if (this.providers.get(id).deployment === Deployment.Local) continue;
-      let choices = this.data.offerings
-        .filter((o) => o.providerId === id && (!recommended || recommended.has(o.id)))
+      const providerOfferings = this.offeringsByProvider.get(id) || [];
+      let choices = providerOfferings
+        .filter((o) => !recommended || recommended.has(o.id))
         .map((o) => withSignals(o, config.asOf))
         .filter(
           (o) =>
@@ -847,11 +869,12 @@ export function verificationSummary(
   offeringId,
   { asOf = new Date().toISOString(), maxAgeDays = 90, contributor } = {},
 ) {
-  const records = (data.verifications || []).filter(
-    (r) =>
-      r.offeringId === offeringId &&
-      (!contributor || r.contributor.toLowerCase() === contributor.toLowerCase()),
-  );
+  const source =
+    data?._verificationsByOffering?.get(offeringId) ||
+    (data?.verifications || []).filter((r) => r.offeringId === offeringId);
+  const records = contributor
+    ? source.filter((r) => r.contributor.toLowerCase() === contributor.toLowerCase())
+    : source;
   const now = Date.parse(asOf);
   const calls = records.filter(
     (r) => r.checks.includes('textGeneration') && Date.parse(r.checkedAt) <= now,
@@ -958,12 +981,24 @@ function validateSignals(o) {
     errors.push(`${o.id}: invalid popularity evidence`);
   return errors;
 }
+const dateParseCache = new Map();
+const parseEpoch = (str) => {
+  let val = dateParseCache.get(str);
+  if (val === undefined) {
+    val = Date.parse(str);
+    dateParseCache.set(str, val);
+  }
+  return val;
+};
 function withSignals(o, asOf) {
-  const now = asOf === undefined ? Date.now() : Date.parse(asOf),
+  const now = asOf === undefined ? Date.now() : parseEpoch(asOf),
     l = o.lifecycleEvidence,
     p = o.popularityEvidence;
-  const fresh = (date, days) =>
-    signalDate(date) && Date.parse(date) <= now && now - Date.parse(date) <= days * 86400000;
+  const fresh = (date, days) => {
+    if (!signalDate(date)) return false;
+    const epoch = parseEpoch(date);
+    return epoch <= now && now - epoch <= days * 86400000;
+  };
   const lifecycle = {
     status:
       o.status === 'deprecated' || l?.status === Lifecycle.Outdated

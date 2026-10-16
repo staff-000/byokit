@@ -129,7 +129,9 @@ run()
   .then((code) => {
     process.exitCode = code;
   })
-  .catch(() => {
-    console.error('Invalid configuration or catalog. Run with a valid local config file.');
+  .catch((err) => {
+    console.error(
+      `Error: ${err?.message || 'Invalid configuration or catalog. Run with a valid local config file.'}`,
+    );
     process.exitCode = 2;
   });

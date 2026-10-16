@@ -28,10 +28,11 @@ PROVIDERS = {
 
 
 class CallError(Exception):
-    def __init__(self, code, message, diagnostics=None):
+    def __init__(self, code, message, diagnostics=None, status=None):
         super().__init__(message)
         self.code = code
         self.diagnostics = diagnostics or []
+        self.status = status
 
 
 def connection_for(model):
@@ -851,6 +852,7 @@ def _execute(model, input, key, options, format):
             raise CallError(
                 "PROVIDER_ERROR",
                 f"Provider rejected the call (HTTP {response.status}).",
+                status=response.status,
             )
         raw = response.read()
         if cancel and cancel.is_set():

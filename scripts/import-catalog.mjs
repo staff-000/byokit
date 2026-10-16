@@ -443,7 +443,7 @@ if (i < 0) {
     new URL('catalog.js', byokitPkg),
     'import {Catalog} from "./index.js";\nconst data=' +
       JSON.stringify(catalog) +
-      ';\nexport default data;\nexport * from \"./index.js\";\nexport function getModels(input={},options){return new Catalog(data).getModels(input,options)}\n',
+      ';\nexport default data;\nexport * from \"./index.js\";\nlet defaultCatalog;\nexport function getModels(input={},options){if(!defaultCatalog)defaultCatalog=new Catalog(data);return defaultCatalog.getModels(input,options)}\n',
   );
   await writeFile(new URL('catalog.json', python), JSON.stringify(catalog) + '\n');
 }

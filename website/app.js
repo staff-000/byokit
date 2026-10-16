@@ -124,14 +124,26 @@ function row(model) {
   tr.append(evidence);
   return tr;
 }
+let currentQueryKey = null;
+let currentModels = [];
+function getFilteredModels() {
+  const config = query();
+  const key = JSON.stringify({ mode, config });
+  if (key !== currentQueryKey) {
+    currentQueryKey = key;
+    currentModels = byokit.getModels(modes[mode], config);
+  }
+  return { config, models: currentModels };
+}
 function render() {
   try {
-    const config = query(),
-      models = byokit.getModels(modes[mode], config),
+    const { config, models } = getFilteredModels(),
       search = $('#search').value.trim().toLowerCase(),
-      matches = models.filter((m) =>
-        `${m.name} ${m.apiModelId} ${m.provider.name}`.toLowerCase().includes(search),
-      );
+      matches = search
+        ? models.filter((m) =>
+            `${m.name} ${m.apiModelId} ${m.provider.name}`.toLowerCase().includes(search),
+          )
+        : models;
     $('#query').textContent = snippet(config);
     $('#results').replaceChildren(...matches.slice(0, shown).map(row));
     if (!matches.length) {

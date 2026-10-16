@@ -84,3 +84,15 @@ test('undeclared budgets warn; strict validation fails without performing infere
   });
   assert.equal(strict.status, 1);
 });
+
+test('CLI surfaces descriptive error message on invalid input and exits with 2', () => {
+  const result = spawnSync(
+    'node',
+    ['packages/byokit/bin.mjs', 'check', 'nonexistent-config.json'],
+    {
+      encoding: 'utf8',
+    },
+  );
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /Error:/);
+});

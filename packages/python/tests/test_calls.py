@@ -213,4 +213,5 @@ class CallTests(unittest.TestCase):
             with self.assertRaises(byokit.CallError) as e:
                 byokit.call(model(), "Hi", "dummy-key", {"runtime_checks": False})
             self.assertEqual(e.exception.code, "PROVIDER_ERROR")
+            self.assertEqual(e.exception.status, 302)
             self.assertNotIn("dummy-key", str(e.exception))

@@ -2,8 +2,10 @@
 
 from .enums import *
 import copy
+import functools
 import math
-from datetime import date
+import time
+from datetime import date, datetime, timezone
 
 FEATURE_STATES = {"supported", "unsupported", "conditional", "unknown"}
 
@@ -378,6 +380,15 @@ class Catalog:
         self.providers = {p["id"]: p for p in self.data["providers"]}
         self.models = {m["id"]: m for m in self.data["models"]}
         self.offerings = {o["id"]: o for o in self.data["offerings"]}
+        self.families = {f["id"]: f for f in self.data.get("families", [])}
+        self.assets = {a["id"]: a for a in self.data.get("assets", [])}
+        self.offerings_by_provider = {}
+        for o in self.data.get("offerings", []):
+            self.offerings_by_provider.setdefault(o["providerId"], []).append(o)
+        self.verifications_by_offering = {}
+        for v in self.data.get("verifications", []):
+            self.verifications_by_offering.setdefault(v.get("offeringId"), []).append(v)
+        self.data["_verifications_by_offering"] = self.verifications_by_offering
 
     def get(self, offering_id):
         return self.offerings.get(offering_id)
@@ -403,15 +414,7 @@ class Catalog:
                         "tags": [],
                     },
                 )
-                family = next(
-                    (
-                        f
-                        for f in self.data["families"]
-                        if f["id"] == model.get("familyId")
-                    ),
-                    None,
-                )
-                assets = self.data.get("assets", [])
+                family = self.families.get(model.get("familyId")) if model else None
                 result.append(
                     dict(
                         o,
@@ -421,21 +424,11 @@ class Catalog:
                         model=model,
                         family=family,
                         logos={
-                            "provider": next(
-                                (
-                                    a
-                                    for a in assets
-                                    if a["id"] == g["provider"].get("logoId")
-                                ),
-                                None,
-                            ),
-                            "family": next(
-                                (
-                                    a
-                                    for a in assets
-                                    if family and a["id"] == family.get("logoId")
-                                ),
-                                None,
+                            "provider": self.assets.get(g["provider"].get("logoId")),
+                            "family": (
+                                self.assets.get(family.get("logoId"))
+                                if family
+                                else None
                             ),
                         },
                         verification=verification_summary(
@@ -571,13 +564,14 @@ class Catalog:
         for provider_id in ids:
             if self.providers[provider_id]["deployment"] == "local":
                 continue
+            provider_offerings = self.offerings_by_provider.get(provider_id, [])
             choices = sorted(
                 (
                     o
                     for o in (
                         _with_signals(item, config.get("asOf"))
-                        for item in self.data["offerings"]
-                        if item["providerId"] == provider_id and (recommended is None or item["id"] in recommended)
+                        for item in provider_offerings
+                        if recommended is None or item["id"] in recommended
                     )
                     if matches(
                         o,
@@ -838,14 +832,20 @@ def estimate_price(offering, budget):
     }
 
 
+_DEFAULT_CATALOG = None
+
+
 def load_catalog():
     """Load the packaged offline snapshot. No network or Node dependency."""
-    import json
-    from importlib.resources import files
+    global _DEFAULT_CATALOG
+    if _DEFAULT_CATALOG is None:
+        import json
+        from importlib.resources import files
 
-    return Catalog(
-        json.loads(files("byokit").joinpath("data/catalog.json").read_text())
-    )
+        _DEFAULT_CATALOG = Catalog(
+            json.loads(files("byokit").joinpath("data/catalog.json").read_text())
+        )
+    return _DEFAULT_CATALOG
 
 
 def derive_tags(offering, model=None):
@@ -955,9 +955,8 @@ async def preflight(
     )
 
 
+@functools.lru_cache(maxsize=4096)
 def _timestamp(value):
-    from datetime import datetime
-
     parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     if parsed.tzinfo is None:
         raise ValueError("Timezone required")
@@ -1028,14 +1027,16 @@ def validate_verifications(records, data):
 def verification_summary(
     data, offering_id, *, as_of=None, max_age_days=90, contributor=None
 ):
-    from datetime import datetime, timezone
-
     now = _timestamp(as_of) if as_of else datetime.now(timezone.utc).timestamp()
+    records_source = (
+        data.get("_verifications_by_offering", {}).get(offering_id)
+        if "_verifications_by_offering" in data
+        else [r for r in data.get("verifications", []) if r["offeringId"] == offering_id]
+    )
     records = [
         r
-        for r in data.get("verifications", [])
-        if r["offeringId"] == offering_id
-        and (not contributor or r["contributor"].lower() == contributor.lower())
+        for r in (records_source or [])
+        if not contributor or r["contributor"].lower() == contributor.lower()
     ]
     calls = sorted(
         (
@@ -1203,8 +1204,6 @@ def _validate_signals(o):
 
 
 def _with_signals(o, as_of=None):
-    import time
-
     now = _timestamp(as_of) if as_of else time.time()
 
     def fresh(date, days):

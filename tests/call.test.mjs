@@ -247,7 +247,7 @@ test('timeouts, cancel and failure are terminal, never leak keys or provider err
       ...noChecks,
       fetch: async () => ({ ok: false, status: 401, json: async () => ({ error: 'secret' }) }),
     }),
-    (e) => e.code === 'PROVIDER_ERROR' && !JSON.stringify(e).includes('secret'),
+    (e) => e.code === 'PROVIDER_ERROR' && e.status === 401 && !JSON.stringify(e).includes('secret'),
   );
   await assert.rejects(
     byokit.call(model(), 'Hi', 'secret', {
