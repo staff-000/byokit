@@ -11,6 +11,7 @@ const fixture = () => {
 const asOf = '2026-10-12T12:00:00Z';
 const live = {
   status: byokit.Lifecycle.Live,
+  basis: byokit.LifecycleBasis.Provider,
   source: 'https://example.com/model-status',
   checkedAt: '2026-10-11T00:00:00Z',
 };
@@ -82,7 +83,7 @@ test('lifecycle and objective popularity expose evidence, filter by enum and der
   d.offerings[0].lifecycleEvidence = { ...live, status: 'OUTDATED' };
   assert.equal(
     new byokit.Catalog(d)
-      .getModels({ asOf, local: false, filters: { lifecycle: ['OUTDATED'] } })
+      .getModels(byokit.COMPLETE, { asOf, local: false, filters: { lifecycle: ['OUTDATED'] } })
       .find((o) => o.id === d.offerings[0].id).lifecycle.status,
     'OUTDATED',
   );

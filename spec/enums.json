@@ -36,7 +36,8 @@
     "Image": "image",
     "Audio": "audio",
     "Video": "video",
-    "Embedding": "embedding"
+    "Embedding": "embedding",
+    "PDF": "pdf"
   },
   "FileFormat": {
     "PDF": "pdf",

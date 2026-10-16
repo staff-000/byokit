@@ -27,6 +27,7 @@ function query() {
   const config = { sort: byokit.ModelSort.ProviderOrder };
   if (!$('#local').checked) config.local = false;
   const filters = {};
+  if ($('#output').value) filters.output = [$('#output').value];
   if ($('#tools').checked) filters.requiredFeatures = [byokit.FeatureName.FunctionCalling];
   const excluded = [];
   if ($('#premium').checked) excluded.push(byokit.Tag.PricePremium);
@@ -40,6 +41,10 @@ function snippet(config) {
   const parts = ['sort: byokit.ModelSort.ProviderOrder'],
     filters = [];
   if (config.local === false) parts.push('local: false');
+  if (config.filters?.output)
+    filters.push(
+      `output: [byokit.Modality.${config.filters.output[0][0].toUpperCase() + config.filters.output[0].slice(1)}]`,
+    );
   if (config.filters?.requiredFeatures)
     filters.push('requiredFeatures: [byokit.FeatureName.FunctionCalling]');
   if (config.filters?.excludeTags)
@@ -94,8 +99,17 @@ function row(model) {
   evidence.append(
     el(
       'span',
+      model.callSupport?.textGeneration
+        ? 'Text calls supported'
+        : model.callSupport?.reason || 'Setup required',
+      'call-support',
+    ),
+  );
+  evidence.append(
+    el(
+      'span',
       model.local ? 'LOCAL SETUP' : model.lifecycle.status,
-      `badge ${model.local ? 'uncertain' : 'live'}`,
+      `badge ${model.local ? 'uncertain' : model.lifecycle.status.toLowerCase()}`,
     ),
     el(
       'span',
@@ -132,7 +146,7 @@ function render() {
     $('#more').hidden = matches.length <= shown;
     $('#more').textContent = `Show more (${matches.length - shown} remaining)`;
     $('#result-note').textContent =
-      `Showing ${Math.min(shown, matches.length)} of ${matches.length}. Hosted entries require LIVE evidence; Local is a setup entry.`;
+      `Showing ${Math.min(shown, matches.length)} of ${matches.length}. Availability is evidence-based; call support describes adapter compatibility.`;
     $('#catalog-error').hidden = true;
   } catch {
     $('#catalog-error').hidden = false;
@@ -148,8 +162,20 @@ for (const button of document.querySelectorAll('[data-mode]'))
     }
     render();
   });
-for (const id of ['search', 'tools', 'premium', 'exclude-china', 'local'])
+for (const id of ['output', 'search', 'tools', 'premium', 'exclude-china', 'local'])
   $('#' + id).addEventListener('input', () => {
+    if (
+      id === 'output' &&
+      mode === 'default' &&
+      $('#output').value &&
+      $('#output').value !== 'text'
+    ) {
+      mode = 'complete';
+      for (const b of document.querySelectorAll('[data-mode]')) {
+        b.classList.toggle('active', b.dataset.mode === mode);
+        b.setAttribute('aria-pressed', String(b.dataset.mode === mode));
+      }
+    }
     shown = 12;
     render();
   });

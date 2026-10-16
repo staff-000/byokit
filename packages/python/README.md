@@ -27,3 +27,17 @@ and dictionary access. Stateless `byokit.call(model, prompt, key)` remains suppo
 
 See the [SDK guide](https://github.com/staff-000/byokit/blob/main/docs/sdk.md) for
 examples, protocol adapters, official SDK integration, validation, and migration.
+
+## Discovery and call support
+
+Defaults are reviewed offering recommendations. COMPLETE includes every upstream
+provider and output modality, including retired and uncertain entries. GLOBAL and
+CHINA remain editorial collections. Filter `output` for image/audio/video generation
+and `callable` for reviewed text-call compatibility. Input/output arrays require all
+listed modalities. Newly discovered providers may have no connection adapter.
+
+`callSupport.textGeneration` is adapter compatibility; availability uses separate
+provider evidence. Catalog observation never establishes LIVE availability.
+Explicit lifecycle filters override `includeDeprecated`. Token prices are per
+million tokens; media prices may be unknown. See the repository README for migration
+details and examples.

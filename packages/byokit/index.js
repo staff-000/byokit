@@ -1,7 +1,7 @@
 export { Byokit, openAI, claude, OpenAI, Anthropic } from './sdk.js';
 export { getModels } from './catalog.js';
 import { validateConnection } from './custom-model.js';
-import { connectionFor } from './connection.js';
+import { connectionFor, callSupportFor } from './connection.js';
 export { appendModel } from './custom-model.js';
 export { call, callClaude, prepareCall, CallError } from './call.js';
 import {
@@ -56,14 +56,20 @@ export function validateCatalog(data) {
       }
     errors.push(...validateSignals(o));
     if (
+      o.callSupport !== undefined &&
+      (typeof o.callSupport?.textGeneration !== 'boolean' ||
+        (o.callSupport.reason !== null && typeof o.callSupport.reason !== 'string'))
+    )
+      errors.push(`${o.id}: invalid callSupport`);
+    if (
       o.releaseDate !== undefined &&
       o.releaseDate !== null &&
       !(
         typeof o.releaseDate === 'string' &&
-        /^\d{4}-\d{2}-\d{2}$/.test(o.releaseDate) &&
+        /^\d{4}-\d{2}(-\d{2})?$/.test(o.releaseDate) &&
         Number(o.releaseDate.slice(0, 4)) >= 1 &&
         Number.isFinite(Date.parse(o.releaseDate)) &&
-        new Date(o.releaseDate).toISOString().slice(0, 10) === o.releaseDate
+        new Date(o.releaseDate).toISOString().slice(0, o.releaseDate.length) === o.releaseDate
       )
     )
       errors.push(`${o.id}: invalid releaseDate`);
@@ -83,6 +89,31 @@ export function validateCatalog(data) {
   for (const p of data.presets)
     if (!Array.isArray(p.providerIds) || p.providerIds.some((id) => !providers.has(id)))
       errors.push(`${p.id}: unresolved provider`);
+  for (const preset of data.presets) {
+    if (
+      preset.offeringIds !== undefined &&
+      (!Array.isArray(preset.offeringIds) ||
+        preset.offeringIds.some(
+          (id) =>
+            !data.offerings.some((o) => o.id === id && preset.providerIds.includes(o.providerId)),
+        ))
+    )
+      errors.push(`${preset.id}: unresolved recommended offering`);
+  }
+  const recommended = new Set();
+  for (const r of data.recommendations || []) {
+    if (
+      !r ||
+      typeof r.offeringId !== 'string' ||
+      recommended.has(r.offeringId) ||
+      !signalSource(r.source) ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(r.reviewedAt) ||
+      typeof r.rationale !== 'string' ||
+      !r.rationale.trim()
+    )
+      errors.push('Invalid recommendation evidence');
+    recommended.add(r?.offeringId);
+  }
   errors.push(...validateVerifications(data.verifications || [], data));
   return errors;
 }
@@ -140,6 +171,7 @@ export function validateConfig(c = {}) {
       'lifecycle',
       'popularity',
       'includeDeprecated',
+      'callable',
       'verified',
       'verifiedBy',
       'verifiedWithinDays',
@@ -193,6 +225,9 @@ export function validateConfig(c = {}) {
       !Number.isFinite(Date.parse(c.asOf)))
   )
     errors.push('asOf must be an ISO timestamp');
+  for (const key of ['callable', 'includeDeprecated'])
+    if (c.filters?.[key] !== undefined && typeof c.filters[key] !== 'boolean')
+      errors.push(`filters.${key} must be boolean`);
   if (c.filters?.verified !== undefined && typeof c.filters.verified !== 'boolean')
     errors.push('filters.verified must be boolean');
   if (c.filters?.verifiedBy !== undefined && !/^github:[a-z0-9-]+$/i.test(c.filters.verifiedBy))
@@ -286,7 +321,18 @@ function matches(o, m, c, providerTags = []) {
       (!finite(value) ? !unknown(c) : op === 'min' ? value < bound : value > bound)
     )
       return false;
-  if (!(f.lifecycle || [Lifecycle.Live]).includes(o.lifecycle.status)) return false;
+  if (
+    f.callable !== undefined &&
+    (o.callSupport?.textGeneration ?? callSupportFor(o).textGeneration) !== f.callable
+  )
+    return false;
+  const lifecycle =
+    f.lifecycle ||
+    (f.includeDeprecated === true ||
+    (c.list === ModelList.Complete && f.includeDeprecated !== false)
+      ? Object.values(Lifecycle)
+      : [Lifecycle.Live, Lifecycle.Uncertain]);
+  if (!lifecycle.includes(o.lifecycle.status)) return false;
   if (f.popularity && !f.popularity.includes(o.popularity.status)) return false;
   const tags = new Set([
     ...[...(m.tags || []), ...providerTags].filter(
@@ -299,7 +345,7 @@ function matches(o, m, c, providerTags = []) {
     (f.excludeTags || []).some((t) => tags.has(t))
   )
     return false;
-  if (!f.includeDeprecated && o.status === 'deprecated') return false;
+
   return true;
 }
 
@@ -384,6 +430,7 @@ export class Catalog {
         return {
           ...o,
           connection: connectionFor(o),
+          callSupport: o.callSupport || callSupportFor(o),
           provider: g.provider,
           model,
           family: family || null,
@@ -423,10 +470,12 @@ export class Catalog {
     if (!Array.isArray(ids) || ids.some((id) => !this.providers.has(id)))
       throw new Error('Unknown provider in providerIds');
     const groups = [];
+    const recommended =
+      config.list === ModelList.Default && preset.offeringIds ? new Set(preset.offeringIds) : null;
     for (const id of ids) {
       if (this.providers.get(id).deployment === Deployment.Local) continue;
       let choices = this.data.offerings
-        .filter((o) => o.providerId === id)
+        .filter((o) => o.providerId === id && (!recommended || recommended.has(o.id)))
         .map((o) => withSignals(o, config.asOf))
         .filter(
           (o) =>
@@ -438,6 +487,8 @@ export class Catalog {
           config.prefer?.features?.filter((f) => x.features?.[f]?.status === 'supported').length ||
           0;
         return (
+          Number(b.lifecycle.status === Lifecycle.Live) -
+            Number(a.lifecycle.status === Lifecycle.Live) ||
           preferred(b) - preferred(a) ||
           (config.prefer?.lowerCost
             ? (a.price?.input ?? Infinity) - (b.price?.input ?? Infinity)
@@ -447,7 +498,7 @@ export class Catalog {
         );
       });
       const cap = uncapped
-        ? config.list === ModelList.Complete || config.providerIds
+        ? config.list === ModelList.Complete || config.providerIds || recommended
           ? Infinity
           : (config.ui?.maxModelsPerProvider ?? 1)
         : (config.ui?.maxModelsPerProvider ?? 4);
@@ -915,11 +966,11 @@ function withSignals(o, asOf) {
     signalDate(date) && Date.parse(date) <= now && now - Date.parse(date) <= days * 86400000;
   const lifecycle = {
     status:
-      l && fresh(l.checkedAt, 90)
-        ? o.status === 'deprecated'
-          ? Lifecycle.Outdated
-          : l.status
-        : Lifecycle.Uncertain,
+      o.status === 'deprecated' || l?.status === Lifecycle.Outdated
+        ? Lifecycle.Outdated
+        : l && fresh(l.checkedAt, 90) && l.basis === LifecycleBasis.Provider
+          ? l.status
+          : Lifecycle.Uncertain,
     evidence: l || null,
   };
   const popularity = {
@@ -988,6 +1039,9 @@ function validateLocal(entry) {
 }
 function localGroups(config, catalog) {
   if (
+    config.filters?.input?.length ||
+    config.filters?.output?.length ||
+    config.filters?.callable !== undefined ||
     config.local === false ||
     (config.filters?.deployment && !config.filters.deployment.includes(Deployment.Local))
   )

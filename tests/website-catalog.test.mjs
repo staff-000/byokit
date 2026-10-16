@@ -8,7 +8,7 @@ test('website model list is the library catalog, including metadata and contribu
     local: false,
     sort: byokit.ModelSort.ProviderOrder,
   });
-  const actual = filterModels().filter((m) => !m.local);
+  const actual = filterModels({ includeOutdated: true }).filter((m) => !m.local);
   assert.deepEqual(
     actual.map((m) => m.id),
     expected.map((m) => m.id),

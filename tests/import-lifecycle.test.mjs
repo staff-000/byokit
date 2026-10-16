@@ -21,7 +21,7 @@ test('import preserves snapshot observation dates, has no per-provider cap, and 
       modalities: { input: ['text'], output: ['text'] },
       limit: { context: 8192, output: 1024 },
     };
-  writeFileSync(file, JSON.stringify(upstream));
+  writeFileSync(file, JSON.stringify({ providers: upstream, models: {} }));
   const imported = (args = []) => {
     const run = spawnSync(
       'node',
@@ -41,13 +41,18 @@ test('import preserves snapshot observation dates, has no per-provider cap, and 
   assert.ok(
     data.offerings
       .filter((o) => o.deployment === 'hosted')
-      .every((o) => o.lifecycleEvidence.checkedAt === stamp),
+      .every((o) => o.listingEvidence.checkedAt === stamp),
   );
   data = imported();
-  assert.equal(data.offerings[0].lifecycleEvidence.checkedAt, stamp);
+  assert.equal(data.offerings[0].listingEvidence.checkedAt, stamp);
   upstream.openai.models['model-0'].name = 'Changed';
-  writeFileSync(file, JSON.stringify(upstream));
+  writeFileSync(file, JSON.stringify({ providers: upstream, models: {} }));
   data = imported();
   assert.ok(data.offerings.every((o) => !o.lifecycleEvidence));
-  assert.deepEqual(new Catalog(data).getModels(COMPLETE, { local: false }), []);
+  assert.equal(new Catalog(data).getModels(COMPLETE, { local: false }).length, 30);
+  assert.ok(
+    new Catalog(data)
+      .getModels(COMPLETE, { local: false })
+      .every((o) => o.lifecycle.status === 'UNCERTAIN'),
+  );
 });

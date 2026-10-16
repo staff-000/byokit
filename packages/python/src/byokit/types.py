@@ -71,6 +71,7 @@ class Filters(TypedDict, total=False):
     lifecycle: list[Lifecycle]
     popularity: list[Popularity]
     includeDeprecated: bool
+    callable: bool
     verified: bool
     verifiedBy: ContributorId
     verifiedWithinDays: int
@@ -102,7 +103,7 @@ class PickerConfig(TypedDict, total=False):
     list: ModelList
     local: list[LocalEndpoint] | Literal[False]
     preset: Preset
-    providerIds: list[ProviderId | CustomProviderId]
+    providerIds: list[str]
     limit: int
     asOf: str
     unknownPolicy: UnknownPolicy

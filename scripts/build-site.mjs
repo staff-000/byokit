@@ -41,7 +41,14 @@ for (const provider of catalog.providers) {
       resolve(root, 'assets', 'provider_' + provider.id + '.svg'),
       resolve(out, 'assets', provider.id + '.svg'),
     );
-  } catch {}
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+    // New catalog providers need a local icon even before branded assets are reviewed.
+    await writeFile(
+      resolve(out, 'assets', provider.id + '.svg'),
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect x="2" y="2" width="28" height="28" rx="8" fill="#687582"/><path d="M10 11h12M10 16h12M10 21h8" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>',
+    );
+  }
 }
 const reports = catalog.verifications || [],
   errors = validateVerifications(reports, catalog);

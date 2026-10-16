@@ -37,8 +37,20 @@ try {
   assert.ok(
     (await page.locator('#hero-code').textContent()).includes('sort: byokit.ModelSort.PriceAscend'),
   );
-  assert.ok((await page.locator('#hero-providers').textContent()).includes('DeepSeek'));
-  assert.equal(await page.locator('#results tr').count(), 6);
+  assert.ok((await page.locator('#hero-providers').textContent()).includes('Anthropic'));
+  assert.equal(await page.locator('#results tr').count(), 5);
+  await page.locator('#output').selectOption('video');
+  assert.ok(
+    (await page
+      .getByRole('button', { name: 'Complete', exact: true })
+      .getAttribute('aria-pressed')) === 'true',
+  );
+  assert.ok((await page.locator('#query').textContent()).includes('Modality.Video'));
+  assert.ok((await page.locator('#results tr').count()) > 0);
+  assert.ok(!(await page.locator('#results').textContent()).includes('LOCAL SETUP'));
+  await page.locator('#output').selectOption('');
+  await page.getByRole('button', { name: 'Default', exact: true }).click();
+  assert.equal(await page.locator('#results tr').count(), 5);
   await page.getByRole('button', { name: 'Complete', exact: true }).click();
   assert.equal(await page.locator('#results tr').count(), 12);
   await page.locator('#more').click();
@@ -110,7 +122,7 @@ try {
   assert.ok(await page.locator('#provider-filter').isVisible());
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   assert.ok((await page.locator('#model-count').textContent()).match(/\d+/)?.[0] > 500);
-  assert.ok((await page.locator('#models').textContent()).includes('lifecycle:LIVE'));
+  assert.ok((await page.locator('#models').textContent()).includes('lifecycle:UNCERTAIN'));
   assert.ok(!(await page.locator('body').textContent()).includes('unit test'));
   await page.locator('#provider-filter').selectOption('deepseek');
   await page.locator('#models button').first().click();

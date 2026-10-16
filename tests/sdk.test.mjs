@@ -293,7 +293,11 @@ test('Byokit routes both public formats identically to helpers across native pro
     byokit.ProviderId.Anthropic,
     byokit.ProviderId.Google,
   ]) {
-    const [offering] = byokit.getModels({ providerIds: [provider], local: false });
+    const [offering] = byokit.getModels({
+      providerIds: [provider],
+      local: false,
+      filters: { callable: true },
+    });
     const data =
       provider === byokit.ProviderId.Anthropic
         ? { content: [{ type: 'text', text: 'OK' }], stop_reason: 'end_turn' }

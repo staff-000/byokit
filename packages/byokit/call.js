@@ -339,6 +339,8 @@ export function prepareCall(
 ) {
   if (!obj(model) || typeof model.apiModelId !== 'string' || !model.apiModelId.trim())
     fail('Select a configured model with an API model ID.');
+  if (model.callSupport?.textGeneration === false)
+    fail(model.callSupport.reason || 'Text generation is unsupported for this catalog model.');
   const connection = model.connection ?? connectionFor(model);
   if (!connection?.baseUrl) fail('Configure the model endpoint first.');
   let url;

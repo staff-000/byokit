@@ -1,4 +1,5 @@
 /** Explicit local snapshot import. Does not download or change a trusted endpoint. */
+import { callSupportFor } from '../packages/byokit/connection.js';
 import { mergeManualCatalog } from './manual-catalog.mjs';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -19,8 +20,16 @@ if (
 )
   throw new Error('Invalid snapshot observation timestamp');
 const raw = await readFile(resolve(source)),
-  upstream = JSON.parse(raw),
+  snapshot = JSON.parse(raw),
+  upstream = snapshot.providers,
+  metadata = snapshot.models,
   overlay = JSON.parse(await readFile(new URL('../catalog/overlays.json', import.meta.url)));
+if (!upstream || !metadata)
+  throw new Error('Expected combined models.dev catalog with providers and models');
+let previous;
+try {
+  previous = JSON.parse(await readFile(resolve(out, 'catalog.json'), 'utf8'));
+} catch {}
 if (!observedAt) {
   try {
     const previous = JSON.parse(await readFile(resolve(out, 'catalog.lock.json'), 'utf8'));
@@ -31,15 +40,15 @@ if (!observedAt) {
 let catalog = {
   schemaVersion: 1,
   provenance: {
-    source: 'https://models.dev/api.json',
-    reviewedAt: new Date().toISOString().slice(0, 10),
+    source: 'https://models.dev/catalog.json?type=all',
+    reviewedAt: (observedAt || new Date().toISOString()).slice(0, 10),
   },
   providers: [],
   families: [],
   models: [],
   offerings: [],
   presets: [
-    { id: 'default', providerIds: ['openai', 'anthropic', 'google', 'openrouter', 'deepseek'] },
+    { id: 'default', providerIds: [], offeringIds: [] },
     { id: 'global', providerIds: [] },
     { id: 'china', providerIds: [] },
   ],
@@ -52,9 +61,9 @@ const feature = (value) => ({
   source: 'models.dev',
 });
 const number = (n) => (typeof n === 'number' && Number.isFinite(n) && n >= 0 ? n : null);
-for (const [id, curation] of Object.entries(overlay.providers)) {
-  const p = upstream[id];
-  if (!p) throw new Error(`Upstream provider missing: ${id}`);
+for (const [id, p] of Object.entries(upstream).sort(([a], [b]) => a.localeCompare(b))) {
+  const curation = overlay.providers[id] || { presets: [] };
+  if (['local', 'ollama'].includes(id)) continue;
   catalog.providers.push({
     id,
     name: p.name,
@@ -63,8 +72,8 @@ for (const [id, curation] of Object.entries(overlay.providers)) {
     auth: 'required',
     deployment: 'hosted',
     logoId: `provider:${id}`,
-    tags: [`origin:${curation.origin}`],
-    provenance: { source: 'catalog/overlays.json', reviewedAt: catalog.provenance.reviewedAt },
+    tags: curation.origin ? [`origin:${curation.origin}`] : [],
+    provenance: { source: 'models.dev', reviewedAt: catalog.provenance.reviewedAt },
   });
   catalog.assets.push({
     id: `provider:${id}`,
@@ -74,32 +83,33 @@ for (const [id, curation] of Object.entries(overlay.providers)) {
   });
   for (const preset of curation.presets)
     catalog.presets.find((x) => x.id === preset).providerIds.push(id);
-  const entries = Object.values(p.models || {})
-    .filter((m) => m.modalities?.output?.includes('text'))
-    .sort(
-      (a, b) =>
-        (b.release_date || '').localeCompare(a.release_date || '') || a.id.localeCompare(b.id),
-    );
-  // COMPLETE needs every text-output offering from each supported provider, including retired entries for explicit inspection.
+  const entries = Object.values(p.models || {}).sort(
+    (a, b) =>
+      (b.release_date || '').localeCompare(a.release_date || '') || a.id.localeCompare(b.id),
+  );
+  // Discovery includes every operation; execution support is reviewed separately.
   for (const [rank, m] of entries.entries()) {
     const modelId = m.canonical_model_id || `${id}/${m.id}`,
-      familyId = m.family || modelId;
+      base = m.canonical_model_id ? metadata[m.canonical_model_id] : m,
+      familyId = base?.family || modelId;
     if (!families.has(familyId)) {
       families.add(familyId);
-      catalog.families.push({ id: familyId, name: familyId, logoId: `provider:${id}` });
+      catalog.families.push({ id: familyId, name: familyId });
     }
     if (!known.has(modelId)) {
       known.add(modelId);
       catalog.models.push({
         id: modelId,
-        name: m.name,
+        name: base?.name || modelId,
         familyId,
-        origin: m.canonical_model_id ? undefined : curation.origin,
-        openWeights: typeof m.open_weights === 'boolean' ? m.open_weights : null,
+        type: base?.type,
+        releaseDate: base?.release_date || null,
+        lastUpdated: base?.last_updated || null,
+        openWeights: typeof base?.open_weights === 'boolean' ? base.open_weights : null,
         commercialUse: 'unknown',
-        license: m.license || null,
+        license: base?.license || null,
         size: { totalParameters: null, activeParameters: null, architecture: 'unknown' },
-        tags: m.open_weights === true ? ['weights:open'] : [],
+        tags: base?.open_weights === true ? ['weights:open'] : [],
         provenance: { source: 'models.dev', reviewedAt: catalog.provenance.reviewedAt },
       });
     }
@@ -154,23 +164,26 @@ for (const [id, curation] of Object.entries(overlay.providers)) {
       modelId,
       apiModelId: m.id,
       name: m.name,
-      releaseDate:
-        typeof m.release_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(m.release_date)
-          ? m.release_date
-          : null,
+      releaseDate: m.release_date || null,
+      lastUpdated: m.last_updated || null,
+      type: m.type,
+      providerShape: m.provider?.shape,
+      requiresProviderOverride: Boolean(
+        m.provider && Object.keys(m.provider).some((key) => key !== 'shape'),
+      ),
+      callSupport: callSupportFor({
+        providerId: id,
+        apiModelId: m.id,
+        modalities: m.modalities,
+        type: m.type,
+        providerShape: m.provider?.shape,
+      }),
       deployment: 'hosted',
       hosting: { region: null, eligibility: 'unknown' },
       speed: { timeToFirstTokenMs: null, tokensPerSecond: null, source: null },
       rank,
       ...(observedAt
-        ? {
-            lifecycleEvidence: {
-              status: m.status === 'deprecated' ? 'OUTDATED' : 'LIVE',
-              basis: 'catalog-listing',
-              source: 'https://models.dev/api.json',
-              checkedAt: observedAt,
-            },
-          }
+        ? { listingEvidence: { source: catalog.provenance.source, checkedAt: observedAt } }
         : {}),
       status: m.status || 'stable',
       fileFormats: (m.modalities?.input || []).filter(
@@ -179,11 +192,11 @@ for (const [id, curation] of Object.entries(overlay.providers)) {
       modalities: {
         input:
           m.modalities?.input?.filter((x) =>
-            ['text', 'image', 'audio', 'video', 'embedding'].includes(x),
+            ['text', 'image', 'audio', 'video', 'embedding', 'pdf'].includes(x),
           ) || null,
         output:
           m.modalities?.output?.filter((x) =>
-            ['text', 'image', 'audio', 'video', 'embedding'].includes(x),
+            ['text', 'image', 'audio', 'video', 'embedding', 'pdf'].includes(x),
           ) || null,
       },
       limits: {
@@ -195,6 +208,10 @@ for (const [id, curation] of Object.entries(overlay.providers)) {
       features,
       price: {
         currency: 'USD',
+        unit: 'per-million-tokens',
+        reasoning: number(m.cost?.reasoning),
+        inputAudio: number(m.cost?.input_audio),
+        outputAudio: number(m.cost?.output_audio),
         input: number(m.cost?.input),
         output: number(m.cost?.output),
         cacheRead: number(m.cost?.cache_read),
@@ -206,6 +223,10 @@ for (const [id, curation] of Object.entries(overlay.providers)) {
     });
   }
 }
+for (const preset of catalog.presets)
+  preset.providerIds.sort(
+    (a, b) => Object.keys(overlay.providers).indexOf(a) - Object.keys(overlay.providers).indexOf(b),
+  );
 for (const id of ['ollama', 'local']) {
   catalog.providers.push({
     id,
@@ -248,6 +269,37 @@ const manual = JSON.parse(
     'utf8',
   ),
 );
+// Carry explicit evidence forward without refreshing its timestamp.
+for (const old of previous?.offerings || []) {
+  if (manual.offerings?.some((o) => o.id === old.id)) continue;
+  const current = catalog.offerings.find((o) => o.id === old.id);
+  const explicit =
+    old.status === 'deprecated' ||
+    old.lifecycleEvidence?.basis === 'provider' ||
+    old.lifecycleEvidence?.status === 'OUTDATED';
+  if (current && explicit && old.lifecycleEvidence)
+    current.lifecycleEvidence = old.lifecycleEvidence;
+  if (
+    !current &&
+    explicit &&
+    (old.status === 'deprecated' || old.lifecycleEvidence?.status === 'OUTDATED')
+  ) {
+    catalog.offerings.push(old);
+    for (const [collection, id] of [
+      ['providers', old.providerId],
+      ['models', old.modelId],
+    ]) {
+      if (
+        !catalog[collection].some((x) => x.id === id) &&
+        !manual[collection]?.some((x) => x.id === id)
+      )
+        catalog[collection].push(previous[collection].find((x) => x.id === id));
+    }
+    const model = previous.models.find((x) => x.id === old.modelId);
+    if (model?.familyId && !catalog.families.some((x) => x.id === model.familyId))
+      catalog.families.push(previous.families.find((x) => x.id === model.familyId));
+  }
+}
 catalog = mergeManualCatalog(catalog, manual);
 // Explicit evidence-backed overlays; identities/endpoints/auth cannot be overridden.
 for (const [collection, allowed] of [
@@ -290,6 +342,18 @@ for (const [collection, allowed] of [
     record.provenance = { source: override.source, reviewedAt: override.reviewedAt };
   }
 }
+for (const o of catalog.offerings) o.callSupport = callSupportFor(o);
+const recommendations = JSON.parse(
+  await readFile(new URL('../catalog/recommendations.json', import.meta.url), 'utf8'),
+);
+catalog.recommendations = recommendations;
+const defaults = catalog.presets.find((p) => p.id === 'default');
+for (const r of recommendations) {
+  const o = catalog.offerings.find((o) => o.id === r.offeringId);
+  if (!o || o.status === 'deprecated' || !o.callSupport?.textGeneration) continue;
+  defaults.offeringIds.push(o.id);
+  if (!defaults.providerIds.includes(o.providerId)) defaults.providerIds.push(o.providerId);
+}
 for (const o of catalog.offerings)
   o.tags = deriveTags(
     o,
@@ -305,24 +369,42 @@ const errors = validateCatalog(catalog);
 if (errors.length) throw new Error(errors.join('; '));
 await mkdir(out, { recursive: true });
 const destination = resolve(out, 'catalog.json');
-let previous;
-try {
-  previous = JSON.parse(await readFile(destination, 'utf8'));
-} catch {}
+const semantic = ({ listingEvidence: _listing, provenance: _provenance, ...record }) => record;
 if (previous) {
   const old = new Map(previous.offerings.map((o) => [o.id, o])),
     next = new Map(catalog.offerings.map((o) => [o.id, o]));
   const diff = {
+    providersAdded: catalog.providers
+      .map((p) => p.id)
+      .filter((id) => !previous.providers.some((p) => p.id === id)),
+    providersRemoved: previous.providers
+      .map((p) => p.id)
+      .filter((id) => !catalog.providers.some((p) => p.id === id)),
+    modelsChanged: catalog.models
+      .filter((m) =>
+        previous.models.some(
+          (old) => old.id === m.id && JSON.stringify(semantic(old)) !== JSON.stringify(semantic(m)),
+        ),
+      )
+      .map((m) => m.id),
+    recommendationsChanged:
+      JSON.stringify(previous.recommendations) !== JSON.stringify(catalog.recommendations),
     added: [...next.keys()].filter((id) => !old.has(id)),
     removed: [...old.keys()].filter((id) => !next.has(id)),
     changed: [...next]
       .filter(
         ([id, o]) =>
-          old.has(id) &&
-          JSON.stringify(o.limits) + JSON.stringify(o.price) !==
-            JSON.stringify(old.get(id).limits) + JSON.stringify(old.get(id).price),
+          old.has(id) && JSON.stringify(semantic(o)) !== JSON.stringify(semantic(old.get(id))),
       )
       .map(([id]) => id),
+    details: [...next]
+      .filter(([id]) => old.has(id))
+      .flatMap(([id, o]) => {
+        const fields = Array.from(
+          new Set([...Object.keys(semantic(o)), ...Object.keys(semantic(old.get(id)))]),
+        ).filter((key) => JSON.stringify(o[key]) !== JSON.stringify(old.get(id)[key]));
+        return fields.length ? [{ id, fields }] : [];
+      }),
   };
   await writeFile(resolve(out, 'changes.json'), JSON.stringify(diff, null, 2) + '\n');
 }
@@ -332,12 +414,15 @@ await writeFile(
   JSON.stringify(
     {
       schemaVersion: 1,
-      source: 'https://models.dev/api.json',
+      source: 'https://models.dev/catalog.json?type=all',
       sha256: createHash('sha256').update(raw).digest('hex'),
       overlaySha256: createHash('sha256').update(JSON.stringify(overlay)).digest('hex'),
       manualSha256: createHash('sha256').update(JSON.stringify(manual)).digest('hex'),
       verificationsSha256: createHash('sha256')
         .update(JSON.stringify(catalog.verifications))
+        .digest('hex'),
+      recommendationsSha256: createHash('sha256')
+        .update(JSON.stringify(recommendations))
         .digest('hex'),
       observedAt: observedAt || null,
       generatedAt: catalog.provenance.reviewedAt,

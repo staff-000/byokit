@@ -42,6 +42,7 @@ export declare enum Modality {
   Audio = 'audio',
   Video = 'video',
   Embedding = 'embedding',
+  PDF = 'pdf',
 }
 
 export declare enum FileFormat {

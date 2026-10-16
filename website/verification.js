@@ -88,7 +88,7 @@ function isUnverified(m) {
   return summary.status !== 'passed';
 }
 function nextUnverifiedModel(fromModel, list = models) {
-  const candidates = list.filter((m) => !m.local);
+  const candidates = list.filter((m) => !m.local && m.callSupport?.textGeneration);
   if (!candidates.length) return null;
   const fromIdx = fromModel ? candidates.findIndex((m) => m.id === fromModel.id) : -1;
   for (let i = fromIdx + 1; i < candidates.length; i++) {
@@ -220,6 +220,7 @@ function renderModels() {
     checkbox.checked = batchSelection.has(m.id);
     checkbox.disabled =
       !!m.local ||
+      !m.callSupport?.textGeneration ||
       busy ||
       !!batchController ||
       (!!batchSelection.size && batchSelection.values().next().value.providerId !== m.providerId);
@@ -331,6 +332,18 @@ function renderModels() {
     } else if (!last) action.append(el('span', 'No community verification yet', 'evidence-note'));
     const button = el('button', 'Verify', 'small-button');
     button.type = 'button';
+    button.disabled = !m.local && !m.callSupport?.textGeneration;
+    if (!m.local && !m.callSupport?.textGeneration)
+      button.title = m.callSupport?.reason || 'No reviewed adapter';
+    action.append(
+      el(
+        'span',
+        m.callSupport?.textGeneration
+          ? 'Text calls supported'
+          : m.callSupport?.reason || 'Local setup',
+        'evidence-note',
+      ),
+    );
     button.addEventListener('click', () => {
       select(m);
       $('#call-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -379,7 +392,7 @@ function toggleBatch(model, checked) {
 $('#batch-select-shown').addEventListener('click', () => {
   const eligible = filteredModels()
     .slice(0, shown)
-    .filter((m) => !m.local);
+    .filter((m) => !m.local && m.callSupport?.textGeneration);
   if (!eligible.length) return;
   const provider = batchSelection.size
     ? batchSelection.values().next().value.providerId

@@ -15,7 +15,7 @@ export function pythonModels(payload) {
       {
         stdio: [fd, 'pipe', 'pipe'],
         encoding: 'utf8',
-        maxBuffer: 16 * 1024 * 1024,
+        maxBuffer: 128 * 1024 * 1024,
         timeout: 30000,
       },
     );

@@ -82,8 +82,8 @@ badge registry in `contributors.json` and individual SVGs under `badges/`.
 
 ## Filters and batch checks
 
-The model list defaults to LIVE offerings. **Include outdated models** explicitly
-adds retired offerings; it never substitutes a model if an outdated one is rejected.
+The verification table includes LIVE and UNCERTAIN offerings by default. **Include outdated models** explicitly
+adds retired offerings; unsupported adapters cannot be verified here and it never substitutes a model if an outdated one is rejected.
 Use the table-header selectors to filter by provider, origin tags, excluded tag,
 supported capability, input modality, weights, context, and input price. Separate
 columns show context, input/output price, speed/release, tags, and verification

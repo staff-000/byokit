@@ -21,10 +21,10 @@ pip install byokit
 import * as byokit from 'byokit';
 
 const models = byokit.getModels();
-// One LIVE model per default provider, plus a Local setup entry.
+// Reviewed offering recommendations, plus a Local setup entry.
 
-byokit.getModels(byokit.COMPLETE); // All LIVE offerings from supported providers
-byokit.getModels(byokit.GLOBAL); // One LIVE model per supported provider + Local
+byokit.getModels(byokit.COMPLETE); // Every provider and output, including retired/uncertain entries
+byokit.getModels(byokit.GLOBAL); // One non-retired model per editorial provider + Local
 byokit.getModels(byokit.CHINA); // China-provider shortlist + Local
 ```
 
@@ -123,7 +123,8 @@ location or network availability.
 | `maxInputPricePerM`, `maxOutputPricePerM`       | Maximum USD per million tokens                                                                                                             |
 | `openWeights`, `commercialUse`, `maxParameters` | Weight availability, licensing, model size                                                                                                 |
 | `minTokensPerSecond`, `maxTimeToFirstTokenMs`   | Known speed and latency measurements                                                                                                       |
-| `lifecycle`, `includeDeprecated`                | LIVE by default; optional OUTDATED/UNCERTAIN                                                                                               |
+| `lifecycle`, `includeDeprecated`                | Non-retired by default; COMPLETE includes all; explicit lifecycle wins                                                                     |
+| `callable`                                      | Filter reviewed text-generation adapter compatibility                                                                                      |
 | `popularity`                                    | POPULAR / NOT_POPULAR / UNCERTAIN from sourced usage ranks                                                                                 |
 | `verified`, `verifiedBy`, `verifiedWithinDays`  | Community call reports and freshness                                                                                                       |
 
@@ -131,7 +132,7 @@ Except the first row, these fields belong inside `filters`. Use exported enums
 such as `byokit.Modality.Image`, `byokit.FeatureName.JsonSchema`, and
 `byokit.Lifecycle.Outdated`. Custom tags use `byokit.customTag('usecase:coding')`.
 Unknown metadata fails requirements by default; `unknownPolicy` can explicitly
-include it. Local entries are appended without hosted metadata filtering.
+include it. Generic Local entries are excluded when input/output or callable filters are set.
 `prefer.features` and `prefer.lowerCost` guide per-provider shortlist selection;
 use `ModelSort.ProviderOrder` to retain that ranking in returned lists.
 
@@ -144,7 +145,7 @@ Each model returns its provider, `apiModelId`, `connection` (URL/protocol),
 capabilities, modalities, limits, prices, tags, logos, lifecycle/popularity
 evidence, and contributor verification records. `releaseDate` and `speed` are
 included where known; current catalog speed measurements are unknown.
-LIVE is listing evidence, not an account-access guarantee. Community verification
+LIVE requires current provider availability evidence; listing presence alone is UNCERTAIN. Community verification
 means a contributor reported a successful call for that exact provider/model.
 
 ## Append your own model
@@ -214,3 +215,45 @@ Catalog synchronization and release publishing are decoupled into separate workf
 
 Built on [Models.dev](https://models.dev). Thank you to its maintainers and
 contributors for the catalog that makes byokit possible. [MIT license](LICENSE).
+
+## Catalog coverage and list migration
+
+The bundled snapshot imports `https://models.dev/catalog.json?type=all`: canonical
+model metadata plus provider-specific offerings. All upstream providers and output
+modalities are discoverable. Coverage depends on upstream and reviewed manual additions.
+
+`DEFAULT` now uses `catalog/recommendations.json`, an offering-level list with source,
+review date, and rationale. Refreshing upstream never automatically adds recommendations.
+`GLOBAL` and `CHINA` remain editorial provider collections. `COMPLETE` includes
+retired and uncertain models. Use `filters.lifecycle` to narrow it; this takes
+precedence over `includeDeprecated`. Set `includeDeprecated: false` to exclude retired entries from COMPLETE. Other lists exclude known retirement unless
+`includeDeprecated: true` or an explicit lifecycle filter includes it.
+
+```js
+const images = byokit.getModels(byokit.COMPLETE, {
+  local: false,
+  filters: { output: [byokit.Modality.Image] },
+});
+const chat = byokit.getModels(byokit.COMPLETE, {
+  local: false,
+  filters: { callable: true, lifecycle: [byokit.Lifecycle.Live] },
+});
+// Dynamic catalog IDs need no new enum constant. Unknown IDs fail at runtime.
+byokit.getModels({ providerIds: ['fireworks-ai'], local: false });
+```
+
+Input and output arrays require every listed modality. Image input means image
+understanding; image output means generation. `callSupport.textGeneration` describes
+compatibility with BYOKit's reviewed adapters. Newly discovered providers have no
+automatically trusted connection; unsupported catalog calls fail before HTTP.
+Image, audio, and video generation are discoverable but have no media call API here.
+
+`listingEvidence.checkedAt` records snapshot observation. `lifecycleEvidence` records
+provider availability with `basis: 'provider'`; legacy evidence without a basis stays UNCERTAIN. Neither proves account access. Contributor verification
+records a specific successful or failed call independently. Retirement evidence
+persists across refreshes, including when an offering disappears upstream.
+
+`releaseDate` and `lastUpdated` preserve day or month precision. Token prices use
+`unit: 'per-million-tokens'`; `inputAudio`, `outputAudio`, `reasoning`, and tiers are
+preserved where known. Missing media pricing stays unknown. A provider's country
+does not establish the origin of models it serves.

@@ -5,20 +5,23 @@ import { pythonModels } from './python-fixture.mjs';
 import * as byokit from 'byokit/catalog';
 const asOf = '2026-10-13T13:00:00Z';
 const fixture = () => JSON.parse(readFileSync('spec/fixtures/catalog.json'));
-test('default list is one LIVE hosted model per requested provider followed by Local', () => {
+test('default list contains explicit reviewed recommendations followed by Local', () => {
   const list = byokit.getModels({ asOf });
   assert.deepEqual(
     list.map((o) => o.providerId),
-    ['anthropic', 'deepseek', 'google', 'openai', 'openrouter', 'local'],
+    ['anthropic', 'google', 'openai', 'openai', 'local'],
   );
-  assert.ok(list.slice(0, -1).every((o) => o.lifecycle.status === byokit.Lifecycle.Live));
+  assert.ok(list.slice(0, -1).every((o) => o.callSupport.textGeneration));
+  const ids = JSON.parse(readFileSync('catalog/recommendations.json')).map((r) => r.offeringId);
+  assert.ok(list.slice(0, -1).every((o) => ids.includes(o.id)));
   assert.equal(list.at(-1).local.configured, false);
   assert.equal(list.at(-1).apiModelId, '');
 });
 test('COMPLETE removes shortlist limits and CHINA selects China providers', () => {
   const full = byokit.getModels(byokit.COMPLETE, { asOf, local: false });
   assert.ok(full.length > 500);
-  assert.ok(full.every((o) => o.lifecycle.status === byokit.Lifecycle.Live));
+  assert.ok(full.some((o) => o.lifecycle.status === byokit.Lifecycle.Uncertain));
+  assert.ok(full.some((o) => o.lifecycle.status === byokit.Lifecycle.Outdated));
   assert.ok(full.filter((o) => o.providerId === 'openrouter').length > 24);
   assert.deepEqual(
     byokit
@@ -60,11 +63,13 @@ test('lifecycle is provider-specific: retired direct model stays LIVE via aggreg
   });
   const c = new byokit.Catalog(d),
     list = c.getModels(byokit.COMPLETE, { asOf, local: false });
-  assert.ok(!list.some((o) => o.id === original.id));
+  assert.ok(
+    list.some((o) => o.id === original.id && o.lifecycle.status === byokit.Lifecycle.Outdated),
+  );
   assert.ok(list.some((o) => o.id === 'openrouter/same-model'));
   delete d.offerings[1].lifecycleEvidence;
   assert.ok(
-    !new byokit.Catalog(d)
+    new byokit.Catalog(d)
       .getModels(byokit.COMPLETE, { asOf, local: false })
       .some((o) => o.id === d.offerings[1].id),
   );

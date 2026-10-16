@@ -70,9 +70,9 @@ flowchart TD
 ```
 
 Provider order follows the preset or explicit provider list. Within a provider,
-preferred supported features rank first, followed by optional input-token price,
+provider-backed LIVE evidence ranks first, followed by preferred features and optional input-token price,
 curated rank and stable ID. Explicit providerIds and COMPLETE return all matching
-LIVE hosted entries; default and region queries choose one per provider. An explicit
+hosted entries; DEFAULT uses reviewed offering IDs and region queries choose one non-retired offering per provider. An explicit
 limit caps hosted results before local entries are appended.
 Grouped UI menus have separate provider/model-per-provider limits.
 
@@ -269,38 +269,26 @@ not label models missing from a ranking as unpopular.
 
 ## Simple queries and local endpoints
 
-`getModels()` chooses one LIVE offering from OpenAI, Anthropic, Google,
-OpenRouter, and DeepSeek, then appends a Local setup entry. Typed `COMPLETE`,
-`CHINA`, and `GLOBAL` shortcuts accept an optional second options argument.
-COMPLETE considers every text-output offering from all supported providers, not
-just a truncated per-provider snapshot. Explicit provider queries are unbounded;
-region/default queries use one model per provider. A hosted limit applies before
-local append. Grouped UI selection still uses its configured display caps.
+`getModels()` selects reviewed offering IDs from `catalog/recommendations.json`, then
+appends a Local setup entry. COMPLETE discovers every upstream provider, output
+modality and lifecycle. GLOBAL and CHINA are editorial provider collections with
+one non-retired offering per provider. Explicit provider queries are unbounded.
+A hosted limit applies before local append; grouped UI retains display caps.
 
-```mermaid
-flowchart TD
-  A[Default / COMPLETE / CHINA / options] --> B[Normalize typed query]
-  B --> C[Provider-specific lifecycle evidence]
-  C --> D[Hosted LIVE filter and other requirements]
-  D --> E[Rank within provider and apply hosted limits]
-  E --> F[Append configured local servers or one setup entry]
-  F --> G[Return model options]
-  H[URL + API protocol + optional model ID] --> F
-```
+The importer consumes the combined `catalog.json?type=all` snapshot. Shared model
+facts come from canonical metadata; offering capabilities, prices, limits and
+lifecycle stay provider-specific. Unlinked models keep provider-scoped IDs.
+Upstream URLs never install call adapters. `callSupport.textGeneration` and
+`filters.callable` distinguish discovery from reviewed text-call compatibility.
 
-A current upstream snapshot explicitly recorded at download time can provide
-`basis: catalog-listing` lifecycle evidence. It does not verify provider execution
-or account entitlement. Provider reviews can override it with `basis: provider`.
-`--observed-at` belongs to the snapshot observation, not the import clock. Reimports
-without a new observation reuse the timestamp only if the source hash matches;
-an unobserved new file yields UNCERTAIN. No inference is run during import.
+Snapshot observation uses `listingEvidence`, never a fresh LIVE claim. `--observed-at`
+belongs to the download; unchanged snapshots reuse it. Provider evidence timestamps
+are preserved. Explicit retirement remains OUTDATED even after evidence ages or
+the offering disappears upstream. No inference runs during import.
 
-Hosted LIVE is default across queries and pickers; explicit lifecycle filters
-allow inspection of retired/uncertain records. Local setup/configuration entries
-are separate and bypass tag, popularity, lifecycle, cost, and capability filters.
-`local: false`, an empty local list, or hosted-only deployment removes them.
-Local entries preserve unknown capabilities and are not labeled LIVE just because
-a URL is configured. Inference belongs to the host's protocol adapter.
+Explicit lifecycle filters take precedence over includeDeprecated. COMPLETE includes
+all states by default; other queries exclude OUTDATED. Local entries preserve unknown
+capabilities and are excluded by input/output and callable requirements.
 
 Local discovery accepts OpenAI-compatible or native Ollama API protocols rather
 than requiring a runtime brand. OpenAI-compatible `/v1/models` works for Ollama,
@@ -445,7 +433,7 @@ Keys are supplied transiently from the provider's form entry and never saved wit
 results. Batch results preserve provider-specific IDs and require explicit sharing
 per successful model; the publication limits and badge rules are unchanged.
 
-Global includes all supported providers. Exclude origin:cn with filters.excludeTags to omit China-origin providers/models; missing origin remains unknown.
+Global includes editorial providers. Exclude origin:cn with filters.excludeTags to omit China-origin providers/models; missing origin remains unknown.
 
 The former NON_CHINA/NonChina API has been removed. Migrate to GLOBAL for an inclusive shortlist or COMPLETE with filters.excludeTags: [Tag.OriginChina] for origin exclusions. Both languages use the same catalog and enum vocabulary.
 

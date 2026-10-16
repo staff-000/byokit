@@ -78,12 +78,12 @@ test('canceling prevents queued requests and fences a late result', async () => 
     ['canceled', 'skipped'],
   );
 });
-test('verification selectors preserve LIVE defaults and explicitly include outdated offerings', () => {
+test('verification selectors include uncertain defaults and explicitly include outdated offerings', () => {
   const live = filterModels({ provider: 'openai' }),
     all = filterModels({ provider: 'openai', includeOutdated: true });
   assert.ok(live.length);
   assert.ok(all.length > live.length);
-  assert.ok(live.every((m) => m.lifecycle.status === 'LIVE'));
+  assert.ok(live.every((m) => ['LIVE', 'UNCERTAIN'].includes(m.lifecycle.status)));
   assert.ok(all.some((m) => m.lifecycle.status === 'OUTDATED'));
   const china = filterModels({ region: 'china' });
   assert.ok(

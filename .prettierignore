@@ -5,6 +5,7 @@ catalog/catalog.lock.json
 catalog/changes.json
 catalog/verifications.json
 packages/core/catalog.js
+packages/byokit/catalog.js
 packages/python/
 docs/verification/
 spec/conformance/

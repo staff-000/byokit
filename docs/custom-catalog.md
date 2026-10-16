@@ -27,14 +27,14 @@ the empty Local setup placeholder.
 ## Add a Models.dev provider
 
 1. Confirm its exact ID exists in the upstream snapshot.
-2. Add `catalog/overlays.json` → `providers` → that ID with known `origin`,
+2. Optionally add `catalog/overlays.json` → `providers` → that ID with known `origin`,
    `rank`, and `presets: ["global"]` (optionally `"china"`).
-3. Add its documented native base URL/protocol to `providerConnections` in
-   `packages/core/connection.js` and Python `inference.py` so calls can execute.
+3. To enable calls, review and add its documented native base URL/protocol to `providerConnections` in
+   `packages/byokit/connection.js` and Python `inference.py` so calls can execute.
 4. Optionally add a stable `ProviderId` enum in `spec/enums.json`, then run
-   `npm run enums:generate`. Otherwise use `customProviderId('provider-id')`.
+   `npm run enums:generate`. Dynamic provider ID strings are also accepted.
 5. Regenerate and validate using the commands below. The importer includes all
-   upstream text-output offerings for that provider.
+   upstream offerings for every provider; overlays only curate metadata and presets.
 
 ## Add manually, independently of upstream
 
@@ -48,13 +48,13 @@ records into [catalog/manual.json](../catalog/manual.json), keeping existing rec
   explicit `connection: { baseUrl, protocol }`, modalities, limits, prices/features.
 - **Evidence:** every provider, model, and offering needs
   `provenance: { source: "https://…", reviewedAt: "YYYY-MM-DD" }`.
-- **Availability:** to appear in default LIVE queries, supply current
+- **Availability:** to establish LIVE availability, supply current
   `lifecycleEvidence: { status: "LIVE", basis: "provider", source: "https://…",
 checkedAt: "…Z" }` after checking provider documentation. Without evidence it is
-  UNCERTAIN; inspect with `filters.lifecycle: [byokit.Lifecycle.Uncertain]`.
+  UNCERTAIN and visible in discovery; narrow with `filters.lifecycle: [byokit.Lifecycle.Uncertain]`.
   Nightly fetching does not refresh manual evidence dates automatically.
 - **Shortlists:** manual providers join Global/COMPLETE. To extend another list,
-  add `presets: [{ id: "default", providerIds: ["acme"] }]` to manual.json.
+  add offering IDs with evidence and rationale to `catalog/recommendations.json` for DEFAULT.
 - **Existing provider:** omit the provider record and refer to its existing ID.
   You can reuse an existing model ID; omit that model record too.
 
@@ -72,7 +72,7 @@ connection URLs, evidence, or verification records.
 ## Regenerate and validate
 
 ```sh
-curl --fail --location https://models.dev/api.json -o /tmp/models.json
+curl --fail --location 'https://models.dev/catalog.json?type=all' -o /tmp/models.json
 node scripts/import-catalog.mjs /tmp/models.json --observed-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 npm run verify
 ```

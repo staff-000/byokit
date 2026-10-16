@@ -75,7 +75,7 @@ test('catalog sync workflow fetches models.dev source every 12 hours decoupled f
     'utf8',
   );
   assert.ok(workflow.includes('0 3,15 * * *'));
-  assert.ok(workflow.includes('https://models.dev/api.json'));
+  assert.ok(workflow.includes('https://models.dev/catalog.json?type=all'));
   assert.ok(workflow.includes('packages/byokit/catalog.js'));
 });
 

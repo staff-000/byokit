@@ -330,6 +330,8 @@ def prepare_call(
         or not model["apiModelId"]
     ):
         _fail("Select a configured model.")
+    if model.get("callSupport", {}).get("textGeneration") is False:
+        _fail(model["callSupport"].get("reason") or "Text generation is unsupported for this catalog model.")
     c = model.get("connection") or connection_for(model)
     if not c or not c.get("baseUrl"):
         _fail("Configure the model endpoint first.")
@@ -942,3 +944,33 @@ def call_claude(
     model: dict, input: str | ClaudeInput, key: str, options: CallOptions | None = None
 ) -> dict:
     return _execute(model, input, key, options, "claude")
+
+
+def call_support_for(model):
+    import re
+
+    if model.get("local", {}).get("configured"):
+        return {"textGeneration": True, "reason": None}
+    reason = None
+    modalities = model.get("modalities") or {}
+    if not model.get("connection") and model.get("providerId") not in PROVIDERS:
+        reason = "No reviewed provider adapter"
+    elif (
+        model.get("type")
+        or model.get("providerShape") == "responses"
+        or model.get("requiresProviderOverride")
+    ):
+        reason = "Unsupported model operation"
+    elif any(
+        (not model.get("connection") or modalities.get(direction) is not None)
+        and "text" not in (modalities.get(direction) or [])
+        for direction in ["input", "output"]
+    ):
+        reason = "Text generation is not declared"
+    elif re.search(
+        r"embedding|rerank|moderation|transcri|whisper|tts|realtime|(?:^|[-/])live(?:$|[-/])|audio|image|dall-e|sora|veo|computer-use|deep-research",
+        model.get("apiModelId", ""),
+        re.I,
+    ):
+        reason = "Unsupported model operation"
+    return {"textGeneration": reason is None, "reason": reason}

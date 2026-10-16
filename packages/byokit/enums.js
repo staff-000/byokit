@@ -30,6 +30,7 @@ export const Modality = Object.freeze({
   Audio: 'audio',
   Video: 'video',
   Embedding: 'embedding',
+  PDF: 'pdf',
 });
 export const FileFormat = Object.freeze({
   PDF: 'pdf',

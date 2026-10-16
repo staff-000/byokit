@@ -105,6 +105,13 @@
               "type": "string",
               "minLength": 1
             }
+          },
+          "offeringIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
           }
         },
         "required": ["id", "providerIds"]
@@ -143,13 +150,13 @@
               "input": {
                 "type": ["array", "null"],
                 "items": {
-                  "enum": ["text", "image", "audio", "video", "embedding"]
+                  "enum": ["text", "image", "audio", "video", "embedding", "pdf"]
                 }
               },
               "output": {
                 "type": ["array", "null"],
                 "items": {
-                  "enum": ["text", "image", "audio", "video", "embedding"]
+                  "enum": ["text", "image", "audio", "video", "embedding", "pdf"]
                 }
               }
             },
@@ -220,6 +227,24 @@
               "cacheWrite": {
                 "type": ["number", "null"],
                 "minimum": 0
+              },
+              "unit": {
+                "const": "per-million-tokens"
+              },
+              "inputAudio": {
+                "type": ["number", "null"],
+                "minimum": 0
+              },
+              "outputAudio": {
+                "type": ["number", "null"],
+                "minimum": 0
+              },
+              "reasoning": {
+                "type": ["number", "null"],
+                "minimum": 0
+              },
+              "tiers": {
+                "type": "array"
               }
             },
             "required": []
@@ -296,7 +321,7 @@
           },
           "releaseDate": {
             "type": ["string", "null"],
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            "pattern": "^\\d{4}-\\d{2}(-\\d{2})?$"
           },
           "connection": {
             "type": "object",
@@ -311,6 +336,26 @@
                 "enum": ["openai-compatible", "claude", "gemini", "ollama"]
               }
             }
+          },
+          "callSupport": {
+            "type": "object",
+            "required": ["textGeneration", "reason"],
+            "properties": {
+              "textGeneration": {
+                "type": "boolean"
+              },
+              "reason": {
+                "type": ["string", "null"]
+              }
+            },
+            "additionalProperties": false
+          },
+          "lastUpdated": {
+            "type": ["string", "null"],
+            "pattern": "^\\d{4}-\\d{2}(-\\d{2})?$"
+          },
+          "type": {
+            "type": "string"
           }
         },
         "required": [
@@ -421,6 +466,30 @@
           },
           "notes": {
             "type": "string"
+          }
+        }
+      }
+    },
+    "recommendations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["offeringId", "source", "reviewedAt", "rationale"],
+        "properties": {
+          "offeringId": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "pattern": "^https://"
+          },
+          "reviewedAt": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 1
           }
         }
       }

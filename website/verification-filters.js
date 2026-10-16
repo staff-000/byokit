@@ -11,8 +11,8 @@ export function filterModels(state = {}) {
   if (state.provider) providerIds = providerIds.filter((id) => id === state.provider);
   const filters = {
     lifecycle: state.includeOutdated
-      ? [byokit.Lifecycle.Live, byokit.Lifecycle.Outdated]
-      : [byokit.Lifecycle.Live],
+      ? Object.values(byokit.Lifecycle)
+      : [byokit.Lifecycle.Live, byokit.Lifecycle.Uncertain],
     includeDeprecated: !!state.includeOutdated,
   };
   if (state.feature && state.feature !== 'any') filters.requiredFeatures = [state.feature];

@@ -41,7 +41,7 @@ jobs:
 
       - name: Fetch Models.dev snapshot
         run: |
-          curl --fail --location --proto '=https' --max-time 60 --max-filesize 52428800 https://models.dev/api.json -o /tmp/models.json
+          curl --fail --location --proto '=https' --max-time 60 --max-filesize 52428800 'https://models.dev/catalog.json?type=all' -o /tmp/models.json
           node scripts/import-catalog.mjs /tmp/models.json --observed-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
       - name: Check for catalog changes and commit

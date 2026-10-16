@@ -1,7 +1,6 @@
 # Generated from spec/enums.json. Run npm run enums:generate.
 from enum import Enum
 
-
 class ProviderId(str, Enum):
     OPEN_AI = "openai"
     ANTHROPIC = "anthropic"
@@ -15,29 +14,24 @@ class ProviderId(str, Enum):
     OLLAMA = "ollama"
     LOCAL = "local"
 
-
 class Preset(str, Enum):
     GLOBAL = "global"
     CHINA = "china"
-
 
 class Country(str, Enum):
     CHINA = "cn"
     UNITED_STATES = "us"
     FRANCE = "fr"
 
-
 class Deployment(str, Enum):
     HOSTED = "hosted"
     LOCAL = "local"
     SELF_HOSTED = "self-hosted"
 
-
 class AuthRequirement(str, Enum):
     REQUIRED = "required"
     OPTIONAL = "optional"
     NONE = "none"
-
 
 class Modality(str, Enum):
     TEXT = "text"
@@ -45,7 +39,7 @@ class Modality(str, Enum):
     AUDIO = "audio"
     VIDEO = "video"
     EMBEDDING = "embedding"
-
+    PDF = "pdf"
 
 class FileFormat(str, Enum):
     PDF = "pdf"
@@ -54,7 +48,6 @@ class FileFormat(str, Enum):
     HTML = "html"
     JSON = "json"
     DOCX = "docx"
-
 
 class FeatureName(str, Enum):
     FUNCTION_CALLING = "functionCalling"
@@ -72,42 +65,35 @@ class FeatureName(str, Enum):
     THINKING_BUDGET = "thinkingBudget"
     THINKING_EFFORT = "thinkingEffort"
 
-
 class FeatureStatus(str, Enum):
     SUPPORTED = "supported"
     UNSUPPORTED = "unsupported"
     CONDITIONAL = "conditional"
     UNKNOWN = "unknown"
 
-
 class CommercialUse(str, Enum):
     ALLOWED = "allowed"
     RESTRICTED = "restricted"
     UNKNOWN = "unknown"
-
 
 class Architecture(str, Enum):
     DENSE = "dense"
     MO_E = "moe"
     UNKNOWN = "unknown"
 
-
 class ContextAccounting(str, Enum):
     COMBINED = "combined"
     INPUT_ONLY = "input-only"
     UNKNOWN = "unknown"
 
-
 class UnknownPolicy(str, Enum):
     INCLUDE = "include"
     EXCLUDE = "exclude"
-
 
 class FitStatus(str, Enum):
     FITS = "fits"
     EXCEEDS = "exceeds"
     UNKNOWN = "unknown"
-
 
 class Certainty(str, Enum):
     DECLARED = "declared"
@@ -115,12 +101,10 @@ class Certainty(str, Enum):
     ESTIMATED = "estimated"
     UNKNOWN = "unknown"
 
-
 class Currency(str, Enum):
     USD = "USD"
     EUR = "EUR"
     CNY = "CNY"
-
 
 class ModelStatus(str, Enum):
     STABLE = "stable"
@@ -129,18 +113,15 @@ class ModelStatus(str, Enum):
     BETA = "beta"
     DEPRECATED = "deprecated"
 
-
 class VerificationResult(str, Enum):
     PASSED = "passed"
     FAILED = "failed"
-
 
 class VerificationStatus(str, Enum):
     UNVERIFIED = "unverified"
     PASSED = "passed"
     FAILED = "failed"
     STALE = "stale"
-
 
 class VerificationCheck(str, Enum):
     TEXT_GENERATION = "textGeneration"
@@ -159,16 +140,13 @@ class VerificationCheck(str, Enum):
     THINKING_BUDGET = "thinkingBudget"
     THINKING_EFFORT = "thinkingEffort"
 
-
 class LocalRuntime(str, Enum):
     OLLAMA = "ollama"
     OPEN_AI_COMPATIBLE = "openai-compatible"
 
-
 class Locale(str, Enum):
     ENGLISH = "en"
     CHINESE = "zh"
-
 
 class SetupStatus(str, Enum):
     IDLE = "idle"
@@ -176,17 +154,14 @@ class SetupStatus(str, Enum):
     READY = "ready"
     ERROR = "error"
 
-
 class SetupEventType(str, Enum):
     EDIT = "edit"
     CHECKING = "checking"
     RESULT = "result"
 
-
 class Severity(str, Enum):
     WARNING = "warning"
     ERROR = "error"
-
 
 class DiagnosticCode(str, Enum):
     CAPABILITY_UNSUPPORTED = "CAPABILITY_UNSUPPORTED"
@@ -207,24 +182,20 @@ class DiagnosticCode(str, Enum):
     TOKEN_ESTIMATE = "TOKEN_ESTIMATE"
     BUDGET_UNDECLARED = "BUDGET_UNDECLARED"
 
-
 class Lifecycle(str, Enum):
     LIVE = "LIVE"
     OUTDATED = "OUTDATED"
     UNCERTAIN = "UNCERTAIN"
-
 
 class Popularity(str, Enum):
     POPULAR = "POPULAR"
     NOT_POPULAR = "NOT_POPULAR"
     UNCERTAIN = "UNCERTAIN"
 
-
 class PopularityMetric(str, Enum):
     REQUESTS = "requests"
     TOKENS = "tokens"
     DOWNLOADS = "downloads"
-
 
 class Tag(str, Enum):
     LIFECYCLE_LIVE = "lifecycle:LIVE"
@@ -237,23 +208,19 @@ class Tag(str, Enum):
     WEIGHTS_OPEN = "weights:open"
     ORIGIN_CHINA = "origin:cn"
 
-
 class ModelList(str, Enum):
     DEFAULT = "default"
     COMPLETE = "complete"
     CHINA = "china"
     GLOBAL = "global"
 
-
 class LocalApi(str, Enum):
     OPEN_AI = "openai-compatible"
     OLLAMA = "ollama"
 
-
 class LifecycleBasis(str, Enum):
     PROVIDER = "provider"
     CATALOG_LISTING = "catalog-listing"
-
 
 class ApiProtocol(str, Enum):
     OPEN_AI = "openai-compatible"
@@ -261,14 +228,12 @@ class ApiProtocol(str, Enum):
     GEMINI = "gemini"
     OLLAMA = "ollama"
 
-
 class Role(str, Enum):
     SYSTEM = "system"
     DEVELOPER = "developer"
     USER = "user"
     ASSISTANT = "assistant"
     TOOL = "tool"
-
 
 class ModelSort(str, Enum):
     ALPHABETICAL_ASCEND = "alphabeticalAscend"
@@ -282,8 +247,7 @@ class ModelSort(str, Enum):
     PRICE = "price"
     SPEED = "speed"
 
-
-DEFAULT = ModelList.DEFAULT
-COMPLETE = ModelList.COMPLETE
-CHINA = ModelList.CHINA
-GLOBAL = ModelList.GLOBAL
+DEFAULT=ModelList.DEFAULT
+COMPLETE=ModelList.COMPLETE
+CHINA=ModelList.CHINA
+GLOBAL=ModelList.GLOBAL

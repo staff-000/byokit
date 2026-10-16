@@ -26,3 +26,27 @@ export function connectionFor(model) {
     ? { ...providerConnections[model.providerId] }
     : null;
 }
+
+/** Catalog discovery never installs or trusts upstream adapters. */
+export function callSupportFor(model) {
+  if (model.local?.configured) return { textGeneration: true, reason: null };
+  let reason = null;
+  if (!model.connection && !providerConnections[model.providerId])
+    reason = 'No reviewed provider adapter';
+  else if (model.type || model.providerShape === 'responses' || model.requiresProviderOverride)
+    reason = 'Unsupported model operation';
+  else if (
+    ((!model.connection || model.modalities?.input != null) &&
+      !model.modalities?.input?.includes('text')) ||
+    ((!model.connection || model.modalities?.output != null) &&
+      !model.modalities?.output?.includes('text'))
+  )
+    reason = 'Text generation is not declared';
+  else if (
+    /embedding|rerank|moderation|transcri|whisper|tts|realtime|(?:^|[-/])live(?:$|[-/])|audio|image|dall-e|sora|veo|computer-use|deep-research/i.test(
+      model.apiModelId,
+    )
+  )
+    reason = 'Unsupported model operation';
+  return { textGeneration: reason === null, reason };
+}

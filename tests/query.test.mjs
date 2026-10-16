@@ -46,14 +46,7 @@ test('bundled provider results preserve real published contributor reports', () 
 test('README example matches the bundled catalog', () => {
   const run = spawnSync('node', ['examples/query.mjs'], { encoding: 'utf8' });
   assert.equal(run.status, 0, run.stderr);
-  assert.deepEqual(JSON.parse(run.stdout), [
-    'anthropic',
-    'deepseek',
-    'google',
-    'openai',
-    'openrouter',
-    'local',
-  ]);
+  assert.deepEqual(JSON.parse(run.stdout), ['anthropic', 'google', 'openai', 'openai', 'local']);
 });
 test('reports retain author and evidence, but never promote unknown capabilities', () => {
   const data = fixture();
@@ -158,11 +151,12 @@ test('explicit provider queries return all non-deprecated matches unless a limit
   );
 });
 
-test('Global includes every supported provider and preserves local choices', () => {
+test('Global includes editorial providers and preserves local choices', () => {
   const data = JSON.parse(readFileSync('catalog/catalog.json'));
   const preset = data.presets.find((p) => p.id === 'global');
   assert.ok(preset);
-  assert.deepEqual(new Set(preset.providerIds), new Set(data.providers.map((p) => p.id)));
+  assert.ok(preset.providerIds.every((id) => data.providers.some((p) => p.id === id)));
+  assert.ok(preset.providerIds.length < data.providers.length);
   assert.ok(preset.providerIds.includes('ollama'));
   assert.ok(preset.providerIds.includes('deepseek'));
   const c = new Catalog(data);
@@ -187,7 +181,7 @@ test('release dates validate actual calendar days; unknown metadata remains null
     data.offerings[0].releaseDate = releaseDate;
     assert.ok(validateCatalog(data).some((e) => e.includes('releaseDate')));
   }
-  for (const releaseDate of [null, '2024-02-29']) {
+  for (const releaseDate of [null, '2024-02-29', '2026-10']) {
     const data = fixture();
     data.offerings[0].releaseDate = releaseDate;
     assert.deepEqual(validateCatalog(data), []);

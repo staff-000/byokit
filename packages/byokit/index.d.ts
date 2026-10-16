@@ -52,7 +52,7 @@ export interface Asset {
   attribution?: string;
 }
 export interface Provider {
-  id: ProviderId | CustomProviderId;
+  id: ProviderId | CustomProviderId | (string & {});
   name: string;
   docsUrl?: string;
   origin?: Country | CustomCountryCode;
@@ -65,6 +65,9 @@ export interface Model {
   id: string;
   name: string;
   familyId?: string;
+  type?: string;
+  releaseDate?: string | null;
+  lastUpdated?: string | null;
   origin?: Country | CustomCountryCode;
   openWeights: boolean | null;
   commercialUse: CommercialUse;
@@ -79,11 +82,17 @@ export interface Model {
 export interface Offering {
   connection?: Connection;
   id: string;
-  providerId: ProviderId | CustomProviderId;
+  providerId: ProviderId | CustomProviderId | (string & {});
   modelId: string;
   apiModelId: string;
   name: string;
   releaseDate?: string | null;
+  lastUpdated?: string | null;
+  type?: string;
+  providerShape?: 'responses' | 'completions';
+  requiresProviderOverride?: boolean;
+  callSupport?: { textGeneration: boolean; reason: string | null };
+  listingEvidence?: { source: string; checkedAt: string };
   deployment: Deployment;
   rank?: number;
   local?: { endpoint: string; api: LocalApi; configured: boolean };
@@ -109,6 +118,10 @@ export interface Offering {
   features: Partial<Record<FeatureName, Feature>>;
   price: {
     currency: Currency;
+    unit?: 'per-million-tokens';
+    reasoning?: number | null;
+    inputAudio?: number | null;
+    outputAudio?: number | null;
     input: number | null;
     output: number | null;
     cacheRead?: number | null;
@@ -125,7 +138,8 @@ export interface CatalogData {
   models: Model[];
   families: { id: string; name: string; logoId?: string }[];
   offerings: Offering[];
-  presets: { id: string; providerIds: string[] }[];
+  presets: { id: string; providerIds: string[]; offeringIds?: string[] }[];
+  recommendations?: { offeringId: string; reviewedAt: string; source: string; rationale: string }[];
   verifications?: VerificationRecord[];
   assets?: Asset[];
   provenance?: Evidence;
@@ -143,7 +157,7 @@ export interface PickerConfig {
   limit?: number;
   asOf?: string;
   preset?: Preset;
-  providerIds?: (ProviderId | CustomProviderId)[];
+  providerIds?: (ProviderId | CustomProviderId | (string & {}))[];
   unknownPolicy?: UnknownPolicy;
   filters?: {
     deployment?: Offering['deployment'][];
@@ -165,6 +179,7 @@ export interface PickerConfig {
     lifecycle?: Lifecycle[];
     popularity?: Popularity[];
     includeDeprecated?: boolean;
+    callable?: boolean;
     verified?: boolean;
     verifiedBy?: ContributorId;
     verifiedWithinDays?: number;
@@ -174,7 +189,7 @@ export interface PickerConfig {
   budget?: { maxInputTokens?: number; maxOutputTokens?: number; overheadTokens?: number };
 }
 export interface Selection {
-  providerId: ProviderId | CustomProviderId;
+  providerId: ProviderId | CustomProviderId | (string & {});
   offeringId?: string;
   modelId: string;
   credentialRef?: string;
@@ -548,7 +563,7 @@ export class Byokit {
 }
 
 export interface CustomModel {
-  providerId: ProviderId | CustomProviderId;
+  providerId: ProviderId | CustomProviderId | (string & {});
   providerName?: string;
   modelId: string;
   name?: string;

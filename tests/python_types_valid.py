@@ -89,3 +89,5 @@ client2.chat.completions.create(
 client2.messages.create(
     model=model, messages=[{"role": byokit.Role.USER, "content": "Hi"}], api_key="key"
 )
+
+byokit.get_models(byokit.COMPLETE, {"providerIds": ["fireworks-ai"], "filters": {"callable": False}})

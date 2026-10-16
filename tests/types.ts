@@ -11,8 +11,8 @@ getModels({limit:10,filters:{verified:true,verifiedBy:githubContributor('example
 getModels({providerIds:[customProviderId('my-provider')]});
 // @ts-expect-error fixed choices require enum members, not raw strings
 getModels({preset:'china'});
-// @ts-expect-error unknown providers are caught at compile time
-getModels({providerIds:['deepseak']});
+// Catalog provider IDs are extensible; unknown IDs are validated at runtime.
+getModels({providerIds:['fireworks-ai'],filters:{callable:false}});
 // @ts-expect-error even a correctly spelled raw feature is rejected
 getModels({filters:{requiredFeatures:['functionCalling']}});
 // @ts-expect-error modality typo

@@ -1,0 +1,26 @@
+[
+  {
+    "offeringId": "openai/gpt-6.1-sol",
+    "source": "https://developers.openai.com/api/docs/models",
+    "reviewedAt": "2026-10-15",
+    "rationale": "Current general-purpose model balancing capability and cost."
+  },
+  {
+    "offeringId": "openai/gpt-6-luna",
+    "source": "https://developers.openai.com/api/docs/models",
+    "reviewedAt": "2026-10-15",
+    "rationale": "Current economical option for focused text workloads."
+  },
+  {
+    "offeringId": "anthropic/claude-sonnet-5-5",
+    "source": "https://platform.claude.com/docs/en/models/overview",
+    "reviewedAt": "2026-10-15",
+    "rationale": "Current Sonnet model for everyday coding and knowledge work."
+  },
+  {
+    "offeringId": "google/gemini-3.8-flash",
+    "source": "https://ai.google.dev/gemini-api/docs/models",
+    "reviewedAt": "2026-10-15",
+    "rationale": "Stable Flash model recommended for new projects."
+  }
+]

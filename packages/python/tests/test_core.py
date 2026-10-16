@@ -51,3 +51,18 @@ class CoreTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CatalogCallSupportTests(unittest.TestCase):
+    def test_unsupported_call_never_reaches_transport(self):
+        from unittest.mock import patch
+        from byokit import call, CallError
+
+        model = {
+            "apiModelId": "image-model",
+            "callSupport": {"textGeneration": False, "reason": "Unsupported model operation"},
+        }
+        with patch("byokit.inference.http.client.HTTPSConnection") as connection:
+            with self.assertRaisesRegex(CallError, "Unsupported model operation"):
+                call(model, {"messages": [{"role": "user", "content": "Hi"}]}, "key", {"runtime_checks": False})
+            connection.assert_not_called()

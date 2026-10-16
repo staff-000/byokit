@@ -50,9 +50,19 @@ def validate_catalog(data):
     models = {m["id"] for m in data["models"]}
     for o in data["offerings"]:
         errors.extend(_validate_signals(o))
+        support = o.get("callSupport")
+        if "callSupport" in o and (
+            not isinstance(support, dict)
+            or not isinstance(support.get("textGeneration"), bool)
+            or "reason" not in support
+            or support["reason"] is not None and not isinstance(support["reason"], str)
+        ):
+            errors.append(f"{o['id']}: invalid callSupport")
         if o.get("releaseDate") is not None:
             try:
-                if date.fromisoformat(o["releaseDate"]).isoformat() != o["releaseDate"]:
+                value = o["releaseDate"]
+                normalized = date.fromisoformat(value + ("-01" if len(value) == 7 else ""))
+                if normalized.isoformat()[:len(value)] != value:
                     raise ValueError()
             except (ValueError, TypeError):
                 errors.append(f"{o['id']}: invalid releaseDate")
@@ -79,6 +89,35 @@ def validate_catalog(data):
             i not in providers for i in p["providerIds"]
         ):
             errors.append(f"{p['id']}: unresolved provider")
+    for preset in data["presets"]:
+        ids = preset.get("offeringIds")
+        if ids is not None and (
+            not isinstance(ids, list)
+            or any(
+                not any(
+                    o["id"] == offering_id and o["providerId"] in (preset.get("providerIds") or [])
+                    for o in data["offerings"]
+                )
+                for offering_id in ids
+            )
+        ):
+            errors.append(f"{preset['id']}: unresolved recommended offering")
+    import re
+    recommended = set()
+    for r in data.get("recommendations", []):
+        if (
+            not isinstance(r, dict)
+            or not isinstance(r.get("offeringId"), str)
+            or r["offeringId"] in recommended
+            or not _signal_source(r.get("source"))
+            or not isinstance(r.get("reviewedAt"), str)
+            or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", r["reviewedAt"])
+            or not isinstance(r.get("rationale"), str)
+            or not r["rationale"].strip()
+        ):
+            errors.append("Invalid recommendation evidence")
+        if isinstance(r, dict) and isinstance(r.get("offeringId"), str):
+            recommended.add(r["offeringId"])
     errors.extend(validate_verifications(data.get("verifications", []), data))
     return errors
 
@@ -136,6 +175,7 @@ def validate_config(config):
             "lifecycle",
             "popularity",
             "includeDeprecated",
+            "callable",
             "verified",
             "verifiedBy",
             "verifiedWithinDays",
@@ -201,6 +241,9 @@ def validate_config(config):
         except (ValueError, TypeError):
             errors.append("asOf must be an ISO timestamp")
     f = config.get("filters", {})
+    for key in ["callable", "includeDeprecated"]:
+        if key in f and not isinstance(f[key], bool):
+            errors.append(f"filters.{key} must be boolean")
     if "verified" in f and not isinstance(f["verified"], bool):
         errors.append("filters.verified must be boolean")
     if "verifiedBy" in f and (
@@ -297,7 +340,17 @@ def matches(o, m, config, provider_tags=None):
             or (finite(value) and (value < f[key] if op == "min" else value > f[key]))
         ):
             return False
-    if o["lifecycle"]["status"] not in f.get("lifecycle", [Lifecycle.LIVE]):
+    support = o.get("callSupport") or call_support_for(o)
+    if "callable" in f and support["textGeneration"] != f["callable"]:
+        return False
+    include_retired = f.get("includeDeprecated") is True or (
+        config.get("list") == ModelList.COMPLETE and f.get("includeDeprecated") is not False
+    )
+    lifecycle = f.get(
+        "lifecycle",
+        list(Lifecycle) if include_retired else [Lifecycle.LIVE, Lifecycle.UNCERTAIN],
+    )
+    if o["lifecycle"]["status"] not in lifecycle:
         return False
     if "popularity" in f and o["popularity"]["status"] not in f["popularity"]:
         return False
@@ -313,7 +366,7 @@ def matches(o, m, config, provider_tags=None):
         t in tags for t in f.get("excludeTags", [])
     ):
         return False
-    return f.get("includeDeprecated", False) or o.get("status") != "deprecated"
+    return True
 
 
 class Catalog:
@@ -363,6 +416,7 @@ class Catalog:
                     dict(
                         o,
                         connection=connection_for(o),
+                        callSupport=o.get("callSupport", call_support_for(o)),
                         provider=g["provider"],
                         model=model,
                         family=family,
@@ -492,6 +546,11 @@ class Catalog:
         if any(i not in self.providers for i in ids):
             raise ValueError("Unknown provider in providerIds")
         groups = []
+        recommended = (
+            set(preset["offeringIds"])
+            if config.get("list") == ModelList.DEFAULT and "offeringIds" in preset
+            else None
+        )
 
         def order(o):
             count = sum(
@@ -500,6 +559,7 @@ class Catalog:
             )
             price = o.get("price", {}).get("input")
             return (
+                -int(o["lifecycle"]["status"] == Lifecycle.LIVE),
                 -count,
                 (price if price is not None else math.inf)
                 if config.get("prefer", {}).get("lowerCost")
@@ -517,7 +577,7 @@ class Catalog:
                     for o in (
                         _with_signals(item, config.get("asOf"))
                         for item in self.data["offerings"]
-                        if item["providerId"] == provider_id
+                        if item["providerId"] == provider_id and (recommended is None or item["id"] in recommended)
                     )
                     if matches(
                         o,
@@ -534,6 +594,7 @@ class Catalog:
                     len(choices)
                     if config.get("list") == ModelList.COMPLETE
                     or "providerIds" in config
+                    or recommended is not None
                     else config.get("ui", {}).get("maxModelsPerProvider", 1)
                 )
                 if uncapped
@@ -1083,20 +1144,21 @@ def _signal_date(value):
         return False
 
 
-def _validate_signals(o):
+def _signal_source(v):
     from urllib.parse import urlparse
 
-    errors = []
+    try:
+        return (
+            isinstance(v, str)
+            and urlparse(v).scheme == "https"
+            and bool(urlparse(v).netloc)
+        )
+    except ValueError:
+        return False
 
-    def source(v):
-        try:
-            return (
-                isinstance(v, str)
-                and urlparse(v).scheme == "https"
-                and bool(urlparse(v).netloc)
-            )
-        except ValueError:
-            return False
+
+def _validate_signals(o):
+    errors = []
 
     def record(v, keys):
         return isinstance(v, dict) and set(v) <= set(keys)
@@ -1107,7 +1169,7 @@ def _validate_signals(o):
         not record(l, ["status", "source", "checkedAt", "basis"])
         or l.get("status") not in {v.value for v in Lifecycle}
         or ("basis" in l and l["basis"] not in {v.value for v in LifecycleBasis})
-        or not source(l.get("source"))
+        or not _signal_source(l.get("source"))
         or not _signal_date(l.get("checkedAt"))
     ):
         errors.append(o["id"] + ": invalid lifecycle evidence")
@@ -1131,7 +1193,7 @@ def _validate_signals(o):
         or p["population"] < p["rank"]
         or not isinstance(p.get("scope"), str)
         or not p["scope"].strip()
-        or not source(p.get("source"))
+        or not _signal_source(p.get("source"))
         or not _signal_date(p.get("windowStart"))
         or not _signal_date(p.get("windowEnd"))
         or _timestamp(p["windowStart"]) >= _timestamp(p["windowEnd"])
@@ -1151,9 +1213,13 @@ def _with_signals(o, as_of=None):
     l = o.get("lifecycleEvidence")
     p = o.get("popularityEvidence")
     lifecycle = {
-        "status": ("OUTDATED" if o.get("status") == "deprecated" else l["status"])
-        if l and fresh(l["checkedAt"], 90)
-        else "UNCERTAIN",
+        "status": (
+            "OUTDATED"
+            if o.get("status") == "deprecated" or l and l["status"] == "OUTDATED"
+            else l["status"]
+            if l and fresh(l["checkedAt"], 90) and l.get("basis") == "provider"
+            else "UNCERTAIN"
+        ),
         "evidence": l,
     }
     popularity = {
@@ -1231,7 +1297,10 @@ def _validate_local(entry):
 
 def _local_groups(config, catalog):
     if (
-        config.get("local") is False
+        config.get("filters", {}).get("input")
+        or config.get("filters", {}).get("output")
+        or "callable" in config.get("filters", {})
+        or config.get("local") is False
         or "deployment" in config.get("filters", {})
         and "local" not in config["filters"]["deployment"]
     ):
@@ -1292,7 +1361,7 @@ def _local_groups(config, catalog):
     return [{"provider": provider, "offerings": offerings}]
 
 
-from .inference import call, call_claude, prepare_call, connection_for, CallError
+from .inference import call, call_claude, prepare_call, connection_for, call_support_for, CallError
 
 from .sdk import Byokit, OpenAI, Anthropic, openAI, claude
 

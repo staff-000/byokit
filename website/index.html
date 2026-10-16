@@ -119,6 +119,16 @@ console.log(result.choices[0].message.content);</code></pre>
             <span id="count" class="count" aria-live="polite">Loading catalog…</span>
           </div>
           <div class="filters">
+            <label
+              >Output
+              <select id="output">
+                <option value="">All</option>
+                <option value="text">Text</option>
+                <option value="image">Image</option>
+                <option value="audio">Audio</option>
+                <option value="video">Video</option>
+              </select></label
+            >
             <label class="search-label"
               ><span class="sr-only">Search selected results</span
               ><input id="search" type="search" placeholder="Search this result list…" /></label
@@ -154,14 +164,15 @@ console.log(result.choices[0].message.content);</code></pre>
           </div>
           <div class="results-footer">
             <span id="result-note"
-              >Hosted results require LIVE listing evidence. Local is a setup entry.</span
+              >Availability and call support are shown separately. Local is a setup entry.</span
             ><button id="more" type="button" class="small-button" hidden>Show more</button>
           </div>
         </div>
         <p class="fine">
-          COMPLETE includes all LIVE text-output offerings from the supported providers in this
-          snapshot. Listing evidence does not guarantee access for your account. Prices are catalog
-          metadata; check the provider before billing.
+          DEFAULT shows reviewed recommendations. COMPLETE includes every upstream provider and
+          output modality, including retired and uncertain offerings. Catalog presence does not
+          verify availability or account access. Prices shown are USD per million tokens; media
+          pricing may be unknown.
         </p>
       </section>
       <section id="playground" class="section wrap playground-section">
