@@ -83,10 +83,12 @@ native Gemini/Ollama and cross-format adapters; official SDKs do not provide thi
 translation. Clients implement non-streaming text, system messages, sampling, and
 tools; unsupported features fail explicitly. Tools are returned for your app to run.
 
-Defaults: 1,024 output tokens, 90-second timeout, no retries. Optional `models`
-constructor metadata enables known-limit/capability checks for those exact IDs;
-unknown metadata produces warnings. Set `runtimeChecks: false` to skip fit checks;
-request and endpoint validation remain. Browser calls require provider CORS support.
+Defaults: 1,024 output tokens, 90-second timeout, no retries. Context token budget
+verification is optional and disabled by default; set `checkBudget: true` (or
+`runtimeChecks: true`, Python `check_budget=True`) to verify token limits and emit
+fit diagnostics before HTTP dispatch. Optional `models` constructor metadata
+enables known-limit/capability checks for those exact IDs. Browser calls require
+provider CORS support.
 
 `byokit.call(model, 'Hello', apiKey)` and `callClaude()` remain stateless helpers.
 Legacy callback factories and the per-request `Byokit` client are deprecated and

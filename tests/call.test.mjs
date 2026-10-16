@@ -147,24 +147,39 @@ test('tool-only responses return calls without executing a tool or retrying', as
   ]);
   assert.equal(r.stop_reason, 'tool_use');
 });
-test('known oversized budgets fail before HTTP; defaults cap output; bypass does not bypass shape checks', async () => {
+test('known oversized budgets fail when checkBudget is enabled; disabled by default; defaults cap output; bypass does not bypass shape checks', async () => {
   let calls = 0;
   const fetch = async () => {
     calls++;
     return ok(chat);
   };
+  // By default, budget checking is disabled, so a call with max_tokens: 201 succeeds through to fetch
+  await byokit.call(
+    model(),
+    { messages: [{ role: byokit.Role.User, content: 'Hi' }], max_tokens: 201 },
+    'secret',
+    { fetch },
+  );
+  assert.equal(calls, 1);
   await assert.rejects(
     byokit.call(
       model(),
       { messages: [{ role: byokit.Role.User, content: 'Hi' }], max_tokens: 201 },
       'secret',
-      { fetch, onWarning() {} },
+      { fetch, checkBudget: true, onWarning() {} },
     ),
     (e) => e.code === 'MODEL_FIT_FAILED',
   );
-  assert.equal(calls, 0);
+  assert.equal(calls, 1);
+  const defaultWarnings = [];
+  await byokit.call(model(), 'Hi', 'secret', { fetch, onWarning: (d) => defaultWarnings.push(d) });
+  assert.equal(defaultWarnings.length, 0);
   const warnings = [];
-  await byokit.call(model(), 'Hi', 'secret', { fetch, onWarning: (d) => warnings.push(d) });
+  await byokit.call(model(), 'Hi', 'secret', {
+    fetch,
+    checkBudget: true,
+    onWarning: (d) => warnings.push(d),
+  });
   assert.ok(warnings.some((d) => d.code === 'TOKEN_COUNT_UNKNOWN'));
   assert.equal(byokit.prepareCall(model(), 'Hi').body.max_tokens, 200);
   await byokit.call(
@@ -173,7 +188,7 @@ test('known oversized budgets fail before HTTP; defaults cap output; bypass does
     'secret',
     { fetch, runtimeChecks: false },
   );
-  assert.equal(calls, 2);
+  assert.equal(calls, 4);
   await assert.rejects(
     byokit.call(
       model(),
@@ -276,13 +291,16 @@ test('known input context upper bounds reject oversize even when combined accoun
       contextAccounting: byokit.ContextAccounting.Unknown,
     },
   };
+  // By default, budget checking is disabled, so inputTokens > context does not throw
+  const defaultPrep = byokit.prepareCall(m, 'Hi', { inputTokens: 101 });
+  assert.equal(defaultPrep.diagnostics.length, 0);
   assert.throws(
-    () => byokit.prepareCall(m, 'Hi', { inputTokens: 101 }),
+    () => byokit.prepareCall(m, 'Hi', { inputTokens: 101, checkBudget: true }),
     (e) => e.code === 'MODEL_FIT_FAILED',
   );
   assert.ok(
     byokit
-      .prepareCall(m, 'Hi', { inputTokens: 99 })
+      .prepareCall(m, 'Hi', { inputTokens: 99, checkBudget: true })
       .diagnostics.some((d) => d.code === 'CONTEXT_UNVERIFIED'),
   );
 });

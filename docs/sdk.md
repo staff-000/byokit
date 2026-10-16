@@ -134,9 +134,10 @@ client class. This extension is not part of official SDK compatibility. Changing
 No proxy service is introduced.
 
 Optional `models` metadata must uniquely match the constructor endpoint and
-protocol. A custom request ID never borrows another model's limits. Missing input
-token counts and unknown limits warn; known budget/capability violations fail.
-`runtimeChecks: false` (`runtime_checks=False`) skips only model-fit checks.
+protocol. A custom request ID never borrows another model's limits. Context token
+budget verification is optional and disabled by default. When enabled with
+`checkBudget: true` (`check_budget=True`) or `runtimeChecks: true` (`runtime_checks=True`),
+missing input token counts and unknown limits warn, while known budget/capability violations fail.
 Defaults remain non-streaming text/system/sampling/tools, 1,024 output tokens capped
 by a known smaller output limit, 90 seconds, and zero automatic retries. Unsupported
 parameters fail. Tool calls are returned, never executed automatically.

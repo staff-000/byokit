@@ -324,9 +324,10 @@ and multimedia are outside this version. Response usage fields are included
 only when reported, rather than fabricated.
 
 Runtime checks reuse checkFit; missing input counts warn rather than pretending
-to guarantee fit. runtimeChecks=false skips model-fit checks, not shape/URL
-validation. Build task budgets are checked offline; missing budgets warn and
-strict validation can fail warnings. Dynamic input budgets remain runtime work.
+to guarantee fit. Budget verification is disabled by default during calls and can
+be enabled explicitly with checkBudget=true (or runtimeChecks=true). Build task
+budgets are checked offline; missing budgets warn and strict validation can fail
+warnings. Dynamic input budgets remain runtime work.
 
 Authentication headers use a per-call key transiently. They are excluded from
 results, diagnostics, records and logs. Redirects are blocked. Browser CORS

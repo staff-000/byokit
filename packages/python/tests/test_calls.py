@@ -123,8 +123,10 @@ class CallTests(unittest.TestCase):
 
     def test_budgets_and_essential_validation(self):
         p = {"messages": [{"role": "user", "content": "Hi"}], "max_tokens": 201}
+        # By default, check_budget is False, so prepare_call succeeds without MODEL_FIT_FAILED
+        self.assertEqual(prepare_call(model(), p)["body"]["max_tokens"], 201)
         with self.assertRaises(byokit.CallError) as e:
-            prepare_call(model(), p)
+            prepare_call(model(), p, check_budget=True)
         self.assertEqual(e.exception.code, "MODEL_FIT_FAILED")
         self.assertEqual(
             prepare_call(model(), p, runtime_checks=False)["body"]["max_tokens"], 201

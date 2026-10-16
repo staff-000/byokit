@@ -335,7 +335,13 @@ function geminiMessages(messages) {
 export function prepareCall(
   model,
   input,
-  { format = 'openai', runtimeChecks = true, inputTokens, overheadTokens = 0 } = {},
+  {
+    format = 'openai',
+    runtimeChecks = false,
+    checkBudget = false,
+    inputTokens,
+    overheadTokens = 0,
+  } = {},
 ) {
   if (!obj(model) || typeof model.apiModelId !== 'string' || !model.apiModelId.trim())
     fail('Select a configured model with an API model ID.');
@@ -359,6 +365,8 @@ export function prepareCall(
     fail('Endpoint must be HTTP(S), without credentials, query or fragment.');
   if (!Object.values(ApiProtocol).includes(connection.protocol)) fail('Unsupported API protocol.');
   if (typeof runtimeChecks !== 'boolean') fail('runtimeChecks must be boolean.');
+  if (typeof checkBudget !== 'boolean') fail('checkBudget must be boolean.');
+  const shouldCheck = runtimeChecks || checkBudget;
   const p = normalize(input, format),
     limit = p.limit ?? Math.min(1024, model.limits?.output || 1024),
     protocol = connection.protocol,
@@ -491,7 +499,7 @@ export function prepareCall(
     path = '/chat/completions';
   }
   let diagnostics = [];
-  if (runtimeChecks) {
+  if (shouldCheck) {
     const fit = checkFit(
       model,
       { inputTokens, outputTokens: limit, overheadTokens },
@@ -631,7 +639,8 @@ function parsed(data, protocol, model) {
 }
 async function execute(model, input, key, options, format) {
   const {
-    runtimeChecks = true,
+    runtimeChecks = false,
+    checkBudget = false,
     signal,
     timeoutMs = 90000,
     onWarning,
@@ -645,7 +654,13 @@ async function execute(model, input, key, options, format) {
   if (!model.local && !key.trim()) fail('Provide a provider API key.');
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) fail('timeoutMs must be positive.');
   const extraHeaders = validateHeaders(options?.headers ?? {});
-  const request = prepareCall(model, input, { format, runtimeChecks, inputTokens, overheadTokens });
+  const request = prepareCall(model, input, {
+    format,
+    runtimeChecks,
+    checkBudget,
+    inputTokens,
+    overheadTokens,
+  });
   for (const d of request.diagnostics)
     if (d.severity === 'warning') {
       if (onWarning) onWarning(d);

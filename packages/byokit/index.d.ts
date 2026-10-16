@@ -411,6 +411,7 @@ export interface ClaudeInput {
 }
 export interface CallOptions {
   headers?: Record<string, string>;
+  checkBudget?: boolean;
   runtimeChecks?: boolean;
   timeoutMs?: number;
   signal?: AbortSignal;
@@ -467,7 +468,10 @@ export function callClaude(
 export function prepareCall(
   model: ModelOption,
   input: string | ChatInput | ClaudeInput,
-  options?: Pick<CallOptions, 'runtimeChecks' | 'inputTokens' | 'overheadTokens'> & {
+  options?: Pick<
+    CallOptions,
+    'checkBudget' | 'runtimeChecks' | 'inputTokens' | 'overheadTokens'
+  > & {
     format?: 'openai' | 'claude';
   },
 ): {
@@ -537,6 +541,7 @@ export class Anthropic<
 }
 
 export interface ClientOptions {
+  checkBudget?: boolean;
   runtimeChecks?: boolean;
   timeoutMs?: number;
 }

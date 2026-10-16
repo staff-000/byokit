@@ -5,6 +5,7 @@ const invalid = (message) => {
 };
 const object = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const optionKeys = [
+  'checkBudget',
   'runtimeChecks',
   'timeoutMs',
   'signal',
@@ -80,7 +81,8 @@ function createClient(config, format) {
     // Validate before obtaining credentials. The underlying adapter emits fit warnings once.
     prepareCall(model, input, {
       format,
-      runtimeChecks: opts.runtimeChecks ?? true,
+      runtimeChecks: opts.runtimeChecks ?? false,
+      checkBudget: opts.checkBudget ?? false,
       inputTokens: opts.inputTokens,
       overheadTokens: opts.overheadTokens,
     });
@@ -169,6 +171,8 @@ function standardClient(config, format) {
   const defaultHeaders = validateHeaders(config.defaultHeaders ?? {});
   if (defaults.runtimeChecks !== undefined && typeof defaults.runtimeChecks !== 'boolean')
     invalid('runtimeChecks must be boolean.');
+  if (defaults.checkBudget !== undefined && typeof defaults.checkBudget !== 'boolean')
+    invalid('checkBudget must be boolean.');
   if (
     defaults.timeoutMs !== undefined &&
     (!Number.isFinite(defaults.timeoutMs) || defaults.timeoutMs <= 0)
@@ -230,11 +234,13 @@ function standardClient(config, format) {
 function clientDefaults(config = {}) {
   if (
     !object(config) ||
-    Object.keys(config).some((k) => !['runtimeChecks', 'timeoutMs'].includes(k))
+    Object.keys(config).some((k) => !['runtimeChecks', 'checkBudget', 'timeoutMs'].includes(k))
   )
-    invalid('Provide only runtimeChecks and timeoutMs client defaults.');
+    invalid('Provide only runtimeChecks, checkBudget and timeoutMs client defaults.');
   if (config.runtimeChecks !== undefined && typeof config.runtimeChecks !== 'boolean')
     invalid('runtimeChecks must be boolean.');
+  if (config.checkBudget !== undefined && typeof config.checkBudget !== 'boolean')
+    invalid('checkBudget must be boolean.');
   if (
     config.timeoutMs !== undefined &&
     (!Number.isFinite(config.timeoutMs) || config.timeoutMs <= 0)
@@ -262,6 +268,8 @@ function createRequest(defaults, format) {
     const opts = { ...defaults, ...execution };
     if (opts.runtimeChecks !== undefined && typeof opts.runtimeChecks !== 'boolean')
       invalid('runtimeChecks must be boolean.');
+    if (opts.checkBudget !== undefined && typeof opts.checkBudget !== 'boolean')
+      invalid('checkBudget must be boolean.');
     // call()/callClaude() validate and build the wire request before yielding.
     return (format === 'claude' ? callClaude : call)(model, input, apiKey, opts);
   };

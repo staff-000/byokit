@@ -166,7 +166,7 @@ class ByokitTests(unittest.TestCase):
                 model=selected,
                 messages=[{"role": byokit.Role.USER, "content": "Hi"}],
                 api_key="secret",
-                options={"input_tokens": 10000},
+                options={"input_tokens": 10000, "check_budget": True},
             )
         self.assertEqual(e.exception.code, "MODEL_FIT_FAILED")
         with patch("byokit.inference.http.client.HTTPSConnection", Connection):
@@ -174,7 +174,7 @@ class ByokitTests(unittest.TestCase):
                 model=selected,
                 messages=[{"role": byokit.Role.USER, "content": "Hi"}],
                 api_key="secret",
-                options={"input_tokens": 10000, "runtime_checks": False},
+                options={"input_tokens": 10000},
             )
         self.assertEqual(len(Connection.requests), 1)
 
@@ -334,11 +334,21 @@ class StandardSDKTests(unittest.TestCase):
             api_key="secret",
             models=[selected],
         )
+        with patch("byokit.inference.http.client.HTTPSConnection", Connection):
+            # Default options (check_budget disabled) succeeds without MODEL_FIT_FAILED
+            c.chat.completions.create(
+                model=selected["apiModelId"],
+                max_tokens=1000,
+                messages=[{"role": byokit.Role.USER, "content": "Hi"}],
+            )
+        self.assertEqual(len(Connection.requests), 1)
+        Connection.requests = []
         with self.assertRaises(byokit.CallError) as e:
             c.chat.completions.create(
                 model=selected["apiModelId"],
                 max_tokens=1000,
                 messages=[{"role": byokit.Role.USER, "content": "Hi"}],
+                options={"check_budget": True},
             )
         self.assertEqual(e.exception.code, "MODEL_FIT_FAILED")
         self.assertEqual(Connection.requests, [])
@@ -350,6 +360,7 @@ class StandardSDKTests(unittest.TestCase):
                 model="custom-id",
                 max_tokens=1000,
                 messages=[{"role": byokit.Role.USER, "content": "Hi"}],
+                options={"check_budget": True},
             )
         self.assertTrue(any("OUTPUT_LIMIT_UNKNOWN" in str(w.message) for w in caught))
         self.assertEqual(Connection.requests[0][1]["model"], "custom-id")

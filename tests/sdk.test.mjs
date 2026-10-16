@@ -154,6 +154,11 @@ test('custom model ID keeps the provider endpoint and uses unknown fit metadata'
     onWarning: (d) => warnings.push(d),
   });
   await c.chat.completions.create({ ...input, model: 'custom-id', max_tokens: 2000000 });
+  assert.equal(warnings.length, 0);
+  await c.chat.completions.create(
+    { ...input, model: 'custom-id', max_tokens: 2000000 },
+    { checkBudget: true },
+  );
   assert.equal(requests[0].body.model, 'custom-id');
   assert.ok(requests[0].url.startsWith(model.connection.baseUrl));
   assert.ok(warnings.some((d) => d.code === 'OUTPUT_LIMIT_UNKNOWN'));
@@ -253,13 +258,13 @@ test('Byokit defaults, fit checks, per-request overrides and format validation',
     },
   };
   await assert.rejects(
-    c.chat.completions.create({ ...input, model }, { ...opts, inputTokens: 1e12 }),
+    c.chat.completions.create(
+      { ...input, model },
+      { ...opts, inputTokens: 1e12, checkBudget: true },
+    ),
     (e) => e.code === 'MODEL_FIT_FAILED',
   );
-  await c.chat.completions.create(
-    { ...input, model },
-    { ...opts, inputTokens: 1e12, runtimeChecks: false },
-  );
+  await c.chat.completions.create({ ...input, model }, { ...opts, inputTokens: 1e12 });
   await assert.rejects(
     c.chat.completions.create({ ...input, model, stream: true }, { ...opts, runtimeChecks: false }),
     (e) => e.code === 'INVALID_REQUEST',
@@ -472,14 +477,21 @@ test('standard clients scope metadata to exact endpoint/protocol and never borro
     models: [model],
     fetch: async () => response(),
   });
+  await c.chat.completions.create({ ...input, max_tokens: 1e12 });
   await assert.rejects(
-    c.chat.completions.create({ ...input, max_tokens: 1e12 }),
+    c.chat.completions.create({ ...input, max_tokens: 1e12 }, { checkBudget: true }),
     (e) => e.code === 'MODEL_FIT_FAILED',
   );
+  const defaultWarnings = [];
+  await c.chat.completions.create(
+    { ...input, model: 'custom-id', max_tokens: 1e12 },
+    { onWarning: (d) => defaultWarnings.push(d) },
+  );
+  assert.equal(defaultWarnings.length, 0);
   const warnings = [];
   await c.chat.completions.create(
     { ...input, model: 'custom-id', max_tokens: 1e12 },
-    { onWarning: (d) => warnings.push(d) },
+    { checkBudget: true, onWarning: (d) => warnings.push(d) },
   );
   assert.ok(warnings.some((d) => d.code === 'OUTPUT_LIMIT_UNKNOWN'));
   assert.throws(

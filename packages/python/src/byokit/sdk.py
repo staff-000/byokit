@@ -21,6 +21,7 @@ def _invalid(message):
 
 def _check_options(options):
     if not isinstance(options, dict) or set(options) - {
+        "check_budget",
         "runtime_checks",
         "timeout_ms",
         "cancel_event",
@@ -59,6 +60,7 @@ class _Request:
             selected.pop("status", None)
         opts = {**self._defaults, **(options or {})}
         if set(opts) - {
+            "check_budget",
             "runtime_checks",
             "timeout_ms",
             "cancel_event",
@@ -75,7 +77,8 @@ class _Request:
             selected,
             params,
             format=self._format,
-            runtime_checks=opts.get("runtime_checks", True),
+            runtime_checks=opts.get("runtime_checks", False),
+            check_budget=opts.get("check_budget", False),
             input_tokens=opts.get("input_tokens"),
             overhead_tokens=opts.get("overhead_tokens", 0),
         )
@@ -225,6 +228,8 @@ class _ByokitRequest:
         opts = {**self._defaults, **(options or {})}
         if "runtime_checks" in opts and not isinstance(opts["runtime_checks"], bool):
             _invalid("runtime_checks must be boolean.")
+        if "check_budget" in opts and not isinstance(opts["check_budget"], bool):
+            _invalid("check_budget must be boolean.")
         import math
 
         timeout = opts.get("timeout_ms", 90000)
@@ -299,11 +304,19 @@ class _ByokitChat:
 class Byokit:
     """Deprecated per-request client; prefer OpenAI/Anthropic constructor credentials."""
 
-    def __init__(self, *, runtime_checks: bool = True, timeout_ms: float = 90000):
+    def __init__(
+        self,
+        *,
+        runtime_checks: bool = False,
+        check_budget: bool = False,
+        timeout_ms: float = 90000,
+    ):
         import math
 
         if not isinstance(runtime_checks, bool):
             _invalid("runtime_checks must be boolean.")
+        if not isinstance(check_budget, bool):
+            _invalid("check_budget must be boolean.")
         if (
             not isinstance(timeout_ms, (int, float))
             or isinstance(timeout_ms, bool)
@@ -313,6 +326,7 @@ class Byokit:
             _invalid("timeout_ms must be positive.")
         defaults: CallOptions = {
             "runtime_checks": runtime_checks,
+            "check_budget": check_budget,
             "timeout_ms": timeout_ms,
         }
         self.chat = _ByokitChat(_ByokitCompletions(defaults, "openai"))
@@ -379,6 +393,10 @@ class _StandardRequest:
             defaults["runtime_checks"], bool
         ):
             _invalid("runtime_checks must be boolean.")
+        if "check_budget" in defaults and not isinstance(
+            defaults["check_budget"], bool
+        ):
+            _invalid("check_budget must be boolean.")
         import math
 
         timeout = defaults.get("timeout_ms", 90000)

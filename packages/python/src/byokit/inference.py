@@ -318,7 +318,8 @@ def prepare_call(
     input,
     *,
     format="openai",
-    runtime_checks=True,
+    runtime_checks=False,
+    check_budget=False,
     input_tokens=None,
     overhead_tokens=0,
 ):
@@ -347,6 +348,9 @@ def prepare_call(
         _fail("Invalid endpoint.")
     if not isinstance(runtime_checks, bool):
         _fail("runtime_checks must be boolean.")
+    if not isinstance(check_budget, bool):
+        _fail("check_budget must be boolean.")
+    should_check = runtime_checks or check_budget
     protocol = c["protocol"]
     if protocol not in list(ApiProtocol):
         _fail("Unsupported API protocol.")
@@ -555,7 +559,7 @@ def prepare_call(
             body["tool_choice"] = p["choice"]
         path = "/chat/completions"
     diagnostics = []
-    if runtime_checks:
+    if should_check:
         budget = {"outputTokens": limit, "overheadTokens": overhead_tokens}
         if input_tokens is not None:
             budget["inputTokens"] = input_tokens
@@ -789,7 +793,8 @@ def _execute(model, input, key, options, format):
         model,
         input,
         format=format,
-        runtime_checks=options.get("runtime_checks", True),
+        runtime_checks=options.get("runtime_checks", False),
+        check_budget=options.get("check_budget", False),
         input_tokens=options.get("input_tokens"),
         overhead_tokens=options.get("overhead_tokens", 0),
     )
