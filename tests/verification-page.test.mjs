@@ -221,6 +221,18 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
     batchShare.click();
     await wait(() => $('#publication-status').textContent.startsWith('Published:'));
     assert.equal(calls, before + count);
+
+    assert.ok($('#api-verify-select'));
+    change('api-verify-select', 'provider:deepseek');
+    assert.ok($('#api-verify-keys input[data-provider="deepseek"]'));
+    $('#api-verify-keys input[data-provider="deepseek"]').value = 'fixture-secret-key';
+    const beforeApi = calls;
+    $('#api-verify-run').click();
+    await wait(() => $('#api-verify-status').textContent.startsWith('API verification finished:'));
+    assert.ok(calls > beforeApi);
+    assert.ok($('#api-verify-results').textContent.includes('Passed'));
+    assert.match($('#models').textContent, /Verified here/);
+
     window.dispatchEvent(new dom.window.Event('pagehide'));
     assert.equal($('#api-key').value, '');
   } finally {

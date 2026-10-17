@@ -1497,6 +1497,75 @@ dialog .record-actions {
   flex-wrap: wrap;
 }
 
+.api-verification-panel {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 24px;
+  margin-top: 20px;
+}
+.api-keys-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin: 16px 0;
+}
+.api-key-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.api-key-item span {
+  color: var(--ink);
+  font-weight: 600;
+}
+.api-key-item input {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.playground-availability {
+  border-top: 1px solid var(--line);
+  background: #f8f9fc;
+  padding: 20px 22px;
+}
+.availability-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.availability-header h3 {
+  margin: 6px 0 2px;
+  font-size: 17px;
+  letter-spacing: -0.3px;
+}
+.availability-drawer {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--line);
+}
+.availability-results {
+  margin-top: 16px;
+}
+.availability-results .report {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
 .playground-section {
   scroll-margin-top: 30px;
 }

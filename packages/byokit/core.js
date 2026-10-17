@@ -482,6 +482,22 @@ export class Catalog {
     this.data._verificationsByOffering = this.verificationsByOffering;
     this._cache = new Map();
   }
+  addVerifications(records) {
+    if (!Array.isArray(records)) return;
+    this.data.verifications = this.data.verifications || [];
+    for (const v of records) {
+      if (!this.data.verifications.some((existing) => existing.id === v.id)) {
+        this.data.verifications.push(v);
+        let list = this.verificationsByOffering.get(v.offeringId);
+        if (!list) {
+          list = [];
+          this.verificationsByOffering.set(v.offeringId, list);
+        }
+        list.push(v);
+      }
+    }
+    this._cache?.clear();
+  }
   get(id) {
     return this.offerings.get(id);
   }

@@ -1,4 +1,5 @@
 import { playgroundExamples } from './playground-examples.js';
+import { verifyInference, successRecord, ProviderApi } from './inference.js';
 const $ = (selector) => document.querySelector(selector);
 const editor = $('#playground-code'),
   output = $('#playground-output'),
@@ -12,13 +13,13 @@ const frameDocument = `<!doctype html><meta http-equiv="Content-Security-Policy"
 let worker;
 onmessage=event=>{
  if(event.source!==parent||event.data?.kind!=='byokit-playground-run')return;
- const {source,code,id}=event.data;
+ const {source,code,id,verifications}=event.data;
  worker?.terminate();
  const url=URL.createObjectURL(new Blob([source],{type:'text/javascript'}));
  worker=new Worker(url);URL.revokeObjectURL(url);
  worker.onmessage=event=>parent.postMessage(event.data,'*');
  worker.onerror=()=>parent.postMessage({kind:'byokit-playground',type:'error',id,text:'The playground worker could not start.'},'*');
- worker.postMessage({code,id});
+ worker.postMessage({code,id,verifications});
 };
 <\/script>`;
 function finish(message, state = 'ready') {
@@ -33,12 +34,14 @@ function finish(message, state = 'ready') {
 }
 function stop(message = 'Stopped. Edit your code and run again.') {
   generation++;
+  availabilityController?.abort();
   finish(message);
 }
 function chooseExample() {
   stop('Ready. Run this example or edit it first.');
   editor.value = playgroundExamples[$('#playground-example').value].code;
   output.textContent = 'Your console output will appear here.';
+  $('#playground-availability').hidden = true;
 }
 async function run() {
   if (active) return;
@@ -69,8 +72,13 @@ async function run() {
     frame.onload = () => {
       if (id !== generation || !active) return;
       status.textContent = 'Running…';
+      const storageKey = 'byokit.inference-verifications.v1';
+      let verifications = [];
+      try {
+        verifications = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      } catch {}
       frame.contentWindow.postMessage(
-        { kind: 'byokit-playground-run', id, source: workerSource, code },
+        { kind: 'byokit-playground-run', id, source: workerSource, code, verifications },
         '*',
       );
     };
@@ -86,6 +94,88 @@ async function run() {
     }
   }
 }
+
+let generatedModels = [];
+let availabilityController = null;
+const availabilityKeys = new Map();
+
+function renderAvailabilityResults() {
+  const container = $('#availability-results');
+  if (!container) return;
+  container.replaceChildren();
+  const storageKey = 'byokit.inference-verifications.v1';
+  let records = [];
+  try {
+    records = JSON.parse(localStorage.getItem(storageKey) || '[]');
+  } catch {}
+
+  for (const m of generatedModels) {
+    const card = document.createElement('article');
+    card.className = 'report';
+    card.dataset.modelId = m.id;
+    const isVerifiedLocally = records.some((r) => r.offeringId === m.id);
+    const passed = isVerifiedLocally || m.verification?.status === 'passed';
+
+    const header = document.createElement('strong');
+    header.textContent = `${m.providerName} / ${m.name || m.apiModelId}`;
+    const badge = document.createElement('span');
+    badge.className = 'status badge ' + (passed ? 'passed' : '');
+    badge.textContent = passed ? 'Verified ✓' : 'Unverified';
+
+    const meta = document.createElement('p');
+    meta.className = 'fine';
+    meta.textContent = `${m.apiModelId} · ${m.protocol || 'chat'}`;
+
+    card.append(header, badge, meta);
+    container.append(card);
+  }
+}
+
+function renderAvailabilityKeys(providers) {
+  const container = $('#availability-keys');
+  if (!container) return;
+  container.replaceChildren();
+  for (const pId of providers) {
+    const pName = ProviderApi[pId]?.name || pId;
+    const label = document.createElement('label');
+    label.className = 'api-key-item';
+    const span = document.createElement('span');
+    span.textContent = `${pName} API key`;
+    const input = document.createElement('input');
+    input.type = 'password';
+    input.dataset.provider = pId;
+    input.placeholder = `Paste your ${pName} key`;
+    input.autocomplete = 'off';
+    input.autocapitalize = 'off';
+    input.spellcheck = false;
+    if (availabilityKeys.has(pId)) {
+      input.value = availabilityKeys.get(pId);
+    }
+    input.addEventListener('input', () => {
+      availabilityKeys.set(pId, input.value.trim());
+    });
+    label.append(span, input);
+    container.append(label);
+  }
+}
+
+function handleGeneratedModels(models) {
+  generatedModels = models;
+  const availSection = $('#playground-availability');
+  if (!availSection) return;
+  availSection.hidden = false;
+  const providers = [...new Set(models.map((m) => m.providerId))].filter((p) => p && p !== 'local');
+  $('#availability-title').textContent =
+    `Generated ${models.length} ${models.length === 1 ? 'model' : 'models'} across ${providers.length} ${providers.length === 1 ? 'provider' : 'providers'}`;
+  const provNames = providers.map((p) => ProviderApi[p]?.name || p);
+  $('#availability-subtitle').textContent = provNames.length
+    ? `Providers: ${provNames.join(', ')}. Test availability with your API keys.`
+    : 'All generated models are local or require no API keys.';
+
+  renderAvailabilityResults();
+  renderAvailabilityKeys(providers);
+}
+
 window.addEventListener('message', (event) => {
   if (!active || !frame || event.source !== frame.contentWindow) return;
   const data = event.data;
@@ -98,12 +188,161 @@ window.addEventListener('message', (event) => {
     if (!output.textContent)
       output.textContent = 'No console output. Use console.log() or return a value.';
     finish('Finished. Output comes from the real byokit catalog.', 'success');
+    if (data.models && data.models.length > 0) {
+      handleGeneratedModels(data.models);
+    } else {
+      $('#playground-availability').hidden = true;
+    }
   } else if (data.type === 'error') {
     output.textContent +=
       (output.textContent ? '\n\n' : '') + String(data.text || 'Execution failed.').slice(0, 2000);
     finish('JavaScript error. Edit your code and try again.', 'error');
   }
 });
+
+$('#availability-start-btn')?.addEventListener('click', () => {
+  const drawer = $('#availability-drawer');
+  if (!drawer) return;
+  drawer.hidden = !drawer.hidden;
+  $('#availability-start-btn').textContent = drawer.hidden
+    ? 'Test model availability'
+    : 'Hide test panel';
+});
+
+$('#availability-clear-btn')?.addEventListener('click', () => {
+  availabilityKeys.clear();
+  for (const inp of document.querySelectorAll('#availability-keys input')) {
+    inp.value = '';
+  }
+  $('#availability-status').textContent = 'API keys cleared.';
+});
+
+$('#availability-cancel-btn')?.addEventListener('click', () => {
+  availabilityController?.abort();
+});
+
+$('#availability-run-btn')?.addEventListener('click', async () => {
+  if (availabilityController) return;
+  if (!generatedModels.length) return;
+  const keyInputs = document.querySelectorAll('#availability-keys input');
+  for (const inp of keyInputs) {
+    if (inp.value.trim()) availabilityKeys.set(inp.dataset.provider, inp.value.trim());
+  }
+  if (!availabilityKeys.size) {
+    $('#availability-status').textContent =
+      'Please enter an API key for at least one provider to test availability.';
+    return;
+  }
+  const controller = new AbortController();
+  availabilityController = controller;
+  $('#availability-run-btn').disabled = true;
+  $('#availability-cancel-btn').hidden = false;
+
+  const storageKey = 'byokit.inference-verifications.v1';
+  let records = [];
+  try {
+    records = JSON.parse(localStorage.getItem(storageKey) || '[]');
+  } catch {}
+
+  let verifiedCount = 0,
+    failedCount = 0,
+    skippedCount = 0;
+  const failedAuth = new Set();
+
+  for (let i = 0; i < generatedModels.length; i++) {
+    if (controller.signal.aborted) break;
+    const model = generatedModels[i];
+    const card = document.querySelector(`#availability-results [data-model-id="${model.id}"]`);
+    const pId = model.providerId;
+    const key = availabilityKeys.get(pId);
+
+    if (model.local) {
+      if (card) {
+        card.querySelector('.status').textContent = 'Local setup';
+        card.querySelector('.status').className = 'status badge';
+      }
+      continue;
+    }
+
+    if (!key) {
+      skippedCount++;
+      if (card) {
+        card.querySelector('.status').textContent = `Skipped (no ${model.providerName} key)`;
+        card.querySelector('.status').className = 'status badge';
+      }
+      continue;
+    }
+
+    if (failedAuth.has(pId)) {
+      skippedCount++;
+      if (card) {
+        card.querySelector('.status').textContent = `Skipped (${model.providerName} auth failed)`;
+        card.querySelector('.status').className = 'status badge uncertain';
+      }
+      continue;
+    }
+
+    if (card) card.querySelector('.status').textContent = 'Testing…';
+    $('#availability-status').textContent =
+      `Testing availability ${i + 1} of ${generatedModels.length}: ${model.name || model.apiModelId} (${model.providerName})…`;
+
+    const job = {
+      offeringId: model.id,
+      providerId: model.providerId,
+      modelId: model.apiModelId,
+      protocol: model.protocol || ProviderApi[model.providerId]?.protocols?.[0] || 'chat',
+      endpoint: model.endpoint,
+      prompt: 'Reply with exactly: OK',
+      maxTokens: 256,
+    };
+
+    try {
+      const result = await verifyInference(job, key, { signal: controller.signal });
+      if (controller.signal.aborted) break;
+      verifiedCount++;
+      const record = successRecord(job, result, key);
+      records = [record, ...records.filter((r) => r.offeringId !== record.offeringId)].slice(
+        0,
+        200,
+      );
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(records));
+      } catch {}
+
+      model.verification = {
+        status: 'passed',
+        latest: { result: 'passed', checkedAt: record.checkedAt },
+      };
+
+      if (card) {
+        card.querySelector('.status').textContent = `Verified ✓ (${result.latencyMs} ms)`;
+        card.querySelector('.status').className = 'status badge passed';
+      }
+    } catch (err) {
+      if (controller.signal.aborted) break;
+      failedCount++;
+      model.verification = { status: 'failed' };
+      const safe = String(err.message || 'Call failed.')
+        .split(key)
+        .join('[redacted]');
+      if (card) {
+        card.querySelector('.status').textContent = `Failed: ${safe}`;
+        card.querySelector('.status').className = 'status badge uncertain';
+      }
+      if (/HTTP (401|403)/.test(safe)) {
+        failedAuth.add(pId);
+      }
+    }
+  }
+
+  availabilityController = null;
+  $('#availability-run-btn').disabled = false;
+  $('#availability-cancel-btn').hidden = true;
+  $('#availability-status').textContent = controller.signal.aborted
+    ? `Availability test canceled. ${verifiedCount} verified, ${failedCount} failed, ${skippedCount} skipped.`
+    : `Availability test complete: ${verifiedCount} verified, ${failedCount} failed, ${skippedCount} skipped.`;
+});
+
 for (const [value, example] of Object.entries(playgroundExamples)) {
   const option = document.createElement('option');
   option.value = value;

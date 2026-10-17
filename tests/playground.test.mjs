@@ -6,7 +6,7 @@ import { buildPlaygroundWorker } from '../scripts/build-playground.mjs';
 import { playgroundExamples } from '../website/playground-examples.js';
 import * as byokit from '../packages/byokit/catalog.js';
 const source = await buildPlaygroundWorker();
-async function execute(code) {
+async function execute(code, verifications) {
   const messages = [];
   const context = {
     self: { postMessage: (message) => messages.push(message) },
@@ -18,7 +18,7 @@ async function execute(code) {
     clearTimeout,
   };
   vm.runInNewContext(source, context, { timeout: 2000 });
-  await context.self.onmessage({ data: { id: 7, code } });
+  await context.self.onmessage({ data: { id: 7, code, verifications } });
   return JSON.parse(JSON.stringify(messages));
 }
 test('playground runs the actual compiled catalog and price sorting API', async () => {
@@ -74,4 +74,32 @@ test('playground only exposes offline library APIs and uses an opaque sandbox wi
   assert.ok(ui.includes("connect-src 'none'"));
   assert.ok(ui.includes('3000'));
   assert.ok(ui.includes('frame?.remove()'));
+});
+test('playground captures generated models and updates verification status when verified', async () => {
+  const messages = await execute('const models = byokit.getModels();');
+  const done = messages.find((m) => m.type === 'done');
+  assert.ok(done.models && done.models.length > 0);
+  assert.ok(done.models.some((m) => m.providerId === 'openai'));
+
+  const verifiedOffering = 'anthropic/claude-sonnet-5-5';
+  const mockVerification = {
+    id: 'test:verify-rec-1',
+    offeringId: verifiedOffering,
+    contributor: 'github:verifier',
+    checkedAt: new Date().toISOString(),
+    result: 'passed',
+    checks: ['textGeneration'],
+  };
+  const verifiedMessages = await execute(
+    `const models = byokit.getModels();
+     const m = models.find(x => x.id === "${verifiedOffering}");
+     console.log(m?.verification?.status);`,
+    [mockVerification],
+  );
+  assert.equal(verifiedMessages.find((m) => m.type === 'log')?.text, 'passed');
+
+  const ui = await readFile(new URL('../website/playground.js', import.meta.url), 'utf8');
+  assert.ok(ui.includes('availability-run-btn'));
+  assert.ok(ui.includes('verifyInference'));
+  assert.ok(ui.includes('successRecord'));
 });

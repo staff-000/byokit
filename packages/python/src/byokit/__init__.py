@@ -472,6 +472,17 @@ class Catalog:
     def clear_cache(self) -> None:
         self._cache.clear()
 
+    def add_verifications(self, records: list[dict]) -> None:
+        if not isinstance(records, list):
+            return
+        if "verifications" not in self.data or not isinstance(self.data["verifications"], list):
+            self.data["verifications"] = []
+        for v in records:
+            if not any(existing.get("id") == v.get("id") for existing in self.data["verifications"]):
+                self.data["verifications"].append(v)
+                self.verifications_by_offering.setdefault(v.get("offeringId"), []).append(v)
+        self.clear_cache()
+
     def get(self, offering_id):
         return self.offerings.get(offering_id)
 

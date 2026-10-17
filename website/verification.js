@@ -855,6 +855,8 @@ window.addEventListener('pagehide', () => {
   controller?.abort();
   batchController?.abort();
   tracker.stop();
+  batchController?.abort();
+  apiVerifyController?.abort();
   revision++;
 });
 window.addEventListener('pageshow', (event) => {
@@ -863,6 +865,225 @@ window.addEventListener('pageshow', (event) => {
     invalidate();
   }
 });
+
+// API verification section: test all models under a chosen API/protocol
+let apiVerifyController = null;
+const apiSelect = $('#api-verify-select');
+if (apiSelect) {
+  const protocolGroup = el('optgroup');
+  protocolGroup.label = 'API Protocols (Cross-Provider)';
+  const protocols = [
+    { id: 'chat', label: 'OpenAI-compatible Chat' },
+    { id: 'anthropic', label: 'Anthropic Messages' },
+    { id: 'gemini', label: 'Gemini GenerateContent' },
+  ];
+  for (const proto of protocols) {
+    const opt = el('option', proto.label);
+    opt.value = 'protocol:' + proto.id;
+    protocolGroup.append(opt);
+  }
+  const providerGroup = el('optgroup');
+  providerGroup.label = 'Provider APIs';
+  const hostedProviders = [
+    ...new Map(
+      models
+        .filter((m) => !m.local && m.callSupport?.textGeneration)
+        .map((m) => [m.providerId, m.provider]),
+    ).values(),
+  ];
+  for (const prov of hostedProviders) {
+    const opt = el('option', `${prov.name} API`);
+    opt.value = 'provider:' + prov.id;
+    providerGroup.append(opt);
+  }
+  apiSelect.append(protocolGroup, providerGroup);
+
+  function getApiModels(value) {
+    if (!value) return [];
+    const [kind, id] = value.split(':');
+    if (kind === 'protocol') {
+      return models.filter(
+        (m) =>
+          !m.local &&
+          m.callSupport?.textGeneration &&
+          ProviderApi[m.providerId]?.protocols.includes(id),
+      );
+    }
+    if (kind === 'provider') {
+      return models.filter((m) => !m.local && m.callSupport?.textGeneration && m.providerId === id);
+    }
+    return [];
+  }
+
+  function renderApiVerification() {
+    apiVerifyController?.abort();
+    apiVerifyController = null;
+    const cancelBtn = $('#api-verify-cancel');
+    if (cancelBtn) cancelBtn.hidden = true;
+    $('#api-verify-results').replaceChildren();
+    const value = apiSelect.value;
+    const matching = getApiModels(value);
+    $('#api-verify-count').textContent = matching.length ? `${matching.length} models` : '';
+    if (!matching.length) {
+      $('#api-verify-summary').textContent =
+        'Choose an API above to see the matching models and required provider keys.';
+      $('#api-verify-keys').replaceChildren();
+      $('#api-verify-run').disabled = true;
+      $('#api-verify-status').textContent = 'No API verification in progress.';
+      return;
+    }
+    const providerIds = [...new Set(matching.map((m) => m.providerId))];
+    $('#api-verify-summary').textContent =
+      `Found ${matching.length} models across ${providerIds.length} ${providerIds.length === 1 ? 'provider' : 'providers'}. Enter API keys for the providers you want to test:`;
+    const container = $('#api-verify-keys');
+    container.replaceChildren();
+    for (const pId of providerIds) {
+      const pName = ProviderApi[pId]?.name || pId;
+      const label = el('label', undefined, 'api-key-item');
+      label.append(el('span', `${pName} API key`));
+      const input = el('input');
+      input.type = 'password';
+      input.dataset.provider = pId;
+      input.placeholder = `Paste your ${pName} key`;
+      input.autocomplete = 'off';
+      input.autocapitalize = 'off';
+      input.spellcheck = false;
+      if ($('#api-key').value && selected?.providerId === pId) {
+        input.value = $('#api-key').value;
+      }
+      label.append(input);
+      container.append(label);
+    }
+    $('#api-verify-run').disabled = false;
+    $('#api-verify-status').textContent =
+      'Ready to test. Enter keys above and click Verify all models under this API.';
+  }
+
+  apiSelect.addEventListener('change', renderApiVerification);
+  apiSelect.addEventListener('input', renderApiVerification);
+  $('#api-verify-clear-keys')?.addEventListener('click', () => {
+    for (const input of document.querySelectorAll('#api-verify-keys input')) {
+      input.value = '';
+    }
+    $('#api-verify-status').textContent = 'Keys cleared.';
+  });
+  $('#api-verify-cancel')?.addEventListener('click', () => {
+    apiVerifyController?.abort();
+  });
+
+  $('#api-verify-run')?.addEventListener('click', async () => {
+    if (apiVerifyController) return;
+    const value = apiSelect.value;
+    const matching = getApiModels(value);
+    if (!matching.length) return;
+    const keyInputs = document.querySelectorAll('#api-verify-keys input');
+    const keys = new Map();
+    for (const inp of keyInputs) {
+      if (inp.value.trim()) keys.set(inp.dataset.provider, inp.value.trim());
+    }
+    if (!keys.size) {
+      $('#api-verify-status').textContent =
+        'Please enter an API key for at least one provider to verify models.';
+      return;
+    }
+
+    const controller = new AbortController();
+    apiVerifyController = controller;
+    $('#api-verify-run').disabled = true;
+    $('#api-verify-cancel').hidden = false;
+    $('#api-verify-results').replaceChildren();
+
+    const cards = new Map();
+    for (const model of matching) {
+      const card = el('article', undefined, 'report');
+      card.append(
+        el('strong', `${model.provider.name} / ${model.name || model.apiModelId}`),
+        el('span', 'Queued', 'status badge'),
+        el('p', model.apiModelId, 'fine'),
+      );
+      cards.set(model.id, card);
+      $('#api-verify-results').append(card);
+    }
+
+    let passedCount = 0,
+      failedCount = 0,
+      skippedCount = 0;
+    const failedAuthProviders = new Set();
+
+    for (let i = 0; i < matching.length; i++) {
+      if (controller.signal.aborted) break;
+      const model = matching[i];
+      const card = cards.get(model.id);
+      const pId = model.providerId;
+      const key = keys.get(pId);
+
+      if (!key) {
+        skippedCount++;
+        card.querySelector('.status').textContent = `Skipped (no ${model.provider.name} key)`;
+        card.querySelector('.status').className = 'status badge';
+        continue;
+      }
+      if (failedAuthProviders.has(pId)) {
+        skippedCount++;
+        card.querySelector('.status').textContent =
+          `Skipped (${model.provider.name} key failed authentication)`;
+        card.querySelector('.status').className = 'status badge uncertain';
+        continue;
+      }
+
+      card.querySelector('.status').textContent = 'Calling provider…';
+      $('#api-verify-status').textContent =
+        `Testing model ${i + 1} of ${matching.length}: ${model.name || model.apiModelId} (${model.provider.name})…`;
+
+      const job = {
+        offeringId: model.id,
+        providerId: model.providerId,
+        modelId: model.apiModelId,
+        protocol: ProviderApi[model.providerId]?.protocols[0] || 'chat',
+        prompt: $('#prompt')?.value || 'Reply with exactly: OK',
+        maxTokens: Number($('#max-tokens')?.value) || 256,
+      };
+
+      try {
+        const result = await verifyInference(job, key, { signal: controller.signal });
+        if (controller.signal.aborted) break;
+        passedCount++;
+        const record = successRecord(job, result, key);
+        records = [record, ...records].slice(0, 200);
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(records));
+        } catch {
+          storageAvailable = false;
+        }
+        card.querySelector('.status').textContent = `Passed · ${result.latencyMs} ms`;
+        card.querySelector('.status').className = 'status badge passed';
+        renderRecords();
+        renderModels();
+      } catch (err) {
+        if (controller.signal.aborted) break;
+        failedCount++;
+        const safe = String(err.message || 'Call failed.')
+          .split(key)
+          .join('[redacted]');
+        card.querySelector('.status').textContent = `Failed: ${safe}`;
+        card.querySelector('.status').className = 'status badge uncertain';
+        if (/HTTP (401|403)/.test(safe)) {
+          failedAuthProviders.add(pId);
+        }
+      }
+    }
+
+    apiVerifyController = null;
+    $('#api-verify-run').disabled = false;
+    $('#api-verify-cancel').hidden = true;
+    const finalMsg = controller.signal.aborted
+      ? `Verification canceled. ${passedCount} passed, ${failedCount} failed, ${skippedCount} skipped.`
+      : `API verification finished: ${passedCount} passed, ${failedCount} failed, ${skippedCount} skipped.`;
+    $('#api-verify-status').textContent = finalMsg;
+    renderModels();
+  });
+}
+
 select(selected);
 renderModels();
 renderRecords();

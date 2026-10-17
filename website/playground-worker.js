@@ -1,9 +1,52 @@
 // Included in the generated offline worker with the real byokit library/catalog.
 self.onmessage = async ({ data }) => {
-  const { code, id } = data;
+  const { code, id, verifications } = data;
   if (typeof code !== 'string' || code.length > 30000) return;
+  if (Array.isArray(verifications) && typeof byokit.addVerifications === 'function') {
+    try {
+      byokit.addVerifications(verifications);
+    } catch {}
+  }
   let messages = 0,
     characters = 0;
+  let capturedModels = [];
+  const track = (item) => {
+    if (Array.isArray(item)) {
+      if (
+        item.length > 0 &&
+        item[0] &&
+        typeof item[0] === 'object' &&
+        ('providerId' in item[0] || 'provider' in item[0])
+      ) {
+        capturedModels = item;
+      }
+    } else if (
+      item &&
+      typeof item === 'object' &&
+      ('providerId' in item || 'provider' in item) &&
+      (item.id || item.apiModelId || item.modelId)
+    ) {
+      capturedModels = [item];
+    }
+  };
+  const trackedByokit = {
+    ...byokit,
+    getModels(...args) {
+      const res = byokit.getModels(...args);
+      track(res);
+      return res;
+    },
+    select(...args) {
+      const res = byokit.select ? byokit.select(...args) : undefined;
+      track(res);
+      return res;
+    },
+    appendModel(...args) {
+      const res = byokit.appendModel(...args);
+      track(res);
+      return res;
+    },
+  };
   const emit = (level, values) => {
     if (messages >= 100 || characters >= 24000) return;
     const seen = new WeakSet();
@@ -52,11 +95,38 @@ self.onmessage = async ({ data }) => {
   try {
     const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
     const value = await new AsyncFunction('byokit', 'console', '"use strict";\n' + code)(
-      byokit,
+      trackedByokit,
       output,
     );
-    if (value !== undefined) emit('log', [value]);
-    self.postMessage({ kind: 'byokit-playground', id, type: 'done', empty: messages === 0 });
+    if (value !== undefined) {
+      emit('log', [value]);
+      track(value);
+    }
+    const modelsPayload = capturedModels.map((m) => {
+      const pId = m.providerId || (typeof m.provider === 'object' ? m.provider?.id : m.provider);
+      return {
+        id: m.id || `${pId}/${m.modelId || m.apiModelId}`,
+        name: m.name || m.apiModelId || m.modelId || m.id,
+        providerId: pId,
+        providerName:
+          (typeof m.provider === 'object' ? m.provider?.name : m.provider) || pId || 'Provider',
+        apiModelId: m.apiModelId || m.modelId,
+        protocol:
+          m.connection?.protocol ||
+          (pId === 'anthropic' ? 'anthropic' : pId === 'google' ? 'gemini' : 'chat'),
+        endpoint: m.connection?.baseUrl || m.baseUrl,
+        local: !!m.local,
+        callSupport: m.callSupport || { textGeneration: true },
+        verification: m.verification,
+      };
+    });
+    self.postMessage({
+      kind: 'byokit-playground',
+      id,
+      type: 'done',
+      empty: messages === 0,
+      models: modelsPayload,
+    });
   } catch (error) {
     self.postMessage({
       kind: 'byokit-playground',

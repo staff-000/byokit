@@ -12,3 +12,8 @@ export function getModels(input = {}, options) {
   if (!defaultCatalog) defaultCatalog = new Catalog(data, { trusted: true });
   return defaultCatalog.getModels(input, options);
 }
+
+export function addVerifications(records) {
+  if (!defaultCatalog) defaultCatalog = new Catalog(data, { trusted: true });
+  defaultCatalog.addVerifications(records);
+}

@@ -243,6 +243,7 @@ export class Catalog {
   hasCached(input?: PickerConfig | ModelList, options?: PickerConfig): boolean;
   getCached(input?: PickerConfig | ModelList, options?: PickerConfig): ModelOption[] | undefined;
   clearCache(): void;
+  addVerifications(records: VerificationRecord[]): void;
   select(list: ModelList, config?: PickerConfig): { provider: Provider; offerings: Offering[] }[];
   select(config?: PickerConfig): { provider: Provider; offerings: Offering[] }[];
 }
@@ -596,4 +597,5 @@ export interface CustomModel {
 export function appendModel(models: readonly ModelOption[], model: CustomModel): ModelOption[];
 export function getModels(config?: PickerConfig): ModelOption[];
 export function getModels(list: ModelList, config?: PickerConfig): ModelOption[];
+export function addVerifications(records: VerificationRecord[]): void;
 export function serializeQuery(input?: PickerConfig | ModelList, options?: PickerConfig): string;

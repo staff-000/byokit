@@ -167,6 +167,53 @@ Reply with exactly: OK</textarea></label
         >
         <pre id="response-text" class="response-text" hidden></pre>
       </section>
+      <section
+        id="api-verification"
+        class="tracker-section"
+        aria-labelledby="api-verification-title"
+      >
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">API VERIFICATION / ALL MODELS UNDER AN API</p>
+            <h2 id="api-verification-title">Verify all models under an API.</h2>
+          </div>
+          <span id="api-verify-count" class="count" aria-live="polite"></span>
+        </div>
+        <p class="lede">
+          Select an API protocol or provider to test all of its supported models. When an API spans
+          multiple providers, provide an API key for each provider you wish to verify. Keys stay
+          strictly in memory and are sent directly to the providers.
+        </p>
+        <div class="api-verification-panel">
+          <div class="call-fields">
+            <label for="api-verify-select">
+              Select API or protocol
+              <select id="api-verify-select">
+                <option value="">Choose an API…</option>
+              </select>
+            </label>
+          </div>
+          <p id="api-verify-summary" class="fine" role="status">
+            Choose an API above to see the matching models and required provider keys.
+          </p>
+          <div id="api-verify-keys" class="api-keys-grid"></div>
+          <div class="call-actions">
+            <button id="api-verify-run" type="button" class="button primary" disabled>
+              Verify all models under this API
+            </button>
+            <button id="api-verify-cancel" type="button" class="small-button" hidden>
+              Cancel verification
+            </button>
+            <button id="api-verify-clear-keys" type="button" class="text-button">
+              Clear API keys
+            </button>
+          </div>
+          <p id="api-verify-status" class="call-status" role="status" aria-live="polite">
+            No API verification in progress.
+          </p>
+          <div id="api-verify-results" class="batch-results"></div>
+        </div>
+      </section>
       <section id="model-list" class="tracker-section">
         <div class="section-head">
           <div>
