@@ -16,6 +16,7 @@ export declare enum ProviderId {
 export declare enum Preset {
   Global = 'global',
   China = 'china',
+  Official = 'official',
 }
 
 export declare enum Country {
@@ -234,6 +235,7 @@ export declare enum Tag {
   PricePremium = 'price:premium',
   WeightsOpen = 'weights:open',
   OriginChina = 'origin:cn',
+  ProviderOfficial = 'provider:official',
 }
 
 export declare enum ModelList {
@@ -241,6 +243,7 @@ export declare enum ModelList {
   Complete = 'complete',
   China = 'china',
   Global = 'global',
+  Official = 'official',
 }
 
 export declare enum LocalApi {
@@ -286,4 +289,5 @@ export declare enum ModelSort {
 export declare const DEFAULT: ModelList.Default,
   COMPLETE: ModelList.Complete,
   CHINA: ModelList.China,
-  GLOBAL: ModelList.Global;
+  GLOBAL: ModelList.Global,
+  OFFICIAL: ModelList.Official;

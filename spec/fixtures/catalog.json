@@ -5,7 +5,8 @@
       "id": "test",
       "name": "Test",
       "auth": "required",
-      "deployment": "hosted"
+      "deployment": "hosted",
+      "tags": ["provider:official"]
     },
     {
       "id": "local",
@@ -234,6 +235,12 @@
       "providerIds": [
         "test",
         "local"
+      ]
+    },
+    {
+      "id": "official",
+      "providerIds": [
+        "test"
       ]
     }
   ]

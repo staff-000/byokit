@@ -26,6 +26,7 @@ const models = byokit.getModels();
 byokit.getModels(byokit.COMPLETE); // Every provider and output, including retired/uncertain entries
 byokit.getModels(byokit.GLOBAL); // One non-retired model per editorial provider + Local
 byokit.getModels(byokit.CHINA); // China-provider shortlist + Local
+byokit.getModels(byokit.OFFICIAL); // Official model creators only (excludes aggregators) + Local
 ```
 
 Discovery runs offline. The bundled catalog comes from a pinned Models.dev
@@ -41,7 +42,7 @@ byokit.getModels(byokit.COMPLETE, { sort: byokit.ModelSort.SpeedDescend }); // T
 ```
 
 Unknown values and non-USD prices sort last; ties use alphabetical order. Local stays appended.
-Default/Global/China first pick their recommended model per provider; use COMPLETE
+Default/Global/China/Official first pick their recommended model per provider; use COMPLETE
 or `providerIds` to sort every matching offering. `ModelSort.ProviderOrder` retains
 provider order and existing per-provider preference ranking.
 
@@ -126,6 +127,7 @@ location or network availability.
 | `openWeights`, `commercialUse`, `maxParameters` | Weight availability, licensing, model size                                                                                                 |
 | `minTokensPerSecond`, `maxTimeToFirstTokenMs`   | Known speed and latency measurements                                                                                                       |
 | `lifecycle`, `includeDeprecated`                | Non-retired by default; COMPLETE includes all; explicit lifecycle wins                                                                     |
+| `official`                                      | Restrict to official canonical creator offerings (or `false` for third-party aggregators/re-hosters)                                       |
 | `callable`                                      | Filter reviewed text-generation adapter compatibility                                                                                      |
 | `popularity`                                    | POPULAR / NOT_POPULAR / UNCERTAIN from sourced usage ranks                                                                                 |
 | `verified`, `verifiedBy`, `verifiedWithinDays`  | Community call reports and freshness                                                                                                       |

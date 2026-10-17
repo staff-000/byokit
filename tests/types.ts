@@ -38,6 +38,8 @@ const lifecycle:byokit.Lifecycle=byokit.getModels()[0].lifecycle.status;
 byokit.getModels();
 byokit.getModels(byokit.COMPLETE);
 byokit.getModels(byokit.CHINA,{local:false});
+byokit.getModels(byokit.OFFICIAL);
+byokit.getModels({filters:{official:true}});
 byokit.getModels({local:[{endpoint:'http://localhost:8000/v1',api:byokit.LocalApi.OpenAI,modelId:'my-model'}]});
 // @ts-expect-error shortcuts are enum values, not raw strings
 byokit.getModels('complete');

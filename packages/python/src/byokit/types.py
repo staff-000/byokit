@@ -75,6 +75,7 @@ class Filters(TypedDict, total=False):
     verified: bool
     verifiedBy: ContributorId
     verifiedWithinDays: int
+    official: bool
 
 
 class Prefer(TypedDict, total=False):

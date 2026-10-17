@@ -45,6 +45,64 @@ test('COMPLETE removes shortlist limits and CHINA selects China providers', () =
   assert.throws(() => byokit.getModels('nonsense'));
   assert.throws(() => byokit.getModels({}, { limit: 1 }));
 });
+test('OFFICIAL selects only official providers and filters.official restricts to first-party endpoints', () => {
+  const official = byokit.getModels(byokit.OFFICIAL, {
+    asOf,
+    sort: byokit.ModelSort.ProviderOrder,
+  });
+  assert.deepEqual(
+    official.map((o) => o.providerId),
+    ['openai', 'anthropic', 'google', 'mistral', 'deepseek', 'zhipuai'],
+  );
+  assert.ok(official.every((o) => o.provider.tags.includes('provider:official')));
+
+  const chinaOfficial = byokit.getModels(byokit.CHINA, {
+    asOf,
+    sort: byokit.ModelSort.ProviderOrder,
+    filters: { official: true },
+  });
+  assert.deepEqual(
+    chinaOfficial.map((o) => o.providerId),
+    ['deepseek', 'zhipuai'],
+  );
+
+  const globalOfficial = byokit.getModels(byokit.GLOBAL, {
+    asOf,
+    sort: byokit.ModelSort.ProviderOrder,
+    filters: { official: true },
+  });
+  assert.deepEqual(
+    globalOfficial.map((o) => o.providerId),
+    ['openai', 'anthropic', 'google', 'mistral', 'deepseek', 'zhipuai'],
+  );
+
+  const globalUnofficial = byokit.getModels(byokit.GLOBAL, {
+    asOf,
+    local: false,
+    sort: byokit.ModelSort.ProviderOrder,
+    filters: { official: false },
+  });
+  assert.deepEqual(
+    globalUnofficial.map((o) => o.providerId),
+    ['mistral', 'groq', 'openrouter', 'siliconflow'],
+  );
+
+  const completeOfficial = byokit.getModels(byokit.COMPLETE, {
+    asOf,
+    local: false,
+    filters: { official: true },
+  });
+  assert.ok(completeOfficial.length > 100);
+  assert.ok(
+    completeOfficial.every((o) => !['openrouter', 'groq', 'siliconflow'].includes(o.providerId)),
+  );
+  assert.ok(
+    completeOfficial.every((o) => {
+      const creator = o.modelId.split('/')[0];
+      return o.providerId === creator || o.providerId.startsWith(creator + '-');
+    }),
+  );
+});
 test('lifecycle is provider-specific: retired direct model stays LIVE via aggregator', () => {
   const d = fixture();
   d.providers.push({

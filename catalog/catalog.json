@@ -313,7 +313,8 @@
       "deployment": "hosted",
       "logoId": "provider:anthropic",
       "tags": [
-        "origin:us"
+        "origin:us",
+        "provider:official"
       ],
       "provenance": {
         "source": "models.dev",
@@ -732,7 +733,8 @@
       "deployment": "hosted",
       "logoId": "provider:deepseek",
       "tags": [
-        "origin:cn"
+        "origin:cn",
+        "provider:official"
       ],
       "provenance": {
         "source": "models.dev",
@@ -969,7 +971,8 @@
       "deployment": "hosted",
       "logoId": "provider:google",
       "tags": [
-        "origin:us"
+        "origin:us",
+        "provider:official"
       ],
       "provenance": {
         "source": "models.dev",
@@ -1612,7 +1615,8 @@
       "deployment": "hosted",
       "logoId": "provider:mistral",
       "tags": [
-        "origin:fr"
+        "origin:fr",
+        "provider:official"
       ],
       "provenance": {
         "source": "models.dev",
@@ -1914,7 +1918,8 @@
       "deployment": "hosted",
       "logoId": "provider:openai",
       "tags": [
-        "origin:us"
+        "origin:us",
+        "provider:official"
       ],
       "provenance": {
         "source": "models.dev",
@@ -3028,7 +3033,8 @@
       "deployment": "hosted",
       "logoId": "provider:zhipuai",
       "tags": [
-        "origin:cn"
+        "origin:cn",
+        "provider:official"
       ],
       "provenance": {
         "source": "models.dev",
@@ -1320826,6 +1320832,17 @@
         "siliconflow",
         "ollama",
         "local"
+      ]
+    },
+    {
+      "id": "official",
+      "providerIds": [
+        "openai",
+        "anthropic",
+        "google",
+        "mistral",
+        "deepseek",
+        "zhipuai"
       ]
     }
   ],

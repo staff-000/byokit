@@ -40,16 +40,16 @@ const py =
 await writeFile(
   new URL('../packages/byokit/enums.js', import.meta.url),
   js +
-    'export const DEFAULT=ModelList.Default, COMPLETE=ModelList.Complete, CHINA=ModelList.China, GLOBAL=ModelList.Global;\n',
+    'export const DEFAULT=ModelList.Default, COMPLETE=ModelList.Complete, CHINA=ModelList.China, GLOBAL=ModelList.Global, OFFICIAL=ModelList.Official;\n',
 );
 await writeFile(
   new URL('../packages/byokit/enums.d.ts', import.meta.url),
   ts +
-    'export declare const DEFAULT:ModelList.Default, COMPLETE:ModelList.Complete, CHINA:ModelList.China, GLOBAL:ModelList.Global;\n',
+    'export declare const DEFAULT:ModelList.Default, COMPLETE:ModelList.Complete, CHINA:ModelList.China, GLOBAL:ModelList.Global, OFFICIAL:ModelList.Official;\n',
 );
 await writeFile(
   new URL('../packages/python/src/byokit/enums.py', import.meta.url),
   py +
-    '\nDEFAULT=ModelList.DEFAULT\nCOMPLETE=ModelList.COMPLETE\nCHINA=ModelList.CHINA\nGLOBAL=ModelList.GLOBAL\n',
+    '\nDEFAULT=ModelList.DEFAULT\nCOMPLETE=ModelList.COMPLETE\nCHINA=ModelList.CHINA\nGLOBAL=ModelList.GLOBAL\nOFFICIAL=ModelList.OFFICIAL\n',
 );
 console.log(`Generated ${Object.keys(spec).length} enums for JavaScript/TypeScript and Python.`);

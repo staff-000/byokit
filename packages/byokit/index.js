@@ -175,6 +175,7 @@ export function validateConfig(c = {}) {
       'verified',
       'verifiedBy',
       'verifiedWithinDays',
+      'official',
     ],
     prefer: ['features', 'lowerCost'],
     ui: ['maxProviders', 'maxModelsPerProvider', 'allowCustomModel'],
@@ -225,7 +226,7 @@ export function validateConfig(c = {}) {
       !Number.isFinite(Date.parse(c.asOf)))
   )
     errors.push('asOf must be an ISO timestamp');
-  for (const key of ['callable', 'includeDeprecated'])
+  for (const key of ['callable', 'includeDeprecated', 'official'])
     if (c.filters?.[key] !== undefined && typeof c.filters[key] !== 'boolean')
       errors.push(`filters.${key} must be boolean`);
   if (c.filters?.verified !== undefined && typeof c.filters.verified !== 'boolean')
@@ -345,8 +346,34 @@ function matches(o, m, c, providerTags = []) {
     (f.excludeTags || []).some((t) => tags.has(t))
   )
     return false;
+  if (f.official !== undefined && isOfficialOffering(o, m, providerTags) !== f.official)
+    return false;
 
   return true;
+}
+
+export function isOfficialOffering(o, m, providerTags = []) {
+  if (providerTags.includes('provider:official')) {
+    const creator = (m?.id || o.modelId).split('/')[0];
+    return o.providerId === creator || o.providerId.startsWith(creator + '-');
+  }
+  const aggregators = [
+    'openrouter',
+    'groq',
+    'siliconflow',
+    '302ai',
+    'aihubmix',
+    'deepinfra',
+    'togetherai',
+    'fireworks-ai',
+    'azure',
+    'amazon-bedrock',
+    'local',
+    'ollama',
+  ];
+  if (aggregators.includes(o.providerId)) return false;
+  const creator = (m?.id || o.modelId).split('/')[0];
+  return o.providerId === creator || o.providerId.startsWith(creator + '-');
 }
 
 function compareModels(a, b, sort) {
@@ -1041,6 +1068,10 @@ function normalizeQuery(input = {}, options) {
     config.list = ModelList.Default;
   if (config.list === ModelList.China) config.preset = 'china';
   if (config.list === ModelList.Global) config.preset = 'global';
+  if (config.list === ModelList.Official) {
+    config.preset = 'official';
+    config.filters = { ...config.filters, official: true };
+  }
   return config;
 }
 function validateLocal(entry) {
@@ -1077,6 +1108,7 @@ function localGroups(config, catalog) {
     config.filters?.input?.length ||
     config.filters?.output?.length ||
     config.filters?.callable !== undefined ||
+    config.filters?.official === true ||
     config.local === false ||
     (config.filters?.deployment && !config.filters.deployment.includes(Deployment.Local))
   )

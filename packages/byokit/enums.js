@@ -12,7 +12,7 @@ export const ProviderId = Object.freeze({
   Ollama: 'ollama',
   Local: 'local',
 });
-export const Preset = Object.freeze({ Global: 'global', China: 'china' });
+export const Preset = Object.freeze({ Global: 'global', China: 'china', Official: 'official' });
 export const Country = Object.freeze({ China: 'cn', UnitedStates: 'us', France: 'fr' });
 export const Deployment = Object.freeze({
   Hosted: 'hosted',
@@ -174,12 +174,14 @@ export const Tag = Object.freeze({
   PricePremium: 'price:premium',
   WeightsOpen: 'weights:open',
   OriginChina: 'origin:cn',
+  ProviderOfficial: 'provider:official',
 });
 export const ModelList = Object.freeze({
   Default: 'default',
   Complete: 'complete',
   China: 'china',
   Global: 'global',
+  Official: 'official',
 });
 export const LocalApi = Object.freeze({ OpenAI: 'openai-compatible', Ollama: 'ollama' });
 export const LifecycleBasis = Object.freeze({
@@ -214,4 +216,5 @@ export const ModelSort = Object.freeze({
 export const DEFAULT = ModelList.Default,
   COMPLETE = ModelList.Complete,
   CHINA = ModelList.China,
-  GLOBAL = ModelList.Global;
+  GLOBAL = ModelList.Global,
+  OFFICIAL = ModelList.Official;

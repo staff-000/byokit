@@ -51,6 +51,7 @@ let catalog = {
     { id: 'default', providerIds: [], offeringIds: [] },
     { id: 'global', providerIds: [] },
     { id: 'china', providerIds: [] },
+    { id: 'official', providerIds: [] },
   ],
   assets: [],
 };
@@ -72,7 +73,10 @@ for (const [id, p] of Object.entries(upstream).sort(([a], [b]) => a.localeCompar
     auth: 'required',
     deployment: 'hosted',
     logoId: `provider:${id}`,
-    tags: curation.origin ? [`origin:${curation.origin}`] : [],
+    tags: [
+      ...(curation.origin ? [`origin:${curation.origin}`] : []),
+      ...(curation.presets.includes('official') ? ['provider:official'] : []),
+    ],
     provenance: { source: 'models.dev', reviewedAt: catalog.provenance.reviewedAt },
   });
   catalog.assets.push({

@@ -181,6 +181,7 @@ def validate_config(config):
             "verified",
             "verifiedBy",
             "verifiedWithinDays",
+            "official",
         ],
         "prefer": ["features", "lowerCost"],
         "ui": ["maxProviders", "maxModelsPerProvider", "allowCustomModel"],
@@ -243,7 +244,7 @@ def validate_config(config):
         except (ValueError, TypeError):
             errors.append("asOf must be an ISO timestamp")
     f = config.get("filters", {})
-    for key in ["callable", "includeDeprecated"]:
+    for key in ["callable", "includeDeprecated", "official"]:
         if key in f and not isinstance(f[key], bool):
             errors.append(f"filters.{key} must be boolean")
     if "verified" in f and not isinstance(f["verified"], bool):
@@ -368,7 +369,39 @@ def matches(o, m, config, provider_tags=None):
         t in tags for t in f.get("excludeTags", [])
     ):
         return False
+    if "official" in f:
+        if is_official_offering(o, m, provider_tags) != f["official"]:
+            return False
     return True
+
+
+def is_official_offering(o, m, provider_tags=None):
+    tags = provider_tags or []
+    if "provider:official" in tags:
+        creator = (m.get("id") or o.get("modelId", "")).split("/")[0]
+        return o.get("providerId") == creator or o.get("providerId", "").startswith(
+            creator + "-"
+        )
+    aggregators = {
+        "openrouter",
+        "groq",
+        "siliconflow",
+        "302ai",
+        "aihubmix",
+        "deepinfra",
+        "togetherai",
+        "fireworks-ai",
+        "azure",
+        "amazon-bedrock",
+        "local",
+        "ollama",
+    }
+    if o.get("providerId") in aggregators:
+        return False
+    creator = (m.get("id") or o.get("modelId", "")).split("/")[0]
+    return o.get("providerId") == creator or o.get("providerId", "").startswith(
+        creator + "-"
+    )
 
 
 class Catalog:
@@ -1258,6 +1291,11 @@ def _normalize_query(input=None, options=None):
         config["preset"] = "china"
     if config.get("list") == ModelList.GLOBAL:
         config["preset"] = "global"
+    if config.get("list") == ModelList.OFFICIAL:
+        config["preset"] = "official"
+        filters = dict(config.get("filters") or {})
+        filters["official"] = True
+        config["filters"] = filters
     return config
 
 
@@ -1299,6 +1337,7 @@ def _local_groups(config, catalog):
         config.get("filters", {}).get("input")
         or config.get("filters", {}).get("output")
         or "callable" in config.get("filters", {})
+        or config.get("filters", {}).get("official") is True
         or config.get("local") is False
         or "deployment" in config.get("filters", {})
         and "local" not in config["filters"]["deployment"]

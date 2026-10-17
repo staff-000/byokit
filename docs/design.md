@@ -271,8 +271,8 @@ not label models missing from a ranking as unpopular.
 
 `getModels()` selects reviewed offering IDs from `catalog/recommendations.json`, then
 appends a Local setup entry. COMPLETE discovers every upstream provider, output
-modality and lifecycle. GLOBAL and CHINA are editorial provider collections with
-one non-retired offering per provider. Explicit provider queries are unbounded.
+modality and lifecycle. GLOBAL, CHINA and OFFICIAL are editorial provider collections with
+one non-retired offering per provider (OFFICIAL excludes third-party aggregators and re-hosters). Explicit provider queries are unbounded.
 A hosted limit applies before local append; grouped UI retains display caps.
 
 The importer consumes the combined `catalog.json?type=all` snapshot. Shared model

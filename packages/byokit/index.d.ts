@@ -183,6 +183,7 @@ export interface PickerConfig {
     verified?: boolean;
     verifiedBy?: ContributorId;
     verifiedWithinDays?: number;
+    official?: boolean;
   };
   prefer?: { features?: FeatureName[]; lowerCost?: boolean };
   ui?: { maxProviders?: number; maxModelsPerProvider?: number; allowCustomModel?: boolean };
@@ -287,6 +288,11 @@ export type SetupEvent =
 export function reduceSetup(state: SetupState, event: SetupEvent): SetupState;
 
 export function deriveTags(offering: Offering, model?: Partial<Model>): string[];
+export function isOfficialOffering(
+  offering: Offering,
+  model?: Partial<Model>,
+  providerTags?: string[],
+): boolean;
 
 export interface VerificationRecord {
   id: string;
