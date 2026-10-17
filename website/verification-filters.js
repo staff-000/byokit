@@ -31,8 +31,18 @@ export function filterModels(state = {}) {
       : byokit.ModelSort.ProviderOrder,
   });
 
-  if (!state.provider || state.provider === byokit.ProviderId.Local)
+  if (!state.provider || state.provider === byokit.ProviderId.Local) {
     models.push(...byokit.getModels().filter((m) => m.local));
+  }
+  if (state.verification && state.verification !== 'any') {
+    const vData = state.verifications ? { verifications: state.verifications } : undefined;
+    models = models.filter((m) => {
+      const summary = vData ? byokit.verificationSummary(vData, m.id) : m.verification;
+      return (
+        summary?.communityStatus === state.verification || summary?.status === state.verification
+      );
+    });
+  }
   const search = (state.search || '').trim().toLowerCase();
   if (search)
     models = models.filter((m) =>

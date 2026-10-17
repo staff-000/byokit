@@ -27,6 +27,7 @@ import {
   Currency,
   ModelStatus,
   VerificationResult,
+  CommunityVerificationStatus,
   VerificationStatus,
   VerificationCheck,
   LocalRuntime,
@@ -180,7 +181,8 @@ export interface PickerConfig {
     popularity?: Popularity[];
     includeDeprecated?: boolean;
     callable?: boolean;
-    verified?: boolean;
+    verified?:
+      boolean | CommunityVerificationStatus | 'verified' | 'unverified' | 'verified to be failure';
     verifiedBy?: ContributorId;
     verifiedWithinDays?: number;
     official?: boolean;
@@ -316,6 +318,8 @@ export interface VerificationRecord {
 }
 export interface VerificationSummary {
   status: VerificationStatus;
+  communityStatus?:
+    CommunityVerificationStatus | 'verified' | 'unverified' | 'verified to be failure';
   latest: VerificationRecord | null;
   records: VerificationRecord[];
 }

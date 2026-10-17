@@ -118,10 +118,17 @@ class VerificationResult(str, Enum):
     PASSED = "passed"
     FAILED = "failed"
 
+class CommunityVerificationStatus(str, Enum):
+    VERIFIED = "verified"
+    UNVERIFIED = "unverified"
+    VERIFIED_TO_BE_FAILURE = "verified to be failure"
+
 class VerificationStatus(str, Enum):
     UNVERIFIED = "unverified"
     PASSED = "passed"
     FAILED = "failed"
+    VERIFIED = "verified"
+    VERIFIED_TO_BE_FAILURE = "verified to be failure"
     STALE = "stale"
 
 class VerificationCheck(str, Enum):

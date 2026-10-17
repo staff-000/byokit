@@ -386,6 +386,15 @@ Reply with exactly: OK</textarea></label
                 <th scope="col" class="status-column">
                   <span class="column-title">Status / verification</span>
                   <div class="column-filters">
+                    <label class="filter-field"
+                      ><span class="sr-only">Verification status</span>
+                      <select id="verification-filter">
+                        <option value="any">Any verification</option>
+                        <option value="verified">Verified</option>
+                        <option value="unverified">Unverified</option>
+                        <option value="verified to be failure">Verified to be failure</option>
+                      </select></label
+                    >
                     <label class="header-checkbox"
                       ><input id="include-outdated" type="checkbox" /> Include outdated</label
                     >

@@ -90,10 +90,17 @@ export const ModelStatus = Object.freeze({
   Deprecated: 'deprecated',
 });
 export const VerificationResult = Object.freeze({ Passed: 'passed', Failed: 'failed' });
+export const CommunityVerificationStatus = Object.freeze({
+  Verified: 'verified',
+  Unverified: 'unverified',
+  VerifiedToBeFailure: 'verified to be failure',
+});
 export const VerificationStatus = Object.freeze({
   Unverified: 'unverified',
   Passed: 'passed',
   Failed: 'failed',
+  Verified: 'verified',
+  VerifiedToBeFailure: 'verified to be failure',
   Stale: 'stale',
 });
 export const VerificationCheck = Object.freeze({

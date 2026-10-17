@@ -248,8 +248,9 @@ def validate_config(config):
     for key in ["callable", "includeDeprecated", "official"]:
         if key in f and not isinstance(f[key], bool):
             errors.append(f"filters.{key} must be boolean")
-    if "verified" in f and not isinstance(f["verified"], bool):
-        errors.append("filters.verified must be boolean")
+    valid_verified = {"verified", "unverified", "verified to be failure"}
+    if "verified" in f and not isinstance(f["verified"], bool) and f["verified"] not in valid_verified:
+        errors.append("filters.verified must be boolean or verification status")
     if "verifiedBy" in f and (
         not isinstance(f["verifiedBy"], str)
         or not re.fullmatch(r"github:[a-z0-9-]+", f["verifiedBy"], re.I)
@@ -1164,21 +1165,36 @@ def verification_summary(
         if now - _timestamp(latest["checkedAt"]) > max_age_days * 86400
         else latest["result"]
     )
-    return {"status": status, "latest": latest, "records": records}
+    community_status = (
+        "unverified"
+        if latest is None
+        else "verified to be failure"
+        if latest["result"] == "failed"
+        else "verified"
+    )
+    return {
+        "status": status,
+        "communityStatus": community_status,
+        "latest": latest,
+        "records": records,
+    }
 
 
 def matches_verification(data, oid, config):
     f = config.get("filters", {})
     if not any(k in f for k in ["verified", "verifiedBy", "verifiedWithinDays"]):
         return True
-    status = verification_summary(
+    summary = verification_summary(
         data,
         oid,
         as_of=config.get("asOf"),
         max_age_days=f.get("verifiedWithinDays", 90),
         contributor=f.get("verifiedBy"),
-    )["status"]
-    return status != "passed" if f.get("verified") is False else status == "passed"
+    )
+    v = f.get("verified")
+    if isinstance(v, str):
+        return summary["communityStatus"] == v or summary["status"] == v
+    return summary["status"] != "passed" if v is False else summary["status"] == "passed"
 
 
 _WARNED_RUNTIME = False

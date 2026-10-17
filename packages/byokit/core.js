@@ -228,8 +228,13 @@ export function validateConfig(c = {}) {
   for (const key of ['callable', 'includeDeprecated', 'official'])
     if (c.filters?.[key] !== undefined && typeof c.filters[key] !== 'boolean')
       errors.push(`filters.${key} must be boolean`);
-  if (c.filters?.verified !== undefined && typeof c.filters.verified !== 'boolean')
-    errors.push('filters.verified must be boolean');
+  const validVerified = ['verified', 'unverified', 'verified to be failure'];
+  if (
+    c.filters?.verified !== undefined &&
+    typeof c.filters.verified !== 'boolean' &&
+    !validVerified.includes(c.filters.verified)
+  )
+    errors.push('filters.verified must be boolean or verification status');
   if (c.filters?.verifiedBy !== undefined && !/^github:[a-z0-9-]+$/i.test(c.filters.verifiedBy))
     errors.push('verifiedBy must identify a GitHub contributor');
   if (
@@ -995,12 +1000,18 @@ export function verificationSummary(
       (a.id < b.id ? -1 : 1),
   );
   const latest = calls[0];
+  const communityStatus = !latest
+    ? 'unverified'
+    : latest.result === 'failed'
+      ? 'verified to be failure'
+      : 'verified';
   return {
     status: !latest
       ? 'unverified'
       : now - Date.parse(latest.checkedAt) > maxAgeDays * 86400000
         ? 'stale'
         : latest.result,
+    communityStatus,
     latest: latest || null,
     records,
   };
@@ -1008,12 +1019,15 @@ export function verificationSummary(
 function matchesVerification(data, id, config) {
   const f = config.filters || {};
   if (f.verified === undefined && !f.verifiedBy && f.verifiedWithinDays === undefined) return true;
-  const state = verificationSummary(data, id, {
+  const summary = verificationSummary(data, id, {
     asOf: config.asOf,
     maxAgeDays: f.verifiedWithinDays,
     contributor: f.verifiedBy,
-  }).status;
-  return f.verified === false ? state !== 'passed' : state === 'passed';
+  });
+  if (typeof f.verified === 'string') {
+    return summary.communityStatus === f.verified || summary.status === f.verified;
+  }
+  return f.verified === false ? summary.status !== 'passed' : summary.status === 'passed';
 }
 
 export function customProviderId(value) {

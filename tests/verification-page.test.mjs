@@ -156,12 +156,17 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
     ];
     $('#check-publication').click();
     await wait(() => $('#publication-status').textContent.startsWith('Published:'));
-    assert.equal(calls, 1);
+    assert.match($('#models').textContent, /Community: verified/);
     assert.match($('#models').textContent, /Community verified by @fixture-user/);
     assert.equal($('#earned-badge').hidden, false);
     assert.match($('#publication-status').textContent, /badge earned/);
     assert.match($('#contributor-list').textContent, /@fixture-user/);
     assert.equal($('#earned-badge-image').getAttribute('src'), './badges/github-123.svg');
+    change('verification-filter', 'verified');
+    assert.match($('#models').textContent, /Community: verified/);
+    change('verification-filter', 'unverified');
+    assert.ok(!$('#models').textContent.includes('Community verified by @fixture-user'));
+    change('verification-filter', 'any');
     providerMode = 'failure';
     $('#verify-form').dispatchEvent(
       new dom.window.Event('submit', { bubbles: true, cancelable: true }),

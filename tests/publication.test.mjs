@@ -139,13 +139,36 @@ test('deduplication, numeric contributor limits, and concurrent rereads preserve
   assert.equal(catalog.verifications?.length ?? 0, 0);
   assert.equal(verificationSummary(first.data, 'deepseek/test', { asOf: time }).status, 'passed');
   assert.equal(
+    verificationSummary(first.data, 'deepseek/test', { asOf: time }).communityStatus,
+    'verified',
+  );
+  assert.equal(
     verificationSummary(first.data, catalog.offerings[0].id, { asOf: time }).status,
+    'unverified',
+  );
+  assert.equal(
+    verificationSummary(first.data, catalog.offerings[0].id, { asOf: time }).communityStatus,
     'unverified',
   );
   assert.equal(
     verificationSummary(first.data, 'deepseek/test', { asOf: '2027-02-01T00:00:00Z' }).status,
     'stale',
   );
+  first.data.verifications.push({
+    id: 'deepseek/test#fail',
+    offeringId: 'deepseek/test',
+    contributor: 'github:fixture-fail',
+    checkedAt: '2026-10-15T12:00:00.000Z',
+    result: 'failed',
+    checks: ['textGeneration'],
+    evidence: 'https://github.com/staff-000/byokit/issues/99',
+    adapter: 'openai',
+  });
+  const failSummary = verificationSummary(first.data, 'deepseek/test', {
+    asOf: '2026-10-15T13:00:00.000Z',
+  });
+  assert.equal(failSummary.status, 'failed');
+  assert.equal(failSummary.communityStatus, 'verified to be failure');
 });
 test('staging fixtures require repository owner and cannot be treated as production calls', () => {
   assert.throws(() => issueSubmission(event({ ...report(), staging: true }), catalog));

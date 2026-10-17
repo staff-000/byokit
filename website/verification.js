@@ -30,6 +30,7 @@ const tracker = new PublicationTracker((reports) => {
   const errors = byokit.validateVerifications(reports, catalog);
   if (errors.length) throw new Error('Invalid published verification records.');
   publishedReports = reports;
+  byokit.addVerifications?.(reports);
   renderModels();
   renderContributors();
 });
@@ -204,6 +205,8 @@ function filteredModels() {
     context: $('#context-filter').value,
     price: $('#price-filter').value,
     sort: $('#sort-filter').value,
+    verification: $('#verification-filter')?.value,
+    verifications: publishedReports,
     includeOutdated: $('#include-outdated').checked,
   });
 }
@@ -314,12 +317,16 @@ function renderModels() {
       );
     if (summary.latest) {
       const report = summary.latest,
+        isFailure =
+          summary.communityStatus === 'verified to be failure' || summary.status === 'failed',
+        badgeText = isFailure ? 'Verified to be failure' : 'Community: verified',
+        badgeClass = isFailure ? 'badge uncertain' : 'badge passed',
         label =
           summary.status === 'stale'
             ? 'Historical verification'
-            : summary.status === 'passed'
-              ? 'Community verified'
-              : 'Community call failed',
+            : isFailure
+              ? 'Verified to be failure'
+              : 'Community verified',
         link = el(
           'a',
           `${label} by ${report.contributor.replace('github:', '@')} · ${new Date(report.checkedAt).toLocaleDateString()}`,
@@ -328,8 +335,8 @@ function renderModels() {
       link.href = report.evidence;
       link.target = '_blank';
       link.rel = 'noopener noreferrer';
-      action.append(link);
-    } else if (!last) action.append(el('span', 'No community verification yet', 'evidence-note'));
+      action.append(el('span', badgeText, badgeClass), link);
+    } else if (!last) action.append(el('span', 'Community: unverified', 'evidence-note'));
     const button = el('button', 'Verify', 'small-button');
     button.type = 'button';
     button.disabled = !m.local && !m.callSupport?.textGeneration;
@@ -788,6 +795,7 @@ for (const id of [
   'context-filter',
   'price-filter',
   'sort-filter',
+  'verification-filter',
   'include-outdated',
 ])
   $('#' + id).addEventListener('input', () => {

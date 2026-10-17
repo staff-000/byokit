@@ -134,10 +134,18 @@ export declare enum VerificationResult {
   Failed = 'failed',
 }
 
+export declare enum CommunityVerificationStatus {
+  Verified = 'verified',
+  Unverified = 'unverified',
+  VerifiedToBeFailure = 'verified to be failure',
+}
+
 export declare enum VerificationStatus {
   Unverified = 'unverified',
   Passed = 'passed',
   Failed = 'failed',
+  Verified = 'verified',
+  VerifiedToBeFailure = 'verified to be failure',
   Stale = 'stale',
 }
 

@@ -116,10 +116,17 @@
     "Passed": "passed",
     "Failed": "failed"
   },
+  "CommunityVerificationStatus": {
+    "Verified": "verified",
+    "Unverified": "unverified",
+    "VerifiedToBeFailure": "verified to be failure"
+  },
   "VerificationStatus": {
     "Unverified": "unverified",
     "Passed": "passed",
     "Failed": "failed",
+    "Verified": "verified",
+    "VerifiedToBeFailure": "verified to be failure",
     "Stale": "stale"
   },
   "VerificationCheck": {

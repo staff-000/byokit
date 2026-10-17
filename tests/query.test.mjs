@@ -114,6 +114,9 @@ test('JS and Python simple query and verification filters agree', () => {
     { asOf },
     { asOf, filters: { verified: true } },
     { asOf, filters: { verified: false } },
+    { asOf, filters: { verified: 'verified' } },
+    { asOf, filters: { verified: 'unverified' } },
+    { asOf, filters: { verified: 'verified to be failure' } },
     { asOf, filters: { verifiedBy: 'github:bob' } },
     { asOf, limit: 1 },
   ];
