@@ -3,6 +3,12 @@ import { validateConnection } from './custom-model.js';
 import { connectionFor, callSupportFor } from './connection.js';
 export { appendModel } from './custom-model.js';
 export { call, callClaude, prepareCall, CallError } from './call.js';
+export class NotImplementedError extends Error {
+  constructor(message = 'Not implemented') {
+    super(message);
+    this.name = 'NotImplementedError';
+  }
+}
 import {
   FeatureStatus,
   ContextAccounting,
@@ -520,11 +526,23 @@ export class Catalog {
     this._cache.clear();
   }
   getModels(input = {}, options) {
+    const config = normalizeQuery(input, options);
+    if (
+      [
+        ModelSort.Speed,
+        ModelSort.SpeedAscend,
+        ModelSort.SpeedDescend,
+        'speed',
+        'speedAscend',
+        'speedDescend',
+      ].includes(config.sort)
+    ) {
+      throw new NotImplementedError('Speed sorting is not implemented');
+    }
     const cacheKey = serializeQuery(input, options);
     if (this._cache.has(cacheKey)) {
       return structuredClone(this._cache.get(cacheKey));
     }
-    const config = normalizeQuery(input, options);
     const groups = this._select(config, true);
     const hosted = groups
       .filter((g) => g.provider.deployment !== Deployment.Local)

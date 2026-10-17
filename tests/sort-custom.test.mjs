@@ -28,14 +28,15 @@ test('sorts across providers before limit with deterministic ties, zero prices a
     c.getModels({ ...q, sort: byokit.ModelSort.PriceAscend, limit: 2 }).map((m) => m.name),
     ['Alpha', 'Beta'],
   );
-  assert.deepEqual(
-    c.getModels({ ...q, sort: byokit.ModelSort.SpeedDescend }).map((m) => m.name),
-    ['Beta', 'Gamma', 'Alpha', 'Zulu'],
+  assert.throws(
+    () => c.getModels({ ...q, sort: byokit.ModelSort.SpeedDescend }),
+    byokit.NotImplementedError,
   );
-  assert.deepEqual(
-    c.getModels({ ...q, sort: byokit.ModelSort.SpeedAscend }).map((m) => m.name),
-    ['Alpha', 'Beta', 'Gamma', 'Zulu'],
+  assert.throws(
+    () => c.getModels({ ...q, sort: byokit.ModelSort.SpeedAscend }),
+    byokit.NotImplementedError,
   );
+  assert.throws(() => c.getModels({ ...q, sort: 'speed' }), byokit.NotImplementedError);
   assert.deepEqual(
     c.getModels({ ...q, sort: byokit.ModelSort.PriceDescend }).map((m) => m.name),
     ['Beta', 'Gamma', 'Alpha', 'Zulu'],
@@ -48,17 +49,28 @@ test('sorts across providers before limit with deterministic ties, zero prices a
     c.getModels({ ...q, sort: 'price' }),
     c.getModels({ ...q, sort: byokit.ModelSort.PriceAscend }),
   );
-  assert.deepEqual(
-    c.getModels({ ...q, sort: 'speed' }),
-    c.getModels({ ...q, sort: byokit.ModelSort.SpeedDescend }),
-  );
-  const queries = Object.values(byokit.ModelSort).map((sort) => ({ ...q, sort }));
+  const speedSorts = [
+    byokit.ModelSort.Speed,
+    byokit.ModelSort.SpeedAscend,
+    byokit.ModelSort.SpeedDescend,
+    'speed',
+    'speedAscend',
+    'speedDescend',
+  ];
+  const queries = Object.values(byokit.ModelSort)
+    .filter((sort) => !speedSorts.includes(sort))
+    .map((sort) => ({ ...q, sort }));
   const py = pythonModels({ data: d, queries });
   assert.equal(py.status, 0, py.stderr);
   assert.deepEqual(
     JSON.parse(py.stdout),
     queries.map((q) => c.getModels(q)),
   );
+  for (const sort of speedSorts) {
+    const res = pythonModels({ data: d, queries: [{ ...q, sort }] });
+    assert.equal(res.status, 1);
+    assert.match(res.stderr, /NotImplementedError/);
+  }
   assert.throws(() => c.getModels({ ...q, sort: 'fastest' }), /sort/);
 });
 test('directional price sorts leave missing and non-USD values last, with Local appended', () => {

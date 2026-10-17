@@ -473,6 +473,7 @@ export class CallError extends Error {
   diagnostics: Diagnostic[];
   status?: number;
 }
+export class NotImplementedError extends Error {}
 export function call(
   model: ModelOption,
   input: string | ChatInput,

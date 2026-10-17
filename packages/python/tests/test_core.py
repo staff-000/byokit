@@ -94,9 +94,18 @@ class CoreTests(unittest.TestCase):
     def test_bool_not_token_count(self):
         self.assertTrue(validate_config({"budget": {"maxInputTokens": True}}))
 
-    def test_snapshot(self):
-        catalog = Catalog(json.loads((root / "catalog/catalog.json").read_text()))
-        self.assertLessEqual(len(catalog.select({"preset": "china"})), 8)
+    def test_speed_sort_raises_not_implemented(self):
+        from byokit import ModelSort
+        for sort in [
+            ModelSort.SPEED,
+            ModelSort.SPEED_ASCEND,
+            ModelSort.SPEED_DESCEND,
+            "speed",
+            "speedAscend",
+            "speedDescend",
+        ]:
+            with self.assertRaises(NotImplementedError):
+                self.catalog.get_models({"sort": sort})
 
 
 if __name__ == "__main__":

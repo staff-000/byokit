@@ -39,16 +39,15 @@ console.log(models.map(model => ({
   },
   speed: {
     label: 'Sort by speed',
-    code: `const models = byokit.getModels({
-  sort: byokit.ModelSort.SpeedDescend,
-  limit: 5,
-  local: false,
-});
-console.log(models.map(model => ({
-  model: model.apiModelId,
-  tokensPerSecond: model.speed?.tokensPerSecond ?? null,
-})));
-// Unknown measurements remain null and sort last.`,
+    code: `try {
+  byokit.getModels({
+    sort: byokit.ModelSort.SpeedDescend,
+    limit: 5,
+    local: false,
+  });
+} catch (error) {
+  console.log('Speed sorting is not implemented:', error.name);
+}`,
   },
   filter: {
     label: 'Complete list with filters',

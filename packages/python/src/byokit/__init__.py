@@ -492,10 +492,21 @@ class Catalog:
         config: "PickerConfig | ModelList | None" = None,
         options: "PickerConfig | None" = None,
     ) -> list[dict]:
+        normalized = _normalize_query(config, options)
+        sort = normalized.get("sort")
+        if sort in (
+            ModelSort.SPEED,
+            ModelSort.SPEED_ASCEND,
+            ModelSort.SPEED_DESCEND,
+            "speed",
+            "speedAscend",
+            "speedDescend",
+        ):
+            raise NotImplementedError("Speed sorting is not implemented")
         cache_key = self.serialize_query(config, options)
         if cache_key in self._cache:
             return copy.deepcopy(self._cache[cache_key])
-        config = _normalize_query(config, options)
+        config = normalized
         groups = self._select(config, True)
         result = []
         for g in groups:
