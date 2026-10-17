@@ -254,6 +254,12 @@
       ]
     },
     {
+      "id": "official-flagship",
+      "providerIds": [
+        "test"
+      ]
+    },
+    {
       "id": "official",
       "providerIds": [
         "test"

@@ -16,7 +16,8 @@ export declare enum ProviderId {
 export declare enum Preset {
   Global = 'global',
   China = 'china',
-  Official = 'official',
+  OfficialFlagship = 'official-flagship',
+  Official = 'official-flagship',
 }
 
 export declare enum Country {
@@ -264,7 +265,8 @@ export declare enum ModelList {
   Complete = 'complete',
   China = 'china',
   Global = 'global',
-  Official = 'official',
+  OfficialFlagship = 'official-flagship',
+  Official = 'official-flagship',
 }
 
 export declare enum LocalApi {
@@ -312,4 +314,5 @@ export declare const DEFAULT: ModelList.Default,
   COMPLETE: ModelList.Complete,
   CHINA: ModelList.China,
   GLOBAL: ModelList.Global,
+  OFFICIAL_FLAGSHIP: ModelList.OfficialFlagship,
   OFFICIAL: ModelList.Official;

@@ -51,7 +51,8 @@ let catalog = {
     { id: 'default', providerIds: [], offeringIds: [] },
     { id: 'global', providerIds: [] },
     { id: 'china', providerIds: [] },
-    { id: 'official', providerIds: [] },
+    { id: 'official-flagship', providerIds: [], offeringIds: [] },
+    { id: 'official', providerIds: [], offeringIds: [] },
   ],
   assets: [],
 };
@@ -352,11 +353,37 @@ const recommendations = JSON.parse(
 );
 catalog.recommendations = recommendations;
 const defaults = catalog.presets.find((p) => p.id === 'default');
-for (const r of recommendations) {
-  const o = catalog.offerings.find((o) => o.id === r.offeringId);
+const defaultRecommendedIds = [
+  'openai/gpt-6.1-sol',
+  'openai/gpt-6-luna',
+  'anthropic/claude-sonnet-5-5',
+  'google/gemini-3.8-flash',
+];
+for (const id of defaultRecommendedIds) {
+  const o = catalog.offerings.find((o) => o.id === id);
   if (!o || o.status === 'deprecated' || !o.callSupport?.textGeneration) continue;
   defaults.offeringIds.push(o.id);
   if (!defaults.providerIds.includes(o.providerId)) defaults.providerIds.push(o.providerId);
+}
+const flagships = [
+  'openai/gpt-6.1-sol',
+  'anthropic/claude-opus-5-5',
+  'google/gemini-4-argon',
+  'mistral/mistral-large-4',
+  'deepseek/deepseek-v4-pro',
+  'zhipuai/glm-5.3',
+];
+for (const pid of ['official-flagship', 'official']) {
+  const p = catalog.presets.find((x) => x.id === pid);
+  if (p) {
+    p.offeringIds = [];
+    for (const id of flagships) {
+      const o = catalog.offerings.find((o) => o.id === id);
+      if (!o || o.status === 'deprecated' || !o.callSupport?.textGeneration) continue;
+      p.offeringIds.push(o.id);
+      if (!p.providerIds.includes(o.providerId)) p.providerIds.push(o.providerId);
+    }
+  }
 }
 for (const o of catalog.offerings)
   o.tags = deriveTags(

@@ -17,7 +17,8 @@ class ProviderId(str, Enum):
 class Preset(str, Enum):
     GLOBAL = "global"
     CHINA = "china"
-    OFFICIAL = "official"
+    OFFICIAL_FLAGSHIP = "official-flagship"
+    OFFICIAL = "official-flagship"
 
 class Country(str, Enum):
     CHINA = "cn"
@@ -235,7 +236,8 @@ class ModelList(str, Enum):
     COMPLETE = "complete"
     CHINA = "china"
     GLOBAL = "global"
-    OFFICIAL = "official"
+    OFFICIAL_FLAGSHIP = "official-flagship"
+    OFFICIAL = "official-flagship"
 
 class LocalApi(str, Enum):
     OPEN_AI = "openai-compatible"
@@ -275,4 +277,5 @@ LIVE=ModelList.LIVE
 COMPLETE=ModelList.COMPLETE
 CHINA=ModelList.CHINA
 GLOBAL=ModelList.GLOBAL
+OFFICIAL_FLAGSHIP=ModelList.OFFICIAL_FLAGSHIP
 OFFICIAL=ModelList.OFFICIAL

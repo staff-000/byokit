@@ -243,7 +243,7 @@ export function validateConfig(c = {}) {
   const errors = [];
   if (c.sort !== undefined && !Object.values(ModelSort).includes(c.sort))
     errors.push('Unknown model sort');
-  if (c.list !== undefined && !Object.values(ModelList).includes(c.list))
+  if (c.list !== undefined && !Object.values(ModelList).includes(c.list) && c.list !== 'official')
     errors.push('Unknown model list');
   if (c.local !== undefined && c.local !== false) {
     if (!Array.isArray(c.local)) errors.push('local must be false or an array');
@@ -836,6 +836,9 @@ export class Catalog {
         (p) =>
           p.id === (config.preset || (config.list === ModelList.Default ? 'default' : 'global')),
       ) ||
+      (config.preset === 'official' || config.preset === 'official-flagship'
+        ? this.data.presets.find((p) => p.id === 'official-flagship' || p.id === 'official')
+        : undefined) ||
       (config.list === ModelList.Default
         ? this.data.presets.find((p) => p.id === 'global')
         : undefined);
@@ -848,13 +851,13 @@ export class Catalog {
     if (!Array.isArray(ids) || ids.some((id) => !this.providers.has(id)))
       throw new Error('Unknown provider in providerIds');
     const groups = [];
-    const recommended =
-      config.list === ModelList.Default && preset.offeringIds ? new Set(preset.offeringIds) : null;
+    const recommended = preset.offeringIds ? new Set(preset.offeringIds) : null;
     for (const id of ids) {
       if (this.providers.get(id).deployment === Deployment.Local) continue;
       const providerOfferings = this.offeringsByProvider.get(id) || [];
+      const hasPresetOffering = recommended && providerOfferings.some((o) => recommended.has(o.id));
       let choices = providerOfferings
-        .filter((o) => !recommended || recommended.has(o.id))
+        .filter((o) => !hasPresetOffering || recommended.has(o.id))
         .map((o) => withSignals(o, config.asOf))
         .filter(
           (o) =>
@@ -865,6 +868,12 @@ export class Catalog {
         const preferred = (x) =>
           config.prefer?.features?.filter((f) => x.features?.[f]?.status === 'supported').length ||
           0;
+        const flagshipOrder =
+          config.preset === 'official-flagship' || config.preset === 'official'
+            ? Number(isFlashModel(a, this.models.get(a.modelId))) -
+                Number(isFlashModel(b, this.models.get(b.modelId))) ||
+              (b.price?.input ?? 0) - (a.price?.input ?? 0)
+            : 0;
         return (
           Number(b.lifecycle.status === Lifecycle.Live) -
             Number(a.lifecycle.status === Lifecycle.Live) ||
@@ -872,6 +881,7 @@ export class Catalog {
           (config.prefer?.lowerCost
             ? (a.price?.input ?? Infinity) - (b.price?.input ?? Infinity)
             : 0) ||
+          flagshipOrder ||
           (a.rank ?? 100) - (b.rank ?? 100) ||
           (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
         );
@@ -1406,7 +1416,8 @@ function withSignals(o, asOf) {
 
 function normalizeQuery(input = {}, options) {
   const mode = typeof input === 'string';
-  if (mode && !Object.values(ModelList).includes(input)) throw new Error('Unknown model list');
+  if (mode && !Object.values(ModelList).includes(input) && input !== 'official')
+    throw new Error('Unknown model list');
   if (
     !mode &&
     (input === null || typeof input !== 'object' || Array.isArray(input) || options !== undefined)
@@ -1418,9 +1429,17 @@ function normalizeQuery(input = {}, options) {
   if (config.list === ModelList.Live) config.list = ModelList.Default;
   if (config.list === ModelList.China) config.preset = 'china';
   if (config.list === ModelList.Global) config.preset = 'global';
-  if (config.list === ModelList.Official) {
-    config.preset = 'official';
+  if (
+    config.list === ModelList.OfficialFlagship ||
+    config.list === ModelList.Official ||
+    config.list === 'official-flagship' ||
+    config.list === 'official'
+  ) {
+    config.preset = 'official-flagship';
     config.filters = { ...config.filters, official: true };
+  }
+  if (config.preset === 'official') {
+    config.preset = 'official-flagship';
   }
   if (config.list !== ModelList.Complete && config.list !== 'complete') {
     const f = { ...(config.filters || {}) };
@@ -1495,6 +1514,8 @@ function localGroups(config, catalog) {
     hasModalityFilter(config.filters?.output) ||
     config.filters?.callable === false ||
     config.filters?.official === true ||
+    config.preset === 'official-flagship' ||
+    config.preset === 'official' ||
     config.local === false ||
     (config.filters?.deployment && !config.filters.deployment.includes(Deployment.Local))
   )

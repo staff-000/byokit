@@ -15,7 +15,8 @@
   "Preset": {
     "Global": "global",
     "China": "china",
-    "Official": "official"
+    "OfficialFlagship": "official-flagship",
+    "Official": "official-flagship"
   },
   "Country": {
     "China": "cn",
@@ -233,7 +234,8 @@
     "Complete": "complete",
     "China": "china",
     "Global": "global",
-    "Official": "official"
+    "OfficialFlagship": "official-flagship",
+    "Official": "official-flagship"
   },
   "LocalApi": {
     "OpenAI": "openai-compatible",

@@ -101,6 +101,8 @@ class CoreTests(unittest.TestCase):
         # Complete list remains raw without default callable filter
         self.assertEqual(to_config("complete"), {"list": "complete"})
         self.assertEqual(to_config({"filters": {"callable": False}}), {"list": "default", "filters": {"callable": False}})
+        self.assertEqual(to_config("official-flagship"), {"list": "official-flagship", "preset": "official-flagship", "filters": {"callable": True, "official": True}})
+        self.assertEqual(to_config("official"), {"list": "official", "preset": "official-flagship", "filters": {"callable": True, "official": True}})
 
 
     def test_limits(self):
@@ -278,6 +280,28 @@ class CoreTests(unittest.TestCase):
         self.assertGreater(len(explicit_non_callable), 0)
         self.assertTrue(all(m.get("callSupport", {}).get("textGeneration") is False for m in explicit_non_callable))
         self.assertTrue(any(m["id"] == "openai/chatgpt-image-latest" for m in explicit_non_callable))
+
+    def test_official_flagship_preset(self):
+        from byokit import load_catalog, OFFICIAL_FLAGSHIP, OFFICIAL, ModelSort
+        bundled_cat = load_catalog()
+        models = bundled_cat.get_models(OFFICIAL_FLAGSHIP, {"sort": ModelSort.PROVIDER_ORDER})
+        self.assertEqual(
+            [m["id"] for m in models],
+            [
+                "openai/gpt-6.1-sol",
+                "anthropic/claude-opus-5-5",
+                "google/gemini-4-argon",
+                "mistral/mistral-large-4",
+                "deepseek/deepseek-v4-pro",
+                "zhipuai/glm-5.3",
+            ],
+        )
+        anthropic_flagship = bundled_cat.get_models({
+            "preset": "official-flagship",
+            "providerIds": ["anthropic"],
+        })
+        self.assertEqual([m["id"] for m in anthropic_flagship], ["anthropic/claude-opus-5-5"])
+
 
 
 

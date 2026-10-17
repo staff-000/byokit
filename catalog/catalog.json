@@ -1321969,6 +1321969,25 @@
       ]
     },
     {
+      "id": "official-flagship",
+      "providerIds": [
+        "openai",
+        "anthropic",
+        "google",
+        "mistral",
+        "deepseek",
+        "zhipuai"
+      ],
+      "offeringIds": [
+        "openai/gpt-6.1-sol",
+        "anthropic/claude-opus-5-5",
+        "google/gemini-4-argon",
+        "mistral/mistral-large-4",
+        "deepseek/deepseek-v4-pro",
+        "zhipuai/glm-5.3"
+      ]
+    },
+    {
       "id": "official",
       "providerIds": [
         "openai",
@@ -1321977,6 +1321996,14 @@
         "mistral",
         "deepseek",
         "zhipuai"
+      ],
+      "offeringIds": [
+        "openai/gpt-6.1-sol",
+        "anthropic/claude-opus-5-5",
+        "google/gemini-4-argon",
+        "mistral/mistral-large-4",
+        "deepseek/deepseek-v4-pro",
+        "zhipuai/glm-5.3"
       ]
     }
   ],
@@ -1323398,6 +1323425,36 @@
       "source": "https://ai.google.dev/gemini-api/docs/models",
       "reviewedAt": "2026-10-15",
       "rationale": "Stable Flash model recommended for new projects."
+    },
+    {
+      "offeringId": "anthropic/claude-opus-5-5",
+      "source": "https://platform.claude.com/docs/en/models/overview",
+      "reviewedAt": "2026-10-15",
+      "rationale": "Flagship frontier Opus model for complex reasoning and advanced capabilities."
+    },
+    {
+      "offeringId": "google/gemini-4-argon",
+      "source": "https://ai.google.dev/gemini-api/docs/models",
+      "reviewedAt": "2026-10-15",
+      "rationale": "Flagship multimodal frontier model with next-generation reasoning."
+    },
+    {
+      "offeringId": "mistral/mistral-large-4",
+      "source": "https://docs.mistral.ai/getting-started/models/models_overview",
+      "reviewedAt": "2026-10-15",
+      "rationale": "Flagship Mistral Large model for multilingual reasoning and code."
+    },
+    {
+      "offeringId": "deepseek/deepseek-v4-pro",
+      "source": "https://api-docs.deepseek.com/quick_start/pricing",
+      "reviewedAt": "2026-10-15",
+      "rationale": "Flagship DeepSeek Pro model for advanced reasoning and coding."
+    },
+    {
+      "offeringId": "zhipuai/glm-5.3",
+      "source": "https://open.bigmodel.cn/dev/api#overview",
+      "reviewedAt": "2026-10-15",
+      "rationale": "Flagship GLM frontier model for comprehensive language understanding."
     }
   ],
   "verifications": [

@@ -180,4 +180,14 @@ test('getConfig and getConfigJson export build-ready configs matching validateCo
     list: 'default',
     filters: { callable: false },
   });
+  assert.deepEqual(toConfig('official-flagship'), {
+    list: 'official-flagship',
+    preset: 'official-flagship',
+    filters: { callable: true, official: true },
+  });
+  assert.deepEqual(toConfig('official'), {
+    list: 'official',
+    preset: 'official-flagship',
+    filters: { callable: true, official: true },
+  });
 });

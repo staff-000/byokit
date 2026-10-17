@@ -35,6 +35,7 @@ byokit.get_models(
 byokit.get_models(byokit.COMPLETE)
 byokit.get_models(byokit.CHINA, {"local": False})
 byokit.get_models(byokit.OFFICIAL)
+byokit.get_models(byokit.OFFICIAL_FLAGSHIP)
 byokit.get_models({"filters": {"official": True}})
 byokit.get_models(
     {

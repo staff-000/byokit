@@ -40,6 +40,7 @@ byokit.getModels();
 byokit.getModels(byokit.COMPLETE);
 byokit.getModels(byokit.CHINA,{local:false});
 byokit.getModels(byokit.OFFICIAL);
+byokit.getModels(byokit.OFFICIAL_FLAGSHIP);
 byokit.getModels({filters:{official:true}});
 byokit.getModels({local:[{endpoint:'http://localhost:8000/v1',api:byokit.LocalApi.OpenAI,modelId:'my-model'}]});
 const byProv: Record<string, byokit.ModelOption[]> = byokit.getModelsByProvider();

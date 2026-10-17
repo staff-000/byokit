@@ -54,7 +54,27 @@ test('OFFICIAL selects only official providers and filters.official restricts to
     official.map((o) => o.providerId),
     ['openai', 'anthropic', 'google', 'mistral', 'deepseek', 'zhipuai'],
   );
+  assert.deepEqual(
+    official.map((o) => o.id),
+    [
+      'openai/gpt-6.1-sol',
+      'anthropic/claude-opus-5-5',
+      'google/gemini-4-argon',
+      'mistral/mistral-large-4',
+      'deepseek/deepseek-v4-pro',
+      'zhipuai/glm-5.3',
+    ],
+  );
   assert.ok(official.every((o) => o.provider.tags.includes('provider:official')));
+
+  const anthropicFlagship = byokit.getModels({
+    preset: 'official-flagship',
+    providerIds: ['anthropic'],
+  });
+  assert.deepEqual(
+    anthropicFlagship.map((o) => o.id),
+    ['anthropic/claude-opus-5-5'],
+  );
 
   const chinaOfficial = byokit.getModels(byokit.CHINA, {
     asOf,

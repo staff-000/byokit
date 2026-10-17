@@ -258,7 +258,7 @@ def validate_config(config):
     errors = []
     if "sort" in config and config["sort"] not in {v.value for v in ModelSort}:
         errors.append("Unknown model sort")
-    if "list" in config and config["list"] not in {v.value for v in ModelList}:
+    if "list" in config and config["list"] not in ({v.value for v in ModelList} | {"official"}):
         errors.append("Unknown model list")
     if "local" in config and config["local"] is not False:
         if not isinstance(config["local"], list):
@@ -877,24 +877,25 @@ class Catalog:
         errors = validate_config(config)
         if errors:
             raise ValueError("; ".join(errors))
+        target_preset = config.get(
+            "preset",
+            "default" if config.get("list") == ModelList.DEFAULT else "global",
+        )
         preset = next(
-            (
-                p
-                for p in self.data["presets"]
-                if p["id"]
-                == config.get(
-                    "preset",
-                    "default" if config.get("list") == ModelList.DEFAULT else "global",
-                )
-            ),
+            (p for p in self.data["presets"] if p["id"] == target_preset),
             None,
         )
+        if not preset and target_preset in ("official", "official-flagship"):
+            preset = next(
+                (p for p in self.data["presets"] if p["id"] in ("official-flagship", "official")),
+                None,
+            )
         if not preset and config.get("list") == ModelList.DEFAULT:
             preset = next(
                 (p for p in self.data["presets"] if p["id"] == "global"), None
             )
         if not preset:
-            raise ValueError("Unknown preset")
+            raise ValueError(f"Unknown preset: {config.get('preset')}")
         ids = config.get(
             "providerIds",
             list(self.providers)
@@ -906,7 +907,7 @@ class Catalog:
         groups = []
         recommended = (
             set(preset["offeringIds"])
-            if config.get("list") == ModelList.DEFAULT and "offeringIds" in preset
+            if "offeringIds" in preset and preset["offeringIds"]
             else None
         )
 
@@ -916,12 +917,17 @@ class Catalog:
                 for f in config.get("prefer", {}).get("features", [])
             )
             price = o.get("price", {}).get("input")
+            is_flash = 1 if is_flash_model(o, self.models.get(o.get("modelId", ""))) else 0
+            flagship_score = 0
+            if config.get("preset") in ("official-flagship", "official"):
+                flagship_score = is_flash * 1000 - (o.get("price", {}).get("input") or 0)
             return (
                 -int(o["lifecycle"]["status"] == Lifecycle.LIVE),
                 -count,
                 (price if price is not None else math.inf)
                 if config.get("prefer", {}).get("lowerCost")
                 else 0,
+                flagship_score,
                 o.get("rank", 100),
                 o["id"],
             )
@@ -930,13 +936,17 @@ class Catalog:
             if self.providers[provider_id]["deployment"] == "local":
                 continue
             provider_offerings = self.offerings_by_provider.get(provider_id, [])
+            has_preset_offering = (
+                recommended is not None
+                and _any(item["id"] in recommended for item in provider_offerings)
+            )
             choices = sorted(
                 (
                     o
                     for o in (
                         _with_signals(item, config.get("asOf"))
                         for item in provider_offerings
-                        if recommended is None or item["id"] in recommended
+                        if not has_preset_offering or item["id"] in recommended
                     )
                     if matches(
                         o,
@@ -1679,7 +1689,7 @@ def _with_signals(o, as_of=None):
 
 def _normalize_query(input=None, options=None):
     if isinstance(input, str):
-        if input not in {v.value for v in ModelList}:
+        if input not in ({v.value for v in ModelList} | {"official"}):
             raise ValueError("Unknown model list")
         config = dict(options or {}, list=input)
     else:
@@ -1694,11 +1704,18 @@ def _normalize_query(input=None, options=None):
         config["preset"] = "china"
     if config.get("list") == ModelList.GLOBAL:
         config["preset"] = "global"
-    if config.get("list") == ModelList.OFFICIAL:
-        config["preset"] = "official"
+    if config.get("list") in (
+        ModelList.OFFICIAL_FLAGSHIP,
+        ModelList.OFFICIAL,
+        "official-flagship",
+        "official",
+    ):
+        config["preset"] = "official-flagship"
         filters = dict(config.get("filters") or {})
         filters["official"] = True
         config["filters"] = filters
+    if config.get("preset") == "official":
+        config["preset"] = "official-flagship"
     if config.get("list") not in (ModelList.COMPLETE, "complete"):
         filters = dict(config.get("filters") or {})
         if "callable" not in filters:
@@ -1831,6 +1848,7 @@ def _local_groups(config, catalog):
         or _has_modality_filter(config.get("filters", {}).get("output"))
         or config.get("filters", {}).get("callable") is False
         or config.get("filters", {}).get("official") is True
+        or config.get("preset") in ("official-flagship", "official")
         or config.get("local") is False
         or "deployment" in config.get("filters", {})
         and "local" not in config["filters"]["deployment"]

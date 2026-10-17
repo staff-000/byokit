@@ -4,22 +4,22 @@
     "openai": {
       "origin": "us",
       "rank": 1,
-      "presets": ["global", "official"]
+      "presets": ["global", "official-flagship", "official"]
     },
     "anthropic": {
       "origin": "us",
       "rank": 2,
-      "presets": ["global", "official"]
+      "presets": ["global", "official-flagship", "official"]
     },
     "google": {
       "origin": "us",
       "rank": 3,
-      "presets": ["global", "official"]
+      "presets": ["global", "official-flagship", "official"]
     },
     "mistral": {
       "origin": "fr",
       "rank": 4,
-      "presets": ["global", "official"]
+      "presets": ["global", "official-flagship", "official"]
     },
     "groq": {
       "origin": "us",
@@ -34,12 +34,12 @@
     "deepseek": {
       "origin": "cn",
       "rank": 1,
-      "presets": ["global", "china", "official"]
+      "presets": ["global", "china", "official-flagship", "official"]
     },
     "zhipuai": {
       "origin": "cn",
       "rank": 2,
-      "presets": ["global", "china", "official"]
+      "presets": ["global", "china", "official-flagship", "official"]
     },
     "siliconflow": {
       "origin": "cn",
