@@ -1,7 +1,139 @@
 {
-  "provider:openai": {
-    "id": "provider:openai",
-    "light": "provider_openai.svg",
+  "provider:302ai": {
+    "id": "provider:302ai",
+    "light": "provider_302ai.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:abacus": {
+    "id": "provider:abacus",
+    "light": "provider_abacus.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:abliteration-ai": {
+    "id": "provider:abliteration-ai",
+    "light": "provider_abliteration-ai.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:above": {
+    "id": "provider:above",
+    "light": "provider_above.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:agentrouter": {
+    "id": "provider:agentrouter",
+    "light": "provider_agentrouter.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:agnes": {
+    "id": "provider:agnes",
+    "light": "provider_agnes.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:ai-router": {
+    "id": "provider:ai-router",
+    "light": "provider_ai-router.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:ai21": {
+    "id": "provider:ai21",
+    "light": "provider_ai21.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:aiand": {
+    "id": "provider:aiand",
+    "light": "provider_aiand.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:aihubmix": {
+    "id": "provider:aihubmix",
+    "light": "provider_aihubmix.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:aimlapi": {
+    "id": "provider:aimlapi",
+    "light": "provider_aimlapi.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:ainetcafe": {
+    "id": "provider:ainetcafe",
+    "light": "provider_ainetcafe.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:aixy": {
+    "id": "provider:aixy",
+    "light": "provider_aixy.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:aki-io": {
+    "id": "provider:aki-io",
+    "light": "provider_aki-io.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:alibaba": {
+    "id": "provider:alibaba",
+    "light": "provider_alibaba.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:alibaba-cn": {
+    "id": "provider:alibaba-cn",
+    "light": "provider_alibaba-cn.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:alibaba-coding-plan": {
+    "id": "provider:alibaba-coding-plan",
+    "light": "provider_alibaba-coding-plan.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:alibaba-coding-plan-cn": {
+    "id": "provider:alibaba-coding-plan-cn",
+    "light": "provider_alibaba-coding-plan-cn.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:alibaba-token-plan": {
+    "id": "provider:alibaba-token-plan",
+    "light": "provider_alibaba-token-plan.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:alibaba-token-plan-cn": {
+    "id": "provider:alibaba-token-plan-cn",
+    "light": "provider_alibaba-token-plan-cn.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:amazon-bedrock": {
+    "id": "provider:amazon-bedrock",
+    "light": "provider_amazon-bedrock.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:ambient": {
+    "id": "provider:ambient",
+    "light": "provider_ambient.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:amd": {
+    "id": "provider:amd",
+    "light": "provider_amd.svg",
     "source": "https://github.com/anomalyco/models.dev",
     "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
   },
@@ -11,27 +143,177 @@
     "source": "https://github.com/anomalyco/models.dev",
     "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
   },
-  "provider:google": {
-    "id": "provider:google",
-    "light": "provider_google.svg",
+  "provider:anyapi": {
+    "id": "provider:anyapi",
+    "light": "provider_anyapi.svg",
     "source": "https://github.com/anomalyco/models.dev",
     "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
   },
-  "provider:mistral": {
-    "id": "provider:mistral",
-    "light": "provider_mistral.svg",
+  "provider:arcee": {
+    "id": "provider:arcee",
+    "light": "provider_arcee.svg",
     "source": "https://github.com/anomalyco/models.dev",
     "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
   },
-  "provider:groq": {
-    "id": "provider:groq",
-    "light": "provider_groq.svg",
+  "provider:auriko": {
+    "id": "provider:auriko",
+    "light": "provider_auriko.svg",
     "source": "https://github.com/anomalyco/models.dev",
     "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
   },
-  "provider:openrouter": {
-    "id": "provider:openrouter",
-    "light": "provider_openrouter.svg",
+  "provider:azure": {
+    "id": "provider:azure",
+    "light": "provider_azure.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:azure-cognitive-services": {
+    "id": "provider:azure-cognitive-services",
+    "light": "provider_azure-cognitive-services.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:bailing": {
+    "id": "provider:bailing",
+    "light": "provider_bailing.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:baseten": {
+    "id": "provider:baseten",
+    "light": "provider_baseten.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:bee": {
+    "id": "provider:bee",
+    "light": "provider_bee.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:berget": {
+    "id": "provider:berget",
+    "light": "provider_berget.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:blueclaw": {
+    "id": "provider:blueclaw",
+    "light": "provider_blueclaw.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:bothub": {
+    "id": "provider:bothub",
+    "light": "provider_bothub.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:boundless": {
+    "id": "provider:boundless",
+    "light": "provider_boundless.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:cerebras": {
+    "id": "provider:cerebras",
+    "light": "provider_cerebras.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:chutes": {
+    "id": "provider:chutes",
+    "light": "provider_chutes.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:clarifai": {
+    "id": "provider:clarifai",
+    "light": "provider_clarifai.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:claudinio": {
+    "id": "provider:claudinio",
+    "light": "provider_claudinio.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:cline-pass": {
+    "id": "provider:cline-pass",
+    "light": "provider_cline-pass.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:cloudferro-sherlock": {
+    "id": "provider:cloudferro-sherlock",
+    "light": "provider_cloudferro-sherlock.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:cloudflare-ai-gateway": {
+    "id": "provider:cloudflare-ai-gateway",
+    "light": "provider_cloudflare-ai-gateway.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:cloudflare-workers-ai": {
+    "id": "provider:cloudflare-workers-ai",
+    "light": "provider_cloudflare-workers-ai.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:cohere": {
+    "id": "provider:cohere",
+    "light": "provider_cohere.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:coralbricks": {
+    "id": "provider:coralbricks",
+    "light": "provider_coralbricks.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:cortecs": {
+    "id": "provider:cortecs",
+    "light": "provider_cortecs.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:crof": {
+    "id": "provider:crof",
+    "light": "provider_crof.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:crossmodel": {
+    "id": "provider:crossmodel",
+    "light": "provider_crossmodel.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:crusoe": {
+    "id": "provider:crusoe",
+    "light": "provider_crusoe.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:daoxe": {
+    "id": "provider:daoxe",
+    "light": "provider_daoxe.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:databricks": {
+    "id": "provider:databricks",
+    "light": "provider_databricks.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:deepinfra": {
+    "id": "provider:deepinfra",
+    "light": "provider_deepinfra.svg",
     "source": "https://github.com/anomalyco/models.dev",
     "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
   },
@@ -41,15 +323,969 @@
     "source": "https://github.com/anomalyco/models.dev",
     "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
   },
-  "provider:zhipuai": {
-    "id": "provider:zhipuai",
-    "light": "provider_zhipuai.svg",
+  "provider:digitalocean": {
+    "id": "provider:digitalocean",
+    "light": "provider_digitalocean.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:dinference": {
+    "id": "provider:dinference",
+    "light": "provider_dinference.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:drun": {
+    "id": "provider:drun",
+    "light": "provider_drun.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:ebcloud": {
+    "id": "provider:ebcloud",
+    "light": "provider_ebcloud.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:echo": {
+    "id": "provider:echo",
+    "light": "provider_echo.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:edenai": {
+    "id": "provider:edenai",
+    "light": "provider_edenai.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:empiriolabs": {
+    "id": "provider:empiriolabs",
+    "light": "provider_empiriolabs.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:engy": {
+    "id": "provider:engy",
+    "light": "provider_engy.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:evroc": {
+    "id": "provider:evroc",
+    "light": "provider_evroc.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:fastrouter": {
+    "id": "provider:fastrouter",
+    "light": "provider_fastrouter.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:fireworks-ai": {
+    "id": "provider:fireworks-ai",
+    "light": "provider_fireworks-ai.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:freemodel": {
+    "id": "provider:freemodel",
+    "light": "provider_freemodel.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:friendli": {
+    "id": "provider:friendli",
+    "light": "provider_friendli.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:github-copilot": {
+    "id": "provider:github-copilot",
+    "light": "provider_github-copilot.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:gitlab": {
+    "id": "provider:gitlab",
+    "light": "provider_gitlab.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:gmicloud": {
+    "id": "provider:gmicloud",
+    "light": "provider_gmicloud.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:google": {
+    "id": "provider:google",
+    "light": "provider_google.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:google-vertex": {
+    "id": "provider:google-vertex",
+    "light": "provider_google-vertex.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:google-vertex-anthropic": {
+    "id": "provider:google-vertex-anthropic",
+    "light": "provider_google-vertex-anthropic.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:greenpt": {
+    "id": "provider:greenpt",
+    "light": "provider_greenpt.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:groq": {
+    "id": "provider:groq",
+    "light": "provider_groq.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:helicone": {
+    "id": "provider:helicone",
+    "light": "provider_helicone.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:hetzner": {
+    "id": "provider:hetzner",
+    "light": "provider_hetzner.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:huggingface": {
+    "id": "provider:huggingface",
+    "light": "provider_huggingface.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:hyper": {
+    "id": "provider:hyper",
+    "light": "provider_hyper.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:iflowcn": {
+    "id": "provider:iflowcn",
+    "light": "provider_iflowcn.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:impossibl": {
+    "id": "provider:impossibl",
+    "light": "provider_impossibl.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:inception": {
+    "id": "provider:inception",
+    "light": "provider_inception.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:inceptron": {
+    "id": "provider:inceptron",
+    "light": "provider_inceptron.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:inco": {
+    "id": "provider:inco",
+    "light": "provider_inco.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:infer": {
+    "id": "provider:infer",
+    "light": "provider_infer.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:inference": {
+    "id": "provider:inference",
+    "light": "provider_inference.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:inferx": {
+    "id": "provider:inferx",
+    "light": "provider_inferx.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:infomaniak": {
+    "id": "provider:infomaniak",
+    "light": "provider_infomaniak.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:io-net": {
+    "id": "provider:io-net",
+    "light": "provider_io-net.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:iteracompute": {
+    "id": "provider:iteracompute",
+    "light": "provider_iteracompute.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:jalapeno": {
+    "id": "provider:jalapeno",
+    "light": "provider_jalapeno.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:jiekou": {
+    "id": "provider:jiekou",
+    "light": "provider_jiekou.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:kenari": {
+    "id": "provider:kenari",
+    "light": "provider_kenari.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:kilo": {
+    "id": "provider:kilo",
+    "light": "provider_kilo.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:kimi-code-plan-cn": {
+    "id": "provider:kimi-code-plan-cn",
+    "light": "provider_kimi-code-plan-cn.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:kimi-code-plan-global": {
+    "id": "provider:kimi-code-plan-global",
+    "light": "provider_kimi-code-plan-global.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:klokintegration": {
+    "id": "provider:klokintegration",
+    "light": "provider_klokintegration.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:kosmik": {
+    "id": "provider:kosmik",
+    "light": "provider_kosmik.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:kuae-cloud-coding-plan": {
+    "id": "provider:kuae-cloud-coding-plan",
+    "light": "provider_kuae-cloud-coding-plan.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:lilac": {
+    "id": "provider:lilac",
+    "light": "provider_lilac.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:llama": {
+    "id": "provider:llama",
+    "light": "provider_llama.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:llmgateway": {
+    "id": "provider:llmgateway",
+    "light": "provider_llmgateway.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:llmgateway-providers": {
+    "id": "provider:llmgateway-providers",
+    "light": "provider_llmgateway-providers.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:llmtech": {
+    "id": "provider:llmtech",
+    "light": "provider_llmtech.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:llmtr": {
+    "id": "provider:llmtr",
+    "light": "provider_llmtr.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:lmstudio": {
+    "id": "provider:lmstudio",
+    "light": "provider_lmstudio.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:longcat": {
+    "id": "provider:longcat",
+    "light": "provider_longcat.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:lowrouter": {
+    "id": "provider:lowrouter",
+    "light": "provider_lowrouter.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:lucidquery": {
+    "id": "provider:lucidquery",
+    "light": "provider_lucidquery.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:lynkr": {
+    "id": "provider:lynkr",
+    "light": "provider_lynkr.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:meganova": {
+    "id": "provider:meganova",
+    "light": "provider_meganova.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:melious": {
+    "id": "provider:melious",
+    "light": "provider_melious.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:merge-gateway": {
+    "id": "provider:merge-gateway",
+    "light": "provider_merge-gateway.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:meta": {
+    "id": "provider:meta",
+    "light": "provider_meta.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:minimax": {
+    "id": "provider:minimax",
+    "light": "provider_minimax.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:minimax-cn": {
+    "id": "provider:minimax-cn",
+    "light": "provider_minimax-cn.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:minimax-cn-coding-plan": {
+    "id": "provider:minimax-cn-coding-plan",
+    "light": "provider_minimax-cn-coding-plan.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:minimax-coding-plan": {
+    "id": "provider:minimax-coding-plan",
+    "light": "provider_minimax-coding-plan.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:mistral": {
+    "id": "provider:mistral",
+    "light": "provider_mistral.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:mixlayer": {
+    "id": "provider:mixlayer",
+    "light": "provider_mixlayer.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:moark": {
+    "id": "provider:moark",
+    "light": "provider_moark.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:modal": {
+    "id": "provider:modal",
+    "light": "provider_modal.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:model-oracle-ai": {
+    "id": "provider:model-oracle-ai",
+    "light": "provider_model-oracle-ai.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:modelis": {
+    "id": "provider:modelis",
+    "light": "provider_modelis.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:modelscope": {
+    "id": "provider:modelscope",
+    "light": "provider_modelscope.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:moonshotai": {
+    "id": "provider:moonshotai",
+    "light": "provider_moonshotai.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:moonshotai-cn": {
+    "id": "provider:moonshotai-cn",
+    "light": "provider_moonshotai-cn.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:morph": {
+    "id": "provider:morph",
+    "light": "provider_morph.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:nan": {
+    "id": "provider:nan",
+    "light": "provider_nan.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:nano-gpt": {
+    "id": "provider:nano-gpt",
+    "light": "provider_nano-gpt.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:nearai": {
+    "id": "provider:nearai",
+    "light": "provider_nearai.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:nebius": {
+    "id": "provider:nebius",
+    "light": "provider_nebius.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:neon": {
+    "id": "provider:neon",
+    "light": "provider_neon.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:neosmith": {
+    "id": "provider:neosmith",
+    "light": "provider_neosmith.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:neuralwatt": {
+    "id": "provider:neuralwatt",
+    "light": "provider_neuralwatt.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:nova": {
+    "id": "provider:nova",
+    "light": "provider_nova.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:nvidia": {
+    "id": "provider:nvidia",
+    "light": "provider_nvidia.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:oci": {
+    "id": "provider:oci",
+    "light": "provider_oci.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:ofox": {
+    "id": "provider:ofox",
+    "light": "provider_ofox.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:ollama-cloud": {
+    "id": "provider:ollama-cloud",
+    "light": "provider_ollama-cloud.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:openai": {
+    "id": "provider:openai",
+    "light": "provider_openai.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:opencode": {
+    "id": "provider:opencode",
+    "light": "provider_opencode.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:opencode-go": {
+    "id": "provider:opencode-go",
+    "light": "provider_opencode-go.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:openrouter": {
+    "id": "provider:openrouter",
+    "light": "provider_openrouter.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:opper": {
+    "id": "provider:opper",
+    "light": "provider_opper.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:ovhcloud": {
+    "id": "provider:ovhcloud",
+    "light": "provider_ovhcloud.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:pareto": {
+    "id": "provider:pareto",
+    "light": "provider_pareto.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:pendra": {
+    "id": "provider:pendra",
+    "light": "provider_pendra.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:perplexity": {
+    "id": "provider:perplexity",
+    "light": "provider_perplexity.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:perplexity-agent": {
+    "id": "provider:perplexity-agent",
+    "light": "provider_perplexity-agent.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:pioneer": {
+    "id": "provider:pioneer",
+    "light": "provider_pioneer.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:poe": {
+    "id": "provider:poe",
+    "light": "provider_poe.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:poolside": {
+    "id": "provider:poolside",
+    "light": "provider_poolside.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:privatemode-ai": {
+    "id": "provider:privatemode-ai",
+    "light": "provider_privatemode-ai.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:qihang-ai": {
+    "id": "provider:qihang-ai",
+    "light": "provider_qihang-ai.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:qiniu-ai": {
+    "id": "provider:qiniu-ai",
+    "light": "provider_qiniu-ai.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:qvac": {
+    "id": "provider:qvac",
+    "light": "provider_qvac.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:reflection": {
+    "id": "provider:reflection",
+    "light": "provider_reflection.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:requesty": {
+    "id": "provider:requesty",
+    "light": "provider_requesty.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:routing-run": {
+    "id": "provider:routing-run",
+    "light": "provider_routing-run.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:runinfra": {
+    "id": "provider:runinfra",
+    "light": "provider_runinfra.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:sakana": {
+    "id": "provider:sakana",
+    "light": "provider_sakana.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:salad-cloud": {
+    "id": "provider:salad-cloud",
+    "light": "provider_salad-cloud.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:sambanova": {
+    "id": "provider:sambanova",
+    "light": "provider_sambanova.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:sap-ai-core": {
+    "id": "provider:sap-ai-core",
+    "light": "provider_sap-ai-core.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:sarvam": {
+    "id": "provider:sarvam",
+    "light": "provider_sarvam.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:scaleway": {
+    "id": "provider:scaleway",
+    "light": "provider_scaleway.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:scnet-token-plan": {
+    "id": "provider:scnet-token-plan",
+    "light": "provider_scnet-token-plan.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:scx-ai": {
+    "id": "provider:scx-ai",
+    "light": "provider_scx-ai.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:sensenova": {
+    "id": "provider:sensenova",
+    "light": "provider_sensenova.svg",
     "source": "https://github.com/anomalyco/models.dev",
     "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
   },
   "provider:siliconflow": {
     "id": "provider:siliconflow",
     "light": "provider_siliconflow.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:siliconflow-cn": {
+    "id": "provider:siliconflow-cn",
+    "light": "provider_siliconflow-cn.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:snowflake-cortex": {
+    "id": "provider:snowflake-cortex",
+    "light": "provider_snowflake-cortex.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:stackit": {
+    "id": "provider:stackit",
+    "light": "provider_stackit.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:standardcompute": {
+    "id": "provider:standardcompute",
+    "light": "provider_standardcompute.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:subconscious": {
+    "id": "provider:subconscious",
+    "light": "provider_subconscious.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:submodel": {
+    "id": "provider:submodel",
+    "light": "provider_submodel.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:synthetic": {
+    "id": "provider:synthetic",
+    "light": "provider_synthetic.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:tempr": {
+    "id": "provider:tempr",
+    "light": "provider_tempr.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:tencent-coding-plan": {
+    "id": "provider:tencent-coding-plan",
+    "light": "provider_tencent-coding-plan.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:tencent-token-plan": {
+    "id": "provider:tencent-token-plan",
+    "light": "provider_tencent-token-plan.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:tencent-tokenhub": {
+    "id": "provider:tencent-tokenhub",
+    "light": "provider_tencent-tokenhub.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:tensorx": {
+    "id": "provider:tensorx",
+    "light": "provider_tensorx.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:the-grid-ai": {
+    "id": "provider:the-grid-ai",
+    "light": "provider_the-grid-ai.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:thinkingmachines": {
+    "id": "provider:thinkingmachines",
+    "light": "provider_thinkingmachines.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:tinfoil": {
+    "id": "provider:tinfoil",
+    "light": "provider_tinfoil.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:togetherai": {
+    "id": "provider:togetherai",
+    "light": "provider_togetherai.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:tokengo": {
+    "id": "provider:tokengo",
+    "light": "provider_tokengo.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:tokenrouter": {
+    "id": "provider:tokenrouter",
+    "light": "provider_tokenrouter.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:trustedrouter": {
+    "id": "provider:trustedrouter",
+    "light": "provider_trustedrouter.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:unorouter": {
+    "id": "provider:unorouter",
+    "light": "provider_unorouter.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:upstage": {
+    "id": "provider:upstage",
+    "light": "provider_upstage.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:venice": {
+    "id": "provider:venice",
+    "light": "provider_venice.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:vercel": {
+    "id": "provider:vercel",
+    "light": "provider_vercel.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:vispark": {
+    "id": "provider:vispark",
+    "light": "provider_vispark.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:vivgrid": {
+    "id": "provider:vivgrid",
+    "light": "provider_vivgrid.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:volcengine": {
+    "id": "provider:volcengine",
+    "light": "provider_volcengine.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:volcengine-coding-plan": {
+    "id": "provider:volcengine-coding-plan",
+    "light": "provider_volcengine-coding-plan.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:vultr": {
+    "id": "provider:vultr",
+    "light": "provider_vultr.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:wallaby": {
+    "id": "provider:wallaby",
+    "light": "provider_wallaby.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:wandb": {
+    "id": "provider:wandb",
+    "light": "provider_wandb.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:watsonx": {
+    "id": "provider:watsonx",
+    "light": "provider_watsonx.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:xai": {
+    "id": "provider:xai",
+    "light": "provider_xai.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:xiaomi": {
+    "id": "provider:xiaomi",
+    "light": "provider_xiaomi.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:xiaomi-token-plan-ams": {
+    "id": "provider:xiaomi-token-plan-ams",
+    "light": "provider_xiaomi-token-plan-ams.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:xiaomi-token-plan-cn": {
+    "id": "provider:xiaomi-token-plan-cn",
+    "light": "provider_xiaomi-token-plan-cn.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:xiaomi-token-plan-sgp": {
+    "id": "provider:xiaomi-token-plan-sgp",
+    "light": "provider_xiaomi-token-plan-sgp.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:xpersona": {
+    "id": "provider:xpersona",
+    "light": "provider_xpersona.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:zai": {
+    "id": "provider:zai",
+    "light": "provider_zai.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:zai-coding-plan": {
+    "id": "provider:zai-coding-plan",
+    "light": "provider_zai-coding-plan.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:zeldoc": {
+    "id": "provider:zeldoc",
+    "light": "provider_zeldoc.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:zenifra": {
+    "id": "provider:zenifra",
+    "light": "provider_zenifra.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:zenmux": {
+    "id": "provider:zenmux",
+    "light": "provider_zenmux.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:zhipuai": {
+    "id": "provider:zhipuai",
+    "light": "provider_zhipuai.svg",
+    "source": "https://github.com/anomalyco/models.dev",
+    "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
+  },
+  "provider:zhipuai-coding-plan": {
+    "id": "provider:zhipuai-coding-plan",
+    "light": "provider_zhipuai-coding-plan.svg",
     "source": "https://github.com/anomalyco/models.dev",
     "licenseNotice": "Models.dev MIT; brand trademarks belong to their owners."
   }
