@@ -341,6 +341,9 @@ function matches(o, m, c, providerTags = []) {
     ),
     ...(o.tags || []),
   ]);
+  if (isFlashModel(o, m)) {
+    tags.add('model:flash');
+  }
   if (
     (f.includeTags || []).some((t) => !tags.has(t)) ||
     (f.excludeTags || []).some((t) => tags.has(t))
@@ -350,6 +353,23 @@ function matches(o, m, c, providerTags = []) {
     return false;
 
   return true;
+}
+
+export function isFlashModel(offering, model = {}) {
+  if (
+    (offering?.tags || []).includes('model:flash') ||
+    (model?.tags || []).includes('model:flash')
+  ) {
+    return true;
+  }
+  const flashRegex = /(?:^|[-_./\s])flashx?(?:$|[-_./\s])/i;
+  return Boolean(
+    (offering?.apiModelId && flashRegex.test(offering.apiModelId)) ||
+    (offering?.name && flashRegex.test(offering.name)) ||
+    (offering?.modelId && flashRegex.test(offering.modelId)) ||
+    (model?.id && flashRegex.test(model.id)) ||
+    (model?.name && flashRegex.test(model.name)),
+  );
 }
 
 export function isOfficialOffering(o, m, providerTags = []) {
@@ -811,6 +831,7 @@ export function deriveTags(offering, model = {}) {
         'deployment:',
         'lifecycle:',
         'popularity:',
+        'model:',
       ].some((p) => t.startsWith(p)),
   );
   for (const [name, feature] of Object.entries(offering.features || {}))
@@ -832,6 +853,9 @@ export function deriveTags(offering, model = {}) {
     tags.push(
       `price:${cost === 0 ? 'zero-token-rate' : cost <= 0.002 ? 'budget' : cost <= 0.02 ? 'mid' : 'premium'}`,
     );
+  }
+  if (isFlashModel(offering, model)) {
+    tags.push('model:flash');
   }
   return [...new Set(tags)].sort();
 }

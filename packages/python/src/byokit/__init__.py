@@ -4,6 +4,7 @@ from .enums import *
 import copy
 import functools
 import math
+import re
 import time
 from datetime import date, datetime, timezone
 
@@ -365,6 +366,8 @@ def matches(o, m, config, provider_tags=None):
         ]
         + o.get("tags", [])
     )
+    if is_flash_model(o, m):
+        tags.add("model:flash")
     if any(t not in tags for t in f.get("includeTags", [])) or any(
         t in tags for t in f.get("excludeTags", [])
     ):
@@ -373,6 +376,22 @@ def matches(o, m, config, provider_tags=None):
         if is_official_offering(o, m, provider_tags) != f["official"]:
             return False
     return True
+
+
+def is_flash_model(offering, model=None):
+    model = model or {}
+    o_tags = offering.get("tags") or []
+    m_tags = model.get("tags") or []
+    if "model:flash" in o_tags or "model:flash" in m_tags:
+        return True
+    pattern = re.compile(r"(?:^|[-_./\s])flashx?(?:$|[-_./\s])", re.IGNORECASE)
+    return bool(
+        (offering.get("apiModelId") and pattern.search(offering["apiModelId"]))
+        or (offering.get("name") and pattern.search(offering["name"]))
+        or (offering.get("modelId") and pattern.search(offering["modelId"]))
+        or (model.get("id") and pattern.search(model["id"]))
+        or (model.get("name") and pattern.search(model["name"]))
+    )
 
 
 def is_official_offering(o, m, provider_tags=None):
@@ -894,6 +913,7 @@ def derive_tags(offering, model=None):
         "deployment:",
         "lifecycle:",
         "popularity:",
+        "model:",
     )
     tags = [t for t in offering.get("tags", []) if not t.startswith(prefixes)]
     tags.extend(
@@ -945,6 +965,8 @@ def derive_tags(offering, model=None):
                 else "premium"
             )
         )
+    if is_flash_model(offering, model):
+        tags.append("model:flash")
     return sorted(set(tags))
 
 

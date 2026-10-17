@@ -29,6 +29,7 @@ byokit.getModels({providerIds:[byokit.ProviderId.DeepSeek]});
 byokit.getModels({preset:byokit.Preset.Global,filters:{verifiedBy:byokit.githubContributor('example')}});
 
 byokit.getModels({filters:{excludeTags:[byokit.Tag.PricePremium],lifecycle:[byokit.Lifecycle.Live],popularity:[byokit.Popularity.Popular]}});
+byokit.getModels({filters:{includeTags:[byokit.Tag.ModelFlash, byokit.Tag.Flash]}});
 // @ts-expect-error lifecycle values require enums
 byokit.getModels({filters:{lifecycle:['LIVE']}});
 // @ts-expect-error unknown popularity label

@@ -236,6 +236,8 @@ export declare enum Tag {
   WeightsOpen = 'weights:open',
   OriginChina = 'origin:cn',
   ProviderOfficial = 'provider:official',
+  ModelFlash = 'model:flash',
+  Flash = 'model:flash',
 }
 
 export declare enum ModelList {

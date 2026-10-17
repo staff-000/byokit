@@ -206,7 +206,9 @@
     "PricePremium": "price:premium",
     "WeightsOpen": "weights:open",
     "OriginChina": "origin:cn",
-    "ProviderOfficial": "provider:official"
+    "ProviderOfficial": "provider:official",
+    "ModelFlash": "model:flash",
+    "Flash": "model:flash"
   },
   "ModelList": {
     "Default": "default",

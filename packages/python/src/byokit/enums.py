@@ -209,6 +209,8 @@ class Tag(str, Enum):
     WEIGHTS_OPEN = "weights:open"
     ORIGIN_CHINA = "origin:cn"
     PROVIDER_OFFICIAL = "provider:official"
+    MODEL_FLASH = "model:flash"
+    FLASH = "model:flash"
 
 class ModelList(str, Enum):
     DEFAULT = "default"

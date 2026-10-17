@@ -288,6 +288,7 @@ export type SetupEvent =
 export function reduceSetup(state: SetupState, event: SetupEvent): SetupState;
 
 export function deriveTags(offering: Offering, model?: Partial<Model>): string[];
+export function isFlashModel(offering?: Partial<Offering>, model?: Partial<Model>): boolean;
 export function isOfficialOffering(
   offering: Offering,
   model?: Partial<Model>,

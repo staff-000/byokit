@@ -133,8 +133,9 @@ location or network availability.
 | `verified`, `verifiedBy`, `verifiedWithinDays`  | Community call reports and freshness                                                                                                       |
 
 Except the first row, these fields belong inside `filters`. Use exported enums
-such as `byokit.Modality.Image`, `byokit.FeatureName.JsonSchema`, and
-`byokit.Lifecycle.Outdated`. Custom tags use `byokit.customTag('usecase:coding')`.
+such as `byokit.Modality.Image`, `byokit.FeatureName.JsonSchema`, `byokit.Tag.ModelFlash`
+(or `byokit.Tag.Flash`), and `byokit.Lifecycle.Outdated`. Custom tags use
+`byokit.customTag('usecase:coding')`.
 Unknown metadata fails requirements by default; `unknownPolicy` can explicitly
 include it. Generic Local entries are excluded when input/output or callable filters are set.
 `prefer.features` and `prefer.lowerCost` guide per-provider shortlist selection;

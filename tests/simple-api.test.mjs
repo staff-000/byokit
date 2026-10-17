@@ -103,6 +103,34 @@ test('OFFICIAL selects only official providers and filters.official restricts to
     }),
   );
 });
+test('Tag.ModelFlash and Tag.Flash filter flash models and agree with isFlashModel', () => {
+  const flashByTag = byokit.getModels(byokit.COMPLETE, {
+    asOf,
+    local: false,
+    filters: { includeTags: [byokit.Tag.ModelFlash] },
+  });
+  const flashByShort = byokit.getModels(byokit.COMPLETE, {
+    asOf,
+    local: false,
+    filters: { includeTags: [byokit.Tag.Flash] },
+  });
+  assert.ok(flashByTag.length > 500);
+  assert.equal(flashByTag.length, flashByShort.length);
+  assert.ok(
+    flashByTag.every((m) => m.tags.includes('model:flash') && byokit.isFlashModel(m, m.model)),
+  );
+  assert.ok(flashByTag.some((m) => m.id === 'google/gemini-3.8-flash'));
+  assert.ok(flashByTag.some((m) => m.id === 'deepseek/deepseek-flash'));
+
+  const nonFlash = byokit.getModels(byokit.COMPLETE, {
+    asOf,
+    local: false,
+    filters: { excludeTags: [byokit.Tag.ModelFlash] },
+  });
+  assert.ok(nonFlash.length > 5000);
+  assert.ok(!nonFlash.some((m) => m.tags.includes('model:flash')));
+  assert.ok(!nonFlash.some((m) => m.id === 'google/gemini-3.8-flash'));
+});
 test('lifecycle is provider-specific: retired direct model stays LIVE via aggregator', () => {
   const d = fixture();
   d.providers.push({
@@ -187,6 +215,7 @@ test('simplified list modes and appended local entries agree with Python', () =>
       local: [{ endpoint: 'http://localhost:8080/v1', modelId: 'one' }],
     },
     { asOf, local: false, filters: { lifecycle: ['UNCERTAIN'] } },
+    { asOf, local: false, filters: { includeTags: [byokit.Tag.ModelFlash] } },
   ];
   const run = pythonModels({ data: d, queries });
   assert.equal(run.status, 0, run.stderr);

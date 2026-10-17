@@ -175,6 +175,8 @@ export const Tag = Object.freeze({
   WeightsOpen: 'weights:open',
   OriginChina: 'origin:cn',
   ProviderOfficial: 'provider:official',
+  ModelFlash: 'model:flash',
+  Flash: 'model:flash',
 });
 export const ModelList = Object.freeze({
   Default: 'default',
