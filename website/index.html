@@ -343,6 +343,69 @@ const models = byokit.getModels();</code></pre>
           </div>
         </div>
       </section>
+      <section id="build-time" class="section wrap build-section">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">05 / PRODUCTION OPTIMIZATION</p>
+            <h2>Build-time precompilation.</h2>
+          </div>
+          <p>
+            Pre-evaluate fixed model queries at build time.<br />
+            Bundle a ~15 KB static list instead of the 20 MB catalog.
+          </p>
+        </div>
+        <div class="build-card">
+          <div class="build-steps">
+            <div class="build-step">
+              <span class="step-num">1</span>
+              <h3>Declare your query</h3>
+              <p>In <code>byok.config.json</code>:</p>
+              <pre><code>{
+  "providerIds": [
+    "anthropic",
+    "google",
+    "openai",
+    "deepseek"
+  ],
+  "local": false,
+  "filters": {
+    "includeTags": ["model:flash"]
+  }
+}</code></pre>
+            </div>
+            <div class="build-step">
+              <span class="step-num">2</span>
+              <h3>Compile once</h3>
+              <p>Evaluate your query at build time:</p>
+              <pre><code># Node / TS:
+npx byokit build byok.config.json \
+  --out src/generated/models.js
+
+# Python:
+byokit build byok.config.json \
+  --out app/generated_models.py</code></pre>
+            </div>
+            <div class="build-step">
+              <span class="step-num">3</span>
+              <h3>Import with zero overhead</h3>
+              <p>Pair with <code>byokit/client</code> (~15 KB):</p>
+              <pre><code>// JavaScript / TypeScript:
+import { getModels, OfferingId }
+  from './generated/models.js';
+import { OpenAI } from 'byokit/client';
+
+const models = getModels();
+const model = models.find(m =>
+  m.id === OfferingId['google/gemini-3.8-flash']);</code></pre>
+            </div>
+          </div>
+          <p class="fine">
+            <code>byokit.getModels()</code> remains supported for interactive exploration and
+            prototyping. For production applications with a fixed query, precompiling at build time
+            delivers instant startup and minimal bundle size.
+          </p>
+        </div>
+      </section>
     </main>
     <footer class="wrap footer">
       <a class="brand" href="./">byokit<span>.</span></a>

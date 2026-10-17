@@ -34,6 +34,34 @@ const response = await client.chat.completions.create({
 console.log(response.choices[0].message.content);
 ```
 
+### Production Optimization: Build-Time Precompilation
+
+For production apps with a fixed query, avoid loading the 20 MB catalog at runtime by precompiling at build time:
+
+1. Create `byok.config.json`:
+
+```json
+{
+  "providerIds": ["anthropic", "google", "openai", "deepseek"],
+  "local": false,
+  "filters": {
+    "includeTags": ["model:flash"]
+  }
+}
+```
+
+2. Run `npx byokit build byok.config.json --out src/generated/models.js`
+
+3. Import without the 20 MB catalog:
+
+```ts
+import { getModels, OfferingId } from './generated/models.js';
+import { OpenAI } from 'byokit/client';
+
+const models = getModels(); // ~15 KB static module, zero runtime parsing
+const model = models.find((m) => m.id === OfferingId['google/gemini-3.8-flash']);
+```
+
 ### 2. DOM Key Picker & Settings UI
 
 ```js

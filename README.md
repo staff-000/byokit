@@ -46,6 +46,77 @@ Default/Global/China/Official first pick their recommended model per provider; u
 or `providerIds` to sort every matching offering. `ModelSort.ProviderOrder` retains
 provider order and existing per-provider preference ranking.
 
+## Optimized build-time pattern (Recommended for production)
+
+While `byokit.getModels()` is ideal for quick prototyping, evaluating it at runtime loads and parses the entire **20 MB** bundled catalog snapshot. Most applications have a **fixed model query** (such as specific providers or flash models).
+
+The **optimized approach** evaluates your query once at build time to produce a tiny static module (~10–30 KB) with zero catalog runtime overhead and full typed autocomplete:
+
+### 1. Declare your query in `byok.config.json`
+
+For example, to select flash models from Anthropic, Google, OpenAI, and DeepSeek:
+
+```json
+{
+  "providerIds": ["anthropic", "google", "openai", "deepseek"],
+  "local": false,
+  "filters": {
+    "includeTags": ["model:flash"]
+  }
+}
+```
+
+_(Note: `config.catalog` is optional; when omitted, the build automatically uses the bundled catalog snapshot.)_
+
+### 2. Precompile at build time
+
+- **JavaScript / TypeScript**:
+
+  ```sh
+  npx byokit build byok.config.json --out src/generated/models.js
+  ```
+
+  Generates `src/generated/models.js` and `models.d.ts` containing only your pre-evaluated models and typed `OfferingId` / `ModelId` enums.
+
+- **Python**:
+  ```sh
+  byokit build byok.config.json --out app/generated_models.py
+  ```
+  Generates `app/generated_models.py` with `MODELS`, `get_models()`, and typed enum classes.
+
+### 3. Use in your application
+
+Import the precompiled models alongside `byokit/client` (which provides the SDK and call helpers without loading the 20 MB catalog):
+
+**JavaScript / TypeScript:**
+
+```ts
+import { getModels, OfferingId } from './generated/models.js';
+import { OpenAI } from 'byokit/client';
+
+// Instant, zero catalog overhead (~15 KB bundle vs 20 MB)
+const models = getModels();
+const model = models.find((m) => m.id === OfferingId['google/gemini-3.8-flash']);
+
+const client = new OpenAI({
+  baseURL: model.connection.baseUrl,
+  apiKey: process.env.GOOGLE_API_KEY ?? '',
+});
+```
+
+**Python:**
+
+```python
+from app.generated_models import get_models, OfferingId
+import byokit
+
+# Instant access, no 20 MB catalog parsed
+models = get_models()
+model = next(m for m in models if m["id"] == OfferingId.GOOGLE_GEMINI_3_8_FLASH)
+
+client = byokit.OpenAI(base_url=model["connection"]["baseUrl"], api_key=api_key)
+```
+
 ## Call a model
 
 ```ts

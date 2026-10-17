@@ -629,8 +629,60 @@ h3 {
   line-height: 1.9;
   padding: 24px;
 }
-.start-code .fine {
-  padding: 0 24px 20px;
+.build-section {
+  padding-bottom: 40px;
+}
+.build-card {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 32px;
+}
+.build-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+.build-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.step-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 11px var(--mono);
+  margin-bottom: 12px;
+}
+.build-step h3 {
+  font-size: 15px;
+  margin-bottom: 6px;
+}
+.build-step p {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0 0 10px;
+}
+.build-step pre {
+  background: #f8f9fc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 11px;
+  line-height: 1.6;
+  overflow-x: auto;
+  flex: 1;
+}
+@media (max-width: 900px) {
+  .build-steps {
+    grid-template-columns: 1fr;
+  }
 }
 .footer {
   display: flex;
