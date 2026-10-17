@@ -227,8 +227,11 @@ export interface Task {
   budget?: PickerConfig['budget'];
   requires?: { features?: FeatureName[]; modalities?: FitOptions['modalities'] };
 }
+export interface CatalogOptions {
+  trusted?: boolean;
+}
 export class Catalog {
-  constructor(data: CatalogData);
+  constructor(data: CatalogData, options?: CatalogOptions);
   data: CatalogData;
   providers: Map<string, Provider>;
   models: Map<string, Model>;
@@ -236,6 +239,10 @@ export class Catalog {
   get(id: string | undefined): Offering | undefined;
   getModels(config?: PickerConfig): ModelOption[];
   getModels(list: ModelList, config?: PickerConfig): ModelOption[];
+  serializeQuery(input?: PickerConfig | ModelList, options?: PickerConfig): string;
+  hasCached(input?: PickerConfig | ModelList, options?: PickerConfig): boolean;
+  getCached(input?: PickerConfig | ModelList, options?: PickerConfig): ModelOption[] | undefined;
+  clearCache(): void;
   select(list: ModelList, config?: PickerConfig): { provider: Provider; offerings: Offering[] }[];
   select(config?: PickerConfig): { provider: Provider; offerings: Offering[] }[];
 }
@@ -589,3 +596,5 @@ export interface CustomModel {
 export function appendModel(models: readonly ModelOption[], model: CustomModel): ModelOption[];
 export function getModels(config?: PickerConfig): ModelOption[];
 export function getModels(list: ModelList, config?: PickerConfig): ModelOption[];
+export function serializeQuery(input?: PickerConfig | ModelList, options?: PickerConfig): string;
+

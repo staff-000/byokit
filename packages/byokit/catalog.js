@@ -9,6 +9,6 @@ export function getModels(input = {}, options) {
     warned = true;
     console.warn("[byokit] Tip: byokit.getModels() evaluated the full bundled catalog at runtime. For production apps with a fixed query, precompile your model list at build time (`npx byokit build byok.config.json --out models.js`) to avoid bundling and querying the full catalog. Set BYOKIT_NO_RUNTIME_WARNING=1 to silence this message.");
   }
-  if (!defaultCatalog) defaultCatalog = new Catalog(data);
+  if (!defaultCatalog) defaultCatalog = new Catalog(data, { trusted: true });
   return defaultCatalog.getModels(input, options);
 }

@@ -424,11 +424,14 @@ def is_official_offering(o, m, provider_tags=None):
 
 
 class Catalog:
-    def __init__(self, data):
-        errors = validate_catalog(data)
-        if errors:
-            raise ValueError("; ".join(errors))
-        self.data = copy.deepcopy(data)
+    def __init__(self, data, trusted=False):
+        if not trusted:
+            errors = validate_catalog(data)
+            if errors:
+                raise ValueError("; ".join(errors))
+            self.data = copy.deepcopy(data)
+        else:
+            self.data = data
         self.providers = {p["id"]: p for p in self.data["providers"]}
         self.models = {m["id"]: m for m in self.data["models"]}
         self.offerings = {o["id"]: o for o in self.data["offerings"]}
@@ -441,6 +444,33 @@ class Catalog:
         for v in self.data.get("verifications", []):
             self.verifications_by_offering.setdefault(v.get("offeringId"), []).append(v)
         self.data["_verifications_by_offering"] = self.verifications_by_offering
+        self._cache = {}
+
+    def serialize_query(
+        self,
+        config: "PickerConfig | ModelList | None" = None,
+        options: "PickerConfig | None" = None,
+    ) -> str:
+        return serialize_query(config, options)
+
+    def has_cached(
+        self,
+        config: "PickerConfig | ModelList | None" = None,
+        options: "PickerConfig | None" = None,
+    ) -> bool:
+        return self.serialize_query(config, options) in self._cache
+
+    def get_cached(
+        self,
+        config: "PickerConfig | ModelList | None" = None,
+        options: "PickerConfig | None" = None,
+    ) -> list[dict] | None:
+        key = self.serialize_query(config, options)
+        hit = self._cache.get(key)
+        return copy.deepcopy(hit) if hit is not None else None
+
+    def clear_cache(self) -> None:
+        self._cache.clear()
 
     def get(self, offering_id):
         return self.offerings.get(offering_id)
@@ -450,6 +480,9 @@ class Catalog:
         config: "PickerConfig | ModelList | None" = None,
         options: "PickerConfig | None" = None,
     ) -> list[dict]:
+        cache_key = self.serialize_query(config, options)
+        if cache_key in self._cache:
+            return copy.deepcopy(self._cache[cache_key])
         config = _normalize_query(config, options)
         groups = self._select(config, True)
         result = []
@@ -551,10 +584,16 @@ class Catalog:
                 )
 
             hosted.sort(key=cmp_to_key(ordering))
-        return copy.deepcopy(
+        out = copy.deepcopy(
             hosted[: config.get("limit", len(result))]
             + [o for o in result if o["deployment"] == "local"]
         )
+        if len(self._cache) >= 64:
+            first_key = next(iter(self._cache))
+            del self._cache[first_key]
+        self._cache[cache_key] = copy.deepcopy(out)
+        return out
+
 
     def select(self, config=None, options=None):
         return self._select(_normalize_query(config, options))
@@ -895,7 +934,8 @@ def load_catalog():
         from importlib.resources import files
 
         _DEFAULT_CATALOG = Catalog(
-            json.loads(files("byokit").joinpath("data/catalog.json").read_text())
+            json.loads(files("byokit").joinpath("data/catalog.json").read_text()),
+            trusted=True,
         )
     return _DEFAULT_CATALOG
 
@@ -1337,6 +1377,21 @@ def _normalize_query(input=None, options=None):
         filters["official"] = True
         config["filters"] = filters
     return config
+
+
+def serialize_query(
+    config: "PickerConfig | ModelList | None" = None,
+    options: "PickerConfig | None" = None,
+) -> str:
+    import json
+    normalized = _normalize_query(config, options)
+    return json.dumps(
+        normalized,
+        sort_keys=True,
+        separators=(",", ":"),
+        default=lambda o: o.value if hasattr(o, "value") else str(o),
+    )
+
 
 
 def _validate_local(entry):

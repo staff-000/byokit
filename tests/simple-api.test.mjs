@@ -224,3 +224,49 @@ test('simplified list modes and appended local entries agree with Python', () =>
     queries.map((q) => new byokit.Catalog(d).getModels(q)),
   );
 });
+
+test('serializeQuery produces deterministic keys and Catalog caches results', () => {
+  const d = fixture();
+  const catalog = new byokit.Catalog(d);
+
+  // 1. Deterministic serialization
+  assert.equal(
+    byokit.serializeQuery('china'),
+    byokit.serializeQuery({ list: 'china' }),
+  );
+  assert.equal(
+    byokit.serializeQuery({ limit: 5, list: 'global' }),
+    byokit.serializeQuery({ list: 'global', limit: 5 }),
+  );
+  assert.equal(
+    byokit.serializeQuery(),
+    byokit.serializeQuery({}),
+  );
+
+  // 2. Cache detection before call
+  const query = { list: 'global', limit: 2 };
+  assert.equal(catalog.hasCached(query), false);
+  assert.equal(catalog.getCached(query), undefined);
+
+  // 3. First call populates cache
+  const first = catalog.getModels(query);
+  assert.equal(catalog.hasCached(query), true);
+  assert.equal(catalog.hasCached({ limit: 2, list: 'global' }), true);
+  assert.ok(Array.isArray(catalog.getCached(query)));
+  assert.equal(catalog.getCached(query).length, first.length);
+
+  // 4. Second call returns cached result directly
+  const second = catalog.getModels({ limit: 2, list: 'global' });
+  assert.deepEqual(first, second);
+
+  // 5. Cache mutation isolation
+  first[0].name = 'MUTATED_NAME';
+  const third = catalog.getModels(query);
+  assert.notEqual(third[0].name, 'MUTATED_NAME');
+
+  // 6. Cache clearing
+  catalog.clearCache();
+  assert.equal(catalog.hasCached(query), false);
+  assert.equal(catalog.getCached(query), undefined);
+});
+

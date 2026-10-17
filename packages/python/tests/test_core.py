@@ -3,7 +3,7 @@ from pathlib import Path
 
 root = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(root / "packages/python/src"))
-from byokit import Catalog, check_fit, validate_config, load_catalog
+from byokit import Catalog, check_fit, validate_config, load_catalog, serialize_query
 
 
 class CoreTests(unittest.TestCase):
@@ -11,6 +11,49 @@ class CoreTests(unittest.TestCase):
         self.catalog = Catalog(
             json.loads((root / "spec/fixtures/catalog.json").read_text())
         )
+
+    def test_serialize_query_and_caching(self):
+        # 1. Deterministic serialization
+        self.assertEqual(
+            serialize_query("china"),
+            serialize_query({"list": "china"}),
+        )
+        self.assertEqual(
+            serialize_query({"limit": 5, "list": "global"}),
+            serialize_query({"list": "global", "limit": 5}),
+        )
+        self.assertEqual(
+            serialize_query(),
+            serialize_query({}),
+        )
+
+        # 2. Cache detection before call
+        query = {"list": "global", "limit": 2}
+        self.assertFalse(self.catalog.has_cached(query))
+        self.assertIsNone(self.catalog.get_cached(query))
+
+        # 3. First call populates cache
+        first = self.catalog.get_models(query)
+        self.assertTrue(self.catalog.has_cached(query))
+        self.assertTrue(self.catalog.has_cached({"limit": 2, "list": "global"}))
+        cached = self.catalog.get_cached(query)
+        self.assertIsInstance(cached, list)
+        self.assertEqual(len(cached), len(first))
+
+        # 4. Second call returns cached result directly
+        second = self.catalog.get_models({"limit": 2, "list": "global"})
+        self.assertEqual(first, second)
+
+        # 5. Cache mutation isolation
+        first[0]["name"] = "MUTATED_NAME"
+        third = self.catalog.get_models(query)
+        self.assertNotEqual(third[0]["name"], "MUTATED_NAME")
+
+        # 6. Cache clearing
+        self.catalog.clear_cache()
+        self.assertFalse(self.catalog.has_cached(query))
+        self.assertIsNone(self.catalog.get_cached(query))
+
 
     def test_bundled(self):
         self.assertTrue(load_catalog().select())

@@ -334,20 +334,25 @@ function matches(o, m, c, providerTags = []) {
       : [Lifecycle.Live, Lifecycle.Uncertain]);
   if (!lifecycle.includes(o.lifecycle.status)) return false;
   if (f.popularity && !f.popularity.includes(o.popularity.status)) return false;
-  const tags = new Set([
-    ...[...(m.tags || []), ...providerTags].filter(
-      (t) => !t.startsWith('lifecycle:') && !t.startsWith('popularity:'),
-    ),
-    ...(o.tags || []),
-  ]);
-  if (isFlashModel(o, m)) {
-    tags.add('model:flash');
-  }
   if (
-    (f.includeTags || []).some((t) => !tags.has(t)) ||
-    (f.excludeTags || []).some((t) => tags.has(t))
-  )
-    return false;
+    (f.includeTags && f.includeTags.length > 0) ||
+    (f.excludeTags && f.excludeTags.length > 0)
+  ) {
+    const tags = new Set([
+      ...[...(m.tags || []), ...providerTags].filter(
+        (t) => !t.startsWith('lifecycle:') && !t.startsWith('popularity:'),
+      ),
+      ...(o.tags || []),
+    ]);
+    if (isFlashModel(o, m)) {
+      tags.add('model:flash');
+    }
+    if (
+      (f.includeTags || []).some((t) => !tags.has(t)) ||
+      (f.excludeTags || []).some((t) => tags.has(t))
+    )
+      return false;
+  }
   if (f.official !== undefined && isOfficialOffering(o, m, providerTags) !== f.official)
     return false;
 
@@ -395,6 +400,16 @@ export function isOfficialOffering(o, m, providerTags = []) {
   return o.providerId === creator || o.providerId.startsWith(creator + '-');
 }
 
+const lowerNameCache = new WeakMap();
+const getLowerName = (o) => {
+  let n = lowerNameCache.get(o);
+  if (n === undefined) {
+    n = o.name.toLowerCase();
+    lowerNameCache.set(o, n);
+  }
+  return n;
+};
+
 function compareModels(a, b, sort) {
   const text = (x, y) => (x < y ? -1 : x > y ? 1 : 0);
   const numeric = (x, y, direction) => {
@@ -418,17 +433,33 @@ function compareModels(a, b, sort) {
     );
   return (
     result ||
-    text(a.name.toLowerCase(), b.name.toLowerCase()) *
+    text(getLowerName(a), getLowerName(b)) *
       (sort === ModelSort.AlphabeticalDescend ? -1 : 1) ||
     text(a.providerId, b.providerId) ||
     text(a.id, b.id)
   );
 }
+
+export function stableKey(obj) {
+  if (obj === null || typeof obj !== 'object') return JSON.stringify(obj);
+  if (Array.isArray(obj)) return `[${obj.map(stableKey).join(',')}]`;
+  const keys = Object.keys(obj).sort();
+  return `{${keys.map((k) => `${JSON.stringify(k)}:${stableKey(obj[k])}`).join(',')}}`;
+}
+
+export function serializeQuery(input = {}, options) {
+  const config = normalizeQuery(input, options);
+  return stableKey(config);
+}
+
 export class Catalog {
-  constructor(data) {
-    const errors = validateCatalog(data);
-    if (errors.length) throw new Error(errors.join('; '));
-    this.data = structuredClone(data);
+  constructor(data, options = {}) {
+    const trusted = Boolean(options?.trusted);
+    if (!trusted) {
+      const errors = validateCatalog(data);
+      if (errors.length) throw new Error(errors.join('; '));
+    }
+    this.data = trusted ? { ...data } : structuredClone(data);
     this.providers = new Map(this.data.providers.map((x) => [x.id, x]));
     this.models = new Map(this.data.models.map((x) => [x.id, x]));
     this.offerings = new Map(this.data.offerings.map((x) => [x.id, x]));
@@ -453,11 +484,29 @@ export class Catalog {
       list.push(v);
     }
     this.data._verificationsByOffering = this.verificationsByOffering;
+    this._cache = new Map();
   }
   get(id) {
     return this.offerings.get(id);
   }
+  serializeQuery(input = {}, options) {
+    return serializeQuery(input, options);
+  }
+  hasCached(input = {}, options) {
+    return this._cache.has(serializeQuery(input, options));
+  }
+  getCached(input = {}, options) {
+    const key = serializeQuery(input, options);
+    return this._cache.has(key) ? structuredClone(this._cache.get(key)) : undefined;
+  }
+  clearCache() {
+    this._cache.clear();
+  }
   getModels(input = {}, options) {
+    const cacheKey = serializeQuery(input, options);
+    if (this._cache.has(cacheKey)) {
+      return structuredClone(this._cache.get(cacheKey));
+    }
     const config = normalizeQuery(input, options);
     const groups = this._select(config, true);
     const hosted = groups
@@ -472,18 +521,12 @@ export class Catalog {
       config.sort ??
       ModelSort.AlphabeticalAscend;
     if (sort !== ModelSort.ProviderOrder)
-      hosted.sort((a, b) =>
-        compareModels(
-          { ...a[1], providerId: a[0].provider.id },
-          { ...b[1], providerId: b[0].provider.id },
-          sort,
-        ),
-      );
+      hosted.sort((a, b) => compareModels(a[1], b[1], sort));
     const limited = hosted.slice(0, config.limit);
     const locals = groups
       .filter((g) => g.provider.deployment === Deployment.Local)
       .flatMap((g) => g.offerings.map((o) => [g, o]));
-    return structuredClone(
+    const result = structuredClone(
       [...limited, ...locals].map(([g, o]) => {
         const model = this.models.get(o.modelId) || {
             id: o.modelId,
@@ -513,6 +556,11 @@ export class Catalog {
         };
       }),
     );
+    if (this._cache.size >= 64) {
+      this._cache.delete(this._cache.keys().next().value);
+    }
+    this._cache.set(cacheKey, result);
+    return structuredClone(result);
   }
   select(input = {}, options) {
     return this._select(normalizeQuery(input, options));

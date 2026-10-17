@@ -452,7 +452,7 @@ if (i < 0) {
       '    warned=true;\n' +
       '    console.warn("[byokit] Tip: byokit.getModels() evaluated the full bundled catalog at runtime. For production apps with a fixed query, precompile your model list at build time (`npx byokit build byok.config.json --out models.js`) to avoid bundling and querying the full catalog. Set BYOKIT_NO_RUNTIME_WARNING=1 to silence this message.");\n' +
       '  }\n' +
-      '  if(!defaultCatalog)defaultCatalog=new Catalog(data);\n' +
+      '  if(!defaultCatalog)defaultCatalog=new Catalog(data, { trusted: true });\n' +
       '  return defaultCatalog.getModels(input,options);\n' +
       '}\n',
   );
