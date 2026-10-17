@@ -222,6 +222,71 @@ include it. Generic Local entries are excluded when input/output or callable fil
 `prefer.features` and `prefer.lowerCost` guide per-provider shortlist selection;
 use `ModelSort.ProviderOrder` to retain that ranking in returned lists.
 
+### Modality matching (`input` and `output`)
+
+Control how models are matched against modalities (text, image, audio, video) using explicit matchers or clean array defaults:
+
+- **`byokit.Exact([...])`**: Output or input must match **strictly** these modalities and no others.
+- **`byokit.Contain([...])`**: Model must support all listed modalities, but may support others.
+- **`byokit.Any([...])`**: Model must support at least one of the listed modalities.
+
+**Default array semantics**:
+
+- `output: [byokit.Modality.Text]` defaults to **exact** matching — returns text-only models and cleanly excludes multimodal image-generating models like `chatgpt-image-latest` (output: text + image) or audio models like `lyria-3-pro-preview` (output: text + audio).
+- `input: [byokit.Modality.Image]` defaults to **contain** matching — discovers vision models that accept both text and images.
+
+```ts
+// Pure text-only models (strictly text output)
+byokit.getModels({ filters: { output: [byokit.Modality.Text] } });
+// Or explicitly:
+byokit.getModels({ filters: { output: byokit.Exact([byokit.Modality.Text]) } });
+
+// All models capable of generating images (pure image or text + image)
+byokit.getModels(byokit.COMPLETE, {
+  filters: { output: byokit.Contain([byokit.Modality.Image]) },
+});
+
+// Models outputting either text or image
+byokit.getModels(byokit.COMPLETE, {
+  filters: { output: byokit.Any([byokit.Modality.Text, byokit.Modality.Image]) },
+});
+```
+
+In `byok.config.json` build files, use `{ "contain": ["image"] }`, `{ "exact": ["text"] }`, or `{ "mode": "any", "values": ["text", "image"] }`.
+Python supports identical matchers: `byokit.Exact()`, `byokit.Contain()`, `byokit.Any()` (or lowercase aliases `exact()`, `contain()`, `any()`).
+
+### Modality matching (`input` and `output`)
+
+Control how models are matched against modalities (text, image, audio, video) using explicit matchers or clean array defaults:
+
+- **`byokit.Exact([...])`**: Output or input must match **strictly** these modalities and no others.
+- **`byokit.Contain([...])`**: Model must support all listed modalities, but may support others.
+- **`byokit.Any([...])`**: Model must support at least one of the listed modalities.
+
+**Default array semantics**:
+- `output: [byokit.Modality.Text]` defaults to **exact** matching — returns text-only models and cleanly excludes multimodal image-generating models like `chatgpt-image-latest` (output: text + image) or audio models like `lyria-3-pro-preview` (output: text + audio).
+- `input: [byokit.Modality.Image]` defaults to **contain** matching — discovers vision models that accept both text and images.
+
+```ts
+// Pure text-only models (strictly text output)
+byokit.getModels({ filters: { output: [byokit.Modality.Text] } });
+// Or explicitly:
+byokit.getModels({ filters: { output: byokit.Exact([byokit.Modality.Text]) } });
+
+// All models capable of generating images (pure image or text + image)
+byokit.getModels(byokit.COMPLETE, {
+  filters: { output: byokit.Contain([byokit.Modality.Image]) },
+});
+
+// Models outputting either text or image
+byokit.getModels(byokit.COMPLETE, {
+  filters: { output: byokit.Any([byokit.Modality.Text, byokit.Modality.Image]) },
+});
+```
+
+In `byok.config.json` build files, use `{ "contain": ["image"] }`, `{ "exact": ["text"] }`, or `{ "mode": "any", "values": ["text", "image"] }`.
+Python supports identical matchers: `byokit.Exact()`, `byokit.Contain()`, `byokit.Any()` (or lowercase aliases `exact()`, `contain()`, `any()`).
+
 `sort` is a top-level enum option: `ModelSort.AlphabeticalAscend` (default),
 `AlphabeticalDescend`, `PriceAscend`, `PriceDescend`, `SpeedAscend`,
 `SpeedDescend`, or `ProviderOrder`. Unknown prices/speeds stay last in either
@@ -329,7 +394,7 @@ const chat = byokit.getModels(byokit.COMPLETE, {
 byokit.getModels({ providerIds: ['fireworks-ai'], local: false });
 ```
 
-Input and output arrays require every listed modality. Image input means image
+Modality filtering supports exact matching, containment, and unions via `byokit.Exact`, `byokit.Contain`, and `byokit.Any`. Bare output arrays default to exact matching; bare input arrays default to containment. Image input means image
 understanding; image output means generation. `callSupport.textGeneration` describes
 compatibility with BYOKit's reviewed adapters. Newly discovered providers have no
 automatically trusted connection; unsupported catalog calls fail before HTTP.

@@ -151,6 +151,22 @@ export interface LocalEndpoint {
   modelId?: string;
   name?: string;
 }
+export type ModalityMatcherMode = 'exact' | 'contain' | 'contains' | 'any';
+export interface ModalityMatcher {
+  mode: ModalityMatcherMode;
+  values: Modality[];
+}
+export type ModalityShorthandMatcher =
+  | { exact: Modality[] }
+  | { contain: Modality[] }
+  | { contains: Modality[] }
+  | { any: Modality[] };
+export type ModalityFilter =
+  | Modality
+  | Modality[]
+  | ModalityMatcher
+  | ModalityShorthandMatcher;
+
 export interface PickerConfig {
   sort?: ModelSort;
   list?: ModelList;
@@ -165,8 +181,8 @@ export interface PickerConfig {
     origin?: (Country | CustomCountryCode)[];
     openWeights?: boolean;
     commercialUse?: Model['commercialUse'];
-    input?: Modality[];
-    output?: Modality[];
+    input?: ModalityFilter;
+    output?: ModalityFilter;
     requiredFeatures?: FeatureName[];
     minContextTokens?: number;
     maxInputPricePerM?: number;
@@ -220,7 +236,7 @@ export interface Budget {
 }
 export interface FitOptions {
   requiredFeatures?: FeatureName[];
-  modalities?: { input?: Modality[]; output?: Modality[] };
+  modalities?: { input?: ModalityFilter; output?: ModalityFilter };
   estimate?: boolean;
   certainty?: FitResult['certainty'];
 }
@@ -249,6 +265,22 @@ export class Catalog {
   select(list: ModelList, config?: PickerConfig): { provider: Provider; offerings: Offering[] }[];
   select(config?: PickerConfig): { provider: Provider; offerings: Offering[] }[];
 }
+export function exact(values: Modality[] | Modality): ModalityMatcher;
+export function contain(values: Modality[] | Modality): ModalityMatcher;
+export function any(values: Modality[] | Modality): ModalityMatcher;
+export const Exact: typeof exact;
+export const Contain: typeof contain;
+export const Contains: typeof contain;
+export const Any: typeof any;
+export function normalizeModalityFilter(
+  value: ModalityFilter | undefined | null,
+  defaultMode?: ModalityMatcherMode,
+): ModalityMatcher | null;
+export function matchesModality(
+  modelValues: string[] | null | undefined,
+  filterSpec: ModalityMatcher | null | undefined,
+  allowUnknown?: boolean,
+): boolean;
 export function validateCatalog(data: unknown): string[];
 export function validateConfig(config?: PickerConfig): string[];
 export function checkFit(

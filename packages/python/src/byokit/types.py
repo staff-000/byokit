@@ -51,11 +51,26 @@ class Selection(_SelectionOptional):
     modelId: str
 
 
+ModalityMatcherMode = Literal["exact", "contain", "contains", "any"]
+
+
+class ModalityMatcher(TypedDict, total=False):
+    mode: ModalityMatcherMode
+    values: list[Modality | str]
+    exact: list[Modality | str]
+    contain: list[Modality | str]
+    contains: list[Modality | str]
+    any: list[Modality | str]
+
+
+ModalityFilter = list[Modality | str] | ModalityMatcher | Modality | str
+
+
 class Filters(TypedDict, total=False):
     deployment: list[Deployment]
     origin: list[Country | CustomCountryCode]
-    input: list[Modality]
-    output: list[Modality]
+    input: ModalityFilter
+    output: ModalityFilter
     requiredFeatures: list[FeatureName]
     commercialUse: CommercialUse
     openWeights: bool

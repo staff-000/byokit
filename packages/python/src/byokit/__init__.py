@@ -1,6 +1,8 @@
 """Offline discovery and stateless, explicitly invoked inference."""
 
 from .enums import *
+import builtins as _builtins
+_any = _builtins.any
 import copy
 import functools
 import math
@@ -31,6 +33,70 @@ def diagnostic(code, message, severity="warning", offering_id=None):
         severity=severity,
         **({"offeringId": offering_id} if offering_id else {}),
     )
+
+
+def _normalize_values_list(values):
+    if values is None:
+        return []
+    if isinstance(values, (list, tuple, set)):
+        return [v.value if hasattr(v, "value") else str(v) for v in values]
+    return [values.value if hasattr(values, "value") else str(values)]
+
+
+def exact(values):
+    return {"mode": "exact", "values": _normalize_values_list(values)}
+
+
+def contain(values):
+    return {"mode": "contain", "values": _normalize_values_list(values)}
+
+
+def any(values):
+    return {"mode": "any", "values": _normalize_values_list(values)}
+
+
+Exact = exact
+Contain = contain
+Contains = contain
+Any = any
+
+
+def _normalize_modality_filter(value, default_mode="contain"):
+    if value is None:
+        return None
+    if isinstance(value, (list, tuple, set)):
+        return {"mode": default_mode, "values": _normalize_values_list(value)}
+    if isinstance(value, dict):
+        if "mode" in value and "values" in value:
+            mode = "contain" if value["mode"] == "contains" else value["mode"]
+            return {"mode": mode, "values": _normalize_values_list(value["values"])}
+        if "exact" in value:
+            return {"mode": "exact", "values": _normalize_values_list(value["exact"])}
+        if "contain" in value:
+            return {"mode": "contain", "values": _normalize_values_list(value["contain"])}
+        if "contains" in value:
+            return {"mode": "contain", "values": _normalize_values_list(value["contains"])}
+        if "any" in value:
+            return {"mode": "any", "values": _normalize_values_list(value["any"])}
+    if isinstance(value, str) or hasattr(value, "value"):
+        return {"mode": default_mode, "values": _normalize_values_list(value)}
+    return None
+
+
+def _matches_modality(model_values, filter_spec, allow_unknown=False):
+    if not filter_spec or not filter_spec.get("values"):
+        return True
+    if model_values is None:
+        return allow_unknown
+    val_set = set(model_values)
+    req_list = filter_spec.get("values", [])
+    mode = filter_spec.get("mode", "contain")
+    if mode == "exact":
+        req_set = set(req_list)
+        return len(val_set) == len(req_set) and req_set == val_set
+    if mode == "any":
+        return _any(x in val_set for x in req_list)
+    return all(x in val_set for x in req_list)
 
 
 def validate_catalog(data):
@@ -88,7 +154,7 @@ def validate_catalog(data):
             if isinstance(value, (int, float)) and not finite(value):
                 errors.append(f"{o['id']}: invalid price")
     for p in data["presets"]:
-        if not isinstance(p.get("providerIds"), list) or any(
+        if not isinstance(p.get("providerIds"), list) or _any(
             i not in providers for i in p["providerIds"]
         ):
             errors.append(f"{p['id']}: unresolved provider")
@@ -96,8 +162,8 @@ def validate_catalog(data):
         ids = preset.get("offeringIds")
         if ids is not None and (
             not isinstance(ids, list)
-            or any(
-                not any(
+            or _any(
+                not _any(
                     o["id"] == offering_id and o["providerId"] in (preset.get("providerIds") or [])
                     for o in data["offerings"]
                 )
@@ -195,8 +261,6 @@ def validate_config(config):
     for key in [
         "deployment",
         "origin",
-        "input",
-        "output",
         "requiredFeatures",
         "fileFormats",
         "includeTags",
@@ -206,9 +270,53 @@ def validate_config(config):
     ]:
         if key in config.get("filters", {}) and (
             not isinstance(config["filters"][key], list)
-            or any(not isinstance(v, str) for v in config["filters"][key])
+            or _any(not isinstance(v, str) for v in config["filters"][key])
         ):
             errors.append(f"filters.{key} must be a string array")
+
+    valid_modalities = {m.value for m in Modality}
+    for key in ["input", "output"]:
+        val = config.get("filters", {}).get(key)
+        if val is not None:
+            if isinstance(val, list):
+                if _any(not isinstance(v, str) for v in val):
+                    errors.append(f"filters.{key} must be a string array or matcher")
+                elif _any(v not in valid_modalities for v in val):
+                    errors.append(f"Unknown filters.{key} value")
+            elif isinstance(val, dict):
+                mode = None
+                values = None
+                if "mode" in val and "values" in val:
+                    mode = val["mode"]
+                    values = val["values"]
+                elif "exact" in val:
+                    mode = "exact"
+                    values = val["exact"]
+                elif "contain" in val:
+                    mode = "contain"
+                    values = val["contain"]
+                elif "contains" in val:
+                    mode = "contain"
+                    values = val["contains"]
+                elif "any" in val:
+                    mode = "any"
+                    values = val["any"]
+                else:
+                    errors.append(f"filters.{key} matcher must specify mode and values")
+                if mode and mode not in ["exact", "contain", "contains", "any"]:
+                    errors.append(f"filters.{key} matcher mode must be exact, contain, or any")
+                if values is not None:
+                    if not isinstance(values, list) or _any(
+                        not isinstance(v, str) for v in values
+                    ):
+                        errors.append(f"filters.{key} values must be a string array")
+                    elif _any(
+                        (v.value if hasattr(v, "value") else v) not in valid_modalities
+                        for v in values
+                    ):
+                        errors.append(f"Unknown filters.{key} value")
+            else:
+                errors.append(f"filters.{key} must be a string array or matcher")
     for key in [
         "minContextTokens",
         "maxInputPricePerM",
@@ -261,8 +369,6 @@ def validate_config(config):
     ):
         errors.append("verifiedWithinDays must be positive")
     vocab = {
-        "input": Modality,
-        "output": Modality,
         "requiredFeatures": FeatureName,
         "deployment": Deployment,
         "lifecycle": Lifecycle,
@@ -270,14 +376,14 @@ def validate_config(config):
     }
     for key, enum in vocab.items():
         values = f.get(key)
-        if isinstance(values, list) and any(
+        if isinstance(values, list) and _any(
             v not in {m.value for m in enum} for v in values
         ):
             errors.append(f"Unknown filters.{key} value")
     preferred = config.get("prefer", {}).get("features")
     if preferred is not None and (
         not isinstance(preferred, list)
-        or any(v not in {m.value for m in FeatureName} for v in preferred)
+        or _any(v not in {m.value for m in FeatureName} for v in preferred)
     ):
         errors.append("Unknown preferred feature")
     if "commercialUse" in f and f["commercialUse"] not in {
@@ -311,13 +417,13 @@ def matches(o, m, config, provider_tags=None):
             value != "unknown" and value != f["commercialUse"]
         ):
             return False
-    for direction in ["input", "output"]:
-        required = f.get(direction, [])
-        values = o.get("modalities", {}).get(direction)
-        if required and (
-            (values is None and not unknown)
-            or (values is not None and not all(v in values for v in required))
-        ):
+    if "input" in f and f["input"] is not None:
+        spec = _normalize_modality_filter(f["input"], default_mode="contain")
+        if not _matches_modality(o.get("modalities", {}).get("input"), spec, unknown):
+            return False
+    if "output" in f and f["output"] is not None:
+        spec = _normalize_modality_filter(f["output"], default_mode="exact")
+        if not _matches_modality(o.get("modalities", {}).get("output"), spec, unknown):
             return False
     if f.get("fileFormats") and (
         (o.get("fileFormats") is None and not unknown)
@@ -369,7 +475,7 @@ def matches(o, m, config, provider_tags=None):
     )
     if is_flash_model(o, m):
         tags.add("model:flash")
-    if any(t not in tags for t in f.get("includeTags", [])) or any(
+    if _any(t not in tags for t in f.get("includeTags", [])) or _any(
         t in tags for t in f.get("excludeTags", [])
     ):
         return False
@@ -479,7 +585,7 @@ class Catalog:
         if "verifications" not in self.data or not isinstance(self.data["verifications"], list):
             self.data["verifications"] = []
         for v in records:
-            if not any(existing.get("id") == v.get("id") for existing in self.data["verifications"]):
+            if not _any(existing.get("id") == v.get("id") for existing in self.data["verifications"]):
                 self.data["verifications"].append(v)
                 self.verifications_by_offering.setdefault(v.get("offeringId"), []).append(v)
         self.clear_cache()
@@ -650,7 +756,7 @@ class Catalog:
             if config.get("list") == ModelList.COMPLETE
             else preset["providerIds"],
         )
-        if any(i not in self.providers for i in ids):
+        if _any(i not in self.providers for i in ids):
             raise ValueError("Unknown provider in providerIds")
         groups = []
         recommended = (
@@ -762,15 +868,33 @@ def check_fit(offering, budget, options=None):
                 )
             )
     for direction in ["input", "output"]:
-        for modality in options.get("modalities", {}).get(direction, []):
+        raw_mod = (options.get("modalities") or {}).get(direction, [])
+        req_list = (
+            raw_mod
+            if isinstance(raw_mod, list)
+            else (
+                raw_mod.get("values")
+                or raw_mod.get("exact")
+                or raw_mod.get("contain")
+                or raw_mod.get("contains")
+                or raw_mod.get("any")
+                or []
+            )
+            if isinstance(raw_mod, dict)
+            else [raw_mod]
+            if raw_mod
+            else []
+        )
+        for modality in req_list:
+            mod_val = modality.value if hasattr(modality, "value") else str(modality)
             values = offering.get("modalities", {}).get(direction)
-            if values is None or modality not in values:
+            if values is None or mod_val not in values:
                 diagnostics.append(
                     diagnostic(
                         "MODALITY_UNVERIFIED"
                         if values is None
                         else "MODALITY_UNSUPPORTED",
-                        f"{direction} modality {modality} is {'unverified' if values is None else 'unsupported'}.",
+                        f"{direction} modality {mod_val} is {'unverified' if values is None else 'unsupported'}.",
                         "warning" if values is None else "error",
                         oid,
                     )
@@ -871,9 +995,9 @@ def check_fit(offering, budget, options=None):
     }
     status = (
         "exceeds"
-        if any(d["severity"] == "error" for d in diagnostics)
+        if _any(d["severity"] == "error" for d in diagnostics)
         else "unknown"
-        if any(d["code"] in unknown_codes for d in diagnostics)
+        if _any(d["code"] in unknown_codes for d in diagnostics)
         else "fits"
     )
     return dict(
@@ -1114,7 +1238,7 @@ def validate_verifications(records, data):
         if (
             not isinstance(r.get("checks"), list)
             or not r["checks"]
-            or any(c not in {m.value for m in VerificationCheck} for c in r["checks"])
+            or _any(c not in {m.value for m in VerificationCheck} for c in r["checks"])
         ):
             errors.append("Verification must name its checks")
         try:
@@ -1193,7 +1317,7 @@ def verification_summary(
 
 def matches_verification(data, oid, config):
     f = config.get("filters", {})
-    if not any(k in f for k in ["verified", "verifiedBy", "verifiedWithinDays"]):
+    if not _any(k in f for k in ["verified", "verifiedBy", "verifiedWithinDays"]):
         return True
     summary = verification_summary(
         data,
@@ -1403,7 +1527,7 @@ def _normalize_query(input=None, options=None):
         if input is not None and not isinstance(input, dict) or options is not None:
             raise ValueError("Use get_models(options) or get_models(list, options)")
         config = dict(input or {})
-    if not any(k in config for k in ["list", "preset", "providerIds"]):
+    if not _any(k in config for k in ["list", "preset", "providerIds"]):
         config["list"] = ModelList.DEFAULT
     if config.get("list") == ModelList.LIVE:
         config["list"] = ModelList.DEFAULT
@@ -1416,6 +1540,21 @@ def _normalize_query(input=None, options=None):
         filters = dict(config.get("filters") or {})
         filters["official"] = True
         config["filters"] = filters
+    if "filters" in config and isinstance(config["filters"], dict):
+        f = dict(config["filters"])
+        if "input" in f and f["input"] is not None:
+            norm = _normalize_modality_filter(f["input"], "contain")
+            if norm and norm.get("values"):
+                f["input"] = {"mode": norm["mode"], "values": sorted(norm["values"])}
+            else:
+                f.pop("input", None)
+        if "output" in f and f["output"] is not None:
+            norm = _normalize_modality_filter(f["output"], "exact")
+            if norm and norm.get("values"):
+                f["output"] = {"mode": norm["mode"], "values": sorted(norm["values"])}
+            else:
+                f.pop("output", None)
+        config["filters"] = f
     return config
 
 
@@ -1467,10 +1606,27 @@ def _validate_local(entry):
             raise ValueError("Invalid local " + key)
 
 
+def _has_modality_filter(spec):
+    if not spec:
+        return False
+    if isinstance(spec, list):
+        return len(spec) > 0
+    if isinstance(spec, dict):
+        vals = (
+            spec.get("values")
+            or spec.get("exact")
+            or spec.get("contain")
+            or spec.get("contains")
+            or spec.get("any")
+        )
+        return len(vals) > 0 if isinstance(vals, list) else bool(vals)
+    return True
+
+
 def _local_groups(config, catalog):
     if (
-        config.get("filters", {}).get("input")
-        or config.get("filters", {}).get("output")
+        _has_modality_filter(config.get("filters", {}).get("input"))
+        or _has_modality_filter(config.get("filters", {}).get("output"))
         or "callable" in config.get("filters", {})
         or config.get("filters", {}).get("official") is True
         or config.get("local") is False
@@ -1485,7 +1641,7 @@ def _local_groups(config, catalog):
     if (
         "local" not in config
         and ids is not None
-        and not any(catalog.providers[id]["deployment"] == "local" for id in ids)
+        and not _any(catalog.providers[id]["deployment"] == "local" for id in ids)
     ):
         return []
     entries = config.get("local", [{}])

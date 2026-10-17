@@ -107,6 +107,78 @@ class CoreTests(unittest.TestCase):
             with self.assertRaises(NotImplementedError):
                 self.catalog.get_models({"sort": sort})
 
+    def test_modality_filters(self):
+        from byokit import Modality, Exact, Contain, Any, exact, contain, any
+
+        self.assertEqual(exact([Modality.TEXT]), {"mode": "exact", "values": ["text"]})
+        self.assertEqual(Exact(Modality.TEXT), {"mode": "exact", "values": ["text"]})
+        self.assertEqual(contain([Modality.TEXT]), {"mode": "contain", "values": ["text"]})
+        self.assertEqual(Contain(Modality.TEXT), {"mode": "contain", "values": ["text"]})
+        self.assertEqual(any([Modality.TEXT, Modality.IMAGE]), {"mode": "any", "values": ["text", "image"]})
+        self.assertEqual(Any([Modality.TEXT, Modality.IMAGE]), {"mode": "any", "values": ["text", "image"]})
+
+        data = json.loads((root / "spec/fixtures/catalog.json").read_text())
+        data["offerings"][0]["modalities"] = {"input": ["text"], "output": ["text"]}
+
+        multi_out = dict(data["offerings"][0], id="test/image-text", modalities={"input": ["text"], "output": ["text", "image"]})
+        vision_in = dict(data["offerings"][0], id="test/vision-in", modalities={"input": ["text", "image"], "output": ["text"]})
+        audio_out = dict(data["offerings"][0], id="test/audio-out", modalities={"input": ["text"], "output": ["text", "audio"]})
+
+        data["offerings"] = [data["offerings"][0], multi_out, vision_in, audio_out]
+        for p in data["presets"]:
+            p["offeringIds"] = [o["id"] for o in data["offerings"]]
+
+        cat = Catalog(data)
+
+        # 1. Bare array on output defaults to exact
+        text_exact_bare = [m["id"] for m in cat.get_models({"local": False, "filters": {"output": [Modality.TEXT]}})]
+        self.assertEqual(text_exact_bare, ["test/small", "test/vision-in"])
+
+        # 2. Exact on output
+        text_exact_explicit = [m["id"] for m in cat.get_models({"local": False, "filters": {"output": Exact([Modality.TEXT])}})]
+        self.assertEqual(text_exact_explicit, ["test/small", "test/vision-in"])
+
+        # 3. Contain on output
+        text_contain = [m["id"] for m in cat.get_models({"local": False, "filters": {"output": Contain([Modality.TEXT])}})]
+        self.assertEqual(text_contain, ["test/audio-out", "test/image-text", "test/small", "test/vision-in"])
+
+        # 4. Exact on output for both text and image
+        multi_exact = [m["id"] for m in cat.get_models({"local": False, "filters": {"output": Exact([Modality.TEXT, Modality.IMAGE])}})]
+        self.assertEqual(multi_exact, ["test/image-text"])
+
+        # 5. Any on output
+        image_or_audio = [m["id"] for m in cat.get_models({"local": False, "filters": {"output": Any([Modality.IMAGE, Modality.AUDIO])}})]
+        self.assertEqual(image_or_audio, ["test/audio-out", "test/image-text"])
+
+        # 6. Bare array on input defaults to contain
+        image_in = [m["id"] for m in cat.get_models({"local": False, "filters": {"input": [Modality.IMAGE]}})]
+        self.assertEqual(image_in, ["test/vision-in"])
+
+        # 7. Shorthand format
+        shorthand = [m["id"] for m in cat.get_models({"local": False, "filters": {"output": {"contain": ["text"]}}})]
+        self.assertEqual(shorthand, text_contain)
+
+        # 8. Bundled catalog check
+        bundled_cat = load_catalog()
+        bundled_text_only = [
+            m["id"]
+            for m in bundled_cat.get_models({
+                "providerIds": ["openai", "google"],
+                "filters": {"output": [Modality.TEXT]},
+            })
+        ]
+        self.assertNotIn("openai/chatgpt-image-latest", bundled_text_only)
+        self.assertNotIn("google/lyria-3-pro-preview", bundled_text_only)
+
+        bundled_contain = [
+            m["id"]
+            for m in bundled_cat.get_models({
+                "providerIds": ["openai"],
+                "filters": {"output": Contain([Modality.TEXT])},
+            })
+        ]
+        self.assertIn("openai/chatgpt-image-latest", bundled_contain)
+
 
 if __name__ == "__main__":
     unittest.main()

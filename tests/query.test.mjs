@@ -8,6 +8,13 @@ import {
   validateCatalog,
   verificationSummary,
   COMPLETE,
+  Modality,
+  Exact,
+  Contain,
+  Any,
+  exact,
+  contain,
+  any,
 } from '../packages/byokit/index.js';
 import bundled, { getModels } from 'byokit/catalog';
 const fixture = () => JSON.parse(readFileSync('spec/fixtures/catalog.json'));
@@ -195,4 +202,141 @@ test('release dates validate actual calendar days; unknown metadata remains null
       releaseDate,
     );
   }
+});
+
+test('modality filters support Exact, Contain, Any with bare array defaults and Python parity', () => {
+  assert.deepEqual(exact([Modality.Text]), { mode: 'exact', values: ['text'] });
+  assert.deepEqual(Exact(Modality.Text), { mode: 'exact', values: ['text'] });
+  assert.deepEqual(contain([Modality.Text]), { mode: 'contain', values: ['text'] });
+  assert.deepEqual(Contain(Modality.Text), { mode: 'contain', values: ['text'] });
+  assert.deepEqual(any([Modality.Text, Modality.Image]), {
+    mode: 'any',
+    values: ['text', 'image'],
+  });
+  assert.deepEqual(Any([Modality.Text, Modality.Image]), {
+    mode: 'any',
+    values: ['text', 'image'],
+  });
+
+  const data = fixture();
+  data.offerings[0].modalities = { input: ['text'], output: ['text'] };
+  const multiOut = structuredClone(data.offerings[0]);
+  multiOut.id = 'test/image-text';
+  multiOut.modalities = { input: ['text'], output: ['text', 'image'] };
+  const visionIn = structuredClone(data.offerings[0]);
+  visionIn.id = 'test/vision-in';
+  visionIn.modalities = { input: ['text', 'image'], output: ['text'] };
+  const audioOut = structuredClone(data.offerings[0]);
+  audioOut.id = 'test/audio-out';
+  audioOut.modalities = { input: ['text'], output: ['text', 'audio'] };
+
+  data.offerings = [data.offerings[0], multiOut, visionIn, audioOut];
+  data.presets[0].offeringIds = data.offerings.map((o) => o.id);
+  data.presets[1].offeringIds = data.offerings.map((o) => o.id);
+  data.presets[2].offeringIds = data.offerings.map((o) => o.id);
+
+  const c = new Catalog(data);
+
+  // 1. Bare array on output defaults to exact -> only pure text output matches
+  const textExactBare = c
+    .getModels({ local: false, filters: { output: [Modality.Text] } })
+    .map((m) => m.id);
+  assert.deepEqual(textExactBare, ['test/small', 'test/vision-in']);
+
+  // 2. Exact on output -> identical to bare array
+  const textExactExplicit = c
+    .getModels({ local: false, filters: { output: Exact([Modality.Text]) } })
+    .map((m) => m.id);
+  assert.deepEqual(textExactExplicit, ['test/small', 'test/vision-in']);
+
+  // 3. Contain on output -> matches models outputting text + image and text + audio
+  const textContain = c
+    .getModels({ local: false, filters: { output: Contain([Modality.Text]) } })
+    .map((m) => m.id);
+  assert.deepEqual(textContain, [
+    'test/audio-out',
+    'test/image-text',
+    'test/small',
+    'test/vision-in',
+  ]);
+
+  // 4. Exact on output for both text and image
+  const multiExact = c
+    .getModels({ local: false, filters: { output: Exact([Modality.Text, Modality.Image]) } })
+    .map((m) => m.id);
+  assert.deepEqual(multiExact, ['test/image-text']);
+
+  // 5. Any on output -> matches anything with image or audio
+  const imageOrAudio = c
+    .getModels({ local: false, filters: { output: Any([Modality.Image, Modality.Audio]) } })
+    .map((m) => m.id);
+  assert.deepEqual(imageOrAudio, ['test/audio-out', 'test/image-text']);
+
+  // 6. Bare array on input defaults to contain -> vision models match [Modality.Image]
+  const imageInContain = c
+    .getModels({ local: false, filters: { input: [Modality.Image] } })
+    .map((m) => m.id);
+  assert.deepEqual(imageInContain, ['test/vision-in']);
+
+  // 7. Shorthand format { contain: [...] }, { exact: [...] }, { any: [...] }
+  const shorthand = c
+    .getModels({ local: false, filters: { output: { contain: ['text'] } } })
+    .map((m) => m.id);
+  assert.deepEqual(shorthand, textContain);
+
+  // 8. Python parity check
+  const queries = [
+    { local: false, filters: { output: [Modality.Text] } },
+    { local: false, filters: { output: { mode: 'exact', values: ['text'] } } },
+    { local: false, filters: { output: { mode: 'contain', values: ['text'] } } },
+    { local: false, filters: { output: { mode: 'exact', values: ['text', 'image'] } } },
+    { local: false, filters: { output: { mode: 'any', values: ['image', 'audio'] } } },
+    { local: false, filters: { input: [Modality.Image] } },
+    { local: false, filters: { output: { contain: ['text'] } } },
+  ];
+  const pyResult = pythonModels({ data, queries });
+  assert.equal(pyResult.status, 0, pyResult.stderr);
+  const pyData = JSON.parse(pyResult.stdout);
+  assert.deepEqual(
+    pyData[0].map((m) => m.id),
+    textExactBare,
+  );
+  assert.deepEqual(
+    pyData[1].map((m) => m.id),
+    textExactExplicit,
+  );
+  assert.deepEqual(
+    pyData[2].map((m) => m.id),
+    textContain,
+  );
+  assert.deepEqual(
+    pyData[3].map((m) => m.id),
+    multiExact,
+  );
+  assert.deepEqual(
+    pyData[4].map((m) => m.id),
+    imageOrAudio,
+  );
+  assert.deepEqual(
+    pyData[5].map((m) => m.id),
+    imageInContain,
+  );
+  assert.deepEqual(
+    pyData[6].map((m) => m.id),
+    shorthand,
+  );
+
+  // Bundled catalog check for chatgpt-image-latest and lyria-3-pro-preview
+  const textOnlyBundled = getModels({
+    providerIds: ['openai', 'google'],
+    filters: { output: [Modality.Text] },
+  }).map((m) => m.id);
+  assert.ok(!textOnlyBundled.includes('openai/chatgpt-image-latest'));
+  assert.ok(!textOnlyBundled.includes('google/lyria-3-pro-preview'));
+
+  const containBundled = getModels({
+    providerIds: ['openai'],
+    filters: { output: Contain([Modality.Text]) },
+  }).map((m) => m.id);
+  assert.ok(containBundled.includes('openai/chatgpt-image-latest'));
 });

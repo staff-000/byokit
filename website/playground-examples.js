@@ -16,6 +16,7 @@ console.log(models.map(model => ({
     byokit.ProviderId.OpenAI,
   ],
   filters: {
+    // Bare array for output defaults to exact match (only text output models)
     output: [byokit.Modality.Text],
   },
   local: false,
@@ -28,9 +29,11 @@ console.log(models.map(model => ({
   },
   image: {
     label: 'Select image models',
-    code: `const models = byokit.getModels(byokit.COMPLETE, {
+    code: `// Use byokit.Contain to match models that output images (pure image or text+image)
+// Or use [byokit.Modality.Image] to match strictly image-only output models.
+const models = byokit.getModels(byokit.COMPLETE, {
   filters: {
-    output: [byokit.Modality.Image],
+    output: byokit.Contain([byokit.Modality.Image]),
   },
   limit: 5,
   local: false,

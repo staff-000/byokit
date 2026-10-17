@@ -27,6 +27,75 @@ import {
   ModelSort,
 } from './enums.js';
 export * from './enums.js';
+
+function normalizeValuesList(values) {
+  if (values === undefined || values === null) return [];
+  if (Array.isArray(values)) return [...values];
+  return [values];
+}
+
+export function exact(values) {
+  return { mode: 'exact', values: normalizeValuesList(values) };
+}
+
+export function contain(values) {
+  return { mode: 'contain', values: normalizeValuesList(values) };
+}
+
+export function any(values) {
+  return { mode: 'any', values: normalizeValuesList(values) };
+}
+
+export const Exact = exact;
+export const Contain = contain;
+export const Contains = contain;
+export const Any = any;
+
+export function normalizeModalityFilter(value, defaultMode = 'contain') {
+  if (value === undefined || value === null) return null;
+  if (Array.isArray(value)) {
+    return { mode: defaultMode, values: [...value] };
+  }
+  if (typeof value === 'object') {
+    if ('mode' in value && 'values' in value) {
+      const mode = value.mode === 'contains' ? 'contain' : value.mode;
+      return { mode, values: normalizeValuesList(value.values) };
+    }
+    if ('exact' in value) {
+      return { mode: 'exact', values: normalizeValuesList(value.exact) };
+    }
+    if ('contain' in value) {
+      return { mode: 'contain', values: normalizeValuesList(value.contain) };
+    }
+    if ('contains' in value) {
+      return { mode: 'contain', values: normalizeValuesList(value.contains) };
+    }
+    if ('any' in value) {
+      return { mode: 'any', values: normalizeValuesList(value.any) };
+    }
+  }
+  if (typeof value === 'string') {
+    return { mode: defaultMode, values: [value] };
+  }
+  return null;
+}
+
+export function matchesModality(modelValues, filterSpec, allowUnknown = false) {
+  if (!filterSpec || !filterSpec.values || filterSpec.values.length === 0) return true;
+  if (modelValues == null) return allowUnknown;
+  const valSet = new Set(modelValues);
+  const reqList = filterSpec.values;
+  const mode = filterSpec.mode || 'contain';
+  if (mode === 'exact') {
+    const reqSet = new Set(reqList);
+    return valSet.size === reqSet.size && [...reqSet].every((x) => valSet.has(x));
+  }
+  if (mode === 'any') {
+    return reqList.some((x) => valSet.has(x));
+  }
+  return reqList.every((x) => valSet.has(x));
+}
+
 /** Framework-independent catalog, selection and preflight rules. No network or storage. */
 const finite = (n) => typeof n === 'number' && Number.isFinite(n) && n >= 0;
 const positive = (n) => finite(n) && n > 0;
@@ -192,8 +261,6 @@ export function validateConfig(c = {}) {
   for (const key of [
     'deployment',
     'origin',
-    'input',
-    'output',
     'requiredFeatures',
     'fileFormats',
     'includeTags',
@@ -206,6 +273,51 @@ export function validateConfig(c = {}) {
       (!Array.isArray(c.filters[key]) || c.filters[key].some((v) => typeof v !== 'string'))
     )
       errors.push(`filters.${key} must be a string array`);
+  for (const key of ['input', 'output']) {
+    const val = c.filters?.[key];
+    if (val !== undefined && val !== null) {
+      if (Array.isArray(val)) {
+        if (val.some((v) => typeof v !== 'string')) {
+          errors.push(`filters.${key} must be a string array or matcher`);
+        } else if (val.some((v) => !Object.values(Modality).includes(v))) {
+          errors.push(`Unknown filters.${key} value`);
+        }
+      } else if (typeof val === 'object') {
+        let mode;
+        let values;
+        if ('mode' in val && 'values' in val) {
+          mode = val.mode;
+          values = val.values;
+        } else if ('exact' in val) {
+          mode = 'exact';
+          values = val.exact;
+        } else if ('contain' in val) {
+          mode = 'contain';
+          values = val.contain;
+        } else if ('contains' in val) {
+          mode = 'contain';
+          values = val.contains;
+        } else if ('any' in val) {
+          mode = 'any';
+          values = val.any;
+        } else {
+          errors.push(`filters.${key} matcher must specify mode and values`);
+        }
+        if (mode && !['exact', 'contain', 'contains', 'any'].includes(mode)) {
+          errors.push(`filters.${key} matcher mode must be exact, contain, or any`);
+        }
+        if (values !== undefined) {
+          if (!Array.isArray(values) || values.some((v) => typeof v !== 'string')) {
+            errors.push(`filters.${key} values must be a string array`);
+          } else if (values.some((v) => !Object.values(Modality).includes(v))) {
+            errors.push(`Unknown filters.${key} value`);
+          }
+        }
+      } else {
+        errors.push(`filters.${key} must be a string array or matcher`);
+      }
+    }
+  }
   for (const key of [
     'minContextTokens',
     'maxInputPricePerM',
@@ -249,8 +361,6 @@ export function validateConfig(c = {}) {
   )
     errors.push('verifiedWithinDays must be positive');
   const vocab = {
-    input: Modality,
-    output: Modality,
     requiredFeatures: FeatureName,
     deployment: Deployment,
     lifecycle: Lifecycle,
@@ -297,17 +407,14 @@ function matches(o, m, c, providerTags = []) {
     (m.commercialUse === 'unknown' ? !unknown(c) : m.commercialUse !== f.commercialUse)
   )
     return false;
-  for (const [required, direction] of [
-    [f.input, 'input'],
-    [f.output, 'output'],
-  ]) {
-    if (
-      required?.length &&
-      (o.modalities?.[direction] == null
-        ? !unknown(c)
-        : !required.every((x) => o.modalities[direction].includes(x)))
-    )
-      return false;
+  const allowUnknown = unknown(c);
+  if (f.input !== undefined && f.input !== null) {
+    const spec = normalizeModalityFilter(f.input, 'contain');
+    if (!matchesModality(o.modalities?.input, spec, allowUnknown)) return false;
+  }
+  if (f.output !== undefined && f.output !== null) {
+    const spec = normalizeModalityFilter(f.output, 'exact');
+    if (!matchesModality(o.modalities?.output, spec, allowUnknown)) return false;
   }
   if (
     f.fileFormats?.length &&
@@ -692,8 +799,12 @@ export function checkFit(offering, budget, options = {}) {
         ),
       );
   }
-  for (const direction of ['input', 'output'])
-    for (const modality of options.modalities?.[direction] || []) {
+  for (const direction of ['input', 'output']) {
+    const rawMod = options.modalities?.[direction];
+    const req = Array.isArray(rawMod)
+      ? rawMod
+      : rawMod?.values || rawMod?.exact || rawMod?.contain || rawMod?.contains || rawMod?.any || [];
+    for (const modality of req) {
       const values = offering.modalities?.[direction];
       if (!values?.includes(modality))
         diagnostics.push(
@@ -705,6 +816,7 @@ export function checkFit(offering, budget, options = {}) {
           ),
         );
     }
+  }
   if (positive(c.input) && input > c.input)
     diagnostics.push(
       diag('INPUT_BUDGET_EXCEEDED', `Input ${input} exceeds ${c.input}.`, 'error', offering.id),
@@ -1187,6 +1299,26 @@ function normalizeQuery(input = {}, options) {
     config.preset = 'official';
     config.filters = { ...config.filters, official: true };
   }
+  if (config.filters) {
+    const f = { ...config.filters };
+    if (f.input !== undefined && f.input !== null) {
+      const norm = normalizeModalityFilter(f.input, 'contain');
+      if (norm && norm.values.length > 0) {
+        f.input = { mode: norm.mode, values: [...norm.values].sort() };
+      } else {
+        delete f.input;
+      }
+    }
+    if (f.output !== undefined && f.output !== null) {
+      const norm = normalizeModalityFilter(f.output, 'exact');
+      if (norm && norm.values.length > 0) {
+        f.output = { mode: norm.mode, values: [...norm.values].sort() };
+      } else {
+        delete f.output;
+      }
+    }
+    config.filters = f;
+  }
   return config;
 }
 function validateLocal(entry) {
@@ -1218,10 +1350,19 @@ function validateLocal(entry) {
     if (entry[k] !== undefined && (typeof entry[k] !== 'string' || !entry[k].trim()))
       throw new Error(`Invalid local ${k}`);
 }
+function hasModalityFilter(spec) {
+  if (!spec) return false;
+  if (Array.isArray(spec)) return spec.length > 0;
+  if (typeof spec === 'object') {
+    const vals = spec.values || spec.exact || spec.contain || spec.contains || spec.any;
+    return Array.isArray(vals) ? vals.length > 0 : Boolean(vals);
+  }
+  return true;
+}
 function localGroups(config, catalog) {
   if (
-    config.filters?.input?.length ||
-    config.filters?.output?.length ||
+    hasModalityFilter(config.filters?.input) ||
+    hasModalityFilter(config.filters?.output) ||
     config.filters?.callable !== undefined ||
     config.filters?.official === true ||
     config.local === false ||
