@@ -1,2 +1,2 @@
 export * from './core.js';
-export { getModels, addVerifications } from './catalog.js';
+export { getModels, getModelsByProvider, addVerifications } from './catalog.js';

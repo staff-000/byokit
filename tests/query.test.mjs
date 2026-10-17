@@ -340,3 +340,25 @@ test('modality filters support Exact, Contain, Any with bare array defaults and 
   }).map((m) => m.id);
   assert.ok(containBundled.includes('openai/chatgpt-image-latest'));
 });
+
+test('getModelsByProvider returns structure of {provider: model list}', async () => {
+  const c = new Catalog(fixture());
+  const grouped = c.getModelsByProvider();
+  assert.ok(grouped && typeof grouped === 'object' && !Array.isArray(grouped));
+  assert.ok(grouped.test);
+  assert.ok(Array.isArray(grouped.test));
+  assert.equal(grouped.test.length, 1);
+  assert.equal(grouped.test[0].id, 'test/large');
+
+  // Top-level exported getModelsByProvider on bundled catalog
+  const { getModelsByProvider } = await import('../packages/byokit/index.js');
+  const bundledGrouped = getModelsByProvider({
+    providerIds: ['anthropic', 'openai'],
+    local: false,
+  });
+  assert.ok(bundledGrouped.anthropic && bundledGrouped.openai);
+  assert.ok(bundledGrouped.anthropic.length > 0);
+  assert.ok(bundledGrouped.openai.length > 0);
+  assert.ok(bundledGrouped.anthropic.every((m) => m.provider.id === 'anthropic'));
+  assert.ok(bundledGrouped.openai.every((m) => m.provider.id === 'openai'));
+});

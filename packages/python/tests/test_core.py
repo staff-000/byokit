@@ -179,6 +179,30 @@ class CoreTests(unittest.TestCase):
         ]
         self.assertIn("openai/chatgpt-image-latest", bundled_contain)
 
+    def test_get_models_by_provider(self):
+        from byokit import get_models_by_provider, Catalog
+
+        data = json.loads((root / "spec/fixtures/catalog.json").read_text())
+        cat = Catalog(data)
+        grouped = cat.get_models_by_provider()
+        self.assertIsInstance(grouped, dict)
+        self.assertIn("test", grouped)
+        self.assertIsInstance(grouped["test"], list)
+        self.assertEqual(len(grouped["test"]), 1)
+        self.assertEqual(grouped["test"][0]["id"], "test/large")
+
+        bundled_grouped = get_models_by_provider({
+            "providerIds": ["anthropic", "openai"],
+            "local": False,
+        })
+        self.assertIn("anthropic", bundled_grouped)
+        self.assertIn("openai", bundled_grouped)
+        self.assertTrue(len(bundled_grouped["anthropic"]) > 0)
+        self.assertTrue(len(bundled_grouped["openai"]) > 0)
+        self.assertTrue(all(m["provider"]["id"] == "anthropic" for m in bundled_grouped["anthropic"]))
+        self.assertTrue(all(m["provider"]["id"] == "openai" for m in bundled_grouped["openai"]))
+
+
 
 if __name__ == "__main__":
     unittest.main()

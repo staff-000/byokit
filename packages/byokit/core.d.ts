@@ -157,15 +157,8 @@ export interface ModalityMatcher {
   values: Modality[];
 }
 export type ModalityShorthandMatcher =
-  | { exact: Modality[] }
-  | { contain: Modality[] }
-  | { contains: Modality[] }
-  | { any: Modality[] };
-export type ModalityFilter =
-  | Modality
-  | Modality[]
-  | ModalityMatcher
-  | ModalityShorthandMatcher;
+  { exact: Modality[] } | { contain: Modality[] } | { contains: Modality[] } | { any: Modality[] };
+export type ModalityFilter = Modality | Modality[] | ModalityMatcher | ModalityShorthandMatcher;
 
 export interface PickerConfig {
   sort?: ModelSort;
@@ -257,6 +250,8 @@ export class Catalog {
   get(id: string | undefined): Offering | undefined;
   getModels(config?: PickerConfig): ModelOption[];
   getModels(list: ModelList, config?: PickerConfig): ModelOption[];
+  getModelsByProvider(config?: PickerConfig): Record<string, ModelOption[]>;
+  getModelsByProvider(list: ModelList, config?: PickerConfig): Record<string, ModelOption[]>;
   serializeQuery(input?: PickerConfig | ModelList, options?: PickerConfig): string;
   hasCached(input?: PickerConfig | ModelList, options?: PickerConfig): boolean;
   getCached(input?: PickerConfig | ModelList, options?: PickerConfig): ModelOption[] | undefined;

@@ -703,6 +703,16 @@ export class Catalog {
     this._cache.set(cacheKey, result);
     return structuredClone(result);
   }
+  getModelsByProvider(input = {}, options) {
+    const models = this.getModels(input, options);
+    const grouped = {};
+    for (const model of models) {
+      const key = model.provider?.id || model.providerId || (model.local ? 'local' : 'unknown');
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(model);
+    }
+    return grouped;
+  }
   select(input = {}, options) {
     return this._select(normalizeQuery(input, options));
   }

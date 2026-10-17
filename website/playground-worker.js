@@ -36,6 +36,13 @@ self.onmessage = async ({ data }) => {
       track(res);
       return res;
     },
+    getModelsByProvider(...args) {
+      const res = byokit.getModelsByProvider(...args);
+      if (res && typeof res === 'object') {
+        track(Object.values(res).flat());
+      }
+      return res;
+    },
     select(...args) {
       const res = byokit.select ? byokit.select(...args) : undefined;
       track(res);

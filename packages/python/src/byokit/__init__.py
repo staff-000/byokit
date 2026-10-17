@@ -723,6 +723,21 @@ class Catalog:
         self._cache[cache_key] = copy.deepcopy(out)
         return out
 
+    def get_models_by_provider(
+        self,
+        config: "PickerConfig | ModelList | None" = None,
+        options: "PickerConfig | None" = None,
+    ) -> dict[str, list[dict]]:
+        models = self.get_models(config, options)
+        grouped: dict[str, list[dict]] = {}
+        for m in models:
+            key = (
+                (m.get("provider") or {}).get("id")
+                or m.get("providerId")
+                or ("local" if m.get("local") else "unknown")
+            )
+            grouped.setdefault(key, []).append(m)
+        return grouped
 
     def select(self, config=None, options=None):
         return self._select(_normalize_query(config, options))
@@ -1355,6 +1370,14 @@ def get_models(
             stacklevel=2,
         )
     return load_catalog().get_models(config, options)
+
+
+def get_models_by_provider(
+    config: "PickerConfig | ModelList | None" = None,
+    options: "PickerConfig | None" = None,
+) -> dict[str, list[dict]]:
+    return load_catalog().get_models_by_provider(config, options)
+
 
 
 from .types import (

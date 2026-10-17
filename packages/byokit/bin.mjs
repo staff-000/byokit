@@ -99,9 +99,9 @@ async function run() {
             `export const ${name}=Object.freeze(${JSON.stringify(Object.fromEntries(entries(values)))});`,
         )
         .join('\n');
-      const jsContent = `export const models = Object.freeze(${JSON.stringify(precompiled, null, 2)});\nexport function getModels() {\n  return structuredClone(models);\n}\n${runtime}\n`;
+      const jsContent = `export const models = Object.freeze(${JSON.stringify(precompiled, null, 2)});\nexport function getModels() {\n  return structuredClone(models);\n}\nexport function getModelsByProvider() {\n  const grouped = {};\n  for (const m of models) {\n    const key = m.provider?.id || m.providerId || (m.local ? 'local' : 'unknown');\n    if (!grouped[key]) grouped[key] = [];\n    grouped[key].push(structuredClone(m));\n  }\n  return grouped;\n}\n${runtime}\n`;
       await writeFile(output, jsContent);
-      const dtsContent = `export type PrecompiledModel = {\n  id: string;\n  providerId: string;\n  modelId: string;\n  apiModelId: string;\n  name: string;\n  deployment: string;\n  connection?: { baseUrl: string; protocol: string };\n  callSupport?: { textGeneration: boolean; reason: string | null };\n  limits?: Record<string, any>;\n  features?: Record<string, any>;\n  price?: Record<string, any>;\n  tags?: string[];\n  provider?: Record<string, any>;\n  model?: Record<string, any>;\n  family?: Record<string, any> | null;\n  logos?: { provider?: string | null; family?: string | null };\n  verification?: Record<string, any>;\n  [key: string]: any;\n};\nexport declare const models: readonly PrecompiledModel[];\nexport declare function getModels(): PrecompiledModel[];\n${declarations.join('\n')}\n`;
+      const dtsContent = `export type PrecompiledModel = {\n  id: string;\n  providerId: string;\n  modelId: string;\n  apiModelId: string;\n  name: string;\n  deployment: string;\n  connection?: { baseUrl: string; protocol: string };\n  callSupport?: { textGeneration: boolean; reason: string | null };\n  limits?: Record<string, any>;\n  features?: Record<string, any>;\n  price?: Record<string, any>;\n  tags?: string[];\n  provider?: Record<string, any>;\n  model?: Record<string, any>;\n  family?: Record<string, any> | null;\n  logos?: { provider?: string | null; family?: string | null };\n  verification?: Record<string, any>;\n  [key: string]: any;\n};\nexport declare const models: readonly PrecompiledModel[];\nexport declare function getModels(): PrecompiledModel[];\nexport declare function getModelsByProvider(): Record<string, PrecompiledModel[]>;\n${declarations.join('\n')}\n`;
       const dtsOutput = output.replace(/\.m?js$/, '.d.ts');
       await writeFile(dtsOutput, dtsContent);
       await writeFile(
@@ -155,7 +155,7 @@ async function run() {
         })
         .join('\n\n');
       const rawJson = JSON.stringify(precompiled);
-      const pyContent = `"""Precompiled BYOKit model list generated at build time."""\nfrom enum import Enum\nimport copy\nimport json\n\nMODELS: list[dict] = json.loads(${JSON.stringify(rawJson)})\n\ndef get_models() -> list[dict]:\n    return copy.deepcopy(MODELS)\n\n${pyEnums}\n`;
+      const pyContent = `"""Precompiled BYOKit model list generated at build time."""\nfrom enum import Enum\nimport copy\nimport json\n\nMODELS: list[dict] = json.loads(${JSON.stringify(rawJson)})\n\ndef get_models() -> list[dict]:\n    return copy.deepcopy(MODELS)\n\ndef get_models_by_provider() -> dict[str, list[dict]]:\n    grouped: dict[str, list[dict]] = {}\n    for m in MODELS:\n        key = (m.get("provider") or {}).get("id") or m.get("providerId") or ("local" if m.get("local") else "unknown")\n        grouped.setdefault(key, []).append(copy.deepcopy(m))\n    return grouped\n\n${pyEnums}\n`;
       await writeFile(output, pyContent);
       await writeFile(
         output + '.lock.json',

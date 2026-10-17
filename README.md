@@ -37,6 +37,10 @@ byokit.getModels(byokit.COMPLETE); // Every provider and output, including retir
 byokit.getModels(byokit.GLOBAL); // One non-retired model per editorial provider + Local
 byokit.getModels(byokit.CHINA); // China-provider shortlist + Local
 byokit.getModels(byokit.OFFICIAL); // Official model creators only (excludes aggregators) + Local
+
+// Group models by provider ({ [providerId]: Model[] }):
+const byProvider = byokit.getModelsByProvider();
+// byProvider['openai'] -> array of OpenAI models
 ```
 
 Discovery runs offline. The bundled catalog comes from a pinned Models.dev
@@ -264,6 +268,7 @@ Control how models are matched against modalities (text, image, audio, video) us
 - **`byokit.Any([...])`**: Model must support at least one of the listed modalities.
 
 **Default array semantics**:
+
 - `output: [byokit.Modality.Text]` defaults to **exact** matching — returns text-only models and cleanly excludes multimodal image-generating models like `chatgpt-image-latest` (output: text + image) or audio models like `lyria-3-pro-preview` (output: text + audio).
 - `input: [byokit.Modality.Image]` defaults to **contain** matching — discovers vision models that accept both text and images.
 
@@ -337,7 +342,7 @@ print(result.choices[0].message.content)
 ```
 
 Install with `pip install byokit`.
-Python offers `Anthropic`, `call_claude()`, `append_model(models, custom)`,
+Python offers `get_models_by_provider()`, `Anthropic`, `call_claude()`, `append_model(models, custom)`,
 and the equivalent `ModelSort.ALPHABETICAL_ASCEND`, `PRICE_ASCEND`,
 `PRICE_DESCEND`, `SPEED_ASCEND`, `SPEED_DESCEND`, and `PROVIDER_ORDER` options.
 

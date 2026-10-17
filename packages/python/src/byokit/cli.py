@@ -119,6 +119,12 @@ def main():
                     f"MODELS: list[dict] = json.loads({json.dumps(raw_json)})\n\n"
                     "def get_models() -> list[dict]:\n"
                     "    return copy.deepcopy(MODELS)\n\n"
+                    "def get_models_by_provider() -> dict[str, list[dict]]:\n"
+                    "    grouped: dict[str, list[dict]] = {}\n"
+                    "    for m in MODELS:\n"
+                    "        key = (m.get('provider') or {}).get('id') or m.get('providerId') or ('local' if m.get('local') else 'unknown')\n"
+                    "        grouped.setdefault(key, []).append(copy.deepcopy(m))\n"
+                    "    return grouped\n\n"
                     + "\n\n".join(py_enums)
                     + "\n"
                 )
@@ -173,6 +179,15 @@ def main():
                     "export function getModels() {\n"
                     "  return structuredClone(models);\n"
                     "}\n"
+                    "export function getModelsByProvider() {\n"
+                    "  const grouped = {};\n"
+                    "  for (const m of models) {\n"
+                    "    const key = m.provider?.id || m.providerId || (m.local ? 'local' : 'unknown');\n"
+                    "    if (!grouped[key]) grouped[key] = [];\n"
+                    "    grouped[key].push(structuredClone(m));\n"
+                    "  }\n"
+                    "  return grouped;\n"
+                    "}\n"
                     + "\n".join(runtime_entries)
                     + "\n"
                 )
@@ -200,6 +215,7 @@ def main():
                     "};\n"
                     "export declare const models: readonly PrecompiledModel[];\n"
                     "export declare function getModels(): PrecompiledModel[];\n"
+                    "export declare function getModelsByProvider(): Record<string, PrecompiledModel[]>;\n"
                     + "\n".join(declarations)
                     + "\n"
                 )

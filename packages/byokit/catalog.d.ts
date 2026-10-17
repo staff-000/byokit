@@ -4,4 +4,9 @@ export default catalogData;
 export const catalog: Catalog;
 export function getModels(config?: PickerConfig): ModelOption[];
 export function getModels(list: ModelList, config?: PickerConfig): ModelOption[];
+export function getModelsByProvider(config?: PickerConfig): Record<string, ModelOption[]>;
+export function getModelsByProvider(
+  list: ModelList,
+  config?: PickerConfig,
+): Record<string, ModelOption[]>;
 export * from './index.js';

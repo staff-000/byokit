@@ -42,6 +42,8 @@ byokit.getModels(byokit.CHINA,{local:false});
 byokit.getModels(byokit.OFFICIAL);
 byokit.getModels({filters:{official:true}});
 byokit.getModels({local:[{endpoint:'http://localhost:8000/v1',api:byokit.LocalApi.OpenAI,modelId:'my-model'}]});
+const byProv: Record<string, byokit.ModelOption[]> = byokit.getModelsByProvider();
+const deepseekModels: byokit.ModelOption[] | undefined = byProv['deepseek'];
 // @ts-expect-error shortcuts are enum values, not raw strings
 byokit.getModels('complete');
 // @ts-expect-error unknown local protocol
