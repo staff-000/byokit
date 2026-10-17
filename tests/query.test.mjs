@@ -329,14 +329,14 @@ test('modality filters support Exact, Contain, Any with bare array defaults and 
   // Bundled catalog check for chatgpt-image-latest and lyria-3-pro-preview
   const textOnlyBundled = getModels({
     providerIds: ['openai', 'google'],
-    filters: { output: [Modality.Text] },
+    filters: { output: [Modality.Text], callable: false },
   }).map((m) => m.id);
   assert.ok(!textOnlyBundled.includes('openai/chatgpt-image-latest'));
   assert.ok(!textOnlyBundled.includes('google/lyria-3-pro-preview'));
 
   const containBundled = getModels({
     providerIds: ['openai'],
-    filters: { output: Contain([Modality.Text]) },
+    filters: { output: Contain([Modality.Text]), callable: false },
   }).map((m) => m.id);
   assert.ok(containBundled.includes('openai/chatgpt-image-latest'));
 });
@@ -361,4 +361,20 @@ test('getModelsByProvider returns structure of {provider: model list}', async ()
   assert.ok(bundledGrouped.openai.length > 0);
   assert.ok(bundledGrouped.anthropic.every((m) => m.provider.id === 'anthropic'));
   assert.ok(bundledGrouped.openai.every((m) => m.provider.id === 'openai'));
+});
+
+test('callable defaults to true for queries and respects explicit overrides', () => {
+  const defaultCallable = getModels({ providerIds: ['openai'], local: false });
+  assert.ok(defaultCallable.length > 0);
+  assert.ok(defaultCallable.every((m) => m.callSupport?.textGeneration === true));
+  assert.ok(!defaultCallable.some((m) => m.id === 'openai/chatgpt-image-latest'));
+
+  const explicitNonCallable = getModels({
+    providerIds: ['openai'],
+    local: false,
+    filters: { callable: false },
+  });
+  assert.ok(explicitNonCallable.length > 0);
+  assert.ok(explicitNonCallable.every((m) => m.callSupport?.textGeneration === false));
+  assert.ok(explicitNonCallable.some((m) => m.id === 'openai/chatgpt-image-latest'));
 });

@@ -142,20 +142,42 @@ test('derived tags never retain stale capability flags or imply licensing', () =
 
 test('getConfig and getConfigJson export build-ready configs matching validateConfig', () => {
   const conf1 = getConfig();
-  assert.deepEqual(conf1, { list: 'default' });
+  assert.deepEqual(conf1, { list: 'default', filters: { callable: true } });
   assert.deepEqual(validateConfig(conf1), []);
 
   const conf2 = getConfig('china', { sort: 'priceAscend', limit: 5 });
-  assert.deepEqual(conf2, { list: 'china', preset: 'china', sort: 'priceAscend', limit: 5 });
+  assert.deepEqual(conf2, {
+    list: 'china',
+    preset: 'china',
+    sort: 'priceAscend',
+    limit: 5,
+    filters: { callable: true },
+  });
   assert.deepEqual(validateConfig(conf2), []);
 
   const jsonStr = getConfigJson('china', { sort: 'priceAscend' });
   assert.equal(typeof jsonStr, 'string');
-  assert.deepEqual(JSON.parse(jsonStr), { list: 'china', preset: 'china', sort: 'priceAscend' });
+  assert.deepEqual(JSON.parse(jsonStr), {
+    list: 'china',
+    preset: 'china',
+    sort: 'priceAscend',
+    filters: { callable: true },
+  });
 
   // Catalog methods and aliases
-  assert.deepEqual(catalog.getConfig(), { list: 'default' });
+  assert.deepEqual(catalog.getConfig(), { list: 'default', filters: { callable: true } });
   assert.equal(typeof catalog.getConfigJson(), 'string');
-  assert.deepEqual(toConfig('global'), { list: 'global', preset: 'global' });
+  assert.deepEqual(toConfig('global'), {
+    list: 'global',
+    preset: 'global',
+    filters: { callable: true },
+  });
   assert.equal(typeof toConfigJson('global'), 'string');
+
+  // Complete list remains raw without default callable filter
+  assert.deepEqual(toConfig('complete'), { list: 'complete' });
+  assert.deepEqual(toConfig({ filters: { callable: false } }), {
+    list: 'default',
+    filters: { callable: false },
+  });
 });

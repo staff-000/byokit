@@ -80,23 +80,27 @@ class CoreTests(unittest.TestCase):
 
     def test_get_config_and_json(self):
         conf = get_config()
-        self.assertEqual(conf, {"list": "default"})
+        self.assertEqual(conf, {"list": "default", "filters": {"callable": True}})
         self.assertEqual(validate_config(conf), [])
 
         conf2 = get_config("china", {"sort": ModelSort.PRICE_ASCEND, "limit": 5})
-        self.assertEqual(conf2, {"list": "china", "preset": "china", "sort": "priceAscend", "limit": 5})
+        self.assertEqual(conf2, {"list": "china", "preset": "china", "sort": "priceAscend", "limit": 5, "filters": {"callable": True}})
         self.assertEqual(validate_config(conf2), [])
 
         json_str = get_config_json("global", {"limit": 3})
         self.assertIsInstance(json_str, str)
         parsed = json.loads(json_str)
-        self.assertEqual(parsed, {"list": "global", "preset": "global", "limit": 3})
+        self.assertEqual(parsed, {"list": "global", "preset": "global", "limit": 3, "filters": {"callable": True}})
 
         # Catalog methods and aliases
-        self.assertEqual(self.catalog.get_config(), {"list": "default"})
+        self.assertEqual(self.catalog.get_config(), {"list": "default", "filters": {"callable": True}})
         self.assertIsInstance(self.catalog.get_config_json(), str)
-        self.assertEqual(to_config("china"), {"list": "china", "preset": "china"})
+        self.assertEqual(to_config("china"), {"list": "china", "preset": "china", "filters": {"callable": True}})
         self.assertIsInstance(to_config_json("china"), str)
+
+        # Complete list remains raw without default callable filter
+        self.assertEqual(to_config("complete"), {"list": "complete"})
+        self.assertEqual(to_config({"filters": {"callable": False}}), {"list": "default", "filters": {"callable": False}})
 
 
     def test_limits(self):
@@ -220,7 +224,7 @@ class CoreTests(unittest.TestCase):
             m["id"]
             for m in bundled_cat.get_models({
                 "providerIds": ["openai", "google"],
-                "filters": {"output": [Modality.TEXT]},
+                "filters": {"output": [Modality.TEXT], "callable": False},
             })
         ]
         self.assertNotIn("openai/chatgpt-image-latest", bundled_text_only)
@@ -230,7 +234,7 @@ class CoreTests(unittest.TestCase):
             m["id"]
             for m in bundled_cat.get_models({
                 "providerIds": ["openai"],
-                "filters": {"output": Contain([Modality.TEXT])},
+                "filters": {"output": Contain([Modality.TEXT]), "callable": False},
             })
         ]
         self.assertIn("openai/chatgpt-image-latest", bundled_contain)
@@ -257,6 +261,23 @@ class CoreTests(unittest.TestCase):
         self.assertTrue(len(bundled_grouped["openai"]) > 0)
         self.assertTrue(all(m["provider"]["id"] == "anthropic" for m in bundled_grouped["anthropic"]))
         self.assertTrue(all(m["provider"]["id"] == "openai" for m in bundled_grouped["openai"]))
+
+    def test_callable_default_and_override(self):
+        from byokit import load_catalog
+        bundled_cat = load_catalog()
+        default_callable = bundled_cat.get_models({"providerIds": ["openai"], "local": False})
+        self.assertGreater(len(default_callable), 0)
+        self.assertTrue(all(m.get("callSupport", {}).get("textGeneration") is True for m in default_callable))
+        self.assertFalse(any(m["id"] == "openai/chatgpt-image-latest" for m in default_callable))
+
+        explicit_non_callable = bundled_cat.get_models({
+            "providerIds": ["openai"],
+            "local": False,
+            "filters": {"callable": False},
+        })
+        self.assertGreater(len(explicit_non_callable), 0)
+        self.assertTrue(all(m.get("callSupport", {}).get("textGeneration") is False for m in explicit_non_callable))
+        self.assertTrue(any(m["id"] == "openai/chatgpt-image-latest" for m in explicit_non_callable))
 
 
 

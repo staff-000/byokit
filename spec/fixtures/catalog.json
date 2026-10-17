@@ -81,6 +81,10 @@
         "source": "https://example.com/test-fixture",
         "checkedAt": "2026-10-11T00:00:00Z",
         "basis": "provider"
+      },
+      "callSupport": {
+        "textGeneration": true,
+        "reason": null
       }
     },
     {
@@ -129,6 +133,10 @@
         "source": "https://example.com/test-fixture",
         "checkedAt": "2026-10-11T00:00:00Z",
         "basis": "provider"
+      },
+      "callSupport": {
+        "textGeneration": true,
+        "reason": null
       }
     },
     {
@@ -177,6 +185,10 @@
         "source": "https://example.com/test-fixture",
         "checkedAt": "2026-10-11T00:00:00Z",
         "basis": "provider"
+      },
+      "callSupport": {
+        "textGeneration": true,
+        "reason": null
       }
     },
     {
@@ -219,7 +231,11 @@
       "tags": [
         "input:text",
         "cap:functionCalling"
-      ]
+      ],
+      "callSupport": {
+        "textGeneration": true,
+        "reason": null
+      }
     }
   ],
   "presets": [

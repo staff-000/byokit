@@ -520,7 +520,12 @@ def matches(o, m, config, provider_tags=None):
         ):
             return False
     support = o.get("callSupport") or call_support_for(o)
-    if "callable" in f and support["textGeneration"] != f["callable"]:
+    callable_filter = (
+        f.get("callable")
+        if "callable" in f
+        else (None if config.get("list") in (ModelList.COMPLETE, "complete") else True)
+    )
+    if callable_filter is not None and support["textGeneration"] != callable_filter:
         return False
     include_retired = f.get("includeDeprecated") is True or (
         config.get("list") == ModelList.COMPLETE and f.get("includeDeprecated") is not False
@@ -1694,6 +1699,11 @@ def _normalize_query(input=None, options=None):
         filters = dict(config.get("filters") or {})
         filters["official"] = True
         config["filters"] = filters
+    if config.get("list") not in (ModelList.COMPLETE, "complete"):
+        filters = dict(config.get("filters") or {})
+        if "callable" not in filters:
+            filters["callable"] = True
+        config["filters"] = filters
     if "filters" in config and isinstance(config["filters"], dict):
         f = dict(config["filters"])
         if "input" in f and f["input"] is not None:
@@ -1819,7 +1829,7 @@ def _local_groups(config, catalog):
     if (
         _has_modality_filter(config.get("filters", {}).get("input"))
         or _has_modality_filter(config.get("filters", {}).get("output"))
-        or "callable" in config.get("filters", {})
+        or config.get("filters", {}).get("callable") is False
         or config.get("filters", {}).get("official") is True
         or config.get("local") is False
         or "deployment" in config.get("filters", {})

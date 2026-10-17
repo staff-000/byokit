@@ -495,9 +495,11 @@ function matches(o, m, c, providerTags = []) {
       (!finite(value) ? !unknown(c) : op === 'min' ? value < bound : value > bound)
     )
       return false;
+  const callable =
+    f.callable !== undefined ? f.callable : c.list === ModelList.Complete ? undefined : true;
   if (
-    f.callable !== undefined &&
-    (o.callSupport?.textGeneration ?? callSupportFor(o).textGeneration) !== f.callable
+    callable !== undefined &&
+    (o.callSupport?.textGeneration ?? callSupportFor(o).textGeneration) !== callable
   )
     return false;
   const lifecycle =
@@ -1420,6 +1422,13 @@ function normalizeQuery(input = {}, options) {
     config.preset = 'official';
     config.filters = { ...config.filters, official: true };
   }
+  if (config.list !== ModelList.Complete && config.list !== 'complete') {
+    const f = { ...(config.filters || {}) };
+    if (f.callable === undefined) {
+      f.callable = true;
+    }
+    config.filters = f;
+  }
   if (config.filters) {
     const f = { ...config.filters };
     if (f.input !== undefined && f.input !== null) {
@@ -1484,7 +1493,7 @@ function localGroups(config, catalog) {
   if (
     hasModalityFilter(config.filters?.input) ||
     hasModalityFilter(config.filters?.output) ||
-    config.filters?.callable !== undefined ||
+    config.filters?.callable === false ||
     config.filters?.official === true ||
     config.local === false ||
     (config.filters?.deployment && !config.filters.deployment.includes(Deployment.Local))
