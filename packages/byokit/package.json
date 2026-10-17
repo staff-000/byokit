@@ -19,6 +19,10 @@
       "types": "./enums.d.ts",
       "default": "./enums.js"
     },
+    "./client": {
+      "types": "./client.d.ts",
+      "default": "./client.js"
+    },
     "./dom": {
       "types": "./dom/index.d.ts",
       "default": "./dom/index.js"
@@ -38,6 +42,10 @@
   "files": [
     "index.js",
     "index.d.ts",
+    "core.js",
+    "core.d.ts",
+    "client.js",
+    "client.d.ts",
     "catalog.js",
     "catalog.d.ts",
     "enums.js",

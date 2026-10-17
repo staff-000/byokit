@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 1,
+  "id": "2026-10-17T10-30-39-259Z",
+  "startedAt": "2026-10-17T10:30:10.889Z",
+  "completedAt": "2026-10-17T10:30:39.259Z",
+  "commit": "cd1e4c28f43f453035078cc4651cbf85b6e97996",
+  "sourceDirty": true,
+  "sourceDigest": "b445afa50c7db31959aef2e95d1682c44f54eda10f655e8236edaa59c4f23f6c",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "nodeVersion": "v23.7.0",
+  "checks": [
+    {
+      "id": "javascript",
+      "name": "JavaScript tests",
+      "command": [
+        "node",
+        "--test",
+        "--test-reporter=spec",
+        "tests/batch-verification.test.mjs",
+        "tests/call.test.mjs",
+        "tests/catalog-coverage.test.mjs",
+        "tests/cli.test.mjs",
+        "tests/conformance.test.mjs",
+        "tests/contributor-badges.test.mjs",
+        "tests/core.test.mjs",
+        "tests/enums.test.mjs",
+        "tests/import-lifecycle.test.mjs",
+        "tests/local.test.mjs",
+        "tests/nightly-catalog.test.mjs",
+        "tests/playground.test.mjs",
+        "tests/publication.test.mjs",
+        "tests/query.test.mjs",
+        "tests/request-examples.test.mjs",
+        "tests/schema.test.mjs",
+        "tests/sdk.test.mjs",
+        "tests/signals.test.mjs",
+        "tests/simple-api.test.mjs",
+        "tests/sort-custom.test.mjs",
+        "tests/ui.test.mjs",
+        "tests/verification-page.test.mjs",
+        "tests/website-catalog.test.mjs",
+        "tests/website-inference.test.mjs"
+      ],
+      "status": "passed",
+      "durationMs": 14773,
+      "exitCode": 0,
+      "tests": {
+        "total": 134,
+        "passed": 134
+      },
+      "outputSha256": "87e6b7d89635e1502f2c5a9b0c320c070ad2d21dc6ef6302ac30cdc3369ecac8"
+    },
+    {
+      "id": "python",
+      "name": "Python tests",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "packages/python/tests",
+        "-v"
+      ],
+      "status": "passed",
+      "durationMs": 4438,
+      "exitCode": 0,
+      "tests": {
+        "total": 28,
+        "passed": 28
+      },
+      "outputSha256": "be37ebc6e993db34d97ef30dcf3ececb7682a0876095868119983edbf71bac30"
+    },
+    {
+      "id": "typescript",
+      "name": "TypeScript types",
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "status": "passed",
+      "durationMs": 578,
+      "exitCode": 0,
+      "outputSha256": "ef08b2fdd16e665f07cdbfcf218255f925b22862307652c07ce4852595c32de4"
+    },
+    {
+      "id": "python-types",
+      "name": "Python types",
+      "command": [
+        "npm",
+        "run",
+        "typecheck:python"
+      ],
+      "status": "passed",
+      "durationMs": 662,
+      "exitCode": 0,
+      "outputSha256": "4f203a09c393d73f152f03e77acf5f93a33f105f94dbe839e0753eb84e29754c"
+    },
+    {
+      "id": "catalog",
+      "name": "Catalog and budget check",
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "status": "passed",
+      "durationMs": 946,
+      "exitCode": 0,
+      "outputSha256": "1b6e8b5c6b57e57a34b43db6f5805da89dce50d483818f66259b74cd56f043e3"
+    },
+    {
+      "id": "budget",
+      "name": "Strict task budget check",
+      "command": [
+        "npm",
+        "run",
+        "check:budget"
+      ],
+      "status": "passed",
+      "durationMs": 580,
+      "exitCode": 0,
+      "outputSha256": "563fdf5ed49668fff588b6c86d092397326bb0f9dac241e503bb6434c574d7ec"
+    },
+    {
+      "id": "sample-build",
+      "name": "Sample catalog build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "status": "passed",
+      "durationMs": 961,
+      "exitCode": 0,
+      "outputSha256": "88d0e9c5a9f7f9fbc865ebac4bbaee8b399316dd013c23849ef557be521e4f28"
+    },
+    {
+      "id": "website-build",
+      "name": "Static website build",
+      "command": [
+        "npm",
+        "run",
+        "site:build"
+      ],
+      "status": "passed",
+      "durationMs": 5302,
+      "exitCode": 0,
+      "outputSha256": "edd2f2b209248e77a57d432aad9fc4a2f79e4a6077747789704c1b19b2b9dd4b"
+    },
+    {
+      "id": "website-browser",
+      "name": "Website Chrome smoke",
+      "command": [
+        "node",
+        "scripts/site-smoke.mjs"
+      ],
+      "status": "not-run",
+      "durationMs": 0,
+      "exitCode": null
+    }
+  ]
+}

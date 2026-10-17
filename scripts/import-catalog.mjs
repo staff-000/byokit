@@ -445,9 +445,16 @@ if (i < 0) {
   await mkdir(python, { recursive: true });
   await writeFile(
     new URL('catalog.js', byokitPkg),
-    'import {Catalog} from "./index.js";\nconst data=' +
+    'import {Catalog} from "./core.js";\nconst data=' +
       JSON.stringify(catalog) +
-      ';\nexport default data;\nexport * from \"./index.js\";\nlet defaultCatalog;\nexport function getModels(input={},options){if(!defaultCatalog)defaultCatalog=new Catalog(data);return defaultCatalog.getModels(input,options)}\n',
+      ';\nexport default data;\nexport * from "./core.js";\nlet defaultCatalog;\nlet warned=false;\nexport function getModels(input={},options){\n' +
+      '  if(!warned&&!globalThis.__BYOKIT_NO_RUNTIME_WARNING__&&!(typeof process!=="undefined"&&process?.env?.BYOKIT_NO_RUNTIME_WARNING)){\n' +
+      '    warned=true;\n' +
+      '    console.warn("[byokit] Tip: byokit.getModels() evaluated the full bundled catalog at runtime. For production apps with a fixed query, precompile your model list at build time (`npx byokit build byok.config.json --out models.js`) to avoid bundling and querying the full catalog. Set BYOKIT_NO_RUNTIME_WARNING=1 to silence this message.");\n' +
+      '  }\n' +
+      '  if(!defaultCatalog)defaultCatalog=new Catalog(data);\n' +
+      '  return defaultCatalog.getModels(input,options);\n' +
+      '}\n',
   );
   await writeFile(new URL('catalog.json', python), JSON.stringify(catalog) + '\n');
 }

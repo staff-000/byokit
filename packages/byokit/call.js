@@ -1,6 +1,6 @@
 import { ApiProtocol, FeatureName, Role } from './enums.js';
 import { connectionFor } from './connection.js';
-import { checkFit } from './index.js';
+import { checkFit } from './core.js';
 export class CallError extends Error {
   constructor(code, message, diagnostics = [], status) {
     super(message);

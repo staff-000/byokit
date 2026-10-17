@@ -1130,10 +1130,28 @@ def matches_verification(data, oid, config):
     return status != "passed" if f.get("verified") is False else status == "passed"
 
 
+_WARNED_RUNTIME = False
+
+
 def get_models(
     config: "PickerConfig | ModelList | None" = None,
     options: "PickerConfig | None" = None,
 ) -> list[dict]:
+    global _WARNED_RUNTIME
+    import os
+
+    if not _WARNED_RUNTIME and not os.environ.get("BYOKIT_NO_RUNTIME_WARNING"):
+        _WARNED_RUNTIME = True
+        import warnings
+
+        warnings.warn(
+            "[byokit] Tip: byokit.get_models() evaluated the full bundled catalog at runtime. "
+            "For production apps with a fixed query, precompile your model list at build time "
+            "(`byokit build byok.config.json --out generated_models.py`) to avoid loading and querying "
+            "the full catalog. Set BYOKIT_NO_RUNTIME_WARNING=1 to silence this message.",
+            UserWarning,
+            stacklevel=2,
+        )
     return load_catalog().get_models(config, options)
 
 

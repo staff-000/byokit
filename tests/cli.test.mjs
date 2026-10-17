@@ -96,3 +96,136 @@ test('CLI surfaces descriptive error message on invalid input and exits with 2',
   assert.equal(result.status, 2);
   assert.match(result.stderr, /Error:/);
 });
+
+test('CLI build supports omitted catalog, precompiled models.js, and generated_models.py', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'byokit-precompiled-'));
+  const configFile = join(dir, 'byok.config.json');
+  // Omit "catalog" to test default bundled catalog usage
+  writeFileSync(
+    configFile,
+    JSON.stringify({
+      list: 'official',
+      local: false,
+      sort: 'alphabeticalAscend',
+      filters: {
+        callable: true,
+      },
+    }),
+  );
+
+  // 1. Build precompiled models.js
+  const jsOut = join(dir, 'models.js');
+  const buildJs = spawnSync(
+    'node',
+    ['packages/byokit/bin.mjs', 'build', configFile, '--out', jsOut],
+    { encoding: 'utf8' },
+  );
+  assert.equal(buildJs.status, 0, buildJs.stderr);
+  assert.match(buildJs.stdout, /Built precompiled model list/);
+
+  // Check generated files
+  const jsContent = readFileSync(jsOut, 'utf8');
+  assert.match(jsContent, /export const models = Object\.freeze/);
+  assert.match(jsContent, /export function getModels\(\)/);
+  assert.match(jsContent, /export const OfferingId=Object\.freeze/);
+
+  const dtsContent = readFileSync(join(dir, 'models.d.ts'), 'utf8');
+  assert.match(dtsContent, /export declare enum OfferingId/);
+  assert.match(dtsContent, /export declare function getModels\(\): PrecompiledModel\[\]/);
+
+  const lockContent = JSON.parse(readFileSync(join(dir, 'models.js.lock.json'), 'utf8'));
+  assert.equal(lockContent.schemaVersion, 1);
+  assert.ok(lockContent.upstreamHash);
+  assert.ok(lockContent.configHash);
+
+  // Import generated module and verify runtime behavior
+  writeFileSync(join(dir, 'package.json'), JSON.stringify({ type: 'module' }));
+  const precompiledModule = await import(pathToFileURL(jsOut).href);
+  assert.ok(Array.isArray(precompiledModule.models));
+  assert.ok(precompiledModule.models.length > 0);
+  assert.deepEqual(precompiledModule.getModels(), precompiledModule.models);
+  // Verify safe cloning (mutating returned array doesn't mutate precompiledModule.models)
+  const copy = precompiledModule.getModels();
+  copy.pop();
+  assert.notEqual(copy.length, precompiledModule.models.length);
+
+  // Typecheck generated models.d.ts
+  const sampleTs = join(dir, 'test-models.ts');
+  const sampleOfferingId = Object.values(precompiledModule.OfferingId)[0];
+  writeFileSync(
+    sampleTs,
+    `import { models, getModels, OfferingId } from './models.js';
+const list = getModels();
+const first = models[0];
+const id: OfferingId = OfferingId[${JSON.stringify(sampleOfferingId)}];
+`,
+  );
+  const checkedTs = spawnSync(
+    process.execPath,
+    [
+      'node_modules/typescript/bin/tsc',
+      '--noEmit',
+      '--strict',
+      '--target',
+      'ES2022',
+      '--module',
+      'NodeNext',
+      '--moduleResolution',
+      'NodeNext',
+      sampleTs,
+    ],
+    { encoding: 'utf8' },
+  );
+  assert.equal(checkedTs.status, 0, checkedTs.stdout + checkedTs.stderr);
+
+  // 2. Build precompiled Python module models.py
+  const pyOut = join(dir, 'generated_models.py');
+  const buildPy = spawnSync(
+    'node',
+    ['packages/byokit/bin.mjs', 'build', configFile, '--out', pyOut],
+    { encoding: 'utf8' },
+  );
+  assert.equal(buildPy.status, 0, buildPy.stderr);
+  assert.match(buildPy.stdout, /Built precompiled Python model list/);
+
+  const pyContent = readFileSync(pyOut, 'utf8');
+  assert.match(pyContent, /MODELS: list\[dict\] =/);
+  assert.match(pyContent, /def get_models\(\) -> list\[dict\]:/);
+  assert.match(pyContent, /class OfferingId\(str, Enum\):/);
+
+  // Execute generated Python module
+  const testPy = spawnSync(
+    'python3',
+    [
+      '-c',
+      `import sys; sys.path.insert(0, ${JSON.stringify(dir)}); import generated_models; models = generated_models.get_models(); assert len(models) == ${precompiledModule.models.length}; assert isinstance(generated_models.OfferingId, type); print("OK")`,
+    ],
+    { encoding: 'utf8' },
+  );
+  assert.equal(testPy.status, 0, testPy.stderr);
+  assert.match(testPy.stdout, /OK/);
+});
+
+test('byokit/client subpath exports client SDK and call helpers without loading catalog.js', async () => {
+  // Test via isolated child process measuring memory/evaluated modules
+  const checkClient = spawnSync(
+    'node',
+    [
+      '--input-type=module',
+      '-e',
+      `import { OpenAI, Anthropic, call, checkFit, FeatureName } from 'byokit/client';
+if (typeof OpenAI !== 'function' || typeof Anthropic !== 'function' || typeof call !== 'function') {
+  process.exit(1);
+}
+// Confirm catalog data is NOT imported
+if (globalThis.__byokit_catalog_loaded__) {
+  process.exit(2);
+}
+console.log('CLIENT_OK');
+`,
+    ],
+    { encoding: 'utf8' },
+  );
+  assert.equal(checkClient.status, 0, checkClient.stderr);
+  assert.match(checkClient.stdout, /CLIENT_OK/);
+});

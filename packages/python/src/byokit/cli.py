@@ -1,8 +1,9 @@
 import argparse
 import hashlib
 import json
+import re
 from pathlib import Path
-from . import Catalog, check_task, validate_config
+from . import Catalog, check_task, validate_config, load_catalog
 
 
 def main():
@@ -20,8 +21,12 @@ def main():
         errors = validate_config(config)
         if errors:
             raise ValueError("; ".join(errors))
-        raw = (path.parent / config["catalog"]).read_text()
-        catalog = Catalog(json.loads(raw))
+        if config.get("catalog"):
+            raw = (path.parent / config["catalog"]).read_text()
+            catalog = Catalog(json.loads(raw))
+        else:
+            catalog = load_catalog()
+            raw = json.dumps(catalog.data)
         groups = catalog.select(config)
         tasks = config.get("tasks", [])
         if not tasks and config.get("budget"):
@@ -66,6 +71,158 @@ def main():
         if args.command == "build":
             if not args.out:
                 raise ValueError("build requires --out")
+            output = Path(args.out)
+            output.parent.mkdir(parents=True, exist_ok=True)
+
+            if args.out.endswith(".py"):
+                precompiled = catalog.get_models(config)
+                registry = {
+                    "OfferingId": list(dict.fromkeys(o["id"] for o in precompiled)),
+                    "ModelId": list(dict.fromkeys(o["apiModelId"] for o in precompiled)),
+                }
+                for feature in ["functionCalling", "strictJsonSchema", "thinking"]:
+                    key = feature[0].upper() + feature[1:] + "OfferingId"
+                    registry[key] = list(
+                        dict.fromkeys(
+                            o["id"]
+                            for o in precompiled
+                            if o.get("features", {}).get(feature, {}).get("status")
+                            == "supported"
+                        )
+                    )
+
+                def to_py_ident(s):
+                    ident = re.sub(r"[^a-zA-Z0-9]+", "_", s).strip("_").upper()
+                    if not ident or ident[0].isdigit():
+                        ident = "_" + ident
+                    return ident
+
+                py_enums = []
+                for name, values in registry.items():
+                    seen = set()
+                    lines = []
+                    for v in values:
+                        member = to_py_ident(v)
+                        while member in seen:
+                            member += "_"
+                        seen.add(member)
+                        lines.append(f'    {member} = "{v}"')
+                    body = "\n".join(lines) if lines else "    pass"
+                    py_enums.append(f"class {name}(str, Enum):\n{body}")
+
+                raw_json = json.dumps(precompiled)
+                py_content = (
+                    '"""Precompiled BYOKit model list generated at build time."""\n'
+                    "from enum import Enum\n"
+                    "import copy\n"
+                    "import json\n\n"
+                    f"MODELS: list[dict] = json.loads({json.dumps(raw_json)})\n\n"
+                    "def get_models() -> list[dict]:\n"
+                    "    return copy.deepcopy(MODELS)\n\n"
+                    + "\n\n".join(py_enums)
+                    + "\n"
+                )
+                output.write_text(py_content)
+                Path(str(output) + ".lock.json").write_text(
+                    json.dumps(
+                        {
+                            "schemaVersion": 1,
+                            "upstreamHash": hashlib.sha256(raw.encode()).hexdigest(),
+                            "configHash": hashlib.sha256(
+                                json.dumps(config).encode()
+                            ).hexdigest(),
+                        },
+                        indent=2,
+                    )
+                    + "\n"
+                )
+                print(
+                    f"Built precompiled Python model list ({len(precompiled)} models) → {output}"
+                )
+                return 0
+
+            if args.out.endswith((".js", ".mjs")):
+                precompiled = catalog.get_models(config)
+                registry = {
+                    "OfferingId": list(dict.fromkeys(o["id"] for o in precompiled)),
+                    "ModelId": list(dict.fromkeys(o["apiModelId"] for o in precompiled)),
+                }
+                for feature in ["functionCalling", "strictJsonSchema", "thinking"]:
+                    key = feature[0].upper() + feature[1:] + "OfferingId"
+                    registry[key] = list(
+                        dict.fromkeys(
+                            o["id"]
+                            for o in precompiled
+                            if o.get("features", {}).get(feature, {}).get("status")
+                            == "supported"
+                        )
+                    )
+
+                declarations = []
+                runtime_entries = []
+                for name, values in registry.items():
+                    members = ",\n".join(
+                        f"  {json.dumps(v)} = {json.dumps(v)}" for v in values
+                    )
+                    declarations.append(f"export declare enum {name} {{\n{members}\n}}")
+                    rt = json.dumps({v: v for v in values})
+                    runtime_entries.append(f"export const {name}=Object.freeze({rt});")
+
+                js_content = (
+                    f"export const models = Object.freeze({json.dumps(precompiled, indent=2)});\n"
+                    "export function getModels() {\n"
+                    "  return structuredClone(models);\n"
+                    "}\n"
+                    + "\n".join(runtime_entries)
+                    + "\n"
+                )
+                output.write_text(js_content)
+                dts_content = (
+                    "export type PrecompiledModel = {\n"
+                    "  id: string;\n"
+                    "  providerId: string;\n"
+                    "  modelId: string;\n"
+                    "  apiModelId: string;\n"
+                    "  name: string;\n"
+                    "  deployment: string;\n"
+                    "  connection?: { baseUrl: string; protocol: string };\n"
+                    "  callSupport?: { textGeneration: boolean; reason: string | null };\n"
+                    "  limits?: Record<string, any>;\n"
+                    "  features?: Record<string, any>;\n"
+                    "  price?: Record<string, any>;\n"
+                    "  tags?: string[];\n"
+                    "  provider?: Record<string, any>;\n"
+                    "  model?: Record<string, any>;\n"
+                    "  family?: Record<string, any> | null;\n"
+                    "  logos?: { provider?: string | null; family?: string | null };\n"
+                    "  verification?: Record<string, any>;\n"
+                    "  [key: string]: any;\n"
+                    "};\n"
+                    "export declare const models: readonly PrecompiledModel[];\n"
+                    "export declare function getModels(): PrecompiledModel[];\n"
+                    + "\n".join(declarations)
+                    + "\n"
+                )
+                dts_output = output.with_suffix(".d.ts")
+                dts_output.write_text(dts_content)
+                Path(str(output) + ".lock.json").write_text(
+                    json.dumps(
+                        {
+                            "schemaVersion": 1,
+                            "upstreamHash": hashlib.sha256(raw.encode()).hexdigest(),
+                            "configHash": hashlib.sha256(
+                                json.dumps(config).encode()
+                            ).hexdigest(),
+                        },
+                        indent=2,
+                    )
+                    + "\n"
+                )
+                print(
+                    f"Built precompiled model list ({len(precompiled)} models) → {output}"
+                )
+                return 0
+
             data = catalog.data.copy()
             data["providers"] = [g["provider"] for g in groups]
             data["offerings"] = [o for g in groups for o in g["offerings"]]
@@ -89,14 +246,15 @@ def main():
                     "providerIds": [p["id"] for p in data["providers"]],
                 }
             ]
-            output = Path(args.out)
-            output.parent.mkdir(parents=True, exist_ok=True)
             output.write_text(json.dumps(data, indent=2) + "\n")
             Path(str(output) + ".lock.json").write_text(
                 json.dumps(
                     {
                         "schemaVersion": 1,
                         "upstreamHash": hashlib.sha256(raw.encode()).hexdigest(),
+                        "configHash": hashlib.sha256(
+                            json.dumps(config).encode()
+                        ).hexdigest(),
                     },
                     indent=2,
                 )
@@ -104,8 +262,8 @@ def main():
             )
         print(f"Checked {len(groups)} providers; {len(diagnostics)} diagnostics.")
         return 0
-    except (ValueError, KeyError, OSError, TypeError):
-        print("Invalid configuration or catalog. Run with a valid local config file.")
+    except (ValueError, KeyError, OSError, TypeError) as err:
+        print(f"Invalid configuration or catalog. Run with a valid local config file. ({err})")
         return 2
 
 

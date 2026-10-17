@@ -1,4 +1,4 @@
-import json, sys, unittest
+import json, os, sys, unittest
 from pathlib import Path
 
 root = Path(__file__).resolve().parents[3]
@@ -66,3 +66,37 @@ class CatalogCallSupportTests(unittest.TestCase):
             with self.assertRaisesRegex(CallError, "Unsupported model operation"):
                 call(model, {"messages": [{"role": "user", "content": "Hi"}]}, "key", {"runtime_checks": False})
             connection.assert_not_called()
+
+
+class CLITests(unittest.TestCase):
+    def test_cli_precompiled_build(self):
+        import subprocess, tempfile
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_file = Path(tmpdir) / "byok.config.json"
+            config_file.write_text(json.dumps({
+                "list": "official",
+                "local": False,
+                "sort": "alphabeticalAscend",
+                "filters": {"callable": True},
+            }))
+            py_out = Path(tmpdir) / "generated_models.py"
+            env = {"PYTHONPATH": str(root / "packages/python/src"), "PATH": os.environ.get("PATH", "")}
+            result = subprocess.run(
+                [sys.executable, "-m", "byokit.cli", "build", str(config_file), "--out", str(py_out)],
+                capture_output=True,
+                text=True,
+                env=env,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue(py_out.exists())
+            self.assertTrue(Path(str(py_out) + ".lock.json").exists())
+            self.assertIn("MODELS", py_out.read_text())
+            self.assertIn("class OfferingId", py_out.read_text())
+
+            check_run = subprocess.run(
+                [sys.executable, "-c", f"import sys; sys.path.insert(0, {json.dumps(tmpdir)}); import generated_models; m = generated_models.get_models(); assert len(m) > 0; print('OK')"],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(check_run.returncode, 0, check_run.stderr)
+            self.assertIn("OK", check_run.stdout)

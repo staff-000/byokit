@@ -52,12 +52,22 @@ Estimates and multimodal overhead must be explicit. There is no model substituti
 or automatic truncation.
 
 ```bash
-node packages/byokit/bin.mjs check examples/task.config.json --strict
-node packages/byokit/bin.mjs build examples/byok.config.json --out /tmp/byok-catalog.json
+# Check budgets offline
+byokit check examples/task.config.json --strict
+
+# Build precompiled static model list (recommended for production):
+byokit build examples/byok.config.json --out src/generated/models.js
+# Or for Python:
+byokit build examples/byok.config.json --out app/generated_models.py
+# Or pruned catalog JSON (for custom catalogs):
+byokit build examples/byok.config.json --out /tmp/byok-catalog.json
 ```
 
 Strict mode fails warnings. CLI exit codes: 0 success, 1 failed checks, 2 invalid config.
-Builds use local snapshots and emit reduced metadata, a lockfile and TS ID unions.
+When `--out` targets `.js` (or `.mjs`), the build pre-evaluates `getModels(config)` once and generates `models.js` plus `models.d.ts` exporting pre-computed `models`, `getModels()`, and `OfferingId`/`ModelId` enums.
+Combine this with `import { OpenAI, Role, call } from 'byokit/client'` to avoid bundling the 20 MB catalog at runtime.
+Python generates `generated_models.py` exporting `MODELS`, `get_models()`, and `OfferingId` enum classes.
+`config.catalog` is optional; when omitted, builds automatically use the bundled catalog snapshot.
 
 ## Local discovery and logos
 

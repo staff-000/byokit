@@ -204,9 +204,10 @@ Run `npm install` and `npm run verify` before proposing a change.
 Successful website checks can be shared through GitHub Issues; published records
 attribute the contributor and award a Model Verifier badge. API keys never enter reports.
 
-Build-time budgets: declare `budget.maxInputTokens` and `maxOutputTokens`, then
-run `byokit check config.json`. Known limit violations fail; missing/unknown
-limits warn. [Design](docs/design.md) · [Integration](docs/integration.md) · [Verification](docs/verification.md)
+Build-time models & budgets: declare your query in `byok.config.json` and run:
+
+- `byokit build byok.config.json --out src/generated/models.js` (or Python `--out app/generated_models.py`) to evaluate your model query once at build time and emit a lightweight static module (~10 KB vs 20 MB). Pair with `import { OpenAI, Role } from 'byokit/client'` to completely avoid bundling the catalog.
+- `byokit check config.json`: verify task input/output token budgets offline. Known limit violations fail; missing/unknown limits warn. [Design](docs/design.md) · [Integration](docs/integration.md) · [Verification](docs/verification.md)
 
 ## Scheduled releases and catalog refresh
 
