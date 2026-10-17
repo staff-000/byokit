@@ -191,6 +191,54 @@ export function validateCatalog(data) {
   errors.push(...validateVerifications(data.verifications || [], data));
   return errors;
 }
+const dateParseCache = new Map();
+export const parseEpoch = (str) => {
+  let val = dateParseCache.get(str);
+  if (val === undefined) {
+    val = Date.parse(str);
+    dateParseCache.set(str, val);
+  }
+  return val;
+};
+export function parseReleasedWithinDays(val) {
+  if (typeof val === 'number') {
+    return val > 0 && Number.isFinite(val) ? val : undefined;
+  }
+  if (typeof val === 'string') {
+    const s = val
+      .trim()
+      .toLowerCase()
+      .replace(/^released?:/, '');
+    if (s === '1m' || s === '1month' || s === '1-month' || s === '30d') return 30;
+    if (s === '3m' || s === '3months' || s === '3-months' || s === '90d') return 90;
+    if (s === '6m' || s === '6months' || s === '6-months' || s === '180d') return 180;
+    if (s === '1y' || s === '1year' || s === '1-year' || s === '365d') return 365;
+    if (s === '2y' || s === '2years' || s === '2-years' || s === '730d') return 730;
+    const num = Number(s);
+    if (Number.isFinite(num) && num > 0) return num;
+  }
+  return undefined;
+}
+export function getReleaseTags(releaseDate, asOf) {
+  if (!releaseDate || typeof releaseDate !== 'string') return [];
+  const norm = /^\d{4}-\d{2}$/.test(releaseDate)
+    ? releaseDate + '-01T00:00:00Z'
+    : releaseDate.includes('T')
+      ? releaseDate
+      : releaseDate + 'T00:00:00Z';
+  const epoch = parseEpoch(norm);
+  if (!Number.isFinite(epoch)) return [];
+  const now = asOf === undefined ? Date.now() : parseEpoch(asOf);
+  const ageDays = (now - epoch) / 86400000;
+  if (ageDays < -1) return [];
+  const tags = [];
+  if (ageDays <= 30) tags.push('release:1m', 'released:1m');
+  if (ageDays <= 90) tags.push('release:3m', 'released:3m');
+  if (ageDays <= 180) tags.push('release:6m', 'released:6m');
+  if (ageDays <= 365) tags.push('release:1y', 'released:1y');
+  if (ageDays <= 730) tags.push('release:2y', 'released:2y');
+  return tags;
+}
 export function validateConfig(c = {}) {
   const errors = [];
   if (c.sort !== undefined && !Object.values(ModelSort).includes(c.sort))
@@ -250,6 +298,7 @@ export function validateConfig(c = {}) {
       'verifiedBy',
       'verifiedWithinDays',
       'official',
+      'releasedWithin',
     ],
     prefer: ['features', 'lowerCost'],
     ui: ['maxProviders', 'maxModelsPerProvider', 'allowCustomModel'],
@@ -360,6 +409,13 @@ export function validateConfig(c = {}) {
     (!finite(c.filters.verifiedWithinDays) || c.filters.verifiedWithinDays < 1)
   )
     errors.push('verifiedWithinDays must be positive');
+  if (
+    c.filters?.releasedWithin !== undefined &&
+    parseReleasedWithinDays(c.filters.releasedWithin) === undefined
+  )
+    errors.push(
+      'filters.releasedWithin must be a valid duration (e.g. 1m, 3m, 6m, 1y, 2y) or positive number of days',
+    );
   const vocab = {
     requiredFeatures: FeatureName,
     deployment: Deployment,
@@ -452,15 +508,46 @@ function matches(o, m, c, providerTags = []) {
       : [Lifecycle.Live, Lifecycle.Uncertain]);
   if (!lifecycle.includes(o.lifecycle.status)) return false;
   if (f.popularity && !f.popularity.includes(o.popularity.status)) return false;
+  if (f.releasedWithin !== undefined) {
+    const maxDays = parseReleasedWithinDays(f.releasedWithin);
+    if (maxDays === undefined) return false;
+    const rDate = o.releaseDate || m?.releaseDate;
+    if (!rDate) {
+      if (!unknown(c)) return false;
+    } else {
+      const norm = /^\d{4}-\d{2}$/.test(rDate)
+        ? rDate + '-01T00:00:00Z'
+        : rDate.includes('T')
+          ? rDate
+          : rDate + 'T00:00:00Z';
+      const epoch = parseEpoch(norm);
+      if (!Number.isFinite(epoch)) {
+        if (!unknown(c)) return false;
+      } else {
+        const now = c.asOf === undefined ? Date.now() : parseEpoch(c.asOf);
+        const ageDays = (now - epoch) / 86400000;
+        if (ageDays < -1 || ageDays > maxDays) return false;
+      }
+    }
+  }
   if ((f.includeTags && f.includeTags.length > 0) || (f.excludeTags && f.excludeTags.length > 0)) {
     const tags = new Set([
       ...[...(m.tags || []), ...providerTags].filter(
-        (t) => !t.startsWith('lifecycle:') && !t.startsWith('popularity:'),
+        (t) =>
+          !t.startsWith('lifecycle:') &&
+          !t.startsWith('popularity:') &&
+          !t.startsWith('release:') &&
+          !t.startsWith('released:'),
       ),
       ...(o.tags || []),
     ]);
     if (isFlashModel(o, m)) {
       tags.add('model:flash');
+    }
+    if (o.releaseDate) {
+      for (const t of getReleaseTags(o.releaseDate, c.asOf)) tags.add(t);
+    } else if (m?.releaseDate) {
+      for (const t of getReleaseTags(m.releaseDate, c.asOf)) tags.add(t);
     }
     if (
       (f.includeTags || []).some((t) => !tags.has(t)) ||
@@ -1244,15 +1331,6 @@ function validateSignals(o) {
     errors.push(`${o.id}: invalid popularity evidence`);
   return errors;
 }
-const dateParseCache = new Map();
-const parseEpoch = (str) => {
-  let val = dateParseCache.get(str);
-  if (val === undefined) {
-    val = Date.parse(str);
-    dateParseCache.set(str, val);
-  }
-  return val;
-};
 function withSignals(o, asOf) {
   const now = asOf === undefined ? Date.now() : parseEpoch(asOf),
     l = o.lifecycleEvidence,
@@ -1281,13 +1359,23 @@ function withSignals(o, asOf) {
     evidence: p || null,
   };
   const tags = (o.tags || []).filter(
-    (t) => !t.startsWith('lifecycle:') && !t.startsWith('popularity:'),
+    (t) =>
+      !t.startsWith('lifecycle:') &&
+      !t.startsWith('popularity:') &&
+      !t.startsWith('release:') &&
+      !t.startsWith('released:'),
   );
+  const releaseTags = getReleaseTags(o.releaseDate, asOf);
   return {
     ...o,
     lifecycle,
     popularity,
-    tags: [...tags, `lifecycle:${lifecycle.status}`, `popularity:${popularity.status}`],
+    tags: [
+      ...tags,
+      `lifecycle:${lifecycle.status}`,
+      `popularity:${popularity.status}`,
+      ...releaseTags,
+    ],
   };
 }
 

@@ -211,3 +211,153 @@ test('freshness boundaries, small populations and evidence validation agree in P
   );
   assert.ok(JSON.parse(run.stdout).every(Boolean));
 });
+
+test('release date tags and releasedWithin filter by duration windows (1m, 3m, 6m, 1y, 2y)', () => {
+  const d = data();
+  // 15 days ago: 2026-09-27 relative to asOf 2026-10-12
+  d.offerings[0].releaseDate = '2026-09-27';
+  let c = new byokit.Catalog(d);
+  let [m1] = c.getModels({
+    asOf,
+    local: false,
+    filters: { includeTags: [byokit.Tag.ReleaseWithin1Month] },
+  });
+  assert.ok(m1);
+  assert.ok(m1.tags.includes('release:1m'));
+  assert.ok(m1.tags.includes('release:3m'));
+  assert.ok(m1.tags.includes('release:6m'));
+  assert.ok(m1.tags.includes('release:1y'));
+  assert.ok(m1.tags.includes('release:2y'));
+
+  // Also test ReleasedWithin... aliases
+  assert.equal(
+    c.getModels({ asOf, local: false, filters: { includeTags: [byokit.Tag.ReleasedWithin1Month] } })
+      .length,
+    1,
+  );
+  assert.equal(c.getModels({ asOf, local: false, filters: { releasedWithin: '1m' } }).length, 1);
+  assert.equal(
+    c.getModels({ asOf, local: false, filters: { releasedWithin: byokit.Tag.ReleaseWithin1Month } })
+      .length,
+    1,
+  );
+
+  // 45 days ago: 2026-08-28 (within 3m, not 1m)
+  d.offerings[0].releaseDate = '2026-08-28';
+  c = new byokit.Catalog(d);
+  assert.equal(
+    c.getModels({ asOf, local: false, filters: { includeTags: [byokit.Tag.ReleaseWithin1Month] } })
+      .length,
+    0,
+  );
+  assert.equal(
+    c.getModels({ asOf, local: false, filters: { includeTags: [byokit.Tag.ReleaseWithin3Months] } })
+      .length,
+    1,
+  );
+  assert.equal(c.getModels({ asOf, local: false, filters: { releasedWithin: '1m' } }).length, 0);
+  assert.equal(c.getModels({ asOf, local: false, filters: { releasedWithin: '3m' } }).length, 1);
+
+  // 120 days ago: 2026-06-14 (within 6m, not 3m)
+  d.offerings[0].releaseDate = '2026-06-14';
+  c = new byokit.Catalog(d);
+  assert.equal(
+    c.getModels({ asOf, local: false, filters: { includeTags: [byokit.Tag.ReleaseWithin3Months] } })
+      .length,
+    0,
+  );
+  assert.equal(
+    c.getModels({ asOf, local: false, filters: { includeTags: [byokit.Tag.ReleaseWithin6Months] } })
+      .length,
+    1,
+  );
+  assert.equal(c.getModels({ asOf, local: false, filters: { releasedWithin: '6m' } }).length, 1);
+
+  // 250 days ago: 2026-02-04 (within 1y, not 6m)
+  d.offerings[0].releaseDate = '2026-02-04';
+  c = new byokit.Catalog(d);
+  assert.equal(
+    c.getModels({ asOf, local: false, filters: { includeTags: [byokit.Tag.ReleaseWithin6Months] } })
+      .length,
+    0,
+  );
+  assert.equal(
+    c.getModels({ asOf, local: false, filters: { includeTags: [byokit.Tag.ReleaseWithin1Year] } })
+      .length,
+    1,
+  );
+  assert.equal(c.getModels({ asOf, local: false, filters: { releasedWithin: '1y' } }).length, 1);
+
+  // 500 days ago: 2025-05-30 (within 2y, not 1y)
+  d.offerings[0].releaseDate = '2025-05-30';
+  c = new byokit.Catalog(d);
+  assert.equal(
+    c.getModels({ asOf, local: false, filters: { includeTags: [byokit.Tag.ReleaseWithin1Year] } })
+      .length,
+    0,
+  );
+  assert.equal(
+    c.getModels({ asOf, local: false, filters: { includeTags: [byokit.Tag.ReleaseWithin2Years] } })
+      .length,
+    1,
+  );
+  assert.equal(c.getModels({ asOf, local: false, filters: { releasedWithin: '2y' } }).length, 1);
+
+  // 800 days ago: 2024-08-04 (older than 2y)
+  d.offerings[0].releaseDate = '2024-08-04';
+  c = new byokit.Catalog(d);
+  assert.equal(
+    c.getModels({ asOf, local: false, filters: { includeTags: [byokit.Tag.ReleaseWithin2Years] } })
+      .length,
+    0,
+  );
+  assert.equal(c.getModels({ asOf, local: false, filters: { releasedWithin: '2y' } }).length, 0);
+
+  // Numeric days filter: e.g. 850 days vs 750 days
+  assert.equal(c.getModels({ asOf, local: false, filters: { releasedWithin: 850 } }).length, 1);
+  assert.equal(c.getModels({ asOf, local: false, filters: { releasedWithin: 750 } }).length, 0);
+
+  // Forged release tags cannot bypass calculation
+  d.offerings[0].tags = ['release:1m', 'released:1m', 'release:1y'];
+  d.offerings[0].releaseDate = '2024-08-04';
+  c = new byokit.Catalog(d);
+  assert.equal(
+    c.getModels({ asOf, local: false, filters: { includeTags: [byokit.Tag.ReleaseWithin1Month] } })
+      .length,
+    0,
+  );
+
+  // Fallback to model releaseDate when offering has none
+  delete d.offerings[0].releaseDate;
+  d.models[0].releaseDate = '2026-09-27';
+  c = new byokit.Catalog(d);
+  assert.equal(
+    c.getModels({ asOf, local: false, filters: { includeTags: [byokit.Tag.ReleaseWithin1Month] } })
+      .length,
+    1,
+  );
+  assert.equal(c.getModels({ asOf, local: false, filters: { releasedWithin: '1m' } }).length, 1);
+
+  // validateConfig validation
+  assert.equal(byokit.validateConfig({ filters: { releasedWithin: '1m' } }).length, 0);
+  assert.equal(byokit.validateConfig({ filters: { releasedWithin: 30 } }).length, 0);
+  assert.ok(byokit.validateConfig({ filters: { releasedWithin: 'invalid' } }).length > 0);
+  assert.ok(byokit.validateConfig({ filters: { releasedWithin: -5 } }).length > 0);
+
+  // Cross-language conformance with Python
+  const queries = [
+    { asOf, local: false, filters: { includeTags: [byokit.Tag.ReleaseWithin1Month] } },
+    { asOf, local: false, filters: { includeTags: [byokit.Tag.ReleaseWithin1Year] } },
+    { asOf, local: false, filters: { releasedWithin: '1m' } },
+    { asOf, local: false, filters: { releasedWithin: '1y' } },
+  ];
+  const run = spawnSync('python3', ['packages/python/tests/conformance_runner.py', 'models'], {
+    input: JSON.stringify({ data: d, queries }),
+    encoding: 'utf8',
+  });
+  assert.equal(run.status, 0, run.stderr);
+  assert.deepEqual(
+    JSON.parse(run.stdout),
+    queries.map((q) => new byokit.Catalog(d).getModels(q)),
+  );
+});

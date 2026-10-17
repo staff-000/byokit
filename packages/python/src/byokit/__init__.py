@@ -191,6 +191,69 @@ def validate_catalog(data):
     return errors
 
 
+def parse_released_within_days(val):
+    if hasattr(val, "value"):
+        val = val.value
+    if isinstance(val, (int, float)) and not isinstance(val, bool):
+        return val if val > 0 and math.isfinite(val) else None
+    if isinstance(val, str):
+        s = re.sub(r"^released?:", "", val.strip().lower())
+        if s in ("1m", "1month", "1-month", "30d"):
+            return 30
+        if s in ("3m", "3months", "3-months", "90d"):
+            return 90
+        if s in ("6m", "6months", "6-months", "180d"):
+            return 180
+        if s in ("1y", "1year", "1-year", "365d"):
+            return 365
+        if s in ("2y", "2years", "2-years", "730d"):
+            return 730
+        try:
+            num = float(s)
+            if num > 0 and math.isfinite(num):
+                return num
+        except ValueError:
+            pass
+    return None
+
+
+def _parse_release_timestamp(value):
+    if not isinstance(value, str):
+        return None
+    val = value.strip()
+    if len(val) == 7 and re.fullmatch(r"\d{4}-\d{2}", val):
+        val = val + "-01"
+    try:
+        if "T" in val:
+            return _timestamp(val)
+        d = date.fromisoformat(val)
+        return datetime.combine(d, datetime.min.time(), timezone.utc).timestamp()
+    except (ValueError, TypeError):
+        return None
+
+
+def get_release_tags(release_date, as_of=None):
+    epoch = _parse_release_timestamp(release_date)
+    if epoch is None:
+        return []
+    now = _timestamp(as_of) if as_of else time.time()
+    age_days = (now - epoch) / 86400.0
+    if age_days < -1.0:
+        return []
+    tags = []
+    if age_days <= 30.0:
+        tags.extend(["release:1m", "released:1m"])
+    if age_days <= 90.0:
+        tags.extend(["release:3m", "released:3m"])
+    if age_days <= 180.0:
+        tags.extend(["release:6m", "released:6m"])
+    if age_days <= 365.0:
+        tags.extend(["release:1y", "released:1y"])
+    if age_days <= 730.0:
+        tags.extend(["release:2y", "released:2y"])
+    return tags
+
+
 def validate_config(config):
     errors = []
     if "sort" in config and config["sort"] not in {v.value for v in ModelSort}:
@@ -249,6 +312,7 @@ def validate_config(config):
             "verifiedBy",
             "verifiedWithinDays",
             "official",
+            "releasedWithin",
         ],
         "prefer": ["features", "lowerCost"],
         "ui": ["maxProviders", "maxModelsPerProvider", "allowCustomModel"],
@@ -368,6 +432,10 @@ def validate_config(config):
         not finite(f["verifiedWithinDays"]) or f["verifiedWithinDays"] < 1
     ):
         errors.append("verifiedWithinDays must be positive")
+    if "releasedWithin" in f and parse_released_within_days(f["releasedWithin"]) is None:
+        errors.append(
+            "filters.releasedWithin must be a valid duration (e.g. 1m, 3m, 6m, 1y, 2y) or positive number of days"
+        )
     vocab = {
         "requiredFeatures": FeatureName,
         "deployment": Deployment,
@@ -465,16 +533,42 @@ def matches(o, m, config, provider_tags=None):
         return False
     if "popularity" in f and o["popularity"]["status"] not in f["popularity"]:
         return False
+    if "releasedWithin" in f:
+        max_days = parse_released_within_days(f["releasedWithin"])
+        if max_days is None:
+            return False
+        r_date = o.get("releaseDate") or (m.get("releaseDate") if m else None)
+        if not r_date:
+            if not unknown:
+                return False
+        else:
+            epoch = _parse_release_timestamp(r_date)
+            if epoch is None:
+                if not unknown:
+                    return False
+            else:
+                now = _timestamp(config["asOf"]) if config.get("asOf") else time.time()
+                age_days = (now - epoch) / 86400.0
+                if age_days < -1.0 or age_days > max_days:
+                    return False
     tags = set(
         [
             t
             for t in m.get("tags", []) + (provider_tags or [])
-            if not t.startswith(("lifecycle:", "popularity:"))
+            if not t.startswith(
+                ("lifecycle:", "popularity:", "release:", "released:")
+            )
         ]
         + o.get("tags", [])
     )
     if is_flash_model(o, m):
         tags.add("model:flash")
+    if o.get("releaseDate"):
+        for t in get_release_tags(o["releaseDate"], config.get("asOf")):
+            tags.add(t)
+    elif m and m.get("releaseDate"):
+        for t in get_release_tags(m["releaseDate"], config.get("asOf")):
+            tags.add(t)
     if _any(t not in tags for t in f.get("includeTags", [])) or _any(
         t in tags for t in f.get("excludeTags", [])
     ):
@@ -1530,14 +1624,20 @@ def _with_signals(o, as_of=None):
         "evidence": p,
     }
     tags = [
-        t for t in o.get("tags", []) if not t.startswith(("lifecycle:", "popularity:"))
+        t
+        for t in o.get("tags", [])
+        if not t.startswith(
+            ("lifecycle:", "popularity:", "release:", "released:")
+        )
     ]
+    release_tags = get_release_tags(o.get("releaseDate"), as_of)
     return dict(
         o,
         lifecycle=lifecycle,
         popularity=popularity,
         tags=tags
-        + ["lifecycle:" + lifecycle["status"], "popularity:" + popularity["status"]],
+        + ["lifecycle:" + lifecycle["status"], "popularity:" + popularity["status"]]
+        + release_tags,
     )
 
 

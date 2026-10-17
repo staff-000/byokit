@@ -94,6 +94,28 @@ class CoreTests(unittest.TestCase):
     def test_bool_not_token_count(self):
         self.assertTrue(validate_config({"budget": {"maxInputTokens": True}}))
 
+    def test_release_date_filters(self):
+        from byokit import Tag
+        fixture = json.loads((root / "spec/fixtures/catalog.json").read_text())
+        as_of = "2026-10-12T12:00:00Z"
+        fixture["offerings"][0]["releaseDate"] = "2026-09-27"
+        cat = Catalog(fixture)
+        m = cat.get_models({"asOf": as_of, "local": False, "filters": {"includeTags": [Tag.RELEASE_WITHIN_1_MONTH]}})
+        self.assertEqual(len(m), 1)
+        self.assertIn("release:1m", m[0]["tags"])
+        self.assertIn("release:1y", m[0]["tags"])
+        self.assertEqual(
+            len(cat.get_models({"asOf": as_of, "local": False, "filters": {"releasedWithin": "1m"}})),
+            1,
+        )
+        self.assertEqual(
+            len(cat.get_models({"asOf": as_of, "local": False, "filters": {"releasedWithin": Tag.RELEASE_WITHIN_1_YEAR}})),
+            1,
+        )
+        self.assertEqual(len(validate_config({"filters": {"releasedWithin": "1m"}})), 0)
+        self.assertTrue(len(validate_config({"filters": {"releasedWithin": "invalid"}})) > 0)
+
+
     def test_speed_sort_raises_not_implemented(self):
         from byokit import ModelSort
         for sort in [

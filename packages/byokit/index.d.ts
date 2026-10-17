@@ -195,6 +195,7 @@ export interface PickerConfig {
     verifiedBy?: ContributorId;
     verifiedWithinDays?: number;
     official?: boolean;
+    releasedWithin?: '1m' | '3m' | '6m' | '1y' | '2y' | Tag | (string & {}) | number;
   };
   prefer?: { features?: FeatureName[]; lowerCost?: boolean };
   ui?: { maxProviders?: number; maxModelsPerProvider?: number; allowCustomModel?: boolean };

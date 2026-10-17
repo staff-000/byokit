@@ -195,6 +195,7 @@ export interface PickerConfig {
     verifiedBy?: ContributorId;
     verifiedWithinDays?: number;
     official?: boolean;
+    releasedWithin?: '1m' | '3m' | '6m' | '1y' | '2y' | Tag | (string & {}) | number;
   };
   prefer?: { features?: FeatureName[]; lowerCost?: boolean };
   ui?: { maxProviders?: number; maxModelsPerProvider?: number; allowCustomModel?: boolean };
@@ -628,3 +629,5 @@ export interface CustomModel {
 /** Append one explicit, unverified model; does not mutate input, query the network, or re-sort. */
 export function appendModel(models: readonly ModelOption[], model: CustomModel): ModelOption[];
 export function serializeQuery(input?: PickerConfig | ModelList, options?: PickerConfig): string;
+export function getReleaseTags(releaseDate: string | undefined | null, asOf?: string): string[];
+export function parseReleasedWithinDays(val: unknown): number | undefined;

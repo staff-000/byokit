@@ -91,6 +91,7 @@ class Filters(TypedDict, total=False):
     verifiedBy: ContributorId
     verifiedWithinDays: int
     official: bool
+    releasedWithin: Literal["1m", "3m", "6m", "1y", "2y"] | Tag | str | int | float
 
 
 class Prefer(TypedDict, total=False):

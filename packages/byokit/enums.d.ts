@@ -246,6 +246,16 @@ export declare enum Tag {
   ProviderOfficial = 'provider:official',
   ModelFlash = 'model:flash',
   Flash = 'model:flash',
+  ReleaseWithin1Month = 'release:1m',
+  ReleaseWithin3Months = 'release:3m',
+  ReleaseWithin6Months = 'release:6m',
+  ReleaseWithin1Year = 'release:1y',
+  ReleaseWithin2Years = 'release:2y',
+  ReleasedWithin1Month = 'release:1m',
+  ReleasedWithin3Months = 'release:3m',
+  ReleasedWithin6Months = 'release:6m',
+  ReleasedWithin1Year = 'release:1y',
+  ReleasedWithin2Years = 'release:2y',
 }
 
 export declare enum ModelList {

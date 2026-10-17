@@ -218,6 +218,16 @@ class Tag(str, Enum):
     PROVIDER_OFFICIAL = "provider:official"
     MODEL_FLASH = "model:flash"
     FLASH = "model:flash"
+    RELEASE_WITHIN_1_MONTH = "release:1m"
+    RELEASE_WITHIN_3_MONTHS = "release:3m"
+    RELEASE_WITHIN_6_MONTHS = "release:6m"
+    RELEASE_WITHIN_1_YEAR = "release:1y"
+    RELEASE_WITHIN_2_YEARS = "release:2y"
+    RELEASED_WITHIN_1_MONTH = "release:1m"
+    RELEASED_WITHIN_3_MONTHS = "release:3m"
+    RELEASED_WITHIN_6_MONTHS = "release:6m"
+    RELEASED_WITHIN_1_YEAR = "release:1y"
+    RELEASED_WITHIN_2_YEARS = "release:2y"
 
 class ModelList(str, Enum):
     DEFAULT = "default"
