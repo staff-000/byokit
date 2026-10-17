@@ -3,7 +3,20 @@ from pathlib import Path
 
 root = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(root / "packages/python/src"))
-from byokit import Catalog, check_fit, validate_config, load_catalog, serialize_query, LIVE
+from byokit import (
+    Catalog,
+    check_fit,
+    validate_config,
+    load_catalog,
+    serialize_query,
+    get_config,
+    get_config_json,
+    to_config,
+    to_config_json,
+    ModelSort,
+    ModelList,
+    LIVE,
+)
 
 
 class CoreTests(unittest.TestCase):
@@ -64,6 +77,27 @@ class CoreTests(unittest.TestCase):
 
     def test_bundled(self):
         self.assertTrue(load_catalog().select())
+
+    def test_get_config_and_json(self):
+        conf = get_config()
+        self.assertEqual(conf, {"list": "default"})
+        self.assertEqual(validate_config(conf), [])
+
+        conf2 = get_config("china", {"sort": ModelSort.PRICE_ASCEND, "limit": 5})
+        self.assertEqual(conf2, {"list": "china", "preset": "china", "sort": "priceAscend", "limit": 5})
+        self.assertEqual(validate_config(conf2), [])
+
+        json_str = get_config_json("global", {"limit": 3})
+        self.assertIsInstance(json_str, str)
+        parsed = json.loads(json_str)
+        self.assertEqual(parsed, {"list": "global", "preset": "global", "limit": 3})
+
+        # Catalog methods and aliases
+        self.assertEqual(self.catalog.get_config(), {"list": "default"})
+        self.assertIsInstance(self.catalog.get_config_json(), str)
+        self.assertEqual(to_config("china"), {"list": "china", "preset": "china"})
+        self.assertIsInstance(to_config_json("china"), str)
+
 
     def test_limits(self):
         self.assertEqual(

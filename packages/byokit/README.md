@@ -38,7 +38,7 @@ console.log(response.choices[0].message.content);
 
 For production apps with a fixed query, avoid loading the 20 MB catalog at runtime by precompiling at build time:
 
-1. Create `byok.config.json`:
+1. Create `byok.config.json` (or click **Save config.json** in the explorer/playground, or call `byokit.getConfigJson(...)`):
 
 ```json
 {

@@ -254,6 +254,14 @@ export class Catalog {
   getModelsByProvider(config?: PickerConfig): Record<string, ModelOption[]>;
   getModelsByProvider(list: ModelList, config?: PickerConfig): Record<string, ModelOption[]>;
   serializeQuery(input?: PickerConfig | ModelList, options?: PickerConfig): string;
+  getConfig(config?: PickerConfig): PickerConfig;
+  getConfig(list: ModelList, config?: PickerConfig): PickerConfig;
+  getConfigJson(config?: PickerConfig, indent?: number): string;
+  getConfigJson(list: ModelList, config?: PickerConfig, indent?: number): string;
+  toConfig(config?: PickerConfig): PickerConfig;
+  toConfig(list: ModelList, config?: PickerConfig): PickerConfig;
+  toConfigJson(config?: PickerConfig, indent?: number): string;
+  toConfigJson(list: ModelList, config?: PickerConfig, indent?: number): string;
   hasCached(input?: PickerConfig | ModelList, options?: PickerConfig): boolean;
   getCached(input?: PickerConfig | ModelList, options?: PickerConfig): ModelOption[] | undefined;
   clearCache(): void;
@@ -637,3 +645,11 @@ export function getModelsByProvider(
 ): Record<string, ModelOption[]>;
 export function addVerifications(records: VerificationRecord[]): void;
 export function serializeQuery(input?: PickerConfig | ModelList, options?: PickerConfig): string;
+export function getConfig(config?: PickerConfig): PickerConfig;
+export function getConfig(list: ModelList, config?: PickerConfig): PickerConfig;
+export function getConfigJson(config?: PickerConfig, indent?: number): string;
+export function getConfigJson(list: ModelList, config?: PickerConfig, indent?: number): string;
+export function toConfig(config?: PickerConfig): PickerConfig;
+export function toConfig(list: ModelList, config?: PickerConfig): PickerConfig;
+export function toConfigJson(config?: PickerConfig, indent?: number): string;
+export function toConfigJson(list: ModelList, config?: PickerConfig, indent?: number): string;

@@ -12,6 +12,10 @@ import {
   reduceSetup,
   resolveSelection,
   deriveTags,
+  getConfig,
+  getConfigJson,
+  toConfig,
+  toConfigJson,
 } from '../packages/byokit/index.js';
 const data = JSON.parse(readFileSync(new URL('../spec/fixtures/catalog.json', import.meta.url)));
 const catalog = new Catalog(data);
@@ -134,4 +138,24 @@ test('derived tags never retain stale capability flags or imply licensing', () =
   assert.ok(tags.includes('weights:open'));
   assert.ok(!tags.includes('license:commercial'));
   assert.ok(tags.includes('custom:favorite'));
+});
+
+test('getConfig and getConfigJson export build-ready configs matching validateConfig', () => {
+  const conf1 = getConfig();
+  assert.deepEqual(conf1, { list: 'default' });
+  assert.deepEqual(validateConfig(conf1), []);
+
+  const conf2 = getConfig('china', { sort: 'priceAscend', limit: 5 });
+  assert.deepEqual(conf2, { list: 'china', preset: 'china', sort: 'priceAscend', limit: 5 });
+  assert.deepEqual(validateConfig(conf2), []);
+
+  const jsonStr = getConfigJson('china', { sort: 'priceAscend' });
+  assert.equal(typeof jsonStr, 'string');
+  assert.deepEqual(JSON.parse(jsonStr), { list: 'china', preset: 'china', sort: 'priceAscend' });
+
+  // Catalog methods and aliases
+  assert.deepEqual(catalog.getConfig(), { list: 'default' });
+  assert.equal(typeof catalog.getConfigJson(), 'string');
+  assert.deepEqual(toConfig('global'), { list: 'global', preset: 'global' });
+  assert.equal(typeof toConfigJson('global'), 'string');
 });

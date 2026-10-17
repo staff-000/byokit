@@ -68,6 +68,12 @@ The **optimized approach** evaluates your query once at build time to produce a 
 
 ### 1. Declare your query in `byok.config.json`
 
+> **Tip: Getting `byok.config.json` easily**
+>
+> - **From the website**: Open the model explorer or interactive playground and click **"Save config.json"** to download the exact configuration matching your query.
+> - **From code (JS/TS)**: Call `byokit.getConfigJson(...)` or `byokit.getConfig(...)`.
+> - **From code (Python)**: Call `byokit.get_config_json(...)` or `byokit.get_config(...)`.
+
 For example, to select flash models from Anthropic, Google, OpenAI, and DeepSeek:
 
 ```json

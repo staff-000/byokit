@@ -138,10 +138,15 @@ console.log(result.choices[0].message.content);</code></pre>
             ><label><input id="local" type="checkbox" checked /> Append Local</label>
           </div>
           <div class="query-bar">
-            <code id="query">byokit.getModels();</code
-            ><button type="button" data-copy="#query" aria-label="Copy explorer query">
-              Copy query
-            </button>
+            <code id="query">byokit.getModels();</code>
+            <div class="query-actions">
+              <button type="button" data-copy="#query" aria-label="Copy explorer query">
+                Copy query
+              </button>
+              <button id="explorer-save-config" type="button" aria-label="Save explorer query as config.json">
+                Save config.json
+              </button>
+            </div>
           </div>
           <div id="catalog-error" class="notice" role="alert" hidden>
             The catalog could not load. Refresh the page to try again.
@@ -211,6 +216,7 @@ Your console output will appear here.</pre>
             <button id="playground-run" type="button" class="button primary">
               Run JavaScript <span aria-hidden="true">▶</span></button
             ><button id="playground-stop" type="button" class="small-button" disabled>Stop</button
+            ><button id="playground-save-config" type="button" class="button secondary">Save config.json</button
             ><button id="playground-reset" type="button" class="text-button">Reset example</button
             ><button id="playground-copy" type="button" class="text-button">Copy code</button
             ><span class="playground-shortcut">⌘ / Ctrl + Enter</span>
@@ -418,7 +424,7 @@ const models = byokit.getModels();</code></pre>
             <div class="build-step">
               <span class="step-num">1</span>
               <h3>Declare your query</h3>
-              <p>In <code>byok.config.json</code>:</p>
+              <p>Save from the explorer/playground above via <strong>Save config.json</strong>, generate with <code>byokit.getConfigJson()</code>, or write <code>byok.config.json</code>:</p>
               <pre><code>{
   "providerIds": [
     "anthropic",

@@ -387,6 +387,11 @@ h3 {
   font-size: 11px;
   white-space: nowrap;
 }
+.query-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 .table-scroll {
   overflow: auto;
 }
@@ -1691,6 +1696,9 @@ dialog .record-actions {
 }
 #playground-status[data-state='success'] {
   color: #277147;
+}
+#playground-status[data-state='warning'] {
+  color: #b45309;
 }
 #playground-status[data-state='error'] {
   color: #a83c3c;

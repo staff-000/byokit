@@ -103,3 +103,29 @@ test('playground captures generated models and updates verification status when 
   assert.ok(ui.includes('verifyInference'));
   assert.ok(ui.includes('successRecord'));
 });
+
+test('playground captures query configs and warns on multiple calls', async () => {
+  const single = await execute('const models = byokit.getModels();');
+  const singleDone = single.find((m) => m.type === 'done');
+  assert.ok(Array.isArray(singleDone.configs));
+  assert.equal(singleDone.configs.length, 1);
+  assert.equal(singleDone.configs[0].list, 'default');
+
+  const multiple = await execute(`
+    const china = byokit.getModels('china');
+    const global = byokit.getModels('global', { limit: 3 });
+  `);
+  const multipleDone = multiple.find((m) => m.type === 'done');
+  assert.equal(multipleDone.configs.length, 2);
+  assert.equal(multipleDone.configs[0].preset, 'china');
+  assert.equal(multipleDone.configs[1].preset, 'global');
+  assert.equal(multipleDone.configs[1].limit, 3);
+
+  const html = await readFile(new URL('../website/index.html', import.meta.url), 'utf8');
+  assert.ok(html.includes('id="playground-save-config"'));
+  assert.ok(html.includes('id="explorer-save-config"'));
+
+  const ui = await readFile(new URL('../website/playground.js', import.meta.url), 'utf8');
+  assert.ok(ui.includes('playground-save-config'));
+  assert.ok(ui.includes('Warning: Multiple model list calls detected'));
+});

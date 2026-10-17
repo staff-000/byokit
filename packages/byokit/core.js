@@ -653,6 +653,17 @@ export function serializeQuery(input = {}, options) {
   return stableKey(config);
 }
 
+export function getConfig(input = {}, options) {
+  return structuredClone(normalizeQuery(input, options));
+}
+
+export function getConfigJson(input = {}, options, indent = 2) {
+  return JSON.stringify(getConfig(input, options), null, indent);
+}
+
+export const toConfig = getConfig;
+export const toConfigJson = getConfigJson;
+
 export class Catalog {
   constructor(data, options = {}) {
     const trusted = Boolean(options?.trusted);
@@ -708,6 +719,18 @@ export class Catalog {
   }
   serializeQuery(input = {}, options) {
     return serializeQuery(input, options);
+  }
+  getConfig(input = {}, options) {
+    return getConfig(input, options);
+  }
+  getConfigJson(input = {}, options, indent = 2) {
+    return getConfigJson(input, options, indent);
+  }
+  toConfig(input = {}, options) {
+    return getConfig(input, options);
+  }
+  toConfigJson(input = {}, options, indent = 2) {
+    return getConfigJson(input, options, indent);
   }
   hasCached(input = {}, options) {
     return this._cache.has(serializeQuery(input, options));

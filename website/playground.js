@@ -42,6 +42,7 @@ function chooseExample() {
   editor.value = playgroundExamples[$('#playground-example').value].code;
   output.textContent = 'Your console output will appear here.';
   $('#playground-availability').hidden = true;
+  capturedConfigs = [];
 }
 async function run() {
   if (active) return;
@@ -96,6 +97,7 @@ async function run() {
 }
 
 let generatedModels = [];
+let capturedConfigs = [];
 let availabilityController = null;
 const availabilityKeys = new Map();
 
@@ -188,6 +190,7 @@ window.addEventListener('message', (event) => {
     if (!output.textContent)
       output.textContent = 'No console output. Use console.log() or return a value.';
     finish('Finished. Output comes from the real byokit catalog.', 'success');
+    capturedConfigs = Array.isArray(data.configs) ? data.configs : [];
     if (data.models && data.models.length > 0) {
       handleGeneratedModels(data.models);
     } else {
@@ -363,7 +366,36 @@ $('#playground-copy').addEventListener('click', async () => {
     status.textContent = 'Select and copy the JavaScript.';
   }
 });
+function downloadJson(filename, obj) {
+  const jsonStr = typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2);
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+$('#playground-save-config')?.addEventListener('click', () => {
+  if (!capturedConfigs.length) {
+    status.textContent = 'Run your code first to generate and save config.json.';
+    status.dataset.state = 'warning';
+    return;
+  }
+  const config = capturedConfigs[0];
+  downloadJson('byok.config.json', config);
+  if (capturedConfigs.length > 1) {
+    status.textContent = `Warning: Multiple model list calls detected (${capturedConfigs.length} calls). Saved the config from the first call.`;
+    status.dataset.state = 'warning';
+  } else {
+    status.textContent = 'Saved byok.config.json from your model list call.';
+    status.dataset.state = 'success';
+  }
+});
 editor.addEventListener('input', () => {
+  capturedConfigs = [];
   if (active) stop('Code changed. Run again to use your edits.');
 });
 editor.addEventListener('keydown', (event) => {

@@ -22,3 +22,17 @@ export function addVerifications(records) {
   if (!defaultCatalog) defaultCatalog = new Catalog(data, { trusted: true });
   defaultCatalog.addVerifications(records);
 }
+
+export function getConfig(input = {}, options) {
+  if (!defaultCatalog) defaultCatalog = new Catalog(data, { trusted: true });
+  return defaultCatalog.getConfig(input, options);
+}
+
+export function getConfigJson(input = {}, options, indent = 2) {
+  if (!defaultCatalog) defaultCatalog = new Catalog(data, { trusted: true });
+  return defaultCatalog.getConfigJson(input, options, indent);
+}
+
+export const toConfig = getConfig;
+export const toConfigJson = getConfigJson;
+

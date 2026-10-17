@@ -654,6 +654,37 @@ class Catalog:
     ) -> str:
         return serialize_query(config, options)
 
+    def get_config(
+        self,
+        config: "PickerConfig | ModelList | None" = None,
+        options: "PickerConfig | None" = None,
+    ) -> dict:
+        return get_config(config, options)
+
+    def get_config_json(
+        self,
+        config: "PickerConfig | ModelList | None" = None,
+        options: "PickerConfig | None" = None,
+        indent: int = 2,
+    ) -> str:
+        return get_config_json(config, options, indent=indent)
+
+    def to_config(
+        self,
+        config: "PickerConfig | ModelList | None" = None,
+        options: "PickerConfig | None" = None,
+    ) -> dict:
+        return get_config(config, options)
+
+    def to_config_json(
+        self,
+        config: "PickerConfig | ModelList | None" = None,
+        options: "PickerConfig | None" = None,
+        indent: int = 2,
+    ) -> str:
+        return get_config_json(config, options, indent=indent)
+
+
     def has_cached(
         self,
         config: "PickerConfig | ModelList | None" = None,
@@ -1693,6 +1724,44 @@ def serialize_query(
         separators=(",", ":"),
         default=lambda o: o.value if hasattr(o, "value") else str(o),
     )
+
+
+def _clean_config(obj):
+    if hasattr(obj, "value"):
+        return obj.value
+    if isinstance(obj, dict):
+        return {k: _clean_config(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_clean_config(v) for v in obj]
+    if isinstance(obj, tuple):
+        return tuple(_clean_config(v) for v in obj)
+    return obj
+
+
+def get_config(
+    config: "PickerConfig | ModelList | None" = None,
+    options: "PickerConfig | None" = None,
+) -> dict:
+    normalized = _normalize_query(config, options)
+    return _clean_config(normalized)
+
+
+def get_config_json(
+    config: "PickerConfig | ModelList | None" = None,
+    options: "PickerConfig | None" = None,
+    indent: int = 2,
+) -> str:
+    import json
+    return json.dumps(
+        get_config(config, options),
+        indent=indent,
+        default=lambda o: o.value if hasattr(o, "value") else str(o),
+    )
+
+
+to_config = get_config
+to_config_json = get_config_json
+
 
 
 

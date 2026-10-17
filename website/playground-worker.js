@@ -10,6 +10,15 @@ self.onmessage = async ({ data }) => {
   let messages = 0,
     characters = 0;
   let capturedModels = [];
+  let capturedConfigs = [];
+  const trackConfig = (args) => {
+    try {
+      if (typeof byokit.getConfig === 'function') {
+        const config = byokit.getConfig(...args);
+        capturedConfigs.push(config);
+      }
+    } catch {}
+  };
   const track = (item) => {
     if (Array.isArray(item)) {
       if (
@@ -32,11 +41,13 @@ self.onmessage = async ({ data }) => {
   const trackedByokit = {
     ...byokit,
     getModels(...args) {
+      trackConfig(args);
       const res = byokit.getModels(...args);
       track(res);
       return res;
     },
     getModelsByProvider(...args) {
+      trackConfig(args);
       const res = byokit.getModelsByProvider(...args);
       if (res && typeof res === 'object') {
         track(Object.values(res).flat());
@@ -44,8 +55,21 @@ self.onmessage = async ({ data }) => {
       return res;
     },
     select(...args) {
+      trackConfig(args);
       const res = byokit.select ? byokit.select(...args) : undefined;
       track(res);
+      return res;
+    },
+    getConfig(...args) {
+      const res = byokit.getConfig(...args);
+      capturedConfigs.push(res);
+      return res;
+    },
+    getConfigJson(...args) {
+      const res = byokit.getConfigJson(...args);
+      try {
+        capturedConfigs.push(JSON.parse(res));
+      } catch {}
       return res;
     },
     appendModel(...args) {
@@ -133,6 +157,7 @@ self.onmessage = async ({ data }) => {
       type: 'done',
       empty: messages === 0,
       models: modelsPayload,
+      configs: capturedConfigs,
     });
   } catch (error) {
     self.postMessage({

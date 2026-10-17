@@ -214,6 +214,30 @@ for (const button of document.querySelectorAll('[data-copy]'))
       selection.addRange(range);
     }
   });
+function downloadJson(filename, obj) {
+  const jsonStr = typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2);
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+$('#explorer-save-config')?.addEventListener('click', () => {
+  const config = byokit.getConfig(modes[mode], query());
+  downloadJson('byok.config.json', config);
+  const button = $('#explorer-save-config');
+  if (button) {
+    const originalText = button.textContent;
+    button.textContent = 'Saved!';
+    setTimeout(() => {
+      button.textContent = originalText;
+    }, 1800);
+  }
+});
 let language = 'typescript',
   example = 'inference',
   format = 'openai';
