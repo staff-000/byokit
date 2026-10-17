@@ -5,6 +5,16 @@ TypeScript/JavaScript and Python supported.
 
 [Try the JavaScript playground](https://staff-000.github.io/byokit/#playground) · [Verify models](https://staff-000.github.io/byokit/verification.html) · [Contribute](CONTRIBUTING.md)
 
+## Highlights
+
+1. **"Model Discovery + Unified Execution" in Two Calls** — One simple call to get an up-to-date list of BYOK models (`byokit.getModels()`), and one simple call to run inference (`byokit.call()` or familiar `OpenAI` / `Anthropic` client wrappers). No provider-specific SDK glue required.
+2. **Preset Lists, Rich Filters & Deterministic Sorting** — Curated presets (`DEFAULT`, `COMPLETE`, `CHINA`, `GLOBAL`, `OFFICIAL`) plus fine-grained filters for modalities (text, image, audio, video), capabilities (function calling, thinking, structured output), context windows, price caps, and origin/tag exclusions.
+3. **Regular Releases & Community Verification** — Pinned catalog snapshots sync automatically every 12 hours from Models.dev with scheduled releases, paired with browser-based community call verification that records real proof and awards contributor badges.
+4. **Zero-Trust Credential & Key Privacy Design** — Keys stay strictly in caller memory and travel directly to the provider endpoint. `byokit` never proxies calls, stores keys in files/browser storage/telemetry, or leaks secrets into serialized objects, logs, or error messages.
+5. **Build-Time Generation (0 Runtime Overhead) & Caching** — Precompile your fixed query at build time (`npx byokit build`) into a tiny ~10–30 KB module with typed autocomplete instead of shipping the full 20 MB catalog. When dynamic runtime queries are evaluated, results are deterministically cached.
+6. **Pre-Flight Task & Budget Fit Checking** — Validate declared token budgets, context constraints, required features, and modalities before making requests (`byokit.checkModelFit()` / `byokit check`) to prevent runtime failures and wasted tokens.
+7. **Complete Cross-Language Parity** — Full feature parity across JavaScript/TypeScript and Python (`byokit.get_models()`, `byokit.call()`, matching enums, sorting rules, and budget checks).
+
 ## Install
 
 ```sh

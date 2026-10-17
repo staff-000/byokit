@@ -258,44 +258,71 @@ Your console output will appear here.</pre>
       <section class="section details-section">
         <div class="wrap details">
           <div>
-            <p class="eyebrow">02 / BEYOND THE NAME</p>
-            <h2>The details your<br />picker needs.</h2>
-            <p class="lede small">Set it up once.<br />Let catalog updates handle model changes.</p>
-            <a class="text-link" href="https://github.com/staff-000/byokit#filter-the-list"
-              >Read the filter reference ↗</a
+            <p class="eyebrow">02 / KEY HIGHLIGHTS</p>
+            <h2>Built for BYOK.<br />Engineered for production.</h2>
+            <p class="lede small">
+              Set it up once.<br />Let automated catalog updates and verified tooling handle the
+              rest.
+            </p>
+            <a class="text-link" href="https://github.com/staff-000/byokit#highlights"
+              >Read the full highlights ↗</a
             >
           </div>
           <div class="detail-list">
             <div>
               <span class="number">01</span>
-              <h3>Find the right fit</h3>
+              <h3>Discovery + execution in two calls</h3>
               <p>
-                Input and output modalities, function calling, structured output, thinking, price,
-                and context window.
+                One simple call to get an up-to-date list of BYOK models, and one simple call to run
+                inference. No provider-specific SDK glue required.
               </p>
             </div>
             <div>
               <span class="number">02</span>
-              <h3>Stay current with each release</h3>
+              <h3>Presets, rich filters &amp; sorting</h3>
               <p>
-                Refresh your byokit catalog and release your app. Provider IDs, models, tags, and
-                limits update together—no hand-maintained model list.
+                Curated presets (DEFAULT, COMPLETE, CHINA, GLOBAL, OFFICIAL) with filters for
+                modalities, capabilities, context, prices, and tag exclusions.
               </p>
             </div>
             <div>
               <span class="number">03</span>
-              <h3>Bring a local server</h3>
+              <h3>Regular releases &amp; verification</h3>
               <p>
-                Append a URL, API protocol, and model ID. Use an OpenAI-compatible server or native
-                Ollama.
+                Automated 12-hour sync and scheduled releases keep catalog choices current, backed
+                by reproducible community inference verification and badges.
               </p>
             </div>
             <div>
               <span class="number">04</span>
-              <h3>Check budgets before a call</h3>
+              <h3>Zero-trust credential &amp; key privacy</h3>
               <p>
-                Validate declared context and completion budgets in a build. Unknown limits produce
-                explicit diagnostics.
+                Keys stay strictly in memory and travel directly to provider endpoints. Never stored
+                in files, browser storage, logs, or telemetry.
+              </p>
+            </div>
+            <div>
+              <span class="number">05</span>
+              <h3>Build-time generation &amp; caching</h3>
+              <p>
+                Precompile queries at build time for 0 runtime overhead (~15 KB vs 20 MB), paired
+                with deterministic in-memory caching for dynamic queries.
+              </p>
+            </div>
+            <div>
+              <span class="number">06</span>
+              <h3>Pre-flight task &amp; budget fit</h3>
+              <p>
+                Validate token budgets, context limits, features, and modalities before sending
+                tokens or incurring API costs.
+              </p>
+            </div>
+            <div>
+              <span class="number">07</span>
+              <h3>Complete cross-language parity</h3>
+              <p>
+                Full parity across JavaScript/TypeScript and Python with shared schemas, enums,
+                query outcomes, and budget checking.
               </p>
             </div>
           </div>
@@ -327,8 +354,8 @@ Your console output will appear here.</pre>
             <p class="eyebrow">04 / HOW TO CALL THE API</p>
             <h2>Get your list.<br />Then call your model.</h2>
             <p>
-              One library for discovery and SDK-style calls. Your application owns the keys; byokit
-              handles the provider differences.
+              Model discovery + unified execution in two calls. Your application owns the keys with
+              zero-trust privacy; byokit handles the provider differences.
             </p>
             <div class="example-purpose" role="group" aria-label="Example purpose">
               <button type="button" data-example="query" aria-pressed="false">
@@ -432,9 +459,10 @@ const model = models.find(m =>
             </div>
           </div>
           <p class="fine">
-            <code>byokit.getModels()</code> remains supported for interactive exploration and
-            prototyping. For production applications with a fixed query, precompiling at build time
-            delivers instant startup and minimal bundle size.
+            <code>byokit.getModels()</code> remains fully supported for interactive exploration and
+            prototyping, with automatic deterministic in-memory caching. For production applications
+            with a fixed query, precompiling at build time delivers zero execution overhead and
+            minimal bundle size (~15 KB vs 20 MB).
           </p>
         </div>
       </section>
