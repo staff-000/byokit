@@ -230,18 +230,12 @@ test('serializeQuery produces deterministic keys and Catalog caches results', ()
   const catalog = new byokit.Catalog(d);
 
   // 1. Deterministic serialization
-  assert.equal(
-    byokit.serializeQuery('china'),
-    byokit.serializeQuery({ list: 'china' }),
-  );
+  assert.equal(byokit.serializeQuery('china'), byokit.serializeQuery({ list: 'china' }));
   assert.equal(
     byokit.serializeQuery({ limit: 5, list: 'global' }),
     byokit.serializeQuery({ list: 'global', limit: 5 }),
   );
-  assert.equal(
-    byokit.serializeQuery(),
-    byokit.serializeQuery({}),
-  );
+  assert.equal(byokit.serializeQuery(), byokit.serializeQuery({}));
 
   // 2. Cache detection before call
   const query = { list: 'global', limit: 2 };
@@ -270,3 +264,9 @@ test('serializeQuery produces deterministic keys and Catalog caches results', ()
   assert.equal(catalog.getCached(query), undefined);
 });
 
+test('LIVE and default list return live models', () => {
+  const live = byokit.getModels(byokit.LIVE, { asOf });
+  const def = byokit.getModels({ asOf });
+  assert.deepEqual(live, def);
+  assert.ok(live.every((o) => o.lifecycle.status !== byokit.Lifecycle.Outdated));
+});

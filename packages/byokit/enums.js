@@ -180,6 +180,7 @@ export const Tag = Object.freeze({
 });
 export const ModelList = Object.freeze({
   Default: 'default',
+  Live: 'live',
   Complete: 'complete',
   China: 'china',
   Global: 'global',
@@ -216,6 +217,7 @@ export const ModelSort = Object.freeze({
   Speed: 'speed',
 });
 export const DEFAULT = ModelList.Default,
+  LIVE = ModelList.Live,
   COMPLETE = ModelList.Complete,
   CHINA = ModelList.China,
   GLOBAL = ModelList.Global,

@@ -1,7 +1,31 @@
 export const playgroundExamples = {
+  shortlist: {
+    label: 'Default shortlist',
+    code: `const models = byokit.getModels();
+console.log(models.map(model => ({
+  provider: model.provider.name,
+  model: model.apiModelId || '(configure local server)',
+})));`,
+  },
+  providers: {
+    label: 'Select from certain providers',
+    code: `const models = byokit.getModels({
+  providerIds: [
+    byokit.ProviderId.Anthropic,
+    byokit.ProviderId.Google,
+    byokit.ProviderId.OpenAI,
+  ],
+  local: false,
+});
+console.log(models.map(model => ({
+  provider: model.provider.name,
+  model: model.apiModelId,
+  context: model.limits.context,
+})));`,
+  },
   price: {
     label: 'Sort by price',
-    code: `const models = byokit.getModels(byokit.COMPLETE, {
+    code: `const models = byokit.getModels({
   sort: byokit.ModelSort.PriceAscend,
   limit: 5,
   local: false,
@@ -13,16 +37,21 @@ console.log(models.map(model => ({
   context: model.limits.context,
 })));`,
   },
-  shortlist: {
-    label: 'Default shortlist',
-    code: `const models = byokit.getModels();
+  speed: {
+    label: 'Sort by speed',
+    code: `const models = byokit.getModels({
+  sort: byokit.ModelSort.SpeedDescend,
+  limit: 5,
+  local: false,
+});
 console.log(models.map(model => ({
-  provider: model.provider.name,
-  model: model.apiModelId || '(configure local server)',
-})));`,
+  model: model.apiModelId,
+  tokensPerSecond: model.speed?.tokensPerSecond ?? null,
+})));
+// Unknown measurements remain null and sort last.`,
   },
   filter: {
-    label: 'Filter and exclude tags',
+    label: 'Complete list with filters',
     code: `const models = byokit.getModels(byokit.COMPLETE, {
   local: false,
   limit: 5,
@@ -38,19 +67,6 @@ console.log(models.map(model => ({
   model: model.apiModelId,
   context: model.limits.context,
 })));`,
-  },
-  speed: {
-    label: 'Sort by speed',
-    code: `const models = byokit.getModels(byokit.COMPLETE, {
-  sort: byokit.ModelSort.SpeedDescend,
-  limit: 5,
-  local: false,
-});
-console.log(models.map(model => ({
-  model: model.apiModelId,
-  tokensPerSecond: model.speed?.tokensPerSecond ?? null,
-})));
-// Unknown measurements remain null and sort last.`,
   },
   custom: {
     label: 'Append a custom model',

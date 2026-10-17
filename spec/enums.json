@@ -212,6 +212,7 @@
   },
   "ModelList": {
     "Default": "default",
+    "Live": "live",
     "Complete": "complete",
     "China": "china",
     "Global": "global",

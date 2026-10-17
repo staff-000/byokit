@@ -595,4 +595,3 @@ export interface CustomModel {
 /** Append one explicit, unverified model; does not mutate input, query the network, or re-sort. */
 export function appendModel(models: readonly ModelOption[], model: CustomModel): ModelOption[];
 export function serializeQuery(input?: PickerConfig | ModelList, options?: PickerConfig): string;
-

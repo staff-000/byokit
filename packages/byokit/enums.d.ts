@@ -242,6 +242,7 @@ export declare enum Tag {
 
 export declare enum ModelList {
   Default = 'default',
+  Live = 'live',
   Complete = 'complete',
   China = 'china',
   Global = 'global',
@@ -289,6 +290,7 @@ export declare enum ModelSort {
   Speed = 'speed',
 }
 export declare const DEFAULT: ModelList.Default,
+  LIVE: ModelList.Live,
   COMPLETE: ModelList.Complete,
   CHINA: ModelList.China,
   GLOBAL: ModelList.Global,

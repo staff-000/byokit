@@ -214,6 +214,7 @@ class Tag(str, Enum):
 
 class ModelList(str, Enum):
     DEFAULT = "default"
+    LIVE = "live"
     COMPLETE = "complete"
     CHINA = "china"
     GLOBAL = "global"
@@ -253,6 +254,7 @@ class ModelSort(str, Enum):
     SPEED = "speed"
 
 DEFAULT=ModelList.DEFAULT
+LIVE=ModelList.LIVE
 COMPLETE=ModelList.COMPLETE
 CHINA=ModelList.CHINA
 GLOBAL=ModelList.GLOBAL

@@ -334,10 +334,7 @@ function matches(o, m, c, providerTags = []) {
       : [Lifecycle.Live, Lifecycle.Uncertain]);
   if (!lifecycle.includes(o.lifecycle.status)) return false;
   if (f.popularity && !f.popularity.includes(o.popularity.status)) return false;
-  if (
-    (f.includeTags && f.includeTags.length > 0) ||
-    (f.excludeTags && f.excludeTags.length > 0)
-  ) {
+  if ((f.includeTags && f.includeTags.length > 0) || (f.excludeTags && f.excludeTags.length > 0)) {
     const tags = new Set([
       ...[...(m.tags || []), ...providerTags].filter(
         (t) => !t.startsWith('lifecycle:') && !t.startsWith('popularity:'),
@@ -433,8 +430,7 @@ function compareModels(a, b, sort) {
     );
   return (
     result ||
-    text(getLowerName(a), getLowerName(b)) *
-      (sort === ModelSort.AlphabeticalDescend ? -1 : 1) ||
+    text(getLowerName(a), getLowerName(b)) * (sort === ModelSort.AlphabeticalDescend ? -1 : 1) ||
     text(a.providerId, b.providerId) ||
     text(a.id, b.id)
   );
@@ -520,8 +516,7 @@ export class Catalog {
       }[config.sort] ??
       config.sort ??
       ModelSort.AlphabeticalAscend;
-    if (sort !== ModelSort.ProviderOrder)
-      hosted.sort((a, b) => compareModels(a[1], b[1], sort));
+    if (sort !== ModelSort.ProviderOrder) hosted.sort((a, b) => compareModels(a[1], b[1], sort));
     const limited = hosted.slice(0, config.limit);
     const locals = groups
       .filter((g) => g.provider.deployment === Deployment.Local)
@@ -1137,6 +1132,7 @@ function normalizeQuery(input = {}, options) {
   const config = mode ? { ...(options || {}), list: input } : { ...input };
   if (config.list === undefined && config.preset === undefined && config.providerIds === undefined)
     config.list = ModelList.Default;
+  if (config.list === ModelList.Live) config.list = ModelList.Default;
   if (config.list === ModelList.China) config.preset = 'china';
   if (config.list === ModelList.Global) config.preset = 'global';
   if (config.list === ModelList.Official) {

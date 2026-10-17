@@ -3,7 +3,7 @@ from pathlib import Path
 
 root = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(root / "packages/python/src"))
-from byokit import Catalog, check_fit, validate_config, load_catalog, serialize_query
+from byokit import Catalog, check_fit, validate_config, load_catalog, serialize_query, LIVE
 
 
 class CoreTests(unittest.TestCase):
@@ -11,6 +11,13 @@ class CoreTests(unittest.TestCase):
         self.catalog = Catalog(
             json.loads((root / "spec/fixtures/catalog.json").read_text())
         )
+
+    def test_live_list(self):
+        live = self.catalog.get_models(LIVE)
+        default = self.catalog.get_models()
+        self.assertEqual(live, default)
+        self.assertTrue(all(o["lifecycle"]["status"] != "OUTDATED" for o in live))
+
 
     def test_serialize_query_and_caching(self):
         # 1. Deterministic serialization

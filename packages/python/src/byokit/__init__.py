@@ -1367,6 +1367,8 @@ def _normalize_query(input=None, options=None):
         config = dict(input or {})
     if not any(k in config for k in ["list", "preset", "providerIds"]):
         config["list"] = ModelList.DEFAULT
+    if config.get("list") == ModelList.LIVE:
+        config["list"] = ModelList.DEFAULT
     if config.get("list") == ModelList.CHINA:
         config["preset"] = "china"
     if config.get("list") == ModelList.GLOBAL:

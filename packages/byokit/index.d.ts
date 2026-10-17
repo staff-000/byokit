@@ -597,4 +597,3 @@ export function appendModel(models: readonly ModelOption[], model: CustomModel):
 export function getModels(config?: PickerConfig): ModelOption[];
 export function getModels(list: ModelList, config?: PickerConfig): ModelOption[];
 export function serializeQuery(input?: PickerConfig | ModelList, options?: PickerConfig): string;
-

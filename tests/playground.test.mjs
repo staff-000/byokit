@@ -27,7 +27,7 @@ test('playground runs the actual compiled catalog and price sorting API', async 
   assert.equal(messages.at(-1).id, 7);
   const actual = JSON.parse(messages[0].text),
     expected = byokit
-      .getModels(byokit.COMPLETE, { sort: byokit.ModelSort.PriceAscend, limit: 5, local: false })
+      .getModels({ sort: byokit.ModelSort.PriceAscend, limit: 5, local: false })
       .map((model) => ({
         provider: model.provider.name,
         model: model.apiModelId,
