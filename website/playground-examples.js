@@ -15,12 +15,30 @@ console.log(models.map(model => ({
     byokit.ProviderId.Google,
     byokit.ProviderId.OpenAI,
   ],
+  filters: {
+    output: [byokit.Modality.Text],
+  },
   local: false,
 });
 console.log(models.map(model => ({
   provider: model.provider.name,
   model: model.apiModelId,
   context: model.limits.context,
+})));`,
+  },
+  image: {
+    label: 'Select image models',
+    code: `const models = byokit.getModels(byokit.COMPLETE, {
+  filters: {
+    output: [byokit.Modality.Image],
+  },
+  limit: 5,
+  local: false,
+});
+console.log(models.map(model => ({
+  provider: model.provider.name,
+  model: model.apiModelId,
+  output: model.modalities?.output,
 })));`,
   },
   price: {
