@@ -26,12 +26,14 @@ for (const file of ['verification-config.json', 'github-verification.js'])
 await mkdir(resolve(out, 'lib/core'), { recursive: true });
 for (const file of [
   'index.js',
+  'core.js',
   'enums.js',
   'catalog.js',
   'call.js',
   'connection.js',
   'sdk.js',
   'custom-model.js',
+  'client.js',
 ])
   await cp(resolve(root, 'packages/byokit', file), resolve(out, 'lib/core', file));
 await mkdir(resolve(out, 'assets'), { recursive: true });
