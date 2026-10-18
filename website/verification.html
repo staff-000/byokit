@@ -136,7 +136,7 @@ Count from 1 to 50 separated by spaces: 1 2 3...</textarea></label
             </p>
           </details>
           <div class="call-actions">
-            <button id="verify" type="submit" class="button primary">
+            <button id="verify" type="submit" class="button primary action-highlight">
               Verify model · earn a badge ↗</button
             ><button id="cancel" type="button" class="small-button" hidden>Cancel</button
             ><button id="clear-key" type="button" class="text-button">Clear API key</button>
@@ -226,14 +226,22 @@ Your console output will appear here.</pre>
                   Test real availability of the models in your generated list with your API keys.
                 </p>
               </div>
-              <button id="availability-start-btn" type="button" class="button secondary">
+              <button
+                id="availability-start-btn"
+                type="button"
+                class="button secondary action-highlight"
+              >
                 Test model availability
               </button>
             </div>
             <div id="availability-drawer" class="availability-drawer" hidden>
               <div id="availability-keys" class="api-keys-grid"></div>
               <div class="call-actions">
-                <button id="availability-run-btn" type="button" class="button primary">
+                <button
+                  id="availability-run-btn"
+                  type="button"
+                  class="button primary action-highlight"
+                >
                   Run availability test
                 </button>
                 <button id="availability-cancel-btn" type="button" class="small-button" hidden>

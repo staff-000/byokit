@@ -149,6 +149,15 @@ h1 span {
   background: var(--accent);
   color: white;
 }
+.button.action-highlight {
+  background: var(--lime);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px rgb(25 29 53 / 10%);
+}
+.button.action-highlight:hover:not(:disabled) {
+  background: #addc62;
+  color: var(--ink);
+}
 .text-link {
   font-size: 14px;
   font-weight: 600;
