@@ -129,6 +129,8 @@ Examples:
   npm run release minor                 # Bump 0.1.0 -> 0.2.0, test, and release
   npm run release 1.0.0                 # Set version 1.0.0 and release
   npm run release patch --dry-run       # Test and simulate release without publishing
+  npm run release patch --push          # Publish, push tags, and create GitHub release
+  npm run release --github-only         # Create GitHub release for existing tag/version
   npm run release minor --npm-only      # Only publish @byokit/* packages to npm
   npm run release minor --pypi-only     # Only publish byokit to PyPI
   npm run release patch --tag beta      # Publish npm packages under the "beta" tag
@@ -139,13 +141,15 @@ Options:
   --skip-tests          Skip test execution before releasing
   --npm-only            Only publish npm packages (@byokit/core, assets, dom, cli, react)
   --pypi-only           Only publish the Python package to PyPI
+  --github-only         Only push tag and create GitHub release (skip npm/PyPI publish)
+  --no-github           Skip creating GitHub release
   --npm-token <token>   npm authentication token (or via NPM_TOKEN in env / .env.release)
   --pypi-token <token>  PyPI API token (or via PYPI_API_TOKEN in env / .env.release)
   --tag <tag>           npm dist-tag (default: latest)
   --otp <code>          npm 2FA authentication code
   --pypi-repo <repo>    PyPI repository (default: pypi, e.g. testpypi)
-  --no-git              Skip git commit and tag
-  --push                Automatically push git commits and tags to origin
+  --no-git              Skip git commit, tag, and GitHub release
+  --push                Automatically push git commits and tags to origin, then create GitHub release
   --allow-dirty         Allow release with uncommitted changes
   --help, -h            Show this help message
 `);
@@ -157,6 +161,9 @@ function parseCliArgs(args) {
     dryRun: false,
     skipTests: false,
     npmOnly: false,
+    pypiOnly: false,
+    githubOnly: false,
+    noGithub: false,
     npmToken:
       process.env.GITHUB_ACTIONS && !args.includes('--npm-token')
         ? null
@@ -179,6 +186,8 @@ function parseCliArgs(args) {
     else if (arg === '--skip-tests') options.skipTests = true;
     else if (arg === '--npm-only') options.npmOnly = true;
     else if (arg === '--pypi-only') options.pypiOnly = true;
+    else if (arg === '--github-only') options.githubOnly = true;
+    else if (arg === '--no-github') options.noGithub = true;
     else if (arg === '--no-git') options.noGit = true;
     else if (arg === '--push') options.push = true;
     else if (arg === '--allow-dirty') options.allowDirty = true;
@@ -363,7 +372,101 @@ function publishPypi({ dryRun, repository, pypiToken }) {
   console.log(`✅ Uploaded to PyPI repository "${repository}"!`);
 }
 
-function handleGit(newVersion, push = false) {
+async function createGitHubRelease(version, { dryRun = false } = {}) {
+  const tagName = `v${version}`;
+  console.log(`\n🚀 Creating GitHub Release for ${tagName}...`);
+
+  if (dryRun) {
+    console.log(`  [dry-run] Would create GitHub release ${tagName}`);
+    return;
+  }
+
+  // 1. Try gh CLI
+  try {
+    const hasGh = run('gh --version', { capture: true, silent: true, ignoreError: true });
+    if (hasGh) {
+      console.log(`$ gh release create ${tagName} --title "Release ${tagName}" --generate-notes`);
+      const output = run(
+        `gh release create ${tagName} --title "Release ${tagName}" --generate-notes`,
+        {
+          capture: true,
+          ignoreError: true,
+        },
+      );
+      if (output !== null) {
+        console.log(`✅ Created GitHub Release ${tagName}!`);
+        return;
+      }
+    }
+  } catch (err) {
+    if (String(err?.message || '').includes('already exists')) {
+      console.log(`ℹ GitHub Release ${tagName} already exists.`);
+      return;
+    }
+    console.warn(`⚠️  gh CLI release creation notice: ${err.message || err}`);
+  }
+
+  // 2. Try GitHub REST API via GH_TOKEN or GITHUB_TOKEN
+  const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;
+  if (token) {
+    try {
+      console.log(`ℹ Creating GitHub Release via GitHub REST API...`);
+      const repo = process.env.GITHUB_REPOSITORY || 'staff-000/byokit';
+      const url = `https://api.github.com/repos/${repo}/releases`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/vnd.github+json',
+          'User-Agent': 'byokit-release-tool',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          tag_name: tagName,
+          name: `Release ${tagName}`,
+          generate_release_notes: true,
+        }),
+      });
+
+      if (res.status === 422) {
+        const text = await res.text();
+        if (text.includes('already_exists')) {
+          console.log(`ℹ GitHub Release ${tagName} already exists.`);
+          return;
+        }
+        throw new Error(`HTTP 422: ${text}`);
+      }
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`HTTP ${res.status}: ${errorText}`);
+      }
+
+      const releaseData = await res.json();
+      console.log(`✅ Created GitHub Release via API: ${releaseData.html_url}`);
+      return;
+    } catch (err) {
+      console.warn(`⚠️  GitHub REST API release creation notice: ${err.message || err}`);
+    }
+  }
+
+  console.log(`\nℹ To create or view the release on GitHub:`);
+  console.log(`   gh release create ${tagName} --title "Release ${tagName}" --generate-notes`);
+  console.log(`   or visit: https://github.com/staff-000/byokit/releases/new?tag=${tagName}\n`);
+}
+
+async function handleGit(newVersion, push = false, noGithub = false, dryRun = false) {
+  if (dryRun) {
+    console.log(`\n🔖 [dry-run] Would create Git commit and tag v${newVersion}`);
+    if (push) {
+      console.log('⬆ [dry-run] Would push git origin main --tags');
+      if (!noGithub) {
+        await createGitHubRelease(newVersion, { dryRun: true });
+      }
+    }
+    return;
+  }
+
   console.log(`\n🔖 Creating Git commit and tag v${newVersion}...`);
   run(
     `git add package.json packages/*/package.json packages/python/pyproject.toml catalog/ packages/byokit/catalog.js packages/python/src/byokit/data/`,
@@ -376,8 +479,21 @@ function handleGit(newVersion, push = false) {
     console.log('\n⬆ Pushing to git origin with tags...');
     run('git push origin main --tags');
     console.log('✅ Pushed to origin!');
+
+    if (!noGithub) {
+      await createGitHubRelease(newVersion, { dryRun: false });
+    }
   } else {
-    console.log(`\nℹ To push this release tag to GitHub, run:\n   git push origin main --tags\n`);
+    console.log(`\nℹ To push this release tag to GitHub and publish the GitHub release, run:`);
+    console.log(`   git push origin main --tags`);
+    if (!noGithub) {
+      console.log(
+        `   gh release create v${newVersion} --title "Release v${newVersion}" --generate-notes`,
+      );
+      console.log(
+        `   or visit: https://github.com/staff-000/byokit/releases/new?tag=v${newVersion}\n`,
+      );
+    }
   }
 }
 
@@ -401,6 +517,30 @@ async function main() {
   const targetInput = options.target || 'patch';
   const newVersion = bumpVersion(currentVersion, targetInput);
   console.log(`Target version:  ${newVersion}`);
+
+  // Handle standalone --github-only
+  if (options.githubOnly) {
+    const versionToRelease = options.target || currentVersion;
+    console.log(`Target release version: v${versionToRelease}`);
+    const tagName = `v${versionToRelease}`;
+    const tagExists = run(`git tag -l ${tagName}`, { capture: true, silent: true })?.trim();
+    if (!tagExists) {
+      console.log(`Tag ${tagName} does not exist locally. Creating annotated tag ${tagName}...`);
+      run(`git tag -a ${tagName} -m "Release ${tagName}"`);
+    }
+    if ((options.push || !options.noGit) && !options.dryRun) {
+      console.log(`\n⬆ Pushing git commits and tags to origin...`);
+      run('git push origin main --tags', { ignoreError: true });
+    } else if (options.dryRun && (options.push || !options.noGit)) {
+      console.log(`\n⬆ [dry-run] Would push git commits and tags to origin`);
+    }
+    await createGitHubRelease(versionToRelease, { dryRun: options.dryRun });
+    console.log(`\n===========================================`);
+    console.log(`🎉 GitHub release v${versionToRelease} completed!`);
+    console.log(`  - https://github.com/staff-000/byokit/releases/tag/${tagName}`);
+    console.log(`===========================================\n`);
+    return;
+  }
 
   // Git cleanliness check
   if (!options.allowDirty && !options.dryRun) {
@@ -442,9 +582,11 @@ async function main() {
       });
     }
 
-    // Git commit & tag
+    // Git commit & tag & GitHub release
     if (!options.dryRun && !options.noGit) {
-      handleGit(newVersion, options.push);
+      await handleGit(newVersion, options.push, options.noGithub, false);
+    } else if (options.dryRun && !options.noGit && options.push) {
+      await handleGit(newVersion, true, options.noGithub, true);
     }
 
     if (options.dryRun) {
@@ -463,6 +605,10 @@ async function main() {
     if (!options.npmOnly) {
       console.log(`PyPI package:`);
       console.log(`  - https://pypi.org/project/byokit/${newVersion}/`);
+    }
+    if (!options.noGithub) {
+      console.log(`GitHub release:`);
+      console.log(`  - https://github.com/staff-000/byokit/releases/tag/v${newVersion}`);
     }
     console.log(`===========================================\n`);
   } catch (err) {

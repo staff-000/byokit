@@ -23,6 +23,7 @@
     "verify": "node scripts/verify.mjs",
     "release": "node scripts/release.mjs",
     "release:dry-run": "node scripts/release.mjs --dry-run",
+    "release:github": "node scripts/release.mjs --github-only",
     "release:trigger": "node scripts/trigger-release.mjs",
     "test:released": "node scripts/test-released-packages.mjs",
     "check:budget": "node packages/byokit/bin.mjs check examples/task.config.json --strict",
