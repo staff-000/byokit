@@ -116,6 +116,25 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
       a.localeCompare(b, undefined, { sensitivity: 'base' }),
     );
     assert.deepEqual(providerOptions, sortedProviderOptions);
+    assert.equal($('#callable-filter').checked, true);
+    assert.ok(document.querySelector('#provider-filter option[value="302ai"]'));
+    assert.ok(!document.querySelector('#provider-filter option[value="local"]'));
+    assert.ok([...document.querySelectorAll('#models .batch-pick')].every((c) => !c.disabled));
+    change('provider-filter', '302ai');
+    assert.match($('#models').textContent, /No matching/);
+    $('#callable-filter').checked = false;
+    $('#callable-filter').dispatchEvent(new dom.window.Event('input'));
+    assert.ok(document.querySelectorAll('#models .batch-pick').length > 0);
+    assert.ok([...document.querySelectorAll('#models .batch-pick')].every((c) => c.disabled));
+    assert.match($('#models').textContent, /No reviewed provider adapter/);
+    $('#callable-filter').checked = true;
+    $('#callable-filter').dispatchEvent(new dom.window.Event('input'));
+    assert.match($('#models').textContent, /No matching/);
+    change('provider-filter', '');
+    $('#setup-local').click();
+    assert.equal($('#verification-drawer').open, true);
+    assert.equal($('#local-fields').hidden, false);
+    $('#drawer-close').click();
     assert.equal(document.querySelectorAll('#models tr:first-child td').length, 8);
     change('sort-filter', 'priceDescend');
     const prices = [...document.querySelectorAll('#models tr')].map(

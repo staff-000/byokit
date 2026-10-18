@@ -3,12 +3,29 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import * as byokit from '../packages/byokit/catalog.js';
 import { filterModels } from '../website/verification-filters.js';
-test('website model list is the library catalog, including metadata and contributor evidence', () => {
+test('verification table defaults to callable models and can show the full hosted catalog', () => {
   const expected = byokit.getModels(byokit.COMPLETE, {
     local: false,
     sort: byokit.ModelSort.ProviderOrder,
+    filters: { callable: true },
   });
   const actual = filterModels({ includeOutdated: true }).filter((m) => !m.local);
+  assert.ok(actual.length > 0);
+  assert.ok(filterModels().every((m) => !m.local && m.callSupport.textGeneration));
+  assert.deepEqual(filterModels({ provider: '302ai', includeOutdated: true }), []);
+  const all = filterModels({ callableOnly: false, includeOutdated: true });
+  assert.deepEqual(
+    all.map((m) => m.id),
+    byokit
+      .getModels(byokit.COMPLETE, { local: false, sort: byokit.ModelSort.ProviderOrder })
+      .map((m) => m.id),
+  );
+  assert.ok(all.some((m) => m.callSupport.textGeneration));
+  assert.ok(all.some((m) => !m.callSupport.textGeneration));
+  assert.ok(filterModels({ provider: '302ai', callableOnly: false }).length > 0);
+  assert.ok(
+    byokit.getModels(byokit.COMPLETE, { local: false }).some((m) => m.providerId === '302ai'),
+  );
   assert.deepEqual(
     actual.map((m) => m.id),
     expected.map((m) => m.id),

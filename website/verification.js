@@ -222,7 +222,14 @@ try {
   storageAvailable = false;
 }
 const models = byokit.getModels(byokit.COMPLETE, {
-  filters: { lifecycle: byokit.any(...Object.values(byokit.Lifecycle)), includeDeprecated: true },
+  filters: {
+    lifecycle: byokit.any(...Object.values(byokit.Lifecycle)),
+    includeDeprecated: true,
+  },
+});
+$('#setup-local').addEventListener('click', () => {
+  const local = models.find((m) => m.local);
+  if (local) openModel(local);
 });
 function isUnverified(m) {
   if (!m || m.local) return false;
@@ -399,7 +406,7 @@ function filteredModels() {
     sort: $('#sort-filter').value,
     verification: $('#verification-filter')?.value,
     verifications: publishedReports,
-    callableOnly: $('#callable-filter')?.checked,
+    callableOnly: $('#callable-filter').checked,
     includeOutdated: $('#include-outdated').checked,
   });
   const sort = $('#sort-filter').value;
@@ -1245,8 +1252,10 @@ for (const [id, values] of [
 }
 $('#filter-reference').textContent =
   'Provider; include/exclude tags (including origin:cn); input/output modalities; file formats; capabilities; context; input/output price; open weights; commercial use; parameter count; speed/latency; lifecycle; popularity; contributor and verification freshness. This page exposes common selectors; the library supports the full list documented in README.';
-const providers = [...new Map(models.map((m) => [m.providerId, m.provider])).values()].sort(
-  (a, b) => (a.name || a.id).localeCompare(b.name || b.id, undefined, { sensitivity: 'base' }),
+const providers = [
+  ...new Map(models.filter((m) => !m.local).map((m) => [m.providerId, m.provider])).values(),
+].sort((a, b) =>
+  (a.name || a.id).localeCompare(b.name || b.id, undefined, { sensitivity: 'base' }),
 );
 for (const provider of providers) {
   const option = el('option', provider.name);

@@ -339,18 +339,21 @@ Your console output will appear here.</pre>
       <section id="model-list" class="tracker-section">
         <div class="section-head">
           <div>
-            <p class="eyebrow">MODEL LIST / LIVE BY DEFAULT</p>
+            <p class="eyebrow">MODEL LIST / CALLABLE BY DEFAULT</p>
             <h2>Every speed measurement helps.</h2>
           </div>
           <span id="model-count" class="count" aria-live="polite"></span>
         </div>
         <p class="fine">
-          Availability and speed are separate. Standard speed summaries use the median and middle
-          50% of published comparable measurements from the last 30 days, grouped by provider
+          Models supported by BYOKit’s text-generation adapters appear by default. Uncheck “Callable
+          only” to browse all catalog models. Call support does not guarantee access for your
+          account. Availability and speed are separate. Standard speed summaries use the median and
+          middle 50% of published comparable measurements from the last 30 days, grouped by provider
           offering and benchmark version. Browser location, network, provider load, and output
           length still affect results. Batch checks verify availability; use Test speed for the
           two-call speed benchmark.
         </p>
+        <button id="setup-local" type="button" class="small-button">Set up a local server</button>
         <details class="filter-reference">
           <summary>What can I filter?</summary>
           <div id="filter-reference"></div>
@@ -522,7 +525,7 @@ Your console output will appear here.</pre>
                       </select></label
                     >
                     <label class="header-checkbox"
-                      ><input id="callable-filter" type="checkbox" /> Browser callable only</label
+                      ><input id="callable-filter" type="checkbox" checked /> Callable only</label
                     >
                     <label class="header-checkbox"
                       ><input id="include-outdated" type="checkbox" /> Include outdated</label

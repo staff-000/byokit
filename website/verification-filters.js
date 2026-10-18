@@ -13,6 +13,7 @@ export function filterModels(state = {}) {
   providerIds = [...new Set(providerIds)];
   if (state.provider) providerIds = providerIds.filter((id) => id === state.provider);
   const filters = {
+    ...(state.callableOnly !== false ? { callable: true } : {}),
     lifecycle: state.includeOutdated
       ? byokit.any(...Object.values(byokit.Lifecycle))
       : byokit.any(byokit.Lifecycle.Live, byokit.Lifecycle.Uncertain),
@@ -51,15 +52,6 @@ export function filterModels(state = {}) {
     sort,
   });
 
-  if (!state.provider || state.provider === byokit.ProviderId.Local) {
-    let locals = byokit.getModels().filter((m) => m.local);
-    if (state.feature && state.feature !== 'any') locals = [];
-    if (state.modality && state.modality !== 'any') locals = [];
-    if (state.speciality && state.speciality !== 'any')
-      locals = locals.filter((m) => m.speciality === state.speciality);
-    if (state.tier && state.tier !== 'any') locals = locals.filter((m) => m.tier === state.tier);
-    models.push(...locals);
-  }
   if (state.verification && state.verification !== 'any') {
     const vData = state.verifications ? { verifications: state.verifications } : undefined;
     models = models.filter((m) => {
@@ -86,7 +78,6 @@ export function filterModels(state = {}) {
         .toLowerCase()
         .includes(search),
     );
-  if (state.callableOnly) models = models.filter((m) => m.local || m.callSupport?.textGeneration);
   if (state.sort === 'release')
     models.sort((a, b) => (b.releaseDate || '').localeCompare(a.releaseDate || ''));
 
