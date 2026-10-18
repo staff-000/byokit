@@ -1384718,6 +1384718,54 @@
       "adapter": "byokit-website@1",
       "evidence": "https://github.com/staff-000/byokit/issues/2",
       "notes": "Community-reported successful chat call. Output budget 256; latency 896 ms. GitHub author ID 249984446; submitted 2026-10-14T12:19:01Z; Provider call ran in the contributor’s browser."
+    },
+    {
+      "id": "website:249984446:06efdba3-8558-4be6-85de-da4be8367af7",
+      "offeringId": "deepseek/deepseek-chat",
+      "contributor": "github:staff-000",
+      "checkedAt": "2026-10-18T17:15:05.351Z",
+      "result": "passed",
+      "assessment": {
+        "attempt": {
+          "outcome": "succeeded",
+          "reason": null,
+          "scope": "request",
+          "certainty": "explicit",
+          "source": "client_error",
+          "classifierVersion": "1",
+          "retry": {
+            "action": "none",
+            "afterSeconds": null
+          }
+        },
+        "checks": {
+          "textGeneration": "passed",
+          "speed": "not_run"
+        },
+        "phases": [
+          {
+            "phase": "generation",
+            "attempt": {
+              "outcome": "succeeded",
+              "reason": null,
+              "scope": "request",
+              "certainty": "explicit",
+              "source": "client_error",
+              "classifierVersion": "1",
+              "retry": {
+                "action": "none",
+                "afterSeconds": null
+              }
+            }
+          }
+        ]
+      },
+      "checks": [
+        "textGeneration"
+      ],
+      "adapter": "byokit-website@1",
+      "evidence": "https://github.com/staff-000/byokit/issues/3",
+      "notes": "Community-reported succeeded chat attempt. Output budget 128; latency 1003 ms. GitHub author ID 249984446; submitted 2026-10-18T17:15:32Z; Provider call ran in the contributor’s browser."
     }
   ]
 }
