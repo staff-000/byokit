@@ -116,6 +116,12 @@ class ModelStatus(str, Enum):
     DEPRECATED = "deprecated"
     UNKNOWN = "unknown"
 
+class ReleaseChannel(str, Enum):
+    STABLE = "stable"
+    PREVIEW = "preview"
+    EXPERIMENTAL = "experimental"
+    UNKNOWN = "unknown"
+
 class VerificationResult(str, Enum):
     PASSED = "passed"
     FAILED = "failed"
@@ -249,6 +255,9 @@ class Tag(str, Enum):
     SPECIALITY_CODING = "speciality:coding"
     SPECIALITY_UNKNOWN = "speciality:unknown"
     TIER_UNKNOWN = "tier:unknown"
+    CHANNEL_PREVIEW = "channel:preview"
+    PREVIEW = "channel:preview"
+    MODEL_PREVIEW = "channel:preview"
 
 class Speciality(str, Enum):
     GENERAL = "general"

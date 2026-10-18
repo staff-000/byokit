@@ -16,6 +16,7 @@ from byokit import (
     ModelSort,
     ModelList,
     LIVE,
+    Tag,
 )
 
 
@@ -30,6 +31,39 @@ class CoreTests(unittest.TestCase):
         default = self.catalog.get_models()
         self.assertEqual(live, default)
         self.assertTrue(all(o["lifecycle"]["status"] != "OUTDATED" for o in live))
+
+    def test_preview_tag_and_default_exclusion(self):
+        self.assertEqual(Tag.CHANNEL_PREVIEW.value, "channel:preview")
+        self.assertEqual(Tag.PREVIEW.value, "channel:preview")
+        self.assertEqual(Tag.MODEL_PREVIEW.value, "channel:preview")
+
+        raw = json.loads((root / "spec/fixtures/catalog.json").read_text())
+        raw["offerings"] = [
+            dict(raw["offerings"][0], id=f"test/{ch}", apiModelId=f"model-{ch}", status="stable" if ch == "stable" else ch)
+            for ch in ["stable", "preview", "experimental", "unknown"]
+        ]
+        cat = Catalog(raw)
+
+        base = {"local": False, "ui": {"maxModelsPerProvider": 10}}
+
+        # 1. Default excludes preview and experimental
+        default_list = cat.get_models(base)
+        self.assertEqual([o["id"] for o in default_list], ["test/stable", "test/unknown"])
+        self.assertTrue(all("channel:preview" not in o["tags"] for o in default_list))
+
+        # 2. Explicitly include previews
+        with_previews = cat.get_models(dict(base, filters={"includePreviews": True}))
+        self.assertEqual([o["id"] for o in with_previews], ["test/experimental", "test/preview", "test/stable", "test/unknown"])
+        preview_offering = next(o for o in with_previews if o["id"] == "test/preview")
+        exp_offering = next(o for o in with_previews if o["id"] == "test/experimental")
+        stable_offering = next(o for o in with_previews if o["id"] == "test/stable")
+        self.assertIn("channel:preview", preview_offering["tags"])
+        self.assertIn("channel:preview", exp_offering["tags"])
+        self.assertNotIn("channel:preview", stable_offering["tags"])
+
+        # 3. Filter by includeTags
+        tagged = cat.get_models(dict(base, filters={"includeTags": [Tag.CHANNEL_PREVIEW]}))
+        self.assertEqual([o["id"] for o in tagged], ["test/experimental", "test/preview"])
 
 
     def test_serialize_query_and_caching(self):

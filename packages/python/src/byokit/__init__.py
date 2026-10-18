@@ -504,6 +504,7 @@ def validate_config(config):
             "ui",
             "budget",
             "tasks",
+            "includePreviews",
         ],
         "filters": [
             "speciality",
@@ -527,6 +528,7 @@ def validate_config(config):
             "lifecycle",
             "popularity",
             "includeDeprecated",
+            "includePreviews",
             "callable",
             "verified",
             "verifiedBy",
@@ -688,9 +690,11 @@ def validate_config(config):
         except (ValueError, TypeError):
             errors.append("asOf must be an ISO timestamp")
     f = config.get("filters", {})
-    for key in ["callable", "includeDeprecated", "official"]:
+    for key in ["callable", "includeDeprecated", "includePreviews", "official"]:
         if key in f and not isinstance(f[key], bool):
             errors.append(f"filters.{key} must be boolean")
+    if "includePreviews" in config and not isinstance(config["includePreviews"], bool):
+        errors.append("includePreviews must be boolean")
     valid_verified = {"verified", "unverified", "verified to be failure"}
     if "verified" in f and not isinstance(f["verified"], bool) and f["verified"] not in valid_verified:
         errors.append("filters.verified must be boolean or verification status")
@@ -725,12 +729,55 @@ def validate_config(config):
     return errors
 
 
-def matches(o, m, config, provider_tags=None):
+def _has_channel_preview_tag(node):
+    if not node:
+        return False
+    if isinstance(node, str):
+        return node == "channel:preview"
+    if hasattr(node, "value"):
+        return getattr(node, "value") == "channel:preview"
+    if isinstance(node, (list, tuple, set)):
+        return _any(_has_channel_preview_tag(t) for t in node)
+    if isinstance(node, dict):
+        vals = (
+            node.get("values")
+            or node.get("items")
+            or node.get("any")
+            or node.get("exact")
+        )
+        if isinstance(vals, (list, tuple, set)):
+            return _any(_has_channel_preview_tag(t) for t in vals)
+        if "or" in node and isinstance(node["or"], list):
+            return _any(_has_channel_preview_tag(t) for t in node["or"])
+        if "and" in node and isinstance(node["and"], list):
+            return _any(_has_channel_preview_tag(t) for t in node["and"])
+    return False
+
+
+def matches(o, m, config, provider_tags=None, is_curated=False):
     f = config.get("filters", {})
     unknown = config.get("unknownPolicy") == "include"
 
     if f.get("releaseChannel") is not None:
-        if not matches_list_filter(get_release_channel(o), normalize_list_filter(f["releaseChannel"], "releaseChannel")):
+        if not matches_list_filter(
+            get_release_channel(o),
+            normalize_list_filter(f["releaseChannel"], "releaseChannel"),
+        ):
+            return False
+    else:
+        channel = get_release_channel(o)
+        allow_preview = (
+            is_curated
+            or f.get("includePreviews") is True
+            or config.get("includePreviews") is True
+            or _has_channel_preview_tag(f.get("includeTags"))
+            or (
+                config.get("list") == "complete"
+                and f.get("includePreviews") is not False
+                and config.get("includePreviews") is not False
+            )
+        )
+        if not allow_preview and channel in ("preview", "experimental"):
             return False
     if "speciality" in f and f["speciality"] is not None:
         spec = normalize_list_filter(f["speciality"], "speciality")
@@ -868,6 +915,9 @@ def matches(o, m, config, provider_tags=None):
         tags.add(f"tier:{tier_val}")
     if is_flash_model(o, m):
         tags.add("model:flash")
+    channel = get_release_channel(o)
+    if channel in ("preview", "experimental"):
+        tags.add("channel:preview")
     if o.get("releaseDate"):
         for t in get_release_tags(o["releaseDate"], config.get("asOf")):
             tags.add(t)
@@ -1373,6 +1423,7 @@ class Catalog:
                         self.models[o["modelId"]],
                         config,
                         self.providers[provider_id].get("tags", []),
+                        is_curated=bool(recommended and o["id"] in recommended),
                     )
                     and matches_verification(self.data, o["id"], config)
                 ),
@@ -1742,6 +1793,9 @@ def derive_tags(offering, model=None):
         )
     if is_flash_model(offering, model):
         tags.append("model:flash")
+    channel = get_release_channel(offering)
+    if channel in ("preview", "experimental"):
+        tags.append("channel:preview")
     return sorted(set(tags))
 
 
@@ -2122,13 +2176,20 @@ def _with_signals(o, as_of=None):
         )
     ]
     release_tags = get_release_tags(o.get("releaseDate"), as_of)
+    channel = get_release_channel(o)
+    channel_tags = ["channel:preview"] if channel in ("preview", "experimental") else []
     return dict(
         o,
         lifecycle=lifecycle,
         popularity=popularity,
-        tags=tags
-        + ["lifecycle:" + lifecycle["status"], "popularity:" + popularity["status"]]
-        + release_tags,
+        tags=list(
+            dict.fromkeys(
+                tags
+                + channel_tags
+                + ["lifecycle:" + lifecycle["status"], "popularity:" + popularity["status"]]
+                + release_tags
+            )
+        ),
     )
 
 

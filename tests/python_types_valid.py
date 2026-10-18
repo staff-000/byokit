@@ -25,10 +25,12 @@ byokit.get_models(
     {
         "filters": {
             "excludeTags": [byokit.Tag.PRICE_PREMIUM],
-            "includeTags": [byokit.Tag.MODEL_FLASH, byokit.Tag.FLASH],
+            "includeTags": [byokit.Tag.MODEL_FLASH, byokit.Tag.FLASH, byokit.Tag.CHANNEL_PREVIEW, byokit.Tag.PREVIEW],
             "lifecycle": [byokit.Lifecycle.LIVE],
             "popularity": [byokit.Popularity.POPULAR],
-        }
+            "includePreviews": True,
+        },
+        "includePreviews": True,
     }
 )
 

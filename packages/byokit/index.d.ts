@@ -208,6 +208,7 @@ export interface PickerConfig {
   preset?: Preset;
   providerIds?: ListFilter<ProviderId | CustomProviderId | (string & {})>;
   unknownPolicy?: UnknownPolicy;
+  includePreviews?: boolean;
   filters?: {
     releaseChannel?: ListFilter<ReleaseChannel>;
     speciality?: ListFilter<Speciality>;
@@ -231,6 +232,7 @@ export interface PickerConfig {
     lifecycle?: ListFilter<Lifecycle>;
     popularity?: ListFilter<Popularity>;
     includeDeprecated?: boolean;
+    includePreviews?: boolean;
     callable?: boolean;
     verified?:
       boolean | CommunityVerificationStatus | 'verified' | 'unverified' | 'verified to be failure';

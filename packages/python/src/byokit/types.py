@@ -99,6 +99,7 @@ class Filters(TypedDict, total=False):
     lifecycle: ListFilter[Lifecycle]
     popularity: ListFilter[Popularity]
     includeDeprecated: bool
+    includePreviews: bool
     callable: bool
     verified: bool
     verifiedBy: ContributorId
@@ -137,6 +138,7 @@ class PickerConfig(TypedDict, total=False):
     limit: int
     asOf: str
     unknownPolicy: UnknownPolicy
+    includePreviews: bool
     filters: Filters
     prefer: Prefer
     ui: UI

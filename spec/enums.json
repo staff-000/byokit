@@ -114,6 +114,12 @@
     "Deprecated": "deprecated",
     "Unknown": "unknown"
   },
+  "ReleaseChannel": {
+    "Stable": "stable",
+    "Preview": "preview",
+    "Experimental": "experimental",
+    "Unknown": "unknown"
+  },
   "VerificationResult": {
     "Passed": "passed",
     "Failed": "failed"
@@ -246,7 +252,10 @@
     "TierMini": "tier:mini",
     "SpecialityCoding": "speciality:coding",
     "SpecialityUnknown": "speciality:unknown",
-    "TierUnknown": "tier:unknown"
+    "TierUnknown": "tier:unknown",
+    "ChannelPreview": "channel:preview",
+    "Preview": "channel:preview",
+    "ModelPreview": "channel:preview"
   },
   "Speciality": {
     "General": "general",

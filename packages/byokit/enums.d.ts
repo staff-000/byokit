@@ -131,6 +131,13 @@ export declare enum ModelStatus {
   Unknown = 'unknown',
 }
 
+export declare enum ReleaseChannel {
+  Stable = 'stable',
+  Preview = 'preview',
+  Experimental = 'experimental',
+  Unknown = 'unknown',
+}
+
 export declare enum VerificationResult {
   Passed = 'passed',
   Failed = 'failed',
@@ -277,6 +284,9 @@ export declare enum Tag {
   SpecialityCoding = 'speciality:coding',
   SpecialityUnknown = 'speciality:unknown',
   TierUnknown = 'tier:unknown',
+  ChannelPreview = 'channel:preview',
+  Preview = 'channel:preview',
+  ModelPreview = 'channel:preview',
 }
 
 export declare enum Speciality {

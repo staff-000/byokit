@@ -472,6 +472,7 @@ export function validateConfig(c = {}) {
       'ui',
       'budget',
       'tasks',
+      'includePreviews',
     ],
     filters: [
       'speciality',
@@ -495,6 +496,7 @@ export function validateConfig(c = {}) {
       'lifecycle',
       'popularity',
       'includeDeprecated',
+      'includePreviews',
       'callable',
       'verified',
       'verifiedBy',
@@ -662,9 +664,11 @@ export function validateConfig(c = {}) {
       !Number.isFinite(Date.parse(c.asOf)))
   )
     errors.push('asOf must be an ISO timestamp');
-  for (const key of ['callable', 'includeDeprecated', 'official'])
+  for (const key of ['callable', 'includeDeprecated', 'includePreviews', 'official'])
     if (c.filters?.[key] !== undefined && typeof c.filters[key] !== 'boolean')
       errors.push(`filters.${key} must be boolean`);
+  if (c.includePreviews !== undefined && typeof c.includePreviews !== 'boolean')
+    errors.push('includePreviews must be boolean');
   const validVerified = ['verified', 'unverified', 'verified to be failure'];
   if (
     c.filters?.verified !== undefined &&
@@ -707,17 +711,41 @@ export function validateConfig(c = {}) {
 function unknown(c) {
   return c.unknownPolicy === 'include';
 }
-function matches(o, m, c, providerTags = []) {
+function hasChannelPreviewTag(node) {
+  if (!node) return false;
+  if (typeof node === 'string') return node === 'channel:preview';
+  if (Array.isArray(node)) return node.some(hasChannelPreviewTag);
+  if (typeof node === 'object') {
+    const vals = node.values ?? node.items ?? node.any ?? node.exact;
+    if (Array.isArray(vals)) return vals.some(hasChannelPreviewTag);
+    if (Array.isArray(node.or)) return node.or.some(hasChannelPreviewTag);
+    if (Array.isArray(node.and)) return node.and.some(hasChannelPreviewTag);
+  }
+  return false;
+}
+function matches(o, m, c, providerTags = [], isCurated = false) {
   const f = c.filters || {};
   const allowUnknown = unknown(c);
-  if (
-    f.releaseChannel != null &&
-    !matchesListFilter(
-      getReleaseChannel(o),
-      normalizeListFilter(f.releaseChannel, 'releaseChannel'),
+  if (f.releaseChannel != null) {
+    if (
+      !matchesListFilter(
+        getReleaseChannel(o),
+        normalizeListFilter(f.releaseChannel, 'releaseChannel'),
+      )
     )
-  )
-    return false;
+      return false;
+  } else {
+    const channel = getReleaseChannel(o);
+    const allowPreview =
+      isCurated ||
+      f.includePreviews === true ||
+      c.includePreviews === true ||
+      hasChannelPreviewTag(f.includeTags) ||
+      (c.list === ModelList.Complete && f.includePreviews !== false && c.includePreviews !== false);
+    if (!allowPreview && (channel === 'preview' || channel === 'experimental')) {
+      return false;
+    }
+  }
 
   if (f.speciality !== undefined && f.speciality !== null) {
     const spec = normalizeListFilter(f.speciality, 'speciality');
@@ -850,6 +878,10 @@ function matches(o, m, c, providerTags = []) {
   if (tierVal) tags.add(`tier:${tierVal}`);
   if (isFlashModel(o, m)) {
     tags.add('model:flash');
+  }
+  const channel = getReleaseChannel(o);
+  if (channel === 'preview' || channel === 'experimental') {
+    tags.add('channel:preview');
   }
   if (o.releaseDate) {
     for (const t of getReleaseTags(o.releaseDate, c.asOf)) tags.add(t);
@@ -1307,8 +1339,13 @@ export class Catalog {
         .map((o) => withSignals(o, config.asOf))
         .filter(
           (o) =>
-            matches(o, this.models.get(o.modelId), config, this.providers.get(id).tags) &&
-            matchesVerification(this.data, o.id, config),
+            matches(
+              o,
+              this.models.get(o.modelId),
+              config,
+              this.providers.get(id).tags,
+              Boolean(recommended?.has(o.id)),
+            ) && matchesVerification(this.data, o.id, config),
         );
       choices.sort((a, b) => {
         const preferred = (x) =>
@@ -1634,6 +1671,10 @@ export function deriveTags(offering, model = {}) {
   if (isFlashModel(offering, model)) {
     tags.push('model:flash');
   }
+  const channel = getReleaseChannel(offering);
+  if (channel === 'preview' || channel === 'experimental') {
+    tags.push('channel:preview');
+  }
   return [...new Set(tags)].sort();
 }
 
@@ -1865,15 +1906,21 @@ function withSignals(o, asOf) {
       !t.startsWith('released:'),
   );
   const releaseTags = getReleaseTags(o.releaseDate, asOf);
+  const channel = getReleaseChannel(o);
+  const channelTags =
+    channel === 'preview' || channel === 'experimental' ? ['channel:preview'] : [];
   return {
     ...o,
     lifecycle,
     popularity,
     tags: [
-      ...tags,
-      `lifecycle:${lifecycle.status}`,
-      `popularity:${popularity.status}`,
-      ...releaseTags,
+      ...new Set([
+        ...tags,
+        ...channelTags,
+        `lifecycle:${lifecycle.status}`,
+        `popularity:${popularity.status}`,
+        ...releaseTags,
+      ]),
     ],
   };
 }

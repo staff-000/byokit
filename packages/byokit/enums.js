@@ -95,6 +95,12 @@ export const ModelStatus = Object.freeze({
   Deprecated: 'deprecated',
   Unknown: 'unknown',
 });
+export const ReleaseChannel = Object.freeze({
+  Stable: 'stable',
+  Preview: 'preview',
+  Experimental: 'experimental',
+  Unknown: 'unknown',
+});
 export const VerificationResult = Object.freeze({ Passed: 'passed', Failed: 'failed' });
 export const CommunityVerificationStatus = Object.freeze({
   Verified: 'verified',
@@ -219,6 +225,9 @@ export const Tag = Object.freeze({
   SpecialityCoding: 'speciality:coding',
   SpecialityUnknown: 'speciality:unknown',
   TierUnknown: 'tier:unknown',
+  ChannelPreview: 'channel:preview',
+  Preview: 'channel:preview',
+  ModelPreview: 'channel:preview',
 });
 export const Speciality = Object.freeze({
   General: 'general',

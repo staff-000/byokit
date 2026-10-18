@@ -155,3 +155,60 @@ test('unknown local setup does not satisfy capability, speciality, or stable-cha
     queries.map((q) => ids(b.getModels(q))),
   );
 });
+
+test('channel:preview tag and default exclusion of preview/experimental models with Python parity', () => {
+  assert.equal(b.Tag.ChannelPreview, 'channel:preview');
+  assert.equal(b.Tag.Preview, 'channel:preview');
+  assert.equal(b.Tag.ModelPreview, 'channel:preview');
+
+  const fixture = JSON.parse(readFileSync('spec/fixtures/catalog.json'));
+  fixture.offerings = ['stable', 'preview', 'experimental', 'unknown'].map((channel) => ({
+    ...structuredClone(fixture.offerings[0]),
+    id: `test/${channel}`,
+    apiModelId: `model-${channel}`,
+    status: channel === 'stable' ? 'stable' : channel,
+  }));
+  const c = new b.Catalog(fixture);
+
+  const base = { local: false, ui: { maxModelsPerProvider: 10 } };
+
+  // 1. By default when generating model list, preview and experimental models are excluded
+  const defaultList = c.getModels(base);
+  assert.deepEqual(ids(defaultList), ['test/stable', 'test/unknown']);
+  assert.ok(defaultList.every((o) => !o.tags.includes('channel:preview')));
+
+  // 2. Explicitly include previews via filters.includePreviews
+  const withPreviews = c.getModels({ ...base, filters: { includePreviews: true } });
+  assert.deepEqual(ids(withPreviews), [
+    'test/experimental',
+    'test/preview',
+    'test/stable',
+    'test/unknown',
+  ]);
+
+  // Verify channel:preview tag is present on preview and experimental offerings
+  const previewModel = withPreviews.find((o) => o.id === 'test/preview');
+  const expModel = withPreviews.find((o) => o.id === 'test/experimental');
+  const stableModel = withPreviews.find((o) => o.id === 'test/stable');
+  assert.ok(previewModel.tags.includes('channel:preview'));
+  assert.ok(expModel.tags.includes('channel:preview'));
+  assert.ok(!stableModel.tags.includes('channel:preview'));
+
+  // 3. Filter using includeTags with Tag.ChannelPreview
+  const tagged = c.getModels({ ...base, filters: { includeTags: b.any(b.Tag.ChannelPreview) } });
+  assert.deepEqual(ids(tagged), ['test/experimental', 'test/preview']);
+
+  // 4. Python parity
+  const queries = [
+    base,
+    { ...base, filters: { includePreviews: true } },
+    { ...base, filters: { includeTags: b.any(b.Tag.ChannelPreview) } },
+    { ...base, filters: { releaseChannel: ['preview'] } },
+  ];
+  const run = pythonModels({ data: fixture, queries });
+  assert.equal(run.status, 0, run.stderr);
+  assert.deepEqual(
+    JSON.parse(run.stdout).map(ids),
+    queries.map((q) => ids(c.getModels(q))),
+  );
+});
