@@ -1,121 +1,323 @@
 # byokit
 
-Add BYOK with a model list and one simple call. Keep your model choices fresh.
-TypeScript/JavaScript and Python supported.
+Add BYOK with a model list and one simple call. Keep your model choices fresh.  
+Full parity across **TypeScript/JavaScript** and **Python**.
 
-[Try the JavaScript playground](https://staff-000.github.io/byokit/#playground) · [Verify models](https://staff-000.github.io/byokit/verification.html) · [Contribute](CONTRIBUTING.md)
+[Try the JavaScript Playground](https://staff-000.github.io/byokit/#playground) · [Model Explorer](https://staff-000.github.io/byokit/#explore) · [Verify Models & Earn Badge](https://staff-000.github.io/byokit/verification.html) · [Contribute](CONTRIBUTING.md)
 
-## Highlights
+---
+
+## Key Highlights
 
 1. **"Model Discovery + Unified Execution" in Two Calls** — One simple call to get an up-to-date list of BYOK models (`byokit.getModels()`), and one simple call to run inference (`byokit.call()` or familiar `OpenAI` / `Anthropic` client wrappers). No provider-specific SDK glue required.
-2. **Preset Lists, Rich Filters & Deterministic Sorting** — Curated presets (`DEFAULT`, `COMPLETE`, `CHINA`, `GLOBAL`, `OFFICIAL`) plus fine-grained filters for modalities (text, image, audio, video), capabilities (function calling, thinking, structured output), context windows, price caps, and origin/tag exclusions.
-3. **Regular Releases & Community Verification** — Pinned catalog snapshots sync automatically every 12 hours from Models.dev with scheduled releases, paired with browser-based community call verification that records real proof and awards contributor badges.
-4. **Zero-Trust Credential & Key Privacy Design** — Keys stay strictly in caller memory and travel directly to the provider endpoint. `byokit` never proxies calls, stores keys in files/browser storage/telemetry, or leaks secrets into serialized objects, logs, or error messages.
-5. **Build-Time Generation (0 Runtime Overhead) & Caching** — Precompile your fixed query at build time (`npx byokit build`) into a tiny ~10–30 KB module with typed autocomplete instead of shipping the full 20 MB catalog. When dynamic runtime queries are evaluated, results are deterministically cached.
-6. **Pre-Flight Task & Budget Fit Checking** — Validate declared token budgets, context constraints, required features, and modalities before making requests (`byokit.checkModelFit()` / `byokit check`) to prevent runtime failures and wasted tokens.
+2. **Presets, Composable Matchers & Rich Filters** — Curated presets (`DEFAULT`, `COMPLETE`, `CHINA`, `GLOBAL`, `OFFICIAL`) paired with composable matchers (`exact`, `any`, `contain`, `exclude`, `and`, `or`, `xor`, `not`) for modalities, required `speciality`, model `tier`, context windows, pricing, and tag exclusions.
+3. **Regular Releases & Community Verification** — Pinned catalog snapshots sync automatically every 12 hours from Models.dev with scheduled releases, backed by browser-based community inference verification and contributor badges.
+4. **Zero-Trust Credential & Key Privacy** — Keys stay strictly in caller memory and travel directly to provider endpoints. `byokit` never proxies calls, stores keys in files/browser storage/telemetry, or leaks secrets into logs or serialized objects.
+5. **Build-Time Generation (0 Runtime Overhead) & Caching** — Precompile your fixed query at build time (`npx byokit build`) into a tiny ~15 KB static module with typed autocomplete instead of shipping the full 20 MB catalog. Dynamic queries at runtime are deterministically cached.
+6. **Pre-Flight Task & Budget Fit Checking** — Validate declared token budgets, context limits, features, and modalities before making requests (`byokit.checkModelFit()` / `byokit check`) to prevent runtime failures and wasted tokens.
 7. **Complete Cross-Language Parity** — Full feature parity across JavaScript/TypeScript and Python (`byokit.get_models()`, `byokit.call()`, matching enums, sorting rules, and budget checks).
 
-## Install
+---
+
+## Installation
 
 ```sh
-# npm
+# npm (Node.js / TypeScript / Browser)
 npm install byokit
 
-# Python
+# pip (Python)
 pip install byokit
 ```
 
-## Get models
+---
+
+## 60-Second Quickstart
+
+Discover available models and run inference in two simple calls:
+
+### TypeScript / JavaScript
 
 ```ts
 import * as byokit from 'byokit';
 
-const models = byokit.getModels();
-// Reviewed offering recommendations, plus a Local setup entry.
+// 1. Get models from curated recommendations
+const [model] = byokit.getModels({
+  providerIds: byokit.exact(byokit.ProviderId.DeepSeek),
+  limit: 1,
+  local: false,
+});
+if (!model?.connection) throw new Error('No model found');
 
-byokit.getModels(byokit.COMPLETE); // Every provider and output, including retired/uncertain entries
-byokit.getModels(byokit.GLOBAL); // One non-retired model per editorial provider + Local
-byokit.getModels(byokit.CHINA); // China-provider shortlist + Local
-byokit.getModels(byokit.OFFICIAL); // Official model creators only (excludes aggregators) + Local
+// 2. Call the model using familiar OpenAI-compatible client
+const client = new byokit.OpenAI({
+  baseURL: model.connection.baseUrl,
+  apiKey: process.env.DEEPSEEK_API_KEY ?? '',
+});
 
-// Group models by provider ({ [providerId]: Model[] }):
+const response = await client.chat.completions.create({
+  model: model.apiModelId,
+  messages: [{ role: byokit.Role.User, content: 'Hello!' }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+### Python
+
+```python
+import os
+import byokit
+
+# 1. Get models from curated recommendations
+models = byokit.get_models({
+    "providerIds": byokit.exact(byokit.ProviderId.DEEP_SEEK),
+    "limit": 1,
+    "local": False,
+})
+if not models:
+    raise ValueError("No matching model")
+model = models[0]
+
+# 2. Call the model using familiar OpenAI-compatible client
+client = byokit.OpenAI(
+    base_url=model["connection"]["baseUrl"],
+    api_key=os.environ.get("DEEPSEEK_API_KEY", ""),
+)
+
+response = client.chat.completions.create(
+    model=model["apiModelId"],
+    messages=[{"role": byokit.Role.USER, "content": "Hello!"}],
+)
+
+print(response.choices[0].message.content)
+```
+
+---
+
+## Step 1: Discover & Filter Models
+
+### Curated Presets
+
+Discovery runs completely offline against a pinned catalog snapshot. By default, `byokit.getModels()` returns a curated shortlist of reviewed models plus a Local setup entry:
+
+```ts
+// Curated reviewed recommendations (OpenAI, Gemini, Claude, DeepSeek) + Local
+const defaultModels = byokit.getModels();
+
+// Complete catalog: every upstream provider and modality, including retired/uncertain entries
+const allModels = byokit.getModels(byokit.COMPLETE);
+
+// Global: one non-retired model per editorial provider + Local
+const globalModels = byokit.getModels(byokit.GLOBAL);
+
+// China: China-headquartered provider shortlist + Local
+const chinaModels = byokit.getModels(byokit.CHINA);
+
+// Official: official model creators only (excludes third-party aggregators/re-hosters) + Local
+const officialModels = byokit.getModels(byokit.OFFICIAL);
+
+// Group models by provider:
 const byProvider = byokit.getModelsByProvider();
 // byProvider['openai'] -> array of OpenAI models
 ```
 
-Discovery runs offline. The bundled catalog comes from a pinned Models.dev
-snapshot; update it and release your app to refresh model choices.
+### Required Fields: `speciality` & `tier`
 
-Models are sorted alphabetically by model name by default. Sort across hosted
-results before applying `limit`:
+Every model in the catalog includes structured editorial classifications:
+
+- **`speciality`**: Purpose and capability focus:
+  - `Speciality.General` — Multi-purpose conversational and reasoning models
+  - `Speciality.Coding` — Code generation and debugging models (alias: `Codex`)
+  - `Speciality.Reasoning` — Extended thought, math, and STEM reasoning models
+  - `Speciality.Cybersecurity` — Threat analysis, vulnerability, and security models
+  - `Speciality.Music` / `Voice` / `Medical` / `Unknown`
+- **`tier`**: Performance and cost scale:
+  - `Tier.Flagship` — Premier frontier intelligence (e.g. Claude 3.7 Sonnet, GPT-4.5)
+  - `Tier.Workhorse` — Balanced general-purpose production engines (e.g. GPT-4o)
+  - `Tier.Flash` — Fast, low-latency, cost-effective models (e.g. Gemini 2.0 Flash)
+  - `Tier.Lite` — Lightweight budget models
+  - `Tier.Mini` — Small compact models
+
+Filter easily by required speciality and tier:
+
+```ts
+// Discover only general-purpose flash models
+const flashModels = byokit.getModels(byokit.COMPLETE, {
+  local: false,
+  filters: {
+    speciality: byokit.Speciality.General,
+    tier: byokit.Tier.Flash,
+  },
+});
+```
+
+### Composable Matchers
+
+All list-based filters support explicit, composable matchers for complete logical expressiveness:
+
+- **`exact(...)`**: Match strictly this set of values (order and duplicates ignored).
+- **`contain(...)`**: Require all listed values to be present (permits additional values).
+- **`any(...)`**: Require at least one of the listed values to match.
+- **`exclude(...)`**: Reject any result that matches any of the listed values.
+- **Boolean operators**: `and(...)`, `or(...)`, `xor(...)`, `not(...)` for complex logic.
+
+```ts
+// Example: select text models excluding lite models, or select any flash model
+const matched = byokit.getModels(byokit.COMPLETE, {
+  local: false,
+  filters: {
+    tier: byokit.or(
+      byokit.and(byokit.exact(byokit.Tier.Flagship), byokit.not(byokit.Tier.Lite)),
+      byokit.exact(byokit.Tier.Flash),
+    ),
+  },
+});
+```
+
+### Modality Matching (`input` and `output`)
+
+Control input and output modalities (`Text`, `Image`, `Audio`, `Video`):
+
+- `output: byokit.exact(byokit.Modality.Text)` — Returns strictly text-only generation (excludes multimodal image-generating or audio-output models).
+- `input: byokit.contain(byokit.Modality.Image)` — Finds vision models accepting images alongside text.
+- `output: byokit.any(byokit.Modality.Text, byokit.Modality.Image)` — Matches models producing either text or images.
+
+```ts
+// Pure text-only models
+byokit.getModels({ filters: { output: byokit.exact(byokit.Modality.Text) } });
+
+// All models capable of generating images
+byokit.getModels(byokit.COMPLETE, {
+  filters: { output: byokit.contain(byokit.Modality.Image) },
+});
+```
+
+### Deterministic Sorting
+
+Sort across providers before applying a result `limit`:
 
 ```ts
 byokit.getModels(byokit.COMPLETE, { sort: byokit.ModelSort.PriceAscend }); // Input price: low → high
 byokit.getModels(byokit.COMPLETE, { sort: byokit.ModelSort.PriceDescend }); // Input price: high → low
 byokit.getModels(byokit.COMPLETE, { sort: byokit.ModelSort.SpeedDescend }); // Tokens/sec: high → low
+byokit.getModels(byokit.COMPLETE, { sort: byokit.ModelSort.AlphabeticalAscend }); // Default
 ```
 
-Unknown values and non-USD prices sort last; ties use alphabetical order. Local stays appended.
-DEFAULT uses an explicit offering shortlist; Global/China select a model per provider and Official uses its flagship shortlist. Use COMPLETE
-or `providerIds` to sort every matching offering. `ModelSort.ProviderOrder` retains
-provider order and existing per-provider preference ranking.
+_Note: Non-USD and unknown prices sort last in either direction. Ties sort alphabetically. Generic Local entries remain appended._
 
-## Optimized build-time pattern (Recommended for production)
+### Filter Reference
 
-While `byokit.getModels()` is ideal for quick prototyping, evaluating it at runtime loads and parses the entire **20 MB** bundled catalog snapshot. Most applications have a **fixed model query** (such as specific providers or flash models).
+| Filter Key           | Type / Enum                 | Description                                                                    |
+| :------------------- | :-------------------------- | :----------------------------------------------------------------------------- |
+| `speciality`         | `Speciality` or Matcher     | `General`, `Coding`, `Reasoning`, `Cybersecurity`, `Music`, `Voice`, `Medical` |
+| `tier`               | `Tier` or Matcher           | `Flagship`, `Workhorse`, `Flash`, `Lite`, `Mini`                               |
+| `input` / `output`   | `Modality` or Matcher       | `Text`, `Image`, `Audio`, `Video`                                              |
+| `providerIds`        | `ProviderId` or Matcher     | `OpenAI`, `Anthropic`, `Google`, `DeepSeek`, etc.                              |
+| `requiredFeatures`   | `FeatureName` or Matcher    | `FunctionCalling`, `JsonSchema`, `PromptCaching`, `ThinkingControls`, etc.     |
+| `excludeTags`        | `Tag` or Matcher            | Tags to reject (e.g. `Tag.OriginChina`, `Tag.PricePremium`)                    |
+| `minContextTokens`   | `number`                    | Minimum required context window                                                |
+| `maxInputPricePerM`  | `number`                    | Maximum USD per 1M input tokens                                                |
+| `maxOutputPricePerM` | `number`                    | Maximum USD per 1M output tokens                                               |
+| `lifecycle`          | `Lifecycle` or Matcher      | `Live`, `Outdated`, `Retired`, `Uncertain`                                     |
+| `releaseChannel`     | `ReleaseChannel` or Matcher | `Stable`, `Preview`, `Experimental`, `Unknown`                                 |
+| `official`           | `boolean`                   | Restrict to canonical first-party creator endpoints                            |
+| `callable`           | `boolean`                   | Filter reviewed text-generation adapter compatibility                          |
+| `verified`           | `boolean`                   | Contributor-verified live inference call records                               |
 
-The **optimized approach** evaluates your query once at build time to produce a tiny static module (~10–30 KB) with zero catalog runtime overhead and full typed autocomplete:
+---
+
+## Step 2: Call the Model
+
+`byokit` supports standard OpenAI and Anthropic client interfaces, plus a lightweight direct helper:
+
+### 1. OpenAI Format
+
+```ts
+const client = new byokit.OpenAI({
+  baseURL: model.connection.baseUrl,
+  apiKey: process.env.MY_API_KEY,
+});
+
+const completion = await client.chat.completions.create({
+  model: model.apiModelId,
+  messages: [{ role: byokit.Role.User, content: 'Analyze this code' }],
+});
+```
+
+### 2. Anthropic Format (Claude)
+
+```ts
+const client = new byokit.Anthropic({
+  baseURL: model.connection.baseUrl,
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
+
+const message = await client.messages.create({
+  model: model.apiModelId,
+  max_tokens: 1024,
+  messages: [{ role: byokit.Role.User, content: 'Summarize this document' }],
+});
+```
+
+### 3. Direct Helper
+
+```ts
+// One-liner stateless call:
+const result = await byokit.call(model, 'Explain quantum computing in one sentence', apiKey);
+console.log(result.choices[0].message.content);
+```
+
+### Zero-Trust Credential Privacy
+
+- Credentials stay strictly in caller memory and are dispatched directly to the provider endpoint.
+- `byokit` never routes through proxies, never caches keys in browser storage or disk, and redacts credentials from all logs, serialization, and error diagnostics.
+
+---
+
+## Step 3: Production Optimization (Build-Time Precompilation)
+
+While `byokit.getModels()` is ideal for dynamic queries and interactive prototyping, evaluating dynamic queries at runtime parses the **20 MB** catalog snapshot.
+
+Most production applications use a **fixed model query**. Precompiling your query at build time generates a static, typed ~15 KB module with **zero catalog runtime overhead**:
 
 ### 1. Declare your query in `byok.config.json`
 
-> **Tip: Getting `byok.config.json` easily**
->
-> - **From the website**: Open the model explorer or interactive playground and click **"Save config.json"** to download the exact configuration matching your query.
-> - **From code (JS/TS)**: Call `byokit.getConfigJson(...)` or `byokit.getConfig(...)`.
-> - **From code (Python)**: Call `byokit.get_config_json(...)` or `byokit.get_config(...)`.
-
-For example, to select flash models from Anthropic, Google, OpenAI, and DeepSeek:
+> **Tip:** You can click **"Save config.json"** directly in the [interactive website explorer](https://staff-000.github.io/byokit/#explore) or call `byokit.getConfigJson(...)` in code.
 
 ```json
 {
   "providerIds": ["anthropic", "google", "openai", "deepseek"],
   "local": false,
   "filters": {
-    "includeTags": ["model:flash"]
+    "speciality": "general",
+    "tier": "flash"
   }
 }
 ```
 
-_(Note: `config.catalog` is optional; when omitted, the build automatically uses the bundled catalog snapshot.)_
+### 2. Compile at build time
 
-### 2. Precompile at build time
+```sh
+# Node / TypeScript:
+npx byokit build byok.config.json --out src/generated/models.js
 
-- **JavaScript / TypeScript**:
+# Python:
+byokit build byok.config.json --out app/generated_models.py
+```
 
-  ```sh
-  npx byokit build byok.config.json --out src/generated/models.js
-  ```
+This generates typed `OfferingId` and `ModelId` enums alongside your filtered models.
 
-  Generates `src/generated/models.js` and `models.d.ts` containing only your pre-evaluated models and typed `OfferingId` / `ModelId` enums.
+### 3. Import with zero overhead
 
-- **Python**:
-  ```sh
-  byokit build byok.config.json --out app/generated_models.py
-  ```
-  Generates `app/generated_models.py` with `MODELS`, `get_models()`, and typed enum classes.
+Pair the generated file with `byokit/client` (~15 KB, contains the SDK client wrappers without the 20 MB catalog):
 
-### 3. Use in your application
-
-Import the precompiled models alongside `byokit/client` (which provides the SDK and call helpers without loading the 20 MB catalog):
-
-**JavaScript / TypeScript:**
+**TypeScript / JavaScript:**
 
 ```ts
 import { getModels, OfferingId } from './generated/models.js';
 import { OpenAI } from 'byokit/client';
 
-// Instant, zero catalog overhead (~15 KB bundle vs 20 MB)
-const models = getModels();
+const models = getModels(); // ~15 KB static data, instant load
 const model = models.find((m) => m.id === OfferingId['google/gemini-3.8-flash']);
 
 const client = new OpenAI({
@@ -130,336 +332,68 @@ const client = new OpenAI({
 from app.generated_models import get_models, OfferingId
 import byokit
 
-# Instant access, no 20 MB catalog parsed
-models = get_models()
+models = get_models() # Instant load, no 20 MB JSON parsed
 model = next(m for m in models if m["id"] == OfferingId.GOOGLE_GEMINI_3_8_FLASH)
 
 client = byokit.OpenAI(base_url=model["connection"]["baseUrl"], api_key=api_key)
 ```
 
-## Call a model
+---
 
-```ts
-const [model] = byokit.getModels({
-  providerIds: [byokit.ProviderId.DeepSeek],
-  limit: 1,
-  local: false,
-});
-if (!model?.connection) throw new Error('No configured model');
+## Append Custom or Local Models
 
-const client = new byokit.OpenAI({
-  baseURL: model.connection.baseUrl,
-  apiKey,
-});
-const completion = await client.chat.completions.create({
-  model: model.apiModelId,
-  messages: [{ role: byokit.Role.User, content: 'Hello' }],
-});
-console.log(completion.choices[0].message.content);
-// Example: Hello! — actual model output varies.
-```
-
-Configure the endpoint and key once; reuse the client for multiple requests and
-model IDs at that endpoint. `defaultHeaders` supports attribution headers such as
-`HTTP-Referer` and `X-OpenRouter-Title`. Keys stay in client memory; byokit never
-persists them to disk, browser storage, logs, or telemetry.
-
-Use `new byokit.Anthropic({baseURL, apiKey})` and `client.messages.create(...)`
-for Claude-style requests/responses. Python uses `OpenAI` / `Anthropic`,
-`base_url`, `api_key`, and `default_headers`; responses support attribute and dict
-access. [Full examples, official SDK integration, and migration](docs/sdk.md).
-
-OpenAI and Anthropic clients default to their named wire protocol. An arbitrary
-base URL must speak that protocol. Byokit's explicit `protocol` extension supports
-native Gemini/Ollama and cross-format adapters; official SDKs do not provide this
-translation. Clients implement non-streaming text, system messages, sampling, and
-tools; unsupported features fail explicitly. Tools are returned for your app to run.
-
-Defaults: 1,024 output tokens, 90-second timeout, no retries. Context token budget
-verification is optional and disabled by default; set `checkBudget: true` (or
-`runtimeChecks: true`, Python `check_budget=True`) to verify token limits and emit
-fit diagnostics before HTTP dispatch. Optional `models` constructor metadata
-enables known-limit/capability checks for those exact IDs. Browser calls require
-provider CORS support.
-
-`byokit.call(model, 'Hello', apiKey)` and `callClaude()` remain stateless helpers.
-Legacy callback factories and the per-request `Byokit` client are deprecated and
-continue to work. `getModels()` always returns an array: `limit: 1` caps hosted
-results, `local: false` prevents a Local setup entry, and an empty result is possible.
-
-## Filter the list
-
-```ts
-const models = byokit.getModels(byokit.COMPLETE, {
-  local: false,
-  filters: {
-    requiredFeatures: [byokit.FeatureName.FunctionCalling],
-    minContextTokens: 32_000,
-    maxInputPricePerM: 2,
-    excludeTags: [byokit.Tag.OriginChina, byokit.Tag.PricePremium],
-  },
-});
-```
-
-Global includes China providers. Use exclusions when you want to omit them.
-`OriginChina` excludes entries tagged `origin:cn` on their provider, model, or
-offering; unknown origin is not a guarantee of exclusion. Origin is not hosting
-location or network availability.
-
-| Filter                                          | Options                                                                                                                                    |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `providerIds`, `limit`, `local`                 | Provider selection, hosted result cap, local endpoints                                                                                     |
-| `deployment`, `origin`                          | Hosted/local/self-hosted; known origin                                                                                                     |
-| `includeTags`, `excludeTags`                    | All included tags required; any excluded tag removes a result                                                                              |
-| `input`, `output`, `fileFormats`                | Text/image/audio/video/embedding; document formats                                                                                         |
-| `requiredFeatures`                              | Function calling, parallel tools, tool choice/schema, prompt caching, JSON/structured output, system/developer messages, thinking controls |
-| `minContextTokens`                              | Minimum context window                                                                                                                     |
-| `maxInputPricePerM`, `maxOutputPricePerM`       | Maximum USD per million tokens                                                                                                             |
-| `openWeights`, `commercialUse`, `maxParameters` | Weight availability, licensing, model size                                                                                                 |
-| `minTokensPerSecond`, `maxTimeToFirstTokenMs`   | Known speed and latency measurements                                                                                                       |
-| `lifecycle`, `includeDeprecated`                | Non-retired by default; COMPLETE includes all; explicit lifecycle wins                                                                     |
-| `official`                                      | Restrict to official canonical creator offerings (or `false` for third-party aggregators/re-hosters)                                       |
-| `callable`                                      | Filter reviewed text-generation adapter compatibility                                                                                      |
-| `popularity`                                    | POPULAR / NOT_POPULAR / UNCERTAIN from sourced usage ranks                                                                                 |
-| `verified`, `verifiedBy`, `verifiedWithinDays`  | Community call reports and freshness                                                                                                       |
-
-Except the first row, these fields belong inside `filters`. Use exported enums
-such as `byokit.Modality.Image`, `byokit.FeatureName.JsonSchema`, `byokit.Tag.ModelFlash`
-(or `byokit.Tag.Flash`), and `byokit.Lifecycle.Outdated`. Custom tags use
-`byokit.customTag('usecase:coding')`.
-Unknown metadata fails requirements by default; `unknownPolicy` can explicitly
-include it. Generic Local entries are excluded when input/output or callable filters are set.
-`prefer.features` and `prefer.lowerCost` guide per-provider shortlist selection;
-use `ModelSort.ProviderOrder` to retain that ranking in returned lists.
-
-### Modality matching (`input` and `output`)
-
-Control how models are matched against modalities (text, image, audio, video) using explicit matchers or clean array defaults:
-
-- **`byokit.Exact([...])`**: Output or input must match **strictly** these modalities and no others.
-- **`byokit.Contain([...])`**: Model must support all listed modalities, but may support others.
-- **`byokit.Any([...])`**: Model must support at least one of the listed modalities.
-
-**Default array semantics**:
-
-- `output: [byokit.Modality.Text]` defaults to **exact** matching — returns text-only models and cleanly excludes multimodal image-generating models like `chatgpt-image-latest` (output: text + image) or audio models like `lyria-3-pro-preview` (output: text + audio).
-- `input: [byokit.Modality.Image]` defaults to **contain** matching — discovers vision models that accept both text and images.
-
-```ts
-// Pure text-only models (strictly text output)
-byokit.getModels({ filters: { output: [byokit.Modality.Text] } });
-// Or explicitly:
-byokit.getModels({ filters: { output: byokit.Exact([byokit.Modality.Text]) } });
-
-// All models capable of generating images (pure image or text + image)
-byokit.getModels(byokit.COMPLETE, {
-  filters: { output: byokit.Contain([byokit.Modality.Image]) },
-});
-
-// Models outputting either text or image
-byokit.getModels(byokit.COMPLETE, {
-  filters: { output: byokit.Any([byokit.Modality.Text, byokit.Modality.Image]) },
-});
-```
-
-In `byok.config.json` build files, use `{ "contain": ["image"] }`, `{ "exact": ["text"] }`, or `{ "mode": "any", "values": ["text", "image"] }`.
-Python supports identical matchers: `byokit.Exact()`, `byokit.Contain()`, `byokit.Any()` (or lowercase aliases `exact()`, `contain()`, `any()`).
-
-### Modality matching (`input` and `output`)
-
-Control how models are matched against modalities (text, image, audio, video) using explicit matchers or clean array defaults:
-
-- **`byokit.Exact([...])`**: Output or input must match **strictly** these modalities and no others.
-- **`byokit.Contain([...])`**: Model must support all listed modalities, but may support others.
-- **`byokit.Any([...])`**: Model must support at least one of the listed modalities.
-
-**Default array semantics**:
-
-- `output: [byokit.Modality.Text]` defaults to **exact** matching — returns text-only models and cleanly excludes multimodal image-generating models like `chatgpt-image-latest` (output: text + image) or audio models like `lyria-3-pro-preview` (output: text + audio).
-- `input: [byokit.Modality.Image]` defaults to **contain** matching — discovers vision models that accept both text and images.
-
-```ts
-// Pure text-only models (strictly text output)
-byokit.getModels({ filters: { output: [byokit.Modality.Text] } });
-// Or explicitly:
-byokit.getModels({ filters: { output: byokit.Exact([byokit.Modality.Text]) } });
-
-// All models capable of generating images (pure image or text + image)
-byokit.getModels(byokit.COMPLETE, {
-  filters: { output: byokit.Contain([byokit.Modality.Image]) },
-});
-
-// Models outputting either text or image
-byokit.getModels(byokit.COMPLETE, {
-  filters: { output: byokit.Any([byokit.Modality.Text, byokit.Modality.Image]) },
-});
-```
-
-In `byok.config.json` build files, use `{ "contain": ["image"] }`, `{ "exact": ["text"] }`, or `{ "mode": "any", "values": ["text", "image"] }`.
-Python supports identical matchers: `byokit.Exact()`, `byokit.Contain()`, `byokit.Any()` (or lowercase aliases `exact()`, `contain()`, `any()`).
-
-`sort` is a top-level enum option: `ModelSort.AlphabeticalAscend` (default),
-`AlphabeticalDescend`, `PriceAscend`, `PriceDescend`, `SpeedAscend`,
-`SpeedDescend`, or `ProviderOrder`. Unknown prices/speeds stay last in either
-direction. Legacy `Alphabetical`, `Price`, and `Speed` names still work.
-
-Each model returns its provider, `apiModelId`, `connection` (URL/protocol),
-capabilities, modalities, limits, prices, tags, logos, lifecycle/popularity
-evidence, and contributor verification records. `releaseDate` and `speed` are
-included where known; current catalog speed measurements are unknown.
-LIVE requires current provider availability evidence; listing presence alone is UNCERTAIN. Community verification
-means a contributor reported a successful call for that exact provider/model.
-
-## Append your own model
+Append your own self-hosted or proprietary endpoints while preserving the unified `byokit` interface:
 
 ```ts
 const models = byokit.appendModel(byokit.getModels(), {
   providerId: byokit.customProviderId('acme'),
-  providerName: 'Acme',
-  modelId: 'my-model',
-  baseUrl: 'https://api.example.com/v1',
+  providerName: 'Acme AI',
+  modelId: 'acme-deep-v1',
+  baseUrl: 'https://api.acme.example.com/v1',
   protocol: byokit.ApiProtocol.OpenAI,
 });
-// models.at(-1) can be passed to byokit.call().
+
+// Appended model can be passed directly to byokit.call() or new byokit.OpenAI()
 ```
 
-Returns a new list; never changes the catalog or stores a key. Custom entries are
-unverified with unknown capabilities/limits unless you supply limits. Duplicate
-offering IDs are rejected. Appending is explicit and happens after query filters,
-sorting, and limits. [Add providers/models to the shared catalog](docs/custom-catalog.md).
+_Custom entries are verified after user query filters, never mutate the shared catalog, and reject duplicate offering IDs._
 
-## Python
+---
 
-```python
-import byokit
+## Pre-Flight Budget Fit Checking
 
-models = byokit.get_models({
-    "providerIds": [byokit.ProviderId.DEEP_SEEK], "limit": 1, "local": False,
-})
-if not models:
-    raise ValueError("No matching model")
-model = models[0]
-client = byokit.OpenAI(base_url=model["connection"]["baseUrl"], api_key=api_key)
-result = client.chat.completions.create(
-    model=model["apiModelId"],
-    messages=[{"role": byokit.Role.USER, "content": "Hello"}],
-)
-print(result.choices[0].message.content)
+Verify token budgets, context constraints, required features, and modalities before sending requests:
+
+```sh
+# CLI check
+npx byokit check task.config.json --strict
 ```
 
-Install with `pip install byokit`.
-Python offers `get_models_by_provider()`, `Anthropic`, `call_claude()`, `append_model(models, custom)`,
-and the equivalent `ModelSort.ALPHABETICAL_ASCEND`, `PRICE_ASCEND`,
-`PRICE_DESCEND`, `SPEED_ASCEND`, `SPEED_DESCEND`, and `PROVIDER_ORDER` options.
+Or programmatically in code:
 
-## Contribute
-
-Edit provider metadata and model tags in [catalog/overlays.json](catalog/overlays.json).
-Refresh the pinned source using the [catalog guide](CONTRIBUTING.md#regenerate-and-validate).
-Run `npm install` and `npm run verify` before proposing a change.
-[CONTRIBUTING.md](CONTRIBUTING.md) covers tags and call verification.
-Successful website checks can be shared through GitHub Issues; published records
-attribute the contributor and award a Model Verifier badge. API keys never enter reports.
-
-Build-time models & budgets: declare your query in `byok.config.json` and run:
-
-- `byokit build byok.config.json --out src/generated/models.js` (or Python `--out app/generated_models.py`) to evaluate your model query once at build time and emit a lightweight static module (~10 KB vs 20 MB). Pair with `import { OpenAI, Role } from 'byokit/client'` to completely avoid bundling the catalog.
-- `byokit check config.json`: verify task input/output token budgets offline. Known limit violations fail; missing/unknown limits warn. [Design](docs/design.md) · [Integration](docs/integration.md) · [Verification](docs/verification.md)
-
-## Scheduled releases and catalog refresh
-
-Catalog synchronization and release publishing are decoupled into separate workflows:
-
-- **Models.dev Sync**: Runs every 12 hours (`0 3,15 * * *`, 3 hours before release checks). It fetches the latest snapshot from Models.dev, merges manual additions, validates the catalog, and commits updates to `main`.
-- **Scheduled Releases**: Runs daily (`0 18 * * *`). It checks for new commits since the last release tag. If more than 20 new commits exist, it automatically bumps a patch version, publishes to npm and PyPI, and deploys the updated website.
-  [Sync Workflow](.github/workflows/catalog-sync.yml) · [Release Workflow](.github/workflows/release.yml) · [Maintenance guide](docs/custom-catalog.md)
-
-## Thanks
-
-Built on [Models.dev](https://models.dev). Thank you to its maintainers and
-contributors for the catalog that makes byokit possible. [MIT license](LICENSE).
-
-## Catalog coverage and list migration
-
-The bundled snapshot imports `https://models.dev/catalog.json?type=all`: canonical
-model metadata plus provider-specific offerings. All upstream providers and output
-modalities are discoverable. Coverage depends on upstream and reviewed manual additions.
-
-`DEFAULT` now uses `catalog/recommendations.json`, an offering-level list with source,
-review date, and rationale. Refreshing upstream never automatically adds recommendations.
-`GLOBAL` and `CHINA` remain editorial provider collections. `COMPLETE` includes
-retired and uncertain models. Use `filters.lifecycle` to narrow it; this takes
-precedence over `includeDeprecated`. Set `includeDeprecated: false` to exclude retired entries from COMPLETE. Other lists exclude known retirement unless
-`includeDeprecated: true` or an explicit lifecycle filter includes it.
-
-```js
-const images = byokit.getModels(byokit.COMPLETE, {
-  local: false,
-  filters: { output: [byokit.Modality.Image] },
+```ts
+const fit = byokit.checkModelFit(model, {
+  estimatedInputTokens: 50_000,
+  maxOutputTokens: 4_000,
+  requiredFeatures: [byokit.FeatureName.FunctionCalling],
 });
-const chat = byokit.getModels(byokit.COMPLETE, {
-  local: false,
-  filters: { callable: true, lifecycle: [byokit.Lifecycle.Live] },
-});
-// Dynamic catalog IDs need no new enum constant. Unknown IDs fail at runtime.
-byokit.getModels({ providerIds: ['fireworks-ai'], local: false });
+
+if (!fit.fits) {
+  console.warn(`Model does not fit constraints: ${fit.reasons.join(', ')}`);
+}
 ```
 
-Modality filtering supports exact matching, containment, and unions via `byokit.Exact`, `byokit.Contain`, and `byokit.Any`. Bare output arrays default to exact matching; bare input arrays default to containment. Image input means image
-understanding; image output means generation. `callSupport.textGeneration` describes
-compatibility with BYOKit's reviewed adapters. Newly discovered providers have no
-automatically trusted connection; unsupported catalog calls fail before HTTP.
-Image, audio, and video generation are discoverable but have no media call API here.
+---
 
-`listingEvidence.checkedAt` records snapshot observation. `lifecycleEvidence` records
-provider availability with `basis: 'provider'`; legacy evidence without a basis stays UNCERTAIN. Neither proves account access. Contributor verification
-records a specific successful or failed call independently. Retirement evidence
-persists across refreshes, including when an offering disappears upstream.
+## Community Verification & Scheduled Releases
 
-`releaseDate` and `lastUpdated` preserve day or month precision. Token prices use
-`unit: 'per-million-tokens'`; `inputAudio`, `outputAudio`, `reasoning`, and tiers are
-preserved where known. Missing media pricing stays unknown. A provider's country
-does not establish the origin of models it serves.
+- **Browser Call Verification**: Verify hosted models with your own API key directly in your browser on the [Verification Page](https://staff-000.github.io/byokit/verification.html). Share successful reports to earn a **Model Verifier badge** on GitHub. API keys never leave your browser.
+- **Automated Catalog Sync**: A GitHub Actions workflow syncs latest snapshots from Models.dev every 12 hours (`0 3,15 * * *`).
+- **Scheduled Automated Releases**: Automatically bumps patch versions and publishes to npm and PyPI when significant updates accumulate (`0 18 * * *`).
 
-The default picker selects six reviewed product-line choices: OpenAI Terra and Luna,
-Gemini Flash, Claude Haiku, and DeepSeek Flash and Chat. `getModels({ local: false })`
-returns just these hosted offerings; the default also includes a local setup entry.
-`get_models({"local": False})` provides the same list in Python. Recommendations are
-maintained in `catalog/recommendations.json` with `default: true`, review dates, and
-rationale. Imports never promote a newer version automatically or substitute another
-product line when a recommendation disappears. Release age alone does not remove Chat.
+---
 
-Discovery remains customizable:
+## License & Acknowledgements
 
-```js
-byokit.getModels(byokit.COMPLETE, {
-  providerIds: ['openai', 'google', 'anthropic', 'deepseek'],
-  local: false,
-  filters: {
-    speciality: byokit.Speciality.General,
-    releaseChannel: ['stable'],
-    output: byokit.or(byokit.exact(byokit.Modality.Text), byokit.exact(byokit.Modality.Image)),
-  },
-});
-```
-
-`filters.releaseChannel` accepts `stable`, `preview`, `experimental`, and `unknown`.
-Missing upstream status stays unknown; preview/experimental model IDs are recognized
-when upstream omits a channel. Stable release channel does not prove provider
-availability or a successful call. Include `unknown` explicitly when desired.
-`speciality` and `tier` are editorial classifications; unrecognized models may be
-`unknown`. `Speciality.Coding` covers Codex and other coding models; `Codex` remains
-an alias. Explicit offering classifications override canonical classifications and
-name heuristics. Evidence-backed catalog overlays can set these fields.
-
-Array filters remain compatible: provider/scalar lists match any requested value;
-input, features, file formats, and included tags require all requested values;
-output arrays match the exact set. `exact(...)` always compares sets, including
-inside nested expressions; duplicate literals do not matter. `contain(...)` permits
-extra values, `any(...)` requires at least one matching value or child, and
-`exclude(...)` requires every value and child to be absent/false. `not(...)` takes
-one expression; `xor(...)` matches exactly one child. Empty `exact()` matches a
-known empty set, while empty `any()` matches nothing. Unknown capabilities follow
-`unknownPolicy` and are excluded by default even under negation.
-For `excludeTags`, the supplied expression identifies tags to reject; a direct
-`exclude(...)` expression is also accepted as an absence requirement.
+- Built on the open [Models.dev](https://models.dev) catalog. Thank you to its maintainers and community contributors.
+- Licensed under the [MIT License](LICENSE).
