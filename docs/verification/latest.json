@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "id": "2026-10-17T16-58-56-239Z",
-  "startedAt": "2026-10-17T16:58:30.897Z",
-  "completedAt": "2026-10-17T16:58:56.239Z",
-  "commit": "0afff7a60aad0c4b5ad3f9cd0589d88cb5cf1bd3",
+  "id": "2026-10-18T07-53-01-866Z",
+  "startedAt": "2026-10-18T07:52:20.453Z",
+  "completedAt": "2026-10-18T07:53:01.866Z",
+  "commit": "fa363aa9b829d771d5a56ec705d0c2d58963834d",
   "sourceDirty": true,
-  "sourceDigest": "ec778cb7b4ca4ca24ff64ce010f02978e093bfa07f46bb7c7d1ee5180e83d17a",
-  "platform": "darwin",
-  "architecture": "arm64",
-  "nodeVersion": "v23.7.0",
+  "sourceDigest": "05a75de4cc75a76a9b67a21d9ca01be63796011fe1a7d5f613f3b892f5b0820b",
+  "platform": "linux",
+  "architecture": "x64",
+  "nodeVersion": "v22.23.3",
   "checks": [
     {
       "id": "javascript",
@@ -43,13 +43,13 @@
         "tests/website-inference.test.mjs"
       ],
       "status": "passed",
-      "durationMs": 15385,
+      "durationMs": 30110,
       "exitCode": 0,
       "tests": {
-        "total": 140,
-        "passed": 140
+        "total": 143,
+        "passed": 143
       },
-      "outputSha256": "005dbae283b481fc2305b84d88ca4012aad5d6b2269e844aa603bbb7357647cd"
+      "outputSha256": "a8ca22de7f082710459eb4186d5990802361f1d5ab3e5aedce94c3a3f078f26f"
     },
     {
       "id": "python",
@@ -64,13 +64,13 @@
         "-v"
       ],
       "status": "passed",
-      "durationMs": 1179,
+      "durationMs": 1214,
       "exitCode": 0,
       "tests": {
-        "total": 33,
-        "passed": 33
+        "total": 36,
+        "passed": 36
       },
-      "outputSha256": "b206c0e3f29ac14bff749c9da2d085fe7dd6895950ae65effe883f355bae8d53"
+      "outputSha256": "5d5d83f6f6c5bbc72e6cde00be526b842947ff9292cab72e048e7df9639c7560"
     },
     {
       "id": "typescript",
@@ -81,7 +81,7 @@
         "typecheck"
       ],
       "status": "passed",
-      "durationMs": 436,
+      "durationMs": 501,
       "exitCode": 0,
       "outputSha256": "ef08b2fdd16e665f07cdbfcf218255f925b22862307652c07ce4852595c32de4"
     },
@@ -94,7 +94,7 @@
         "typecheck:python"
       ],
       "status": "passed",
-      "durationMs": 635,
+      "durationMs": 609,
       "exitCode": 0,
       "outputSha256": "4f203a09c393d73f152f03e77acf5f93a33f105f94dbe839e0753eb84e29754c"
     },
@@ -107,9 +107,9 @@
         "check"
       ],
       "status": "passed",
-      "durationMs": 803,
+      "durationMs": 883,
       "exitCode": 0,
-      "outputSha256": "1b6e8b5c6b57e57a34b43db6f5805da89dce50d483818f66259b74cd56f043e3"
+      "outputSha256": "84ad15fd23b6db2cacfeb669aba6bfae1c76b448bba2082e812944a192e7183e"
     },
     {
       "id": "budget",
@@ -120,7 +120,7 @@
         "check:budget"
       ],
       "status": "passed",
-      "durationMs": 500,
+      "durationMs": 549,
       "exitCode": 0,
       "outputSha256": "563fdf5ed49668fff588b6c86d092397326bb0f9dac241e503bb6434c574d7ec"
     },
@@ -133,9 +133,9 @@
         "build"
       ],
       "status": "passed",
-      "durationMs": 916,
+      "durationMs": 913,
       "exitCode": 0,
-      "outputSha256": "88d0e9c5a9f7f9fbc865ebac4bbaee8b399316dd013c23849ef557be521e4f28"
+      "outputSha256": "1b76d81255597fe8eaf7f77942d49e0523909e60413762cf19851e5d22065fc1"
     },
     {
       "id": "website-build",
@@ -146,9 +146,9 @@
         "site:build"
       ],
       "status": "passed",
-      "durationMs": 5340,
+      "durationMs": 6529,
       "exitCode": 0,
-      "outputSha256": "57514e2d505eafbd6a680993323001fbd877ea3056a99bbee94c999adb1d3e3f"
+      "outputSha256": "2085d0e3b2175736955eed945643a046e299aca54d7f8ffb3347a9d6e02fe34b"
     },
     {
       "id": "website-browser",
