@@ -751,9 +751,14 @@ $('#batch-open').addEventListener('click', () => {
   pendingBatch = { models: [...batchSelection.values()] };
   $('#batch-confirm-description').textContent =
     `Send up to ${pendingBatch.models.length} AI requests, one per model. This may use provider credits.`;
+  const batchProviders = [
+    ...new Map(pendingBatch.models.map((m) => [m.providerId, m.provider])).values(),
+  ].sort((a, b) =>
+    (a.name || a.id).localeCompare(b.name || b.id, undefined, { sensitivity: 'base' }),
+  );
   $('#batch-confirm-models').replaceChildren(
-    ...Array.from(new Set(pendingBatch.models.map((m) => m.providerId)), (providerId) => {
-      const group = pendingBatch.models.filter((m) => m.providerId === providerId);
+    ...batchProviders.map((provider) => {
+      const group = pendingBatch.models.filter((m) => m.providerId === provider.id);
       const item = el('li', group[0].provider.name),
         list = el('ul');
       list.append(...group.map((m) => el('li', m.apiModelId)));
@@ -762,9 +767,7 @@ $('#batch-open').addEventListener('click', () => {
     }),
   );
   $('#batch-keys').replaceChildren();
-  for (const provider of new Map(
-    pendingBatch.models.map((m) => [m.providerId, m.provider]),
-  ).values()) {
+  for (const provider of batchProviders) {
     const label = el('label', `${provider.name} API key`),
       input = el('input');
     input.type = 'password';
@@ -1242,7 +1245,10 @@ for (const [id, values] of [
 }
 $('#filter-reference').textContent =
   'Provider; include/exclude tags (including origin:cn); input/output modalities; file formats; capabilities; context; input/output price; open weights; commercial use; parameter count; speed/latency; lifecycle; popularity; contributor and verification freshness. This page exposes common selectors; the library supports the full list documented in README.';
-for (const provider of [...new Map(models.map((m) => [m.providerId, m.provider])).values()]) {
+const providers = [...new Map(models.map((m) => [m.providerId, m.provider])).values()].sort(
+  (a, b) => (a.name || a.id).localeCompare(b.name || b.id, undefined, { sensitivity: 'base' }),
+);
+for (const provider of providers) {
   const option = el('option', provider.name);
   option.value = provider.id;
   $('#provider-filter').append(option);

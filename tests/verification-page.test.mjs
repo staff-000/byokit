@@ -108,6 +108,14 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
       'include-outdated',
     ])
       assert.ok($('#' + id).closest('thead'), id + ' belongs to the table header');
+    const providerOptions = [...document.querySelectorAll('#provider-filter option')]
+      .slice(1)
+      .map((o) => o.textContent);
+    assert.ok(providerOptions.length > 5);
+    const sortedProviderOptions = [...providerOptions].sort((a, b) =>
+      a.localeCompare(b, undefined, { sensitivity: 'base' }),
+    );
+    assert.deepEqual(providerOptions, sortedProviderOptions);
     assert.equal(document.querySelectorAll('#models tr:first-child td').length, 8);
     change('sort-filter', 'priceDescend');
     const prices = [...document.querySelectorAll('#models tr')].map(
