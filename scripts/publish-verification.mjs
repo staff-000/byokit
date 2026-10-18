@@ -1,3 +1,4 @@
+import { measurementSummary } from '../website/speed-measurements.js';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
@@ -33,26 +34,39 @@ export function addReport(data, reports, submission) {
         .filter(
           (r) =>
             r.offeringId === record.offeringId &&
+            r.result === 'passed' &&
+            r.adapter === record.adapter &&
+            Date.parse(r.checkedAt) <= submitted &&
+            Date.parse(r.checkedAt) >= submitted - 30 * 86400000 &&
             Number.isFinite(r.tokensPerSecond) &&
             r.tokensPerSecond > 0,
         )
         .map((r) => r.tokensPerSecond)
         .sort((a, b) => a - b);
-      if (validSpeeds.length > 0) {
+      const standard = measurementSummary(
+        next,
+        record.offeringId,
+        submission.report.protocol,
+        submitted,
+      );
+      if (validSpeeds.length > 0 || standard.median != null) {
         const mid = Math.floor(validSpeeds.length / 2);
         const medianSpeed =
-          validSpeeds.length % 2 === 1
+          standard.median ??
+          (validSpeeds.length % 2 === 1
             ? validSpeeds[mid]
-            : Math.round(((validSpeeds[mid - 1] + validSpeeds[mid]) / 2) * 10) / 10;
+            : Math.round(((validSpeeds[mid - 1] + validSpeeds[mid]) / 2) * 10) / 10);
         updatedOfferings = data.offerings.map((o) =>
           o.id === record.offeringId
             ? {
                 ...o,
                 speed: {
                   timeToFirstTokenMs:
-                    record.timeToFirstTokenMs ?? o.speed?.timeToFirstTokenMs ?? null,
+                    standard.median != null
+                      ? null
+                      : (record.timeToFirstTokenMs ?? o.speed?.timeToFirstTokenMs ?? null),
                   tokensPerSecond: medianSpeed,
-                  source: record.evidence,
+                  source: standard.latestSpeedEvidence || record.evidence,
                 },
               }
             : o,

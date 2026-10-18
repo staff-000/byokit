@@ -26,8 +26,8 @@
       <p class="eyebrow">REAL INFERENCE / YOUR CURRENT SETTINGS</p>
       <h1>Does this model<br /><span>work for you?</span></h1>
       <p class="lede">
-        Choose a model and test one real API call with your own key. Verify a hosted model, share
-        your success through GitHub, and earn a Model Verifier badge when your report is published.
+        Already verified? Test it again. More contributors help us understand speed and variability.
+        Use your own key, then share your measurement on GitHub to build the community evidence.
       </p>
       <div class="privacy-note">
         <strong>We never save your API key.</strong> It stays in this page’s memory and is sent
@@ -95,6 +95,10 @@
               /></label>
             </div>
             <p class="call-destination">Request goes directly to <code id="destination"></code></p>
+            <p id="measurement-context" class="fine" role="status"></p>
+            <button id="standard-speed" type="button" class="small-button">
+              Use standard speed benchmark
+            </button>
             <details class="call-settings">
               <summary>Prompt and output limit</summary>
               <label
@@ -109,8 +113,10 @@ Count from 1 to 50 separated by spaces: 1 2 3...</textarea></label
                   max="8192"
               /></label>
               <p class="fine">
-                Short prompt benchmark minimizes time-to-first-token overhead for clean speed
-                measurement.
+                The standard benchmark uses this fixed counting prompt and 128 output tokens. Custom
+                settings still verify availability but are excluded from the standard speed median.
+                Speed is estimated from two non-streaming calls; actual time to first token is not
+                measured.
               </p>
             </details>
             <details id="request-example" class="call-settings">
@@ -310,10 +316,17 @@ Your console output will appear here.</pre>
         <div class="section-head">
           <div>
             <p class="eyebrow">MODEL LIST / LIVE BY DEFAULT</p>
-            <h2>Pick a model to verify.</h2>
+            <h2>Every speed measurement helps.</h2>
           </div>
           <span id="model-count" class="count" aria-live="polite"></span>
         </div>
+        <p class="fine">
+          Availability and speed are separate. Standard speed summaries use the median and middle
+          50% of published comparable measurements from the last 30 days, grouped by provider
+          offering and benchmark version. Browser location, network, provider load, and output
+          length still affect results. Batch checks verify availability; use Test speed for the
+          two-call speed benchmark.
+        </p>
         <details class="filter-reference">
           <summary>What can I filter?</summary>
           <div id="filter-reference"></div>

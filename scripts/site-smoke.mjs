@@ -107,7 +107,7 @@ try {
   await page.screenshot({ path: join(tmpdir(), 'byokit-site-mobile.png'), fullPage: true });
   await page.goto(base + 'verification.html');
   assert.equal(await page.locator('#verify').isDisabled(), false);
-  assert.ok((await page.locator('#verify').textContent()).includes('earn a badge'));
+  assert.match(await page.locator('#verify').textContent(), /Test speed|Add your speed result/);
   assert.equal(await page.locator('#github-sign-in').count(), 0);
   await page.locator('#models tr').first().waitFor();
   assert.equal(await page.locator('#verified-only').count(), 0);
@@ -205,7 +205,8 @@ try {
             checkedAt: report.checkedAt,
             result: 'passed',
             checks: ['textGeneration'],
-            adapter: 'byokit-website@1',
+            adapter: 'byokit-website@count-128-delta-v1:chat',
+            tokensPerSecond: 68,
             evidence: 'https://github.com/staff-000/byokit/issues/1',
           },
         ],
@@ -216,6 +217,9 @@ try {
   await page.getByText(/Published: community verified by @fixture-user/).waitFor();
   assert.equal(await page.locator('#earned-badge').isVisible(), true);
   assert.ok((await page.locator('#contributor-list').textContent()).includes('@fixture-user'));
+  assert.match(await page.locator('#models').textContent(), /Median · 1 standard measurement/);
+  assert.match(await page.locator('#models').textContent(), /Small sample · provisional estimate/);
+  assert.ok(await page.getByRole('button', { name: 'Add your speed result', exact: true }).count());
   // Single-model verification uses a baseline request plus its speed benchmark.
   assert.equal(calls, 2);
   const stored = await page.evaluate(() =>

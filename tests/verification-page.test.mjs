@@ -79,6 +79,7 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
       ['./request-examples.js', 'website/request-examples.js'],
       ['./inference.js', 'website/inference.js'],
       ['./verification-filters.js', 'website/verification-filters.js'],
+      ['./speed-measurements.js', 'website/speed-measurements.js'],
       ['./batch-verification.js', 'website/batch-verification.js'],
     ])
       source = source.replace(`'${relative}'`, JSON.stringify(pathToFileURL(resolve(file)).href));
@@ -86,7 +87,7 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
     assert.equal($('#github-sign-in'), null);
     assert.equal($('#verify').disabled, false);
     assert.equal(calls, 0);
-    assert.match($('#verify').textContent, /earn a badge/);
+    assert.match($('#verify').textContent, /Test speed|Add your speed result/);
     assert.equal($('#earned-badge').hidden, true);
     for (const id of [
       'model-search',
@@ -164,6 +165,9 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
     $('#check-publication').click();
     await wait(() => $('#publication-status').textContent.startsWith('Published:'));
     assert.match($('#models').textContent, /Community: verified/);
+    assert.match($('#models button').textContent, /Add your speed result/);
+    assert.match($('#models').textContent, /published checks/);
+    assert.match($('#models').textContent, /known contributors/);
     assert.match($('#models').textContent, /Community verified by @fixture-user/);
     assert.equal($('#earned-badge').hidden, false);
     assert.match($('#publication-status').textContent, /badge earned/);
@@ -171,6 +175,9 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
     assert.equal($('#earned-badge-image').getAttribute('src'), './badges/github-123.svg');
     change('verification-filter', 'verified');
     assert.match($('#models').textContent, /Community: verified/);
+    assert.match($('#models button').textContent, /Add your speed result/);
+    assert.match($('#models').textContent, /published checks/);
+    assert.match($('#models').textContent, /known contributors/);
     change('verification-filter', 'unverified');
     assert.ok(!$('#models').textContent.includes('Community verified by @fixture-user'));
     change('verification-filter', 'any');

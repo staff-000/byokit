@@ -1,3 +1,9 @@
+import {
+  measurementSummary,
+  relativeMeasurementTime,
+  SPEED_PROMPT,
+  SPEED_MAX_TOKENS,
+} from './speed-measurements.js';
 import { filterModels } from './verification-filters.js';
 import { runBatch, validateBatch, MAX_BATCH_REQUESTS } from './batch-verification.js';
 import { contributorBadges, badgeMarkdown } from './contributor-badges.js';
@@ -111,6 +117,8 @@ function openModel(model) {
   }
   if (!model.local && !model.callSupport?.textGeneration) return;
   providerKeys.set(selected.providerId, $('#api-key').value);
+  $('#prompt').value = SPEED_PROMPT;
+  $('#max-tokens').value = SPEED_MAX_TOKENS;
   select(model);
   for (const row of document.querySelectorAll('#models tr'))
     row.classList.toggle('selected', row.dataset.offering === model.id);
@@ -256,12 +264,17 @@ function select(model) {
     $('#api-key').value = '';
     $('#api-key').placeholder = `Paste your ${model.provider?.name || model.providerId} key`;
   }
+  const coverage = modelMeasurements(model);
+  const previouslyTested = coverage.checks > 0 || records.some((r) => r.offeringId === model.id);
   $('#verify').textContent = model.local
-    ? 'Verify local model · 2 requests'
-    : 'Verify model · 2 requests · earn a badge ↗';
+    ? 'Test speed · 2 requests'
+    : `${previouslyTested ? 'Add your speed result' : 'Test speed'} · 2 requests`;
+  $('#measurement-context').textContent = model.local
+    ? 'Local measurements stay in your browser.'
+    : `${coverage.checks} published checks · ${coverage.contributors} known contributors. ${coverage.nudge}`;
   $('#badge-hint').textContent = model.local
-    ? 'Local checks stay private. Publish a hosted-model report to earn a badge.'
-    : 'Earn a Model Verifier badge: verify a hosted model, share the success on GitHub, and receive your badge after publication.';
+    ? 'Local checks stay private.'
+    : 'Already verified? Your measurement still helps. Every published contribution counts, including repeat tests of the same model. Share on GitHub to earn a Model Verifier badge.';
   $('#selected-name').textContent = model.name;
   $('#selected-id').textContent = model.id;
   const api = ProviderApi[model.providerId];
@@ -294,7 +307,7 @@ function select(model) {
   updateCostEstimate();
 }
 function filteredModels() {
-  return filterModels({
+  const filtered = filterModels({
     search: $('#model-search').value,
     provider: $('#provider-filter').value,
     region: $('#region-filter').value,
@@ -312,7 +325,46 @@ function filteredModels() {
     callableOnly: $('#callable-filter')?.checked,
     includeOutdated: $('#include-outdated').checked,
   });
+  const sort = $('#sort-filter').value;
+  if (['speed', 'speedAscend', 'speedDescend'].includes(sort)) {
+    const speeds = new Map(filtered.map((m) => [m.id, modelMeasurements(m).median]));
+    filtered.sort((a, b) => {
+      const av = speeds.get(a.id),
+        bv = speeds.get(b.id);
+      if (av == null || bv == null) return av == null ? (bv == null ? 0 : 1) : -1;
+      return sort === 'speedAscend' ? av - bv : bv - av;
+    });
+  }
+  return filtered;
 }
+let measurementIndexSource = null;
+const measurementIndex = new Map();
+function modelMeasurements(model) {
+  if (measurementIndexSource !== publishedReports) {
+    measurementIndex.clear();
+    for (const report of publishedReports) {
+      if (!measurementIndex.has(report.offeringId)) measurementIndex.set(report.offeringId, []);
+      measurementIndex.get(report.offeringId).push(report);
+    }
+    measurementIndexSource = publishedReports;
+  }
+  return measurementSummary(
+    measurementIndex.get(model.id) || [],
+    model.id,
+    ProviderApi[model.providerId]?.protocols[0],
+  );
+}
+const speedNumber = (value) => value.toLocaleString(undefined, { maximumFractionDigits: 1 });
+$('#standard-speed').addEventListener('click', () => {
+  if (busy || batchController) return;
+  $('#prompt').value = SPEED_PROMPT;
+  $('#max-tokens').value = SPEED_MAX_TOKENS;
+  invalidate();
+  destination();
+  status(
+    'Standard speed benchmark selected: fixed counting prompt, 128 output tokens, two requests.',
+  );
+});
 function renderModels() {
   const focusedRow = document.activeElement?.closest('#models tr'),
     focusedId = focusedRow?.dataset.offering;
@@ -378,14 +430,37 @@ function renderModels() {
     );
     const performance = el('td');
     performance.dataset.label = 'Speed / release';
-    const speedDisplay =
-      m.speed?.tokensPerSecond != null
-        ? `${m.speed.tokensPerSecond.toLocaleString()} tokens/sec${m.speed.source === 'community-verified' ? ' (verified)' : ''}`
-        : 'Speed unknown';
-    performance.append(
-      el('span', speedDisplay, 'metric-value'),
-      el('span', 'Released ' + (m.releaseDate || 'unknown'), 'evidence-note'),
-    );
+    const coverage = modelMeasurements(m);
+    if (coverage.median != null) {
+      performance.append(
+        el('span', `${speedNumber(coverage.median)} tokens/sec`, 'metric-value'),
+        el(
+          'span',
+          `Median · ${coverage.samples} standard ${coverage.samples === 1 ? 'measurement' : 'measurements'} · ${coverage.speedContributors} known contributors · last 30 days`,
+          'evidence-note',
+        ),
+      );
+      if (coverage.samples >= 3)
+        performance.append(
+          el(
+            'span',
+            `Middle 50%: ${speedNumber(coverage.p25)}–${speedNumber(coverage.p75)} tokens/sec`,
+            'evidence-note',
+          ),
+        );
+      else performance.append(el('span', 'Small sample · provisional estimate', 'evidence-note'));
+    } else {
+      performance.append(el('span', 'Speed needs measurements', 'metric-value'));
+      if (m.speed?.tokensPerSecond != null)
+        performance.append(
+          el(
+            'span',
+            `Historical estimate: ${speedNumber(m.speed.tokensPerSecond)} tokens/sec · benchmark unrecorded`,
+            'evidence-note',
+          ),
+        );
+    }
+    performance.append(el('span', 'Released ' + (m.releaseDate || 'unknown'), 'evidence-note'));
     const inputCell = el('td');
     inputCell.dataset.label = 'Input';
     const inputTags = el('div', undefined, 'model-tags');
@@ -456,7 +531,27 @@ function renderModels() {
       link.rel = 'noopener noreferrer';
       action.append(el('span', badgeText, badgeClass), link);
     } else if (!last) action.append(el('span', 'Community: unverified', 'evidence-note'));
-    const button = el('button', 'Verify', 'small-button');
+    if (!m.local)
+      action.append(
+        el(
+          'span',
+          `${coverage.checks} published checks · ${coverage.contributors} known contributors`,
+          'evidence-note',
+        ),
+        el(
+          'span',
+          coverage.latestAt
+            ? `Last tested ${relativeMeasurementTime(coverage.latestAt)}`
+            : 'No published checks yet',
+          'evidence-note',
+        ),
+        el('span', coverage.nudge, 'contribution-nudge'),
+      );
+    const button = el(
+      'button',
+      last || coverage.checks ? 'Add your speed result' : 'Test speed',
+      'small-button action-highlight',
+    );
     button.type = 'button';
     button.disabled = !m.local && !m.callSupport?.textGeneration;
     if (!m.local && !m.callSupport?.textGeneration)
@@ -772,7 +867,7 @@ function renderContributors() {
       image,
       el(
         'p',
-        `${badge.verifiedModels} ${badge.verifiedModels === 1 ? 'model' : 'models'} verified · first contribution ${new Date(badge.firstVerifiedAt).toLocaleDateString()}`,
+        `${badge.verificationCount} published contributions · ${badge.verifiedModels} ${badge.verifiedModels === 1 ? 'model' : 'models'} verified${badge.verificationCount > 1 ? ' · Repeat contributor' : ''} · first contribution ${new Date(badge.firstVerifiedAt).toLocaleDateString()}`,
         'fine',
       ),
       actions,
@@ -851,9 +946,18 @@ $('#verify-form').addEventListener('submit', async (event) => {
     if (result.tokensPerSecond != null) {
       statusMsg += ` · ${result.tokensPerSecond.toFixed(1)} tokens/sec`;
       if (result.timeToFirstTokenMs != null) {
-        statusMsg += ` (~${result.timeToFirstTokenMs} ms TTFT)`;
+        statusMsg += ` (~${result.timeToFirstTokenMs} ms baseline latency estimate)`;
       }
     }
+    const communitySpeed = modelMeasurements(selected);
+    if (result.benchmark) {
+      statusMsg +=
+        communitySpeed.median != null
+          ? `. Recent community median: ${speedNumber(communitySpeed.median)} tokens/sec (${communitySpeed.samples} measurements, last 30 days)`
+          : '. Yours can be the first recent standard speed contribution';
+    } else
+      statusMsg +=
+        '. Timing excluded from the standard speed median (custom settings or insufficient comparable timing/token data)';
     statusMsg += `. Recorded ${storageAvailable ? 'in this browser' : 'in memory for this visit'}.`;
     status(statusMsg, 'success');
     renderRecords();
@@ -862,6 +966,9 @@ $('#verify-form').addEventListener('submit', async (event) => {
       try {
         activeReport = createReport(captured, result, record.id, key);
         $('#share-verification').href = issueUrl(activeReport);
+        $('#share-verification').textContent = result.benchmark
+          ? 'Contribute your speed result on GitHub ↗'
+          : 'Share verification on GitHub ↗';
         $('#share-verification').hidden = false;
         const advanceBtn = $('#next-unverified-advance');
         const nextModel = nextUnverifiedModel(
@@ -873,7 +980,7 @@ $('#verify-form').addEventListener('submit', async (event) => {
           advanceBtn.hidden = false;
         }
         publicationStatus(
-          'Your call succeeded! Share the report on GitHub to earn your Model Verifier badge after publication.',
+          'Your result stays private until you share it on GitHub. Another measurement helps even when this model is already verified; published repeat contributions count toward your contributor profile.',
         );
       } catch {
         publicationStatus(

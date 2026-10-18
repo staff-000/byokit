@@ -1,3 +1,8 @@
+import {
+  SPEED_BENCHMARK,
+  SPEED_MAX_TOKENS,
+  isStandardSpeedSettings,
+} from './speed-measurements.js';
 // Shared browser/Actions report format. No credentials, prompts, or generated text.
 export const REPORT_MARKER = '<!-- byokit-verification:v1 -->';
 const fields = [
@@ -13,6 +18,7 @@ const fields = [
   'tokensPerSecond',
   'outputTokens',
   'staging',
+  'benchmark',
 ];
 export function reportFields(value) {
   if (
@@ -72,6 +78,15 @@ export function reportFields(value) {
     (!Number.isInteger(value.outputTokens) || value.outputTokens < 0 || value.outputTokens > 8192)
   )
     throw new Error('Invalid output token count.');
+  if (
+    value.benchmark !== undefined &&
+    (value.benchmark !== SPEED_BENCHMARK ||
+      value.maxTokens !== SPEED_MAX_TOKENS ||
+      value.tokensPerSecond == null ||
+      !Number.isInteger(value.outputTokens) ||
+      value.outputTokens <= 0)
+  )
+    throw new Error('Invalid speed benchmark.');
   if (value.staging !== undefined && value.staging !== true)
     throw new Error('Invalid staging flag.');
   return value;
@@ -86,6 +101,9 @@ export function createReport(settings, result, operationId, secret = '') {
     checkedAt: result.checkedAt,
     latencyMs: result.latencyMs,
     maxTokens: settings.maxTokens,
+    ...(result.benchmark === SPEED_BENCHMARK && isStandardSpeedSettings(settings)
+      ? { benchmark: SPEED_BENCHMARK }
+      : {}),
     ...(result.timeToFirstTokenMs != null ? { timeToFirstTokenMs: result.timeToFirstTokenMs } : {}),
     ...(result.tokensPerSecond != null ? { tokensPerSecond: result.tokensPerSecond } : {}),
     ...(result.usage?.outputTokens != null ? { outputTokens: result.usage.outputTokens } : {}),

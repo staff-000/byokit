@@ -1,3 +1,4 @@
+import { SPEED_BENCHMARK, speedAdapter } from '../website/speed-measurements.js';
 import { parseIssueReport } from '../website/verification-report.js';
 export const REPOSITORY = 'staff-000/byokit';
 export function issueSubmission(event, catalog) {
@@ -66,7 +67,8 @@ export function canonicalReport(submission) {
     checks: ['textGeneration'],
     ...(report.tokensPerSecond ? { tokensPerSecond: report.tokensPerSecond } : {}),
     ...(report.timeToFirstTokenMs ? { timeToFirstTokenMs: report.timeToFirstTokenMs } : {}),
-    adapter: 'byokit-website@1',
+    adapter:
+      report.benchmark === SPEED_BENCHMARK ? speedAdapter(report.protocol) : 'byokit-website@1',
     evidence,
     notes: `Community-reported successful ${report.protocol} call. Output budget ${report.maxTokens}; latency ${report.latencyMs} ms${ttftNote}${speedNote}. GitHub author ID ${user.id}; submitted ${createdAt}; Provider call ran in the contributor’s browser.`,
   };

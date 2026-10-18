@@ -2293,3 +2293,11 @@ dialog .record-actions {
 #verification-drawer [hidden] {
   display: none !important;
 }
+
+.contribution-nudge {
+  display: block;
+  margin: 8px 0;
+  font-size: 12px;
+  color: var(--accent);
+  line-height: 1.5;
+}

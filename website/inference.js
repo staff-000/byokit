@@ -1,3 +1,4 @@
+import { SPEED_BENCHMARK, isStandardSpeedSettings, speedAdapter } from './speed-measurements.js';
 import { OpenAI, prepareCall, ApiProtocol } from '../packages/byokit/index.js';
 // Verification UI: shared library adapters, browser-local records, no stored credentials.
 import { providerConnections } from '../packages/byokit/connection.js';
@@ -145,13 +146,23 @@ export async function verifyInference(settings, key, options = {}) {
     ) {
       tokensPerSecond = tokensPerSecond > 10000 ? 10000 : null;
     }
+    const standard =
+      isStandardSpeedSettings(settings) &&
+      Number.isInteger(r1.usage?.completion_tokens) &&
+      r1.usage.completion_tokens > 0 &&
+      Number.isInteger(r2.usage?.completion_tokens) &&
+      deltaT > 0 &&
+      deltaN > 0 &&
+      deltaN / (deltaT / 1000) <= 10000;
     const timeToFirstTokenMs = Math.max(1, t1Latency);
 
     return {
       text: text.slice(0, 10000),
       checkedAt: new Date().toISOString(),
       latencyMs: t2Latency,
-      timeToFirstTokenMs,
+      // Baseline call latency is an overhead estimate, not measured streaming TTFT.
+      ...(!standard ? { timeToFirstTokenMs } : {}),
+      ...(standard && tokensPerSecond != null ? { benchmark: SPEED_BENCHMARK } : {}),
       ...(tokensPerSecond != null ? { tokensPerSecond } : {}),
       returnedModel: r2.model,
       usage: {
@@ -213,7 +224,10 @@ export function successRecord(settings, result, secret = '') {
     ...(result.tokensPerSecond != null ? { tokensPerSecond: result.tokensPerSecond } : {}),
     result: 'passed',
     checks: ['textGeneration'],
-    adapter: 'byokit-website@1',
+    adapter:
+      result.benchmark === SPEED_BENCHMARK && isStandardSpeedSettings(settings)
+        ? speedAdapter(settings.protocol)
+        : 'byokit-website@1',
     usage: { ...result.usage },
     scope: 'this-browser',
   };

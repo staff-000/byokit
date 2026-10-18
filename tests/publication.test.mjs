@@ -206,3 +206,51 @@ test('publication checks never repeat inference and discard late feed responses'
   assert.equal(await missing.check(report().operationId), null);
   missing.stop();
 });
+
+test('repeat standard speed contributions update a comparable median without mixing custom timings', () => {
+  const standard = {
+    ...report(),
+    maxTokens: 128,
+    benchmark: 'count-128-delta-v1',
+    tokensPerSecond: 20,
+    outputTokens: 50,
+  };
+  const first = addReport(catalog, [], issueSubmission(event(standard), catalog));
+  const custom = {
+    ...report(),
+    operationId: '71e4f6ef-c19e-4d28-bdf6-10cb85fcaa09',
+    tokensPerSecond: 900,
+  };
+  const second = addReport(
+    first.data,
+    first.reports,
+    issueSubmission(event(custom, { number: 43 }), catalog),
+  );
+  assert.equal(
+    second.data.offerings.find((o) => o.id === 'deepseek/test').speed.tokensPerSecond,
+    20,
+  );
+  assert.equal(
+    second.data.offerings.find((o) => o.id === 'deepseek/test').speed.source,
+    first.record.evidence,
+  );
+  const again = {
+    ...standard,
+    operationId: '71e4f6ef-c19e-4d28-bdf6-10cb85fcaa10',
+    tokensPerSecond: 40,
+  };
+  const third = addReport(
+    second.data,
+    second.reports,
+    issueSubmission(event(again, { number: 44 }), catalog),
+  );
+  assert.equal(
+    third.data.offerings.find((o) => o.id === 'deepseek/test').speed.tokensPerSecond,
+    30,
+  );
+  assert.equal(
+    third.reports.length,
+    3,
+    'repeat measurements are retained, rather than replacing a prior verification',
+  );
+});

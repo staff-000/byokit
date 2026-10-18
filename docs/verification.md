@@ -111,3 +111,30 @@ each success separately through its GitHub link; the existing ten-publications-p
 limit still applies. Keys stay only in page memory and never enter saved records.
 Local-server entries support single-model verification only. Single-model checks
 retain their baseline call and speed benchmark (up to two requests).
+
+## Keep contributing after a model is verified
+
+Availability verification and speed measurements answer different questions.
+A verified model still benefits from another account and another measurement.
+Use **Test speed** or **Add your speed result** to open the drawer. The standard
+benchmark uses a fixed counting prompt, a 128-token output budget, and two
+non-streaming requests: a short baseline followed by generation. It estimates
+speed from the token-count and elapsed-time differences. This is an estimate,
+not a measurement of streaming time to first token. Browser location, network,
+provider load, output length, and model configuration can still affect results;
+region is not collected or grouped.
+
+The table shows the median, middle 50% range (from three samples), sample count,
+known contributor count, and a 30-day window. Speed sorting uses that same
+recent median, with unknown values last. One or two samples are explicitly
+provisional. Only published successful results with provider-reported token counts,
+positive timing differences, the same offering/protocol, and the same versioned
+standard benchmark are combined. Legacy, custom, batch, failed, stale, and
+browser-local timings are excluded from this public summary. Historical speed
+values remain labeled separately. Counts and medians describe self-reported
+observations, not guaranteed performance or independent experiments.
+
+The public report carries the benchmark version without including the prompt,
+API key, or generated text. A successful result remains private until you share
+it on GitHub. Repeated tests are retained and count toward the contributor's
+published-contribution total; the daily publication limit still applies.
