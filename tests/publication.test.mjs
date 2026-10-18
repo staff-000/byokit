@@ -167,8 +167,9 @@ test('deduplication, numeric contributor limits, and concurrent rereads preserve
   const failSummary = verificationSummary(first.data, 'deepseek/test', {
     asOf: '2026-10-15T13:00:00.000Z',
   });
-  assert.equal(failSummary.status, 'failed');
-  assert.equal(failSummary.communityStatus, 'verified to be failure');
+  assert.equal(failSummary.status, 'passed');
+  assert.equal(failSummary.community.recentIssues.unknown, 1);
+  assert.equal(failSummary.communityStatus, 'verified');
 });
 test('staging fixtures require repository owner and cannot be treated as production calls', () => {
   assert.throws(() => issueSubmission(event({ ...report(), staging: true }), catalog));

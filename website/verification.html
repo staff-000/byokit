@@ -161,6 +161,8 @@ Count from 1 to 50 separated by spaces: 1 2 3...</textarea></label
           <p id="call-status" class="call-status" role="status" aria-live="polite">
             No call has been made.
           </p>
+          <p id="retry-guidance" class="fine" role="status" hidden></p>
+          <p id="attempt-community" class="fine" role="status"></p>
           <div class="call-actions">
             <a
               id="share-verification"
@@ -490,7 +492,11 @@ Your console output will appear here.</pre>
                         <option value="any">Any verification</option>
                         <option value="verified">Verified</option>
                         <option value="unverified">Unverified</option>
-                        <option value="verified to be failure">Verified to be failure</option>
+                        <option value="issues_reported">Issues reported, no recent success</option>
+                        <option value="stale">Stale evidence</option>
+                        <option value="verified to be failure">
+                          Unsuccessful attempts (legacy filter)
+                        </option>
                       </select></label
                     >
                     <label class="header-checkbox"
@@ -539,12 +545,12 @@ Your console output will appear here.</pre>
           </div>
         </div>
         <p class="fine">
-          Successful checks are saved here with model/API settings, date, latency, and token usage.
-          Keys, prompts, and generated text are never saved. Records describe a past call; another
-          key or changed settings need a new check. After a catalog-hosted model succeeds, Share
-          verification opens a prefilled GitHub issue. Submit it there; GitHub Actions commits your
-          attributed community report and updates the website. Opening the form alone does not
-          publish anything. Local-server checks stay in this browser.
+          Attempts are saved here with their outcome, model/API settings, date, latency, and
+          available token usage. Keys, prompts, and generated text are never saved. Records describe
+          a past call; another key or changed settings need a new check. After a catalog-hosted
+          model succeeds, Share verification opens a prefilled GitHub issue. Submit it there; GitHub
+          Actions commits your attributed community report and updates the website. Opening the form
+          alone does not publish anything. Local-server checks stay in this browser.
         </p>
         <p id="storage-note" class="fine" role="status"></p>
         <div id="records" class="report-list"></div>

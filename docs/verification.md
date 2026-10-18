@@ -7,8 +7,8 @@ No byokit login is needed. A small call may consume your provider quota.
 ## Test and share
 
 1. Select the exact provider/model and review its endpoint and settings.
-2. Enter the provider API key and click **Verify model · earn a badge**.
-3. After **Call succeeded**, click **Share on GitHub · claim badge**.
+2. Enter the provider API key and click **Test speed** or **Add your speed result**.
+3. Review the attempt result and community evidence. Use the Share action to contribute successful checks or sanitized issue categories.
 4. GitHub opens a prefilled issue. Sign in there if necessary, review the report,
    and click **Submit new issue**. Opening or closing the form does not publish it.
 5. GitHub Actions validates the report, commits the catalog update, and deploys Pages.
@@ -23,15 +23,13 @@ copy the SDK example to run locally. There is no key-bearing proxy.
 ## Privacy and meaning
 
 Keys stay in page memory and go directly to the AI provider. They are never saved
-in storage, included in issues, or sent to byokit. Refresh, navigation, provider
-changes, and **Clear API key** clear the entry. Prompts and generated text stay out
-of records and issue URLs. Public reports contain only version, report UUID,
-offering/model IDs, protocol, check time, latency, and output budget.
+in storage, included in issues, or sent to byokit. Refreshing or leaving the page clears all keys. **Clear API key** clears the selected provider entry; other keys remain only in page memory until navigation or refresh. Prompts and generated text stay out
+of records and issue URLs. Public reports contain version, report UUID, offering/model IDs, protocol, check time, latency, output budget, and optional normalized assessments and benchmark metrics. Raw provider errors and provider account identifiers are excluded.
 
 GitHub supplies the issue author's identity. **Community verified by @user · date**
 means that contributor reported a successful text call. Browser reports cannot
 independently prove inference. Availability remains provider/account-specific:
-a DeepSeek report does not verify its OpenRouter offering. Failures remain local.
+a DeepSeek report does not verify its OpenRouter offering. Blocked or inconclusive observations remain private until explicitly shared.
 Community verification never overrides upstream LIVE/OUTDATED/UNCERTAIN metadata.
 The existing 90-day freshness window applies; historical reports remain evidence.
 
@@ -138,3 +136,70 @@ The public report carries the benchmark version without including the prompt,
 API key, or generated text. A successful result remains private until you share
 it on GitHub. Repeated tests are retained and count toward the contributor's
 published-contribution total; the daily publication limit still applies.
+
+## Structured verification outcomes
+
+A completed request and global model availability are different questions.
+SDK errors keep their existing `code` and HTTP `status`, and add `attempt`
+(`error.attempt` in JavaScript and Python). `classifyVerificationError` and
+`classify_verification_error` normalize safe metadata. Reviewed provider error
+codes/details take precedence over HTTP fallbacks. The classifier never returns
+raw messages, account IDs, credentials, or an inferred physical location.
+
+Website results and new published records include `assessment`:
+
+```json
+{
+  "attempt": {
+    "outcome": "blocked",
+    "reason": "quota_exhausted",
+    "scope": "account",
+    "certainty": "explicit",
+    "source": "provider_code",
+    "classifierVersion": "1",
+    "httpStatus": 429,
+    "retry": { "action": "check_billing", "afterSeconds": null }
+  },
+  "checks": { "textGeneration": "blocked", "speed": "not_run" }
+}
+```
+
+Outcomes are `succeeded`, `partial`, `blocked`, `inconclusive`, `canceled`, and
+`skipped`. Reasons distinguish credentials, quota, request limits, access,
+region/policy restrictions, missing-or-inaccessible IDs, invalid requests,
+unsupported operations, provider outages, connectivity, timeout, and response
+problems. Generic 403 and 404 responses do not establish geography or retirement.
+A generic 429 remains an ambiguous rate-or-quota limit. Browser network failures
+cannot distinguish connectivity from CORS. Classification source `provider_code`
+also covers reviewed structured provider details; HTTP-only fallbacks are inferred.
+
+The two benchmark phases are recorded separately. Successful baseline generation
+followed by a blocked generation phase gives `partial`, with text generation
+`passed` and speed `blocked`. No speed value is recorded for an incomplete or
+unmeasurable benchmark. Baseline latency is not actual streaming TTFT.
+
+Retries are manual. Readable `Retry-After`/provider retry delays produce guidance and
+a countdown, never automatic requests. Browser CORS may hide `Retry-After` unless the provider exposes that header; structured retry details are used when available. Account credentials/quota stop that
+provider's remaining batch; explicit model-specific restrictions do not stop
+siblings. Unknown/shared rate limits, outages, and connectivity problems stop
+remaining requests for that provider while other providers continue. Unsent work
+is `skipped`, with the cause preserved. Canceled and skipped observations are not
+published.
+
+`verificationSummary(...).community` / `verification_summary(...)["community"]`
+is authoritative for community evidence. It returns `verified`, `issues_reported`,
+`unverified`, or `stale`, the last successful time, unique successful contributors,
+and issue-category counts over the last seven days. At least one success within
+the configurable 90-day window establishes `verified`; newer account-specific
+failures cannot erase it. Issues without fresh successes yield `issues_reported`.
+No community report changes lifecycle evidence or promises access for every account.
+
+Legacy `result` stays `passed`/`failed` for call-completion compatibility; partial
+attempts use `failed` while their successful checks remain authoritative. Old
+`passed` records are positive observations; old undifferentiated `failed` records
+are inconclusive issues. Legacy summary `status` is `passed`, `stale`, or
+`unverified`; use `community` for the full assessment. Existing failure enum
+constants remain, and deprecated `failed`/`verified to be failure` filters match
+unsuccessful text-generation attempts within the freshness window, including
+models that also have successful evidence. A custom account/region problem never
+means a model is universally broken.

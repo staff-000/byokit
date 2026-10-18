@@ -11,6 +11,7 @@ import urllib.parse
 import http.client
 import warnings
 import uuid
+from .verification import classify_verification_error
 from .enums import ApiProtocol
 from .types import ChatInput, ClaudeInput, CallOptions
 
@@ -33,6 +34,7 @@ class CallError(Exception):
         self.code = code
         self.diagnostics = diagnostics or []
         self.status = status
+        self.attempt = classify_verification_error({"code":code,"status":status})
 
 
 def connection_for(model):
@@ -855,21 +857,86 @@ def _execute(model, input, key, options, format):
         )
         response = conn.getresponse()
         if response.status < 200 or response.status >= 300:
-            raise CallError(
+            body = None
+            try:
+                raw_error = response.read(16385)
+                if len(raw_error) <= 16384:
+                    body = json.loads(raw_error)
+            except (ValueError, OSError):
+                pass
+            error = CallError(
                 "PROVIDER_ERROR",
                 f"Provider rejected the call (HTTP {response.status}).",
                 status=response.status,
             )
+            error.attempt = classify_verification_error(
+                {"code": error.code, "status": response.status},
+                body=body,
+                retry_after=response.getheader("Retry-After"),
+            )
+            raise error
         raw = response.read()
         if cancel and cancel.is_set():
             raise CallError("CANCELED", "Call canceled.")
         if time.monotonic() - started >= timeout:
             raise CallError("TIMEOUT", "Call timed out.")
         try:
-            result = _parse(json.loads(raw), req["protocol"], model)
+            payload = json.loads(raw)
+            if not isinstance(payload, dict):
+                raise CallError(
+                    "INVALID_RESPONSE", "Invalid provider JSON or response."
+                )
+            feedback = payload.get("promptFeedback")
+            candidates = (
+                payload.get("candidates")
+                if isinstance(payload.get("candidates"), list)
+                else []
+            )
+            choices = (
+                payload.get("choices")
+                if isinstance(payload.get("choices"), list)
+                else []
+            )
+            blocked = isinstance(feedback, dict) and feedback.get("blockReason") in {
+                "SAFETY",
+                "PROHIBITED_CONTENT",
+                "BLOCKLIST",
+                "IMAGE_SAFETY",
+            }
+            blocked = (
+                blocked
+                or payload.get("stop_reason") == "refusal"
+                or any(
+                    isinstance(c, dict)
+                    and c.get("finishReason")
+                    in {"SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST"}
+                    for c in candidates
+                )
+            )
+            blocked = blocked or any(
+                isinstance(c, dict)
+                and (
+                    c.get("finish_reason") == "content_filter"
+                    or isinstance(c.get("message"), dict)
+                    and bool(c["message"].get("refusal"))
+                )
+                for c in choices
+            )
+            if blocked:
+                error = CallError(
+                    "POLICY_RESTRICTED",
+                    "Provider policy prevented this response.",
+                    status=response.status,
+                )
+                error.attempt = classify_verification_error(
+                    {"status": response.status},
+                    body={"error": {"code": "content_policy_violation"}},
+                )
+                raise error
+            result = _parse(payload, req["protocol"], model)
         except CallError:
             raise
-        except (ValueError, KeyError, TypeError, IndexError):
+        except (ValueError, KeyError, TypeError, IndexError, AttributeError):
             raise CallError(
                 "INVALID_RESPONSE", "Invalid provider JSON or response."
             ) from None

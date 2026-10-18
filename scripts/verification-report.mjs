@@ -63,13 +63,15 @@ export function canonicalReport(submission) {
     offeringId: report.offeringId,
     contributor: `github:${user.login}`,
     checkedAt: report.checkedAt,
-    result: 'passed',
+    result:
+      report.assessment && report.assessment.attempt.outcome !== 'succeeded' ? 'failed' : 'passed',
+    ...(report.assessment ? { assessment: structuredClone(report.assessment) } : {}),
     checks: ['textGeneration'],
     ...(report.tokensPerSecond ? { tokensPerSecond: report.tokensPerSecond } : {}),
     ...(report.timeToFirstTokenMs ? { timeToFirstTokenMs: report.timeToFirstTokenMs } : {}),
     adapter:
       report.benchmark === SPEED_BENCHMARK ? speedAdapter(report.protocol) : 'byokit-website@1',
     evidence,
-    notes: `Community-reported successful ${report.protocol} call. Output budget ${report.maxTokens}; latency ${report.latencyMs} ms${ttftNote}${speedNote}. GitHub author ID ${user.id}; submitted ${createdAt}; Provider call ran in the contributor’s browser.`,
+    notes: `Community-reported ${report.assessment?.attempt.outcome || 'successful'} ${report.protocol} attempt. Output budget ${report.maxTokens}; latency ${report.latencyMs} ms${ttftNote}${speedNote}. GitHub author ID ${user.id}; submitted ${createdAt}; Provider call ran in the contributor’s browser.`,
   };
 }

@@ -95,13 +95,13 @@ test('reports retain author and evidence, but never promote unknown capabilities
   models[0].verification.records[0].result = 'failed';
   assert.equal(c.data.verifications[0].result, 'passed');
 });
-test('later failures, stale reports, feature-only reports, and future reports cannot establish a passing text call', () => {
+test('later account failures preserve successes; stale, feature-only, and future evidence cannot establish a fresh passing call', () => {
   const data = fixture();
   data.verifications = [
     report(),
     report({ id: 'new-failure', checkedAt: '2026-10-12T10:00:00Z', result: 'failed' }),
   ];
-  assert.equal(verificationSummary(data, 'test/small', { asOf }).status, 'failed');
+  assert.equal(verificationSummary(data, 'test/small', { asOf }).status, 'passed');
   data.verifications = [report({ checkedAt: '2020-01-01T00:00:00Z' })];
   assert.equal(verificationSummary(data, 'test/small', { asOf }).status, 'stale');
   data.verifications = [report({ checks: ['functionCalling'] })];

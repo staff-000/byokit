@@ -162,7 +162,7 @@ try {
   assert.ok((await page.locator('#request-code').textContent()).includes('$API_KEY'));
   assert.equal(calls, 0);
   await page.locator('#verify').click();
-  await page.getByText(/Call succeeded in/).waitFor();
+  await page.getByText(/Call succeeded (?:in|for text generation)/).waitFor();
   // Single-model verification uses a baseline request plus its speed benchmark.
   assert.equal(calls, 2);
   assert.equal(await page.locator('#share-verification').isVisible(), true);
@@ -240,13 +240,45 @@ try {
     route.fulfill({ status: 401, contentType: 'application/json', body: '{}' }),
   );
   await page.locator('#verify').click();
-  await page.getByText(/HTTP 401/).waitFor();
+  await page
+    .locator('#call-status')
+    .filter({ hasText: /HTTP 401/ })
+    .waitFor();
   assert.equal(
     await page.evaluate(
       () => JSON.parse(localStorage.getItem('byokit.inference-verifications.v1')).length,
     ),
-    1,
+    2,
   );
+  let quotaCalls = 0;
+  await page.route('https://api.deepseek.com/**', (route) => {
+    quotaCalls++;
+    return route.fulfill({
+      status: 429,
+      headers: { 'Retry-After': '1', 'Access-Control-Expose-Headers': 'Retry-After' },
+      contentType: 'application/json',
+      body: JSON.stringify({
+        error: { type: 'insufficient_quota', message: 'private provider account information' },
+      }),
+    });
+  });
+  await page.locator('#verify').click();
+  await page
+    .locator('#call-status')
+    .filter({ hasText: /quota is exhausted/ })
+    .waitFor();
+  assert.match(await page.locator('#attempt-community').textContent(), /successful calls reported/);
+  await page
+    .locator('#retry-guidance')
+    .filter({ hasText: /wait has elapsed/ })
+    .waitFor();
+  assert.equal(quotaCalls, 1, 'retry guidance never sends another request');
+  const failureShare = new URL(await page.locator('#share-verification').getAttribute('href'));
+  const failureBody = failureShare.searchParams.get('body');
+  assert.ok(!failureBody.includes('private provider account information'));
+  const failureReport = JSON.parse(failureBody.match(/```json\s*\n([\s\S]*?)\n```/)[1]);
+  assert.equal(failureReport.assessment.attempt.reason, 'quota_exhausted');
+  assert.equal(failureReport.assessment.attempt.scope, 'account');
   let batchCalls = 0;
   await page.route('https://api.deepseek.com/**', async (route) => {
     batchCalls++;

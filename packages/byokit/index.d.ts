@@ -403,18 +403,87 @@ export function isOfficialOffering(
   providerTags?: string[],
 ): boolean;
 
+export interface VerificationAttempt {
+  outcome: 'succeeded' | 'partial' | 'blocked' | 'inconclusive' | 'canceled' | 'skipped';
+  reason:
+    | 'invalid_credentials'
+    | 'quota_exhausted'
+    | 'rate_limited'
+    | 'access_denied'
+    | 'region_restricted'
+    | 'policy_restricted'
+    | 'model_not_found_or_inaccessible'
+    | 'invalid_request'
+    | 'unsupported_operation'
+    | 'provider_unavailable'
+    | 'network_error'
+    | 'timeout'
+    | 'invalid_response'
+    | 'empty_response'
+    | 'unknown'
+    | null;
+  scope: 'account' | 'model' | 'provider' | 'region' | 'request' | 'client' | 'unknown';
+  certainty: 'explicit' | 'inferred' | 'unknown';
+  source: 'provider_code' | 'http_status' | 'client_error';
+  classifierVersion: '1';
+  httpStatus?: number;
+  retry: {
+    action:
+      | 'none'
+      | 'check_credentials'
+      | 'check_billing'
+      | 'retry_later'
+      | 'check_limits'
+      | 'check_model_access'
+      | 'check_supported_locations'
+      | 'review_policy'
+      | 'check_model_id_and_access'
+      | 'check_operation'
+      | 'check_settings'
+      | 'check_network'
+      | 'review_response'
+      | 'review_diagnostics';
+    afterSeconds: number | null;
+  };
+}
+export interface VerificationAssessment {
+  attempt: VerificationAttempt;
+  checks: {
+    textGeneration: 'passed' | 'blocked' | 'inconclusive' | 'not_run';
+    speed: 'passed' | 'blocked' | 'inconclusive' | 'not_run';
+  };
+  phases?: Array<{ phase: 'baseline' | 'generation'; attempt: VerificationAttempt }>;
+}
+export interface CommunityAssessment {
+  status: 'verified' | 'issues_reported' | 'unverified' | 'stale';
+  lastSuccessAt: string | null;
+  successfulContributors: number;
+  recentIssues: Partial<Record<NonNullable<VerificationAttempt['reason']>, number>>;
+  issueWindowDays: 7;
+  latest: VerificationRecord | null;
+  latestSuccess: VerificationRecord | null;
+}
+export function classifyVerificationError(
+  error?: { code?: string; status?: number; attempt?: VerificationAttempt },
+  options?: { body?: unknown; retryAfter?: string; now?: number },
+): VerificationAttempt;
+
 export interface VerificationRecord {
   id: string;
   offeringId: string;
   contributor: ContributorId;
   checkedAt: string;
   result: VerificationResult;
+  assessment?: VerificationAssessment;
+  tokensPerSecond?: number;
+  timeToFirstTokenMs?: number;
   checks: VerificationCheck[];
   evidence: string;
   adapter: string;
   notes?: string;
 }
 export interface VerificationSummary {
+  community: CommunityAssessment;
   status: VerificationStatus;
   communityStatus?:
     CommunityVerificationStatus | 'verified' | 'unverified' | 'verified to be failure';
@@ -570,6 +639,8 @@ export class CallError extends Error {
   code: string;
   diagnostics: Diagnostic[];
   status?: number;
+  attempt: VerificationAttempt;
+  assessment?: VerificationAssessment;
 }
 export class NotImplementedError extends Error {}
 export function call(

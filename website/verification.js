@@ -1,3 +1,5 @@
+import { textWasVerified } from '../packages/byokit/verification.js';
+import { assessmentForError, attemptText, retryCountdown } from './attempt-display.js';
 import {
   measurementSummary,
   relativeMeasurementTime,
@@ -36,6 +38,7 @@ const tracker = new PublicationTracker((reports) => {
   const errors = byokit.validateVerifications(reports, catalog);
   if (errors.length) throw new Error('Invalid published verification records.');
   publishedReports = reports;
+  if (selected) $('#attempt-community').textContent = communityText(selected.id);
   byokit.addVerifications?.(reports);
   renderModels();
   renderContributors();
@@ -47,12 +50,14 @@ function trackPublication() {
     (state, record) => {
       if (state === 'published') {
         publicationStatus(
-          `Published: community verified by ${record.contributor.replace('github:', '@')} on ${new Date(record.checkedAt).toLocaleDateString()}.`,
+          `Published: ${textWasVerified(record) ? 'community verified' : 'issue observation'} by ${record.contributor.replace('github:', '@')} on ${new Date(record.checkedAt).toLocaleDateString()}.`,
         );
         $('#check-publication').hidden = true;
-        const badge = contributorBadges(publishedReports).find(
-          (b) => b.login.toLowerCase() === record.contributor.slice(7).toLowerCase(),
-        );
+        const badge =
+          textWasVerified(record) &&
+          contributorBadges(publishedReports).find(
+            (b) => b.login.toLowerCase() === record.contributor.slice(7).toLowerCase(),
+          );
         if (badge) {
           $('#earned-badge').href = badge.recognitionUrl;
           $('#earned-badge-image').src = './' + badge.badgePath;
@@ -151,7 +156,7 @@ const models = byokit.getModels(byokit.COMPLETE, {
 });
 function isUnverified(m) {
   if (!m || m.local) return false;
-  if (records.some((r) => r.offeringId === m.id)) return false;
+  if (records.some((r) => r.offeringId === m.id && textWasVerified(r))) return false;
   const summary = byokit.verificationSummary({ verifications: publishedReports }, m.id);
   return summary.status !== 'passed';
 }
@@ -194,6 +199,7 @@ function status(text, kind) {
   $('#call-status').dataset.state = kind || '';
 }
 function invalidate() {
+  retryCountdown($('#retry-guidance'), null);
   revision++;
   batchController?.abort();
   pendingBatch = null;
@@ -260,6 +266,7 @@ function select(model) {
   const changedProvider = selected?.providerId !== model.providerId;
   invalidate();
   selected = model;
+  $('#attempt-community').textContent = communityText(model.id);
   if (changedProvider) {
     $('#api-key').value = '';
     $('#api-key').placeholder = `Paste your ${model.provider?.name || model.providerId} key`;
@@ -506,20 +513,31 @@ function renderModels() {
       summary = byokit.verificationSummary({ verifications: publishedReports }, m.id);
     if (last)
       action.append(
-        el('span', 'Verified here', 'badge passed'),
+        el(
+          'span',
+          textWasVerified(last) ? 'Verified here' : 'Attempt recorded here',
+          textWasVerified(last) ? 'badge passed' : 'badge uncertain',
+        ),
+        ...(last.assessment
+          ? [el('span', `Your attempt: ${attemptText(last.assessment)}`, 'evidence-note')]
+          : []),
         el('span', new Date(last.checkedAt).toLocaleDateString(), 'evidence-note'),
       );
     if (summary.latest) {
       const report = summary.latest,
-        isFailure =
-          summary.communityStatus === 'verified to be failure' || summary.status === 'failed',
-        badgeText = isFailure ? 'Verified to be failure' : 'Community: verified',
-        badgeClass = isFailure ? 'badge uncertain' : 'badge passed',
+        isFailure = summary.communityStatus === 'issues_reported',
+        badgeText =
+          summary.communityStatus === 'stale'
+            ? 'Community: stale'
+            : isFailure
+              ? 'Community: issues reported'
+              : 'Community: verified',
+        badgeClass = summary.communityStatus === 'verified' ? 'badge passed' : 'badge uncertain',
         label =
           summary.status === 'stale'
-            ? 'Historical verification'
+            ? 'Historical observation'
             : isFailure
-              ? 'Verified to be failure'
+              ? 'Reported issue'
               : 'Community verified',
         link = el(
           'a',
@@ -530,6 +548,14 @@ function renderModels() {
       link.target = '_blank';
       link.rel = 'noopener noreferrer';
       action.append(el('span', badgeText, badgeClass), link);
+      for (const [reason, count] of Object.entries(summary.community.recentIssues))
+        action.append(
+          el(
+            'span',
+            `${count} ${reason.replaceAll('_', ' ')} observations · last 7 days`,
+            'evidence-note',
+          ),
+        );
     } else if (!last) action.append(el('span', 'Community: unverified', 'evidence-note'));
     if (!m.local)
       action.append(
@@ -760,14 +786,27 @@ $('#batch-confirm-send').addEventListener('click', async () => {
             ? 'Calling provider…'
             : entry.status === 'passed'
               ? 'Call succeeded'
-              : entry.error;
+              : entry.assessment
+                ? attemptText(entry.assessment)
+                : entry.error;
+        if (entry.assessment?.attempt.retry.afterSeconds != null) {
+          const guidance = el('p', undefined, 'fine');
+          card.append(guidance);
+          retryCountdown(guidance, entry.assessment.attempt);
+        }
         if (entry.status === 'running') {
           sent++;
           $('#batch-status').textContent =
             `Request ${sent} of ${pending.jobs.length}: ${job.modelId}`;
         }
-        if (entry.status === 'passed' && !controller.signal.aborted) {
-          const record = successRecord(job, entry.result, keys[job.providerId]);
+        if (['passed', 'partial', 'failed'].includes(entry.status) && !controller.signal.aborted) {
+          const observed = entry.result || {
+            assessment: entry.assessment,
+            checkedAt: entry.checkedAt,
+            latencyMs: entry.latencyMs,
+            usage: {},
+          };
+          const record = successRecord(job, observed, keys[job.providerId]);
           records = [record, ...records].slice(0, 200);
           try {
             localStorage.setItem(storageKey, JSON.stringify(records));
@@ -775,8 +814,14 @@ $('#batch-confirm-send').addEventListener('click', async () => {
             storageAvailable = false;
           }
           try {
-            const report = createReport(job, entry.result, record.id, keys[job.providerId]),
-              share = el('a', 'Share this success on GitHub · claim badge ↗', 'text-link');
+            const report = createReport(job, observed, record.id, keys[job.providerId]),
+              share = el(
+                'a',
+                entry.status === 'passed'
+                  ? 'Share this success on GitHub · claim badge ↗'
+                  : 'Share sanitized observation on GitHub ↗',
+                'text-link',
+              );
             share.href = issueUrl(report);
             share.target = '_blank';
             share.rel = 'noopener noreferrer';
@@ -800,7 +845,7 @@ $('#batch-confirm-send').addEventListener('click', async () => {
     });
     if (id === batchSerial)
       $('#batch-status').textContent =
-        `${controller.signal.aborted ? 'Batch canceled.' : 'Batch finished.'} ${sent} requests sent · ${entries.filter((e) => e.status === 'passed').length} succeeded · ${entries.filter((e) => e.status === 'failed').length} failed · ${entries.filter((e) => e.status === 'skipped').length} skipped. Share successful reports individually on GitHub.`;
+        `${controller.signal.aborted ? 'Batch canceled.' : 'Batch finished.'} ${sent} requests sent · ${entries.filter((e) => e.status === 'passed').length} succeeded · ${entries.filter((e) => e.assessment?.attempt.outcome === 'blocked').length} blocked · ${entries.filter((e) => e.assessment?.attempt.outcome === 'inconclusive').length} inconclusive · ${entries.filter((e) => e.status === 'partial').length} partial · ${entries.filter((e) => e.status === 'skipped').length} skipped. Share sanitized observations individually on GitHub.`;
   } catch {
     if (id === batchSerial)
       $('#batch-status').textContent =
@@ -892,11 +937,16 @@ function renderRecords() {
     }
     card.append(
       el('strong', r.offeringId),
-      el('span', 'Passed', 'badge passed'),
+      el(
+        'span',
+        r.assessment ? r.assessment.attempt.outcome : 'Passed',
+        textWasVerified(r) ? 'badge passed' : 'badge uncertain',
+      ),
+      ...(r.assessment ? [el('p', attemptText(r.assessment), 'fine')] : []),
       el('p', timing),
       el('code', `${r.modelId} · max output ${r.maxTokens}`),
     );
-    if (r.returnedModel !== r.modelId)
+    if (r.returnedModel && r.returnedModel !== r.modelId)
       card.append(el('p', `Provider returned model: ${r.returnedModel}`));
     list.append(card);
   }
@@ -905,6 +955,24 @@ function renderRecords() {
   $('#storage-note').textContent = storageAvailable
     ? 'Records stay in this browser until you clear or export them.'
     : 'Browser storage is unavailable. Records stay in memory for this visit; export them before leaving.';
+}
+function saveObservation(job, result, key) {
+  const record = successRecord(job, result, key);
+  records = [record, ...records].slice(0, 200);
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(records));
+  } catch {
+    storageAvailable = false;
+  }
+  renderRecords();
+  renderModels();
+  return record;
+}
+function communityText(id) {
+  const c = byokit.verificationSummary({ verifications: publishedReports }, id).community;
+  return c.status === 'verified'
+    ? `Community: successful calls reported · ${c.successfulContributors} contributors · last success ${new Date(c.lastSuccessAt).toLocaleDateString()}`
+    : `Community: ${c.status.replaceAll('_', ' ')}. This attempt does not establish universal model availability.`;
 }
 $('#verify-form').addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -942,7 +1010,11 @@ $('#verify-form').addEventListener('submit', async (event) => {
     }
     $('#response-text').textContent = result.text;
     $('#response-text').hidden = false;
-    let statusMsg = `Call succeeded in ${result.latencyMs} ms`;
+    let statusMsg =
+      result.assessment?.attempt.outcome === 'partial'
+        ? `Call succeeded for text generation. ${attemptText(result.assessment)}`
+        : `Call succeeded in ${result.latencyMs} ms`;
+    retryCountdown($('#retry-guidance'), result.assessment?.attempt);
     if (result.tokensPerSecond != null) {
       statusMsg += ` · ${result.tokensPerSecond.toFixed(1)} tokens/sec`;
       if (result.timeToFirstTokenMs != null) {
@@ -959,7 +1031,8 @@ $('#verify-form').addEventListener('submit', async (event) => {
       statusMsg +=
         '. Timing excluded from the standard speed median (custom settings or insufficient comparable timing/token data)';
     statusMsg += `. Recorded ${storageAvailable ? 'in this browser' : 'in memory for this visit'}.`;
-    status(statusMsg, 'success');
+    status(statusMsg, result.assessment?.attempt.outcome === 'partial' ? 'partial' : 'success');
+    $('#attempt-community').textContent = communityText(captured.offeringId);
     renderRecords();
     renderModels();
     if (captured.providerId !== 'local') {
@@ -990,14 +1063,32 @@ $('#verify-form').addEventListener('submit', async (event) => {
     } else publicationStatus('Local-server checks stay in this browser and are not published.');
   } catch (e) {
     if (id === revision) {
-      status(
-        e.code === 'PROVIDER_ERROR' && e.message.includes('HTTP 401')
-          ? `${ProviderApi[captured.providerId]?.name || 'The selected provider'} rejected this API key (HTTP 401). Use a key issued by this provider and check that it is active. Your key remains private.`
-          : e.code === 'NETWORK_ERROR'
-            ? 'The provider could not be reached. Browser/network restrictions may prevent this call. Copy the SDK example to try it locally.'
-            : e.message,
-        'error',
-      );
+      const assessment = assessmentForError(e);
+      status(attemptText(assessment), 'error');
+      $('#attempt-community').textContent = communityText(captured.offeringId);
+      retryCountdown($('#retry-guidance'), assessment.attempt);
+      if (!['canceled', 'skipped'].includes(assessment.attempt.outcome)) {
+        const observation = {
+          assessment,
+          checkedAt: e.checkedAt || new Date().toISOString(),
+          latencyMs: e.latencyMs || 0,
+          usage: {},
+        };
+        const record = saveObservation(captured, observation, key);
+        if (captured.providerId !== 'local') {
+          try {
+            activeReport = createReport(captured, observation, record.id, key);
+            $('#share-verification').href = issueUrl(activeReport);
+            $('#share-verification').textContent = 'Share sanitized issue category on GitHub ↗';
+            $('#share-verification').hidden = false;
+            publicationStatus(
+              'Only the normalized issue category and safe metadata are shared when you click Share. Raw provider errors and account details are excluded.',
+            );
+          } catch {
+            publicationStatus('This observation cannot be shared safely.');
+          }
+        }
+      }
     }
   } finally {
     if (id === revision) {
@@ -1166,6 +1257,9 @@ document.addEventListener('visibilitychange', () => {
   else if (activeReport && !$('#check-publication').hidden) trackPublication();
 });
 window.addEventListener('pagehide', () => {
+  retryCountdown($('#retry-guidance'), null);
+  for (const node of $('#batch-results').querySelectorAll('p'))
+    if (node._retryTimer) retryCountdown(node, null);
   $('#api-key').value = '';
   providerKeys.clear();
   for (const input of $('#batch-keys').querySelectorAll('input')) input.value = '';

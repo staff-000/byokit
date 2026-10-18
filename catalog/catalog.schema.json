@@ -526,8 +526,381 @@
           "timeToFirstTokenMs": {
             "type": "number",
             "minimum": 0
+          },
+          "assessment": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["attempt", "checks"],
+            "properties": {
+              "attempt": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "outcome",
+                  "reason",
+                  "scope",
+                  "certainty",
+                  "source",
+                  "classifierVersion",
+                  "retry"
+                ],
+                "properties": {
+                  "outcome": {
+                    "enum": ["succeeded", "partial", "blocked", "inconclusive"]
+                  },
+                  "reason": {
+                    "enum": [
+                      null,
+                      "invalid_credentials",
+                      "quota_exhausted",
+                      "rate_limited",
+                      "access_denied",
+                      "region_restricted",
+                      "policy_restricted",
+                      "model_not_found_or_inaccessible",
+                      "invalid_request",
+                      "unsupported_operation",
+                      "provider_unavailable",
+                      "network_error",
+                      "timeout",
+                      "invalid_response",
+                      "empty_response",
+                      "unknown"
+                    ]
+                  },
+                  "scope": {
+                    "enum": [
+                      "account",
+                      "model",
+                      "provider",
+                      "region",
+                      "request",
+                      "client",
+                      "unknown"
+                    ]
+                  },
+                  "certainty": {
+                    "enum": ["explicit", "inferred", "unknown"]
+                  },
+                  "source": {
+                    "enum": ["provider_code", "http_status", "client_error"]
+                  },
+                  "classifierVersion": {
+                    "const": "1"
+                  },
+                  "httpStatus": {
+                    "type": "integer",
+                    "minimum": 100,
+                    "maximum": 599
+                  },
+                  "retry": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["action", "afterSeconds"],
+                    "properties": {
+                      "action": {
+                        "enum": [
+                          "none",
+                          "check_credentials",
+                          "check_billing",
+                          "retry_later",
+                          "check_limits",
+                          "check_model_access",
+                          "check_supported_locations",
+                          "review_policy",
+                          "check_model_id_and_access",
+                          "check_operation",
+                          "check_settings",
+                          "check_network",
+                          "review_response",
+                          "review_diagnostics"
+                        ]
+                      },
+                      "afterSeconds": {
+                        "type": ["integer", "null"],
+                        "minimum": 0,
+                        "maximum": 604800
+                      }
+                    }
+                  }
+                }
+              },
+              "checks": {
+                "type": "object",
+                "required": ["textGeneration", "speed"],
+                "additionalProperties": false,
+                "properties": {
+                  "textGeneration": {
+                    "enum": ["passed", "blocked", "inconclusive", "not_run"]
+                  },
+                  "speed": {
+                    "enum": ["passed", "blocked", "inconclusive", "not_run"]
+                  }
+                }
+              },
+              "phases": {
+                "type": "array",
+                "maxItems": 2,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["phase", "attempt"],
+                  "properties": {
+                    "phase": {
+                      "enum": ["baseline", "generation"]
+                    },
+                    "attempt": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "outcome",
+                        "reason",
+                        "scope",
+                        "certainty",
+                        "source",
+                        "classifierVersion",
+                        "retry"
+                      ],
+                      "properties": {
+                        "outcome": {
+                          "enum": [
+                            "succeeded",
+                            "partial",
+                            "blocked",
+                            "inconclusive",
+                            "canceled",
+                            "skipped"
+                          ]
+                        },
+                        "reason": {
+                          "enum": [
+                            null,
+                            "invalid_credentials",
+                            "quota_exhausted",
+                            "rate_limited",
+                            "access_denied",
+                            "region_restricted",
+                            "policy_restricted",
+                            "model_not_found_or_inaccessible",
+                            "invalid_request",
+                            "unsupported_operation",
+                            "provider_unavailable",
+                            "network_error",
+                            "timeout",
+                            "invalid_response",
+                            "empty_response",
+                            "unknown"
+                          ]
+                        },
+                        "scope": {
+                          "enum": [
+                            "account",
+                            "model",
+                            "provider",
+                            "region",
+                            "request",
+                            "client",
+                            "unknown"
+                          ]
+                        },
+                        "certainty": {
+                          "enum": ["explicit", "inferred", "unknown"]
+                        },
+                        "source": {
+                          "enum": ["provider_code", "http_status", "client_error"]
+                        },
+                        "classifierVersion": {
+                          "const": "1"
+                        },
+                        "httpStatus": {
+                          "type": "integer",
+                          "minimum": 100,
+                          "maximum": 599
+                        },
+                        "retry": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["action", "afterSeconds"],
+                          "properties": {
+                            "action": {
+                              "enum": [
+                                "none",
+                                "check_credentials",
+                                "check_billing",
+                                "retry_later",
+                                "check_limits",
+                                "check_model_access",
+                                "check_supported_locations",
+                                "review_policy",
+                                "check_model_id_and_access",
+                                "check_operation",
+                                "check_settings",
+                                "check_network",
+                                "review_response",
+                                "review_diagnostics"
+                              ]
+                            },
+                            "afterSeconds": {
+                              "type": ["integer", "null"],
+                              "minimum": 0,
+                              "maximum": 604800
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "attempt": {
+                      "properties": {
+                        "outcome": {
+                          "const": "succeeded"
+                        }
+                      }
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "checks": {
+                      "properties": {
+                        "textGeneration": {
+                          "const": "passed"
+                        },
+                        "speed": {
+                          "enum": ["passed", "not_run"]
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "attempt": {
+                      "properties": {
+                        "outcome": {
+                          "const": "partial"
+                        }
+                      }
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "checks": {
+                      "properties": {
+                        "textGeneration": {
+                          "const": "passed"
+                        },
+                        "speed": {
+                          "enum": ["blocked", "inconclusive", "not_run"]
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "attempt": {
+                      "properties": {
+                        "outcome": {
+                          "enum": ["blocked", "inconclusive"]
+                        }
+                      }
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "checks": {
+                      "properties": {
+                        "textGeneration": {
+                          "enum": ["blocked", "inconclusive", "not_run"]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
           }
-        }
+        },
+        "allOf": [
+          {
+            "if": {
+              "required": ["assessment"]
+            },
+            "then": {
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "assessment": {
+                        "properties": {
+                          "attempt": {
+                            "properties": {
+                              "outcome": {
+                                "const": "succeeded"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "result": {
+                        "const": "passed"
+                      }
+                    }
+                  },
+                  "else": {
+                    "properties": {
+                      "result": {
+                        "const": "failed"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "assessment": {
+                        "properties": {
+                          "checks": {
+                            "properties": {
+                              "speed": {
+                                "not": {
+                                  "const": "passed"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "then": {
+                    "not": {
+                      "required": ["tokensPerSecond"]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
       }
     },
     "recommendations": {

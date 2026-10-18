@@ -39,6 +39,7 @@ export function measurementSummary(reports, offeringId, protocol, now = Date.now
   const samples = valid.filter(
     (r) =>
       r.result === 'passed' &&
+      (!r.assessment || r.assessment.checks.speed === 'passed') &&
       r.adapter === speedAdapter(protocol) &&
       Date.parse(r.checkedAt) >= now - SPEED_WINDOW_DAYS * day &&
       Number.isFinite(r.tokensPerSecond) &&

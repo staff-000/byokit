@@ -50,7 +50,10 @@ test('authentication and quota failures stop the queue and redact credential-bea
     const entries = await runBatch(jobs(), 'fixture-key', {
       verify: async () => {
         calls++;
-        throw Object.assign(new Error(`HTTP ${status} fixture-key`), { code: 'PROVIDER_ERROR' });
+        throw Object.assign(new Error(`HTTP ${status} fixture-key`), {
+          code: 'PROVIDER_ERROR',
+          status,
+        });
       },
     });
     assert.equal(calls, 1);
@@ -139,7 +142,8 @@ test('cross-provider batches validate every key before sending and isolate provi
       verify: async (job, key) => {
         calls.push(job.providerId);
         assert.equal(key, job.providerId === 'deepseek' ? 'deep-secret' : 'open-secret');
-        if (job.providerId === 'deepseek') throw new Error('HTTP 401 deep-secret open-secret');
+        if (job.providerId === 'deepseek')
+          throw Object.assign(new Error('HTTP 401 deep-secret open-secret'), { status: 401 });
         return { text: 'OK' };
       },
     },

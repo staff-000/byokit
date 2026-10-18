@@ -50,6 +50,7 @@
     "catalog.d.ts",
     "enums.js",
     "enums.d.ts",
+    "verification.js",
     "call.js",
     "connection.js",
     "sdk.js",

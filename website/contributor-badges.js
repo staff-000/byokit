@@ -1,3 +1,4 @@
+import { textWasVerified } from '../packages/byokit/verification.js';
 // Badges are derived from published catalog evidence; browser-local tests cannot award one.
 const site = 'https://staff-000.github.io/byokit/';
 export function contributorBadges(reports) {
@@ -8,7 +9,7 @@ export function contributorBadges(reports) {
       report.staging ||
       report.scope === 'this-browser' ||
       !login ||
-      report.result !== 'passed' ||
+      !textWasVerified(report) ||
       !report.checks?.includes('textGeneration') ||
       !Number.isFinite(Date.parse(report.checkedAt))
     )

@@ -64,6 +64,15 @@ export function filterModels(state = {}) {
     const vData = state.verifications ? { verifications: state.verifications } : undefined;
     models = models.filter((m) => {
       const summary = vData ? byokit.verificationSummary(vData, m.id) : m.verification;
+      if (['failed', 'verified to be failure'].includes(state.verification))
+        return summary?.records?.some(
+          (r) =>
+            (r.assessment
+              ? r.assessment.checks.textGeneration !== 'passed'
+              : r.result === 'failed') &&
+            Date.parse(r.checkedAt) <= Date.now() &&
+            Date.parse(r.checkedAt) >= Date.now() - 90 * 86400000,
+        );
       return (
         summary?.communityStatus === state.verification || summary?.status === state.verification
       );

@@ -1,3 +1,5 @@
+import { shouldStopProvider } from '../packages/byokit/verification.js';
+import { assessmentForError, attemptText, retryCountdown } from './attempt-display.js';
 import { playgroundExamples } from './playground-examples.js';
 import { verifyInference, successRecord, ProviderApi } from './inference.js';
 import { createReport, issueUrl } from './verification-report.js';
@@ -251,7 +253,7 @@ $('#availability-run-btn')?.addEventListener('click', async () => {
   let verifiedCount = 0,
     failedCount = 0,
     skippedCount = 0;
-  const failedAuth = new Set();
+  const providerStops = new Map();
 
   for (let i = 0; i < generatedModels.length; i++) {
     if (controller.signal.aborted) break;
@@ -277,10 +279,10 @@ $('#availability-run-btn')?.addEventListener('click', async () => {
       continue;
     }
 
-    if (failedAuth.has(pId)) {
+    if (providerStops.has(pId)) {
       skippedCount++;
       if (card) {
-        card.querySelector('.status').textContent = `Skipped (${model.providerName} auth failed)`;
+        card.querySelector('.status').textContent = `Not attempted: ${providerStops.get(pId)}`;
         card.querySelector('.status').className = 'status badge uncertain';
       }
       continue;
@@ -314,12 +316,15 @@ $('#availability-run-btn')?.addEventListener('click', async () => {
       } catch {}
 
       model.verification = {
-        status: 'passed',
-        latest: { result: 'passed', checkedAt: record.checkedAt },
+        ...model.verification,
+        attempt: result.assessment.attempt,
+        personalChecks: result.assessment.checks,
       };
+      // A local check does not replace published community evidence.
 
       if (card) {
-        card.querySelector('.status').textContent = `Verified ✓ (${result.latencyMs} ms)`;
+        card.querySelector('.status').textContent =
+          `Your call succeeded ✓ (${result.latencyMs} ms)`;
         card.querySelector('.status').className = 'status badge passed';
         try {
           const report = createReport(job, result, record.id, key);
@@ -351,7 +356,7 @@ $('#availability-run-btn')?.addEventListener('click', async () => {
             const selectBtn = document.createElement('button');
             selectBtn.type = 'button';
             selectBtn.className = 'small-button';
-            selectBtn.textContent = 'Select in Hero Tester ↑';
+            selectBtn.textContent = 'Open verification drawer';
             selectBtn.addEventListener('click', () => {
               window.selectVerificationModel(model.id, key);
             });
@@ -366,17 +371,43 @@ $('#availability-run-btn')?.addEventListener('click', async () => {
     } catch (err) {
       if (controller.signal.aborted) break;
       failedCount++;
-      model.verification = { status: 'failed' };
-      const safe = String(err.message || 'Call failed.')
-        .split(key)
-        .join('[redacted]');
+      const assessment = assessmentForError(err);
+      model.verification = { ...model.verification, attempt: assessment.attempt };
+      const observation = {
+        assessment,
+        checkedAt: err.checkedAt || new Date().toISOString(),
+        latencyMs: err.latencyMs || 0,
+        usage: {},
+      };
+      const record = successRecord(job, observation, key);
+      records = [record, ...records].slice(0, 200);
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(records));
+      } catch {
+        /* Memory remains available. */
+      }
       if (card) {
-        card.querySelector('.status').textContent = `Failed: ${safe}`;
+        card.querySelector('.status').textContent = attemptText(assessment);
         card.querySelector('.status').className = 'status badge uncertain';
+        const guidance = document.createElement('p');
+        guidance.className = 'fine';
+        card.append(guidance);
+        retryCountdown(guidance, assessment.attempt);
+        try {
+          const report = createReport(job, observation, record.id, key),
+            share = document.createElement('a');
+          share.className = 'text-link';
+          share.textContent = 'Share sanitized issue category on GitHub ↗';
+          share.href = issueUrl(report);
+          share.target = '_blank';
+          share.rel = 'noopener noreferrer';
+          share.addEventListener('click', () => window.trackVerificationPublication?.(report));
+          card.append(share);
+        } catch {
+          /* Unsupported local observations cannot be published. */
+        }
       }
-      if (/HTTP (401|403)/.test(safe)) {
-        failedAuth.add(pId);
-      }
+      if (shouldStopProvider(assessment.attempt)) providerStops.set(pId, attemptText(assessment));
     }
   }
 
@@ -384,8 +415,8 @@ $('#availability-run-btn')?.addEventListener('click', async () => {
   $('#availability-run-btn').disabled = false;
   $('#availability-cancel-btn').hidden = true;
   $('#availability-status').textContent = controller.signal.aborted
-    ? `Availability test canceled. ${verifiedCount} verified, ${failedCount} failed, ${skippedCount} skipped.`
-    : `Availability test complete: ${verifiedCount} verified, ${failedCount} failed, ${skippedCount} skipped.${verifiedCount ? ' Click "Share on GitHub" on any verified card above to submit your report and update the status via GitHub Actions!' : ''}`;
+    ? `Availability test canceled. ${verifiedCount} verified, ${failedCount} blocked or inconclusive, ${skippedCount} skipped.`
+    : `Availability test complete: ${verifiedCount} verified, ${failedCount} blocked or inconclusive, ${skippedCount} skipped.${verifiedCount ? ' Click "Share on GitHub" on any verified card above to submit your report and update the status via GitHub Actions!' : ''}`;
 });
 
 for (const [value, example] of Object.entries(playgroundExamples)) {

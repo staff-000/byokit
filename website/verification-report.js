@@ -1,3 +1,4 @@
+import { validAssessment } from '../packages/byokit/verification.js';
 import {
   SPEED_BENCHMARK,
   SPEED_MAX_TOKENS,
@@ -19,6 +20,7 @@ const fields = [
   'outputTokens',
   'staging',
   'benchmark',
+  'assessment',
 ];
 export function reportFields(value) {
   if (
@@ -87,6 +89,18 @@ export function reportFields(value) {
       value.outputTokens <= 0)
   )
     throw new Error('Invalid speed benchmark.');
+  if (
+    value.assessment !== undefined &&
+    (!validAssessment(value.assessment) ||
+      ['canceled', 'skipped'].includes(value.assessment.attempt.outcome))
+  )
+    throw new Error('Invalid or unpublishable verification assessment.');
+  if (
+    value.assessment &&
+    value.assessment.checks.speed !== 'passed' &&
+    (value.tokensPerSecond !== undefined || value.benchmark !== undefined)
+  )
+    throw new Error('Incomplete speed measurements cannot be shared.');
   if (value.staging !== undefined && value.staging !== true)
     throw new Error('Invalid staging flag.');
   return value;
@@ -101,6 +115,7 @@ export function createReport(settings, result, operationId, secret = '') {
     checkedAt: result.checkedAt,
     latencyMs: result.latencyMs,
     maxTokens: settings.maxTokens,
+    ...(result.assessment ? { assessment: structuredClone(result.assessment) } : {}),
     ...(result.benchmark === SPEED_BENCHMARK && isStandardSpeedSettings(settings)
       ? { benchmark: SPEED_BENCHMARK }
       : {}),
@@ -115,7 +130,7 @@ export function createReport(settings, result, operationId, secret = '') {
 }
 export function issueBody(report) {
   reportFields(report);
-  return `${REPORT_MARKER}\n${report.staging ? 'Staging pipeline fixture. No real inference occurred. This must never enter the model catalog.' : 'Community report: this model returned text using my provider account and the settings below.'}\n\nNo API key, prompt, or generated text is included.\n\n\`\`\`json\n${JSON.stringify(report, null, 2)}\n\`\`\`\n`;
+  return `${REPORT_MARKER}\n${report.staging ? 'Staging pipeline fixture. No real inference occurred. This must never enter the model catalog.' : 'Community observation from my provider account. This describes one attempt, not universal model access.'}\n\nNo API key, prompt, or generated text is included.\n\n\`\`\`json\n${JSON.stringify(report, null, 2)}\n\`\`\`\n`;
 }
 export function issueUrl(report) {
   const url = new URL('https://github.com/staff-000/byokit/issues/new');
@@ -132,7 +147,7 @@ export function parseIssueReport(body) {
   if (body.length > 6000 || body.split(REPORT_MARKER).length !== 2)
     throw new Error('Verification report is too large or ambiguous.');
   const blocks = [...body.matchAll(/```json\s*\n([\s\S]*?)\n```/g)];
-  if (blocks.length !== 1 || blocks[0][1].length > 2000)
+  if (blocks.length !== 1 || blocks[0][1].length > 4096)
     throw new Error('Include exactly one bounded JSON report.');
   return reportFields(JSON.parse(blocks[0][1]));
 }

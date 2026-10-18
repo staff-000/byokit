@@ -80,6 +80,8 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
       ['./inference.js', 'website/inference.js'],
       ['./verification-filters.js', 'website/verification-filters.js'],
       ['./speed-measurements.js', 'website/speed-measurements.js'],
+      ['./attempt-display.js', 'website/attempt-display.js'],
+      ['../packages/byokit/verification.js', 'packages/byokit/verification.js'],
       ['./batch-verification.js', 'website/batch-verification.js'],
     ])
       source = source.replace(`'${relative}'`, JSON.stringify(pathToFileURL(resolve(file)).href));
@@ -186,8 +188,28 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
       new dom.window.Event('submit', { bubbles: true, cancelable: true }),
     );
     await wait(() => $('#call-status').textContent.includes('HTTP 401'));
-    assert.equal(JSON.parse(localStorage.getItem('byokit.inference-verifications.v1')).length, 1);
-    assert.equal($('#share-verification').hidden, true);
+    assert.equal(JSON.parse(localStorage.getItem('byokit.inference-verifications.v1')).length, 2);
+    assert.equal($('#share-verification').hidden, false);
+    assert.match($('#share-verification').textContent, /sanitized issue category/);
+    const failureReport = parseIssueReport(
+      new URL($('#share-verification').href).searchParams.get('body'),
+    );
+    assert.equal(failureReport.assessment.attempt.reason, 'invalid_credentials');
+    feed.push(
+      canonicalReport({
+        report: failureReport,
+        user: { id: 123, login: 'fixture-user' },
+        evidence: 'https://github.com/staff-000/byokit/issues/44',
+        createdAt: failureReport.checkedAt,
+      }),
+    );
+    $('#share-verification').click();
+    await wait(() =>
+      $('#publication-status').textContent.startsWith('Published: issue observation'),
+    );
+    assert.match($('#models').textContent, /Community: verified/);
+    assert.equal($('#earned-badge').hidden, true);
+
     assert.equal($('#earned-badge').hidden, true);
     providerMode = 'pending';
     $('#verify-form').dispatchEvent(
@@ -198,7 +220,7 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
     resolveProvider(new Response(JSON.stringify({ choices: [{ message: { content: 'late' } }] })));
     await new Promise((r) => setTimeout(r, 30));
     assert.match($('#call-status').textContent, /Settings changed/);
-    assert.equal(JSON.parse(localStorage.getItem('byokit.inference-verifications.v1')).length, 1);
+    assert.equal(JSON.parse(localStorage.getItem('byokit.inference-verifications.v1')).length, 2);
     providerMode = 'success';
     change('prompt', 'private fixture prompt');
     assert.equal($('#verified-only'), null);

@@ -17,8 +17,12 @@ class Response:
     def __init__(self, data):
         self.data = data
 
-    def read(self):
-        return json.dumps(self.data).encode()
+    def read(self, amount=None):
+        raw = json.dumps(self.data).encode()
+        return raw if amount is None else raw[:amount]
+
+    def getheader(self, name):
+        return None
 
 
 class Connection:

@@ -106,6 +106,8 @@ export const CommunityVerificationStatus = Object.freeze({
   Verified: 'verified',
   Unverified: 'unverified',
   VerifiedToBeFailure: 'verified to be failure',
+  IssuesReported: 'issues_reported',
+  Stale: 'stale',
 });
 export const VerificationStatus = Object.freeze({
   Unverified: 'unverified',
@@ -114,6 +116,7 @@ export const VerificationStatus = Object.freeze({
   Verified: 'verified',
   VerifiedToBeFailure: 'verified to be failure',
   Stale: 'stale',
+  IssuesReported: 'issues_reported',
 });
 export const VerificationCheck = Object.freeze({
   TextGeneration: 'textGeneration',

@@ -1,3 +1,4 @@
+import { classifyVerificationError, readProviderError } from './verification.js';
 import { ApiProtocol, FeatureName, Role } from './enums.js';
 import { connectionFor } from './connection.js';
 import { checkFit } from './core.js';
@@ -8,6 +9,7 @@ export class CallError extends Error {
     this.code = code;
     this.diagnostics = diagnostics;
     if (status !== undefined) this.status = status;
+    this.attempt = classifyVerificationError({ code, status });
   }
 }
 const fail = (message) => {
@@ -705,13 +707,20 @@ async function execute(model, input, key, options, format) {
       cache: 'no-store',
       referrerPolicy: 'no-referrer',
     });
-    if (!response.ok)
-      throw new CallError(
+    if (!response.ok) {
+      const body = await readProviderError(response);
+      const error = new CallError(
         'PROVIDER_ERROR',
         `Provider rejected the call (HTTP ${response.status}).`,
         [],
         response.status,
       );
+      error.attempt = classifyVerificationError(
+        { code: error.code, status: response.status },
+        { body, retryAfter: response.headers?.get?.('retry-after') },
+      );
+      throw error;
+    }
     let data;
     try {
       data = await response.json();
@@ -719,6 +728,32 @@ async function execute(model, input, key, options, format) {
       throw new CallError('INVALID_RESPONSE', 'Provider returned invalid JSON.');
     }
     if (controller.signal.aborted) throw new CallError('CANCELED', 'Call canceled.');
+    if (
+      ['SAFETY', 'PROHIBITED_CONTENT', 'BLOCKLIST', 'IMAGE_SAFETY'].includes(
+        data?.promptFeedback?.blockReason,
+      ) ||
+      data?.stop_reason === 'refusal' ||
+      (Array.isArray(data?.candidates) ? data.candidates : []).some((c) =>
+        ['SAFETY', 'PROHIBITED_CONTENT', 'BLOCKLIST'].includes(c?.finishReason),
+      ) ||
+      (Array.isArray(data?.choices) ? data.choices : []).some(
+        (c) =>
+          c?.finish_reason === 'content_filter' ||
+          (typeof c?.message?.refusal === 'string' && !!c.message.refusal.trim()),
+      )
+    ) {
+      const error = new CallError(
+        'POLICY_RESTRICTED',
+        'Provider policy prevented this response.',
+        [],
+        response.status,
+      );
+      error.attempt = classifyVerificationError(
+        { status: response.status },
+        { body: { error: { code: 'content_policy_violation' } } },
+      );
+      throw error;
+    }
     const parsedResult = parsed(data, request.protocol, model);
     const result =
       format === 'claude'

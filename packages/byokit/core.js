@@ -1,3 +1,5 @@
+import { communityAssessment, textWasVerified, validAssessment } from './verification.js';
+export { classifyVerificationError } from './verification.js';
 export { Byokit, openAI, claude, OpenAI, Anthropic } from './sdk.js';
 import { validateConnection } from './custom-model.js';
 import { connectionFor, callSupportFor } from './connection.js';
@@ -669,7 +671,15 @@ export function validateConfig(c = {}) {
       errors.push(`filters.${key} must be boolean`);
   if (c.includePreviews !== undefined && typeof c.includePreviews !== 'boolean')
     errors.push('includePreviews must be boolean');
-  const validVerified = ['verified', 'unverified', 'verified to be failure'];
+  const validVerified = [
+    'verified',
+    'unverified',
+    'verified to be failure',
+    'issues_reported',
+    'stale',
+    'failed',
+    'passed',
+  ];
   if (
     c.filters?.verified !== undefined &&
     typeof c.filters.verified !== 'boolean' &&
@@ -1737,6 +1747,7 @@ export function validateVerifications(records, data) {
       'evidence',
       'adapter',
       'notes',
+      'assessment',
       'tokensPerSecond',
       'timeToFirstTokenMs',
     ];
@@ -1750,6 +1761,19 @@ export function validateVerifications(records, data) {
       (!Number.isFinite(r.timeToFirstTokenMs) || r.timeToFirstTokenMs < 0)
     )
       errors.push('timeToFirstTokenMs must be a non-negative number');
+    if (
+      r.assessment !== undefined &&
+      (!validAssessment(r.assessment) ||
+        ['canceled', 'skipped'].includes(r.assessment.attempt.outcome) ||
+        (r.result === 'passed') !== (r.assessment.attempt.outcome === 'succeeded'))
+    )
+      errors.push('Invalid structured verification assessment');
+    if (
+      validAssessment(r.assessment) &&
+      r.assessment.checks.speed !== 'passed' &&
+      r.tokensPerSecond !== undefined
+    )
+      errors.push('Incomplete speed checks cannot carry speed metrics');
     if (Object.keys(r).some((k) => !permitted.includes(k)))
       errors.push('Unknown verification field; do not record keys or request payloads');
   }
@@ -1766,30 +1790,17 @@ export function verificationSummary(
   const records = contributor
     ? source.filter((r) => r.contributor.toLowerCase() === contributor.toLowerCase())
     : source;
-  const now = Date.parse(asOf);
-  const calls = records.filter(
-    (r) => r.checks.includes('textGeneration') && Date.parse(r.checkedAt) <= now,
-  );
-  calls.sort(
-    (a, b) =>
-      Date.parse(b.checkedAt) - Date.parse(a.checkedAt) ||
-      (a.result === b.result ? 0 : a.result === 'failed' ? -1 : 1) ||
-      (a.id < b.id ? -1 : 1),
-  );
-  const latest = calls[0];
-  const communityStatus = !latest
-    ? 'unverified'
-    : latest.result === 'failed'
-      ? 'verified to be failure'
-      : 'verified';
+  const community = communityAssessment(records, { now: Date.parse(asOf), maxAgeDays });
   return {
-    status: !latest
-      ? 'unverified'
-      : now - Date.parse(latest.checkedAt) > maxAgeDays * 86400000
-        ? 'stale'
-        : latest.result,
-    communityStatus,
-    latest: latest || null,
+    status:
+      community.status === 'verified'
+        ? 'passed'
+        : community.status === 'stale'
+          ? 'stale'
+          : 'unverified',
+    communityStatus: community.status,
+    latest: community.latestSuccess || community.latest,
+    community,
     records,
   };
 }
@@ -1802,6 +1813,15 @@ function matchesVerification(data, id, config) {
     contributor: f.verifiedBy,
   });
   if (typeof f.verified === 'string') {
+    if (['failed', 'verified to be failure'].includes(f.verified))
+      return summary.records.some(
+        (r) =>
+          !textWasVerified(r) &&
+          Date.parse(r.checkedAt) <= Date.parse(config.asOf || new Date().toISOString()) &&
+          Date.parse(r.checkedAt) >=
+            Date.parse(config.asOf || new Date().toISOString()) -
+              (f.verifiedWithinDays ?? 90) * 86400000,
+      );
     return summary.communityStatus === f.verified || summary.status === f.verified;
   }
   return f.verified === false ? summary.status !== 'passed' : summary.status === 'passed';

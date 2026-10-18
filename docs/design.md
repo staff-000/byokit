@@ -499,3 +499,17 @@ with one content digest. This keeps cached UI code, enums, adapters, styles, and
 catalog snapshots in the same deployment; it does not trigger live discovery or
 change the public verification feed. Bundled canonical verification records render
 immediately, while successful feed refreshes replace that snapshot.
+
+## Attempt assessments and community evidence
+
+SDK errors preserve their existing codes and carry a normalized attempt with
+reason, scope, certainty, classifier version, safe HTTP status, and manual retry
+guidance. Provider payloads are inspected transiently and bounded, never copied
+into verification records. JavaScript and Python share classification fixtures.
+
+Verification observations preserve per-check and benchmark-phase results.
+Partial benchmarks retain successful text-generation evidence and omit speed.
+The legacy completion result remains for compatibility. Community summaries use
+fresh positive observations, display recent issue categories separately, and
+never infer global failure or retirement from an account, network, or rate-limit
+problem. Optional failure sharing publishes only sanitized normalized metadata.

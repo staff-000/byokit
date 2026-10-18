@@ -1,0 +1,383 @@
+[
+  {
+    "name": "quota under 429",
+    "error": {
+      "code": "PROVIDER_ERROR",
+      "status": 429
+    },
+    "options": {
+      "now": 1792324800000,
+      "body": {
+        "error": {
+          "type": "insufficient_quota",
+          "message": "private-account-key"
+        }
+      }
+    },
+    "expected": {
+      "reason": "quota_exhausted",
+      "scope": "account",
+      "outcome": "blocked",
+      "certainty": "explicit"
+    }
+  },
+  {
+    "name": "rate under 429",
+    "error": {
+      "status": 429
+    },
+    "options": {
+      "now": 1792324800000,
+      "body": {
+        "error": {
+          "type": "rate_limit_error"
+        }
+      },
+      "retryAfter": "12"
+    },
+    "expected": {
+      "reason": "rate_limited",
+      "outcome": "blocked"
+    }
+  },
+  {
+    "name": "ambiguous 429",
+    "error": {
+      "status": 429
+    },
+    "options": {
+      "now": 1792324800000,
+      "body": {
+        "error": {
+          "status": "RESOURCE_EXHAUSTED"
+        }
+      }
+    },
+    "expected": {
+      "reason": "unknown",
+      "certainty": "unknown",
+      "outcome": "blocked"
+    }
+  },
+  {
+    "name": "generic permission",
+    "error": {
+      "status": 403
+    },
+    "options": {
+      "now": 1792324800000
+    },
+    "expected": {
+      "reason": "access_denied",
+      "scope": "unknown",
+      "certainty": "inferred"
+    }
+  },
+  {
+    "name": "explicit location",
+    "error": {
+      "status": 403
+    },
+    "options": {
+      "now": 1792324800000,
+      "body": {
+        "error": {
+          "code": "unsupported_country_region_territory"
+        }
+      }
+    },
+    "expected": {
+      "reason": "region_restricted",
+      "scope": "region",
+      "certainty": "explicit"
+    }
+  },
+  {
+    "name": "grandfathered account",
+    "error": {
+      "status": 403
+    },
+    "options": {
+      "now": 1792324800000,
+      "body": {
+        "error": {
+          "message": "This model is available to existing users only."
+        }
+      }
+    },
+    "expected": {
+      "reason": "access_denied",
+      "scope": "account",
+      "certainty": "explicit"
+    }
+  },
+  {
+    "name": "model entitlement",
+    "error": {
+      "status": 403
+    },
+    "options": {
+      "now": 1792324800000,
+      "body": {
+        "error": {
+          "code": "model_access_denied"
+        }
+      }
+    },
+    "expected": {
+      "reason": "access_denied",
+      "scope": "model"
+    }
+  },
+  {
+    "name": "generic not found",
+    "error": {
+      "status": 404
+    },
+    "options": {
+      "now": 1792324800000
+    },
+    "expected": {
+      "reason": "model_not_found_or_inaccessible",
+      "scope": "unknown",
+      "outcome": "blocked"
+    }
+  },
+  {
+    "name": "outage",
+    "error": {
+      "status": 529
+    },
+    "options": {
+      "now": 1792324800000,
+      "body": {
+        "error": {
+          "type": "overloaded_error"
+        }
+      }
+    },
+    "expected": {
+      "reason": "provider_unavailable",
+      "scope": "provider",
+      "outcome": "inconclusive"
+    }
+  },
+  {
+    "name": "network CORS ambiguous",
+    "error": {
+      "code": "NETWORK_ERROR"
+    },
+    "options": {
+      "now": 1792324800000
+    },
+    "expected": {
+      "reason": "network_error",
+      "scope": "client",
+      "outcome": "inconclusive"
+    }
+  },
+  {
+    "name": "timeout",
+    "error": {
+      "code": "TIMEOUT"
+    },
+    "options": {
+      "now": 1792324800000
+    },
+    "expected": {
+      "reason": "timeout",
+      "outcome": "inconclusive"
+    }
+  },
+  {
+    "name": "invalid response",
+    "error": {
+      "code": "INVALID_RESPONSE"
+    },
+    "options": {
+      "now": 1792324800000
+    },
+    "expected": {
+      "reason": "invalid_response",
+      "outcome": "inconclusive"
+    }
+  },
+  {
+    "name": "empty response",
+    "error": {
+      "code": "EMPTY_RESPONSE"
+    },
+    "options": {
+      "now": 1792324800000
+    },
+    "expected": {
+      "reason": "empty_response",
+      "outcome": "inconclusive"
+    }
+  },
+  {
+    "name": "safety",
+    "error": {
+      "code": "POLICY_RESTRICTED"
+    },
+    "options": {
+      "now": 1792324800000
+    },
+    "expected": {
+      "reason": "policy_restricted",
+      "scope": "request",
+      "outcome": "blocked"
+    }
+  },
+  {
+    "name": "cancel",
+    "error": {
+      "code": "CANCELED"
+    },
+    "options": {
+      "now": 1792324800000
+    },
+    "expected": {
+      "outcome": "canceled"
+    }
+  },
+  {
+    "name": "per model minute quota",
+    "error": {
+      "status": 429
+    },
+    "options": {
+      "now": 1792324800000,
+      "body": {
+        "error": {
+          "status": "RESOURCE_EXHAUSTED",
+          "details": [
+            {
+              "quotaViolations": [
+                {
+                  "quotaId": "GenerateRequestsPerMinutePerModel",
+                  "quotaDimensions": {
+                    "model": "secret-name"
+                  }
+                }
+              ]
+            },
+            {
+              "retryDelay": "2.5s"
+            }
+          ]
+        }
+      }
+    },
+    "expected": {
+      "reason": "rate_limited",
+      "scope": "model"
+    }
+  },
+  {
+    "name": "daily model quota",
+    "error": {
+      "status": 429
+    },
+    "options": {
+      "now": 1792324800000,
+      "body": {
+        "error": {
+          "details": [
+            {
+              "quotaViolations": [
+                {
+                  "quotaMetric": "GenerateRequestsPerDayPerModel",
+                  "quotaDimensions": {
+                    "model": "secret-name"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "expected": {
+      "reason": "quota_exhausted",
+      "scope": "model"
+    }
+  },
+  {
+    "name": "invalid retry delay ignored",
+    "error": {
+      "status": 429
+    },
+    "options": {
+      "now": 1792324800000,
+      "retryAfter": "private-key"
+    },
+    "expected": {
+      "reason": "unknown"
+    }
+  },
+  {
+    "name": "unknown provider code",
+    "error": {
+      "status": 403
+    },
+    "options": {
+      "now": 1792324800000,
+      "body": {
+        "error": {
+          "code": "private-provider-code",
+          "message": "private-account"
+        }
+      }
+    },
+    "expected": {
+      "reason": "access_denied",
+      "scope": "unknown",
+      "certainty": "inferred"
+    }
+  },
+  {
+    "name": "unspecified quota exhaustion stays ambiguous",
+    "error": {
+      "status": 429
+    },
+    "options": {
+      "now": 1792324800000,
+      "body": {
+        "error": {
+          "status": "RESOURCE_EXHAUSTED",
+          "message": "Quota exceeded for a metric"
+        }
+      }
+    },
+    "expected": {
+      "reason": "unknown",
+      "certainty": "unknown",
+      "outcome": "blocked"
+    }
+  },
+  {
+    "name": "Gemini key invalid",
+    "error": {
+      "status": 400
+    },
+    "options": {
+      "now": 1792324800000,
+      "body": {
+        "error": {
+          "status": "INVALID_ARGUMENT",
+          "details": [
+            {
+              "reason": "API_KEY_INVALID"
+            }
+          ]
+        }
+      }
+    },
+    "expected": {
+      "reason": "invalid_credentials",
+      "scope": "account",
+      "outcome": "blocked"
+    }
+  }
+]

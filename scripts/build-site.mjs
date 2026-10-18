@@ -9,7 +9,16 @@ const root = resolve(new URL('..', import.meta.url).pathname),
   out = resolve(root, 'dist/site');
 await mkdir(out, { recursive: true });
 await cp(resolve(root, 'website'), out, { recursive: true });
-for (const file of ['inference.js', 'verification-filters.js', 'verification.js'])
+for (const file of [
+  'inference.js',
+  'verification-filters.js',
+  'verification.js',
+  'batch-verification.js',
+  'verification-report.js',
+  'contributor-badges.js',
+  'attempt-display.js',
+  'playground.js',
+])
   await writeFile(
     resolve(out, file),
     (await readFile(resolve(root, 'website', file), 'utf8')).replaceAll(
@@ -29,6 +38,7 @@ for (const file of [
   'core.js',
   'enums.js',
   'catalog.js',
+  'verification.js',
   'call.js',
   'connection.js',
   'sdk.js',

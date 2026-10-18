@@ -127,7 +127,9 @@
   "CommunityVerificationStatus": {
     "Verified": "verified",
     "Unverified": "unverified",
-    "VerifiedToBeFailure": "verified to be failure"
+    "VerifiedToBeFailure": "verified to be failure",
+    "IssuesReported": "issues_reported",
+    "Stale": "stale"
   },
   "VerificationStatus": {
     "Unverified": "unverified",
@@ -135,7 +137,8 @@
     "Failed": "failed",
     "Verified": "verified",
     "VerifiedToBeFailure": "verified to be failure",
-    "Stale": "stale"
+    "Stale": "stale",
+    "IssuesReported": "issues_reported"
   },
   "VerificationCheck": {
     "TextGeneration": "textGeneration",

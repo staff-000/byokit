@@ -130,6 +130,8 @@ class CommunityVerificationStatus(str, Enum):
     VERIFIED = "verified"
     UNVERIFIED = "unverified"
     VERIFIED_TO_BE_FAILURE = "verified to be failure"
+    ISSUES_REPORTED = "issues_reported"
+    STALE = "stale"
 
 class VerificationStatus(str, Enum):
     UNVERIFIED = "unverified"
@@ -138,6 +140,7 @@ class VerificationStatus(str, Enum):
     VERIFIED = "verified"
     VERIFIED_TO_BE_FAILURE = "verified to be failure"
     STALE = "stale"
+    ISSUES_REPORTED = "issues_reported"
 
 class VerificationCheck(str, Enum):
     TEXT_GENERATION = "textGeneration"

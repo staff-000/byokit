@@ -7,6 +7,7 @@ export async function buildPlaygroundWorker() {
     'client.js',
     'connection.js',
     'custom-model.js',
+    'verification.js',
     'call.js',
     'sdk.js',
     'index.js',

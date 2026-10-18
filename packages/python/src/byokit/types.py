@@ -270,3 +270,81 @@ class CustomModel(_CustomModelOptional):
     modelId: str
     baseUrl: str
     protocol: ApiProtocol
+
+
+class AttemptRetry(TypedDict):
+    action: str
+    afterSeconds: int | None
+
+
+class _AttemptOptional(TypedDict, total=False):
+    httpStatus: int
+
+
+class VerificationAttempt(_AttemptOptional):
+    outcome: Literal[
+        "succeeded", "partial", "blocked", "inconclusive", "canceled", "skipped"
+    ]
+    reason: str | None
+    scope: Literal[
+        "account", "model", "provider", "region", "request", "client", "unknown"
+    ]
+    certainty: Literal["explicit", "inferred", "unknown"]
+    source: Literal["provider_code", "http_status", "client_error"]
+    classifierVersion: Literal["1"]
+    retry: AttemptRetry
+
+
+class VerificationCheckResults(TypedDict):
+    textGeneration: Literal["passed", "blocked", "inconclusive", "not_run"]
+    speed: Literal["passed", "blocked", "inconclusive", "not_run"]
+
+
+class VerificationPhase(TypedDict):
+    phase: Literal["baseline", "generation"]
+    attempt: VerificationAttempt
+
+
+class _AssessmentOptional(TypedDict, total=False):
+    phases: list[VerificationPhase]
+
+
+class VerificationAssessment(_AssessmentOptional):
+    attempt: VerificationAttempt
+    checks: VerificationCheckResults
+
+
+class _VerificationRecordOptional(TypedDict, total=False):
+    assessment: VerificationAssessment
+    tokensPerSecond: float
+    timeToFirstTokenMs: float
+    notes: str
+
+
+class VerificationRecord(_VerificationRecordOptional):
+    id: str
+    offeringId: str
+    contributor: str
+    checkedAt: str
+    result: Literal["passed", "failed"]
+    checks: list[str]
+    evidence: str
+    adapter: str
+
+
+class CommunityAssessment(TypedDict):
+    status: Literal["verified", "issues_reported", "unverified", "stale"]
+    lastSuccessAt: str | None
+    successfulContributors: int
+    recentIssues: dict[str, int]
+    issueWindowDays: int
+    latest: VerificationRecord | None
+    latestSuccess: VerificationRecord | None
+
+
+class VerificationSummary(TypedDict):
+    status: Literal["passed", "unverified", "stale"]
+    communityStatus: Literal["verified", "issues_reported", "unverified", "stale"]
+    community: CommunityAssessment
+    latest: VerificationRecord | None
+    records: list[VerificationRecord]

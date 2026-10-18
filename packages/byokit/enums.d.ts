@@ -147,6 +147,8 @@ export declare enum CommunityVerificationStatus {
   Verified = 'verified',
   Unverified = 'unverified',
   VerifiedToBeFailure = 'verified to be failure',
+  IssuesReported = 'issues_reported',
+  Stale = 'stale',
 }
 
 export declare enum VerificationStatus {
@@ -156,6 +158,7 @@ export declare enum VerificationStatus {
   Verified = 'verified',
   VerifiedToBeFailure = 'verified to be failure',
   Stale = 'stale',
+  IssuesReported = 'issues_reported',
 }
 
 export declare enum VerificationCheck {

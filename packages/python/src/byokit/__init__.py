@@ -1,9 +1,24 @@
 """Offline discovery and stateless, explicitly invoked inference."""
 
+from .verification import (
+    classify_verification_error,
+    community_assessment,
+    text_was_verified,
+    valid_assessment,
+)
+
 from .enums import *
-from .types import FilterMatcher
+from .types import (
+    FilterMatcher,
+    VerificationAttempt,
+    VerificationAssessment,
+    VerificationRecord,
+    VerificationSummary,
+    CommunityAssessment,
+)
 from typing import Any as TypingAny
 import builtins as _builtins
+
 _any = _builtins.any
 import copy
 import functools
@@ -695,7 +710,7 @@ def validate_config(config):
             errors.append(f"filters.{key} must be boolean")
     if "includePreviews" in config and not isinstance(config["includePreviews"], bool):
         errors.append("includePreviews must be boolean")
-    valid_verified = {"verified", "unverified", "verified to be failure"}
+    valid_verified = {"verified", "unverified", "verified to be failure", "issues_reported", "stale", "passed", "failed"}
     if "verified" in f and not isinstance(f["verified"], bool) and f["verified"] not in valid_verified:
         errors.append("filters.verified must be boolean or verification status")
     if "verifiedBy" in f and (
@@ -1910,6 +1925,19 @@ def validate_verifications(records, data):
             or r["timeToFirstTokenMs"] < 0
         ):
             errors.append("timeToFirstTokenMs must be a non-negative number")
+        if "assessment" in r and (
+            not valid_assessment(r["assessment"])
+            or r["assessment"]["attempt"]["outcome"] in {"canceled", "skipped"}
+            or (r["result"] == "passed")
+            != (r["assessment"]["attempt"]["outcome"] == "succeeded")
+        ):
+            errors.append("Invalid structured verification assessment")
+        if (
+            valid_assessment(r.get("assessment"))
+            and r["assessment"]["checks"]["speed"] != "passed"
+            and "tokensPerSecond" in r
+        ):
+            errors.append("Incomplete speed checks cannot carry speed metrics")
         if set(r) - {
             "id",
             "offeringId",
@@ -1920,6 +1948,7 @@ def validate_verifications(records, data):
             "evidence",
             "adapter",
             "notes",
+            "assessment",
             "tokensPerSecond",
             "timeToFirstTokenMs",
         }:
@@ -1936,44 +1965,25 @@ def verification_summary(
     records_source = (
         data.get("_verifications_by_offering", {}).get(offering_id)
         if "_verifications_by_offering" in data
-        else [r for r in data.get("verifications", []) if r["offeringId"] == offering_id]
+        else [
+            r for r in data.get("verifications", []) if r["offeringId"] == offering_id
+        ]
     )
     records = [
         r
         for r in (records_source or [])
         if not contributor or r["contributor"].lower() == contributor.lower()
     ]
-    calls = sorted(
-        (
-            r
-            for r in records
-            if "textGeneration" in r["checks"] and _timestamp(r["checkedAt"]) <= now
-        ),
-        key=lambda r: (
-            -_timestamp(r["checkedAt"]),
-            0 if r["result"] == "failed" else 1,
-            r["id"],
-        ),
-    )
-    latest = calls[0] if calls else None
-    status = (
-        "unverified"
-        if latest is None
-        else "stale"
-        if now - _timestamp(latest["checkedAt"]) > max_age_days * 86400
-        else latest["result"]
-    )
-    community_status = (
-        "unverified"
-        if latest is None
-        else "verified to be failure"
-        if latest["result"] == "failed"
-        else "verified"
-    )
+    community = community_assessment(records, now=now, max_age_days=max_age_days)
     return {
-        "status": status,
-        "communityStatus": community_status,
-        "latest": latest,
+        "status": "passed"
+        if community["status"] == "verified"
+        else "stale"
+        if community["status"] == "stale"
+        else "unverified",
+        "communityStatus": community["status"],
+        "community": community,
+        "latest": community["latestSuccess"] or community["latest"],
         "records": records,
     }
 
@@ -1991,8 +2001,23 @@ def matches_verification(data, oid, config):
     )
     v = f.get("verified")
     if isinstance(v, str):
+        if v in {"failed", "verified to be failure"}:
+            now = (
+                _timestamp(config["asOf"])
+                if config.get("asOf")
+                else datetime.now(timezone.utc).timestamp()
+            )
+            return _any(
+                not text_was_verified(r)
+                and 0
+                <= now - _timestamp(r["checkedAt"])
+                <= f.get("verifiedWithinDays", 90) * 86400
+                for r in summary["records"]
+            )
         return summary["communityStatus"] == v or summary["status"] == v
-    return summary["status"] != "passed" if v is False else summary["status"] == "passed"
+    return (
+        summary["status"] != "passed" if v is False else summary["status"] == "passed"
+    )
 
 
 _WARNED_RUNTIME = False

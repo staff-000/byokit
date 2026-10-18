@@ -1,3 +1,8 @@
+import {
+  classifyVerificationError,
+  shouldStopProvider,
+  successAttempt,
+} from '../packages/byokit/verification.js';
 import { verifyInference, requestFor } from './inference.js';
 export const MAX_BATCH_REQUESTS = 10;
 function providerKey(keys, providerId) {
@@ -32,7 +37,7 @@ export async function runBatch(
   keys = typeof keys === 'string' ? keys : Object.fromEntries(Object.entries(keys || {}));
   validateBatch(jobs, keys);
   const entries = [];
-  const stopped = new Set();
+  const stopped = new Map();
   for (const job of jobs) {
     const key = providerKey(keys, job.providerId);
     let entry;
@@ -40,6 +45,10 @@ export async function runBatch(
       entry = {
         offeringId: job.offeringId,
         status: 'skipped',
+        assessment: {
+          attempt: { ...(stopped.get(job.providerId) || successAttempt()), outcome: 'skipped' },
+          checks: { textGeneration: 'not_run', speed: 'not_run' },
+        },
         error: signal?.aborted
           ? 'Canceled before this request.'
           : 'Stopped after a provider authentication, quota, or connection failure.',
@@ -50,7 +59,14 @@ export async function runBatch(
         const result = await verify(job, key, { signal });
         entry = signal?.aborted
           ? { offeringId: job.offeringId, status: 'canceled', error: 'Call canceled.' }
-          : { offeringId: job.offeringId, status: 'passed', result };
+          : {
+              offeringId: job.offeringId,
+              status: result.assessment?.attempt.outcome === 'partial' ? 'partial' : 'passed',
+              result,
+              ...(result.assessment ? { assessment: result.assessment } : {}),
+            };
+        if (shouldStopProvider(result.assessment?.attempt))
+          stopped.set(job.providerId, result.assessment.attempt);
       } catch (error) {
         const safe = Object.values(typeof keys === 'string' ? { key: keys } : keys)
           .filter(Boolean)
@@ -58,16 +74,27 @@ export async function runBatch(
             (message, secret) => message.split(secret).join('[redacted]'),
             String(error.message || 'Call failed.'),
           );
+        const attempt = classifyVerificationError(error);
         entry = {
+          assessment: error.assessment || {
+            attempt,
+            checks: {
+              textGeneration:
+                attempt.outcome === 'blocked'
+                  ? 'blocked'
+                  : attempt.outcome === 'canceled'
+                    ? 'not_run'
+                    : 'inconclusive',
+              speed: 'not_run',
+            },
+          },
+          checkedAt: error.checkedAt || new Date().toISOString(),
+          latencyMs: error.latencyMs || 0,
           offeringId: job.offeringId,
           status: signal?.aborted ? 'canceled' : 'failed',
           error: safe,
         };
-        if (
-          ['NETWORK_ERROR', 'TIMEOUT'].includes(error.code) ||
-          /HTTP (401|402|403|429)/.test(safe)
-        )
-          stopped.add(job.providerId);
+        if (shouldStopProvider(attempt)) stopped.set(job.providerId, attempt);
       }
     }
     entries.push(entry);
