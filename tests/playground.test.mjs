@@ -102,6 +102,8 @@ test('playground captures generated models and updates verification status when 
   assert.ok(ui.includes('availability-run-btn'));
   assert.ok(ui.includes('verifyInference'));
   assert.ok(ui.includes('successRecord'));
+  assert.ok(ui.includes('createReport'));
+  assert.ok(ui.includes('issueUrl'));
 });
 
 test('playground captures query configs and warns on multiple calls', async () => {

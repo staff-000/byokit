@@ -77,6 +77,7 @@ export function filterModels(state = {}) {
         .toLowerCase()
         .includes(search),
     );
+  if (state.callableOnly) models = models.filter((m) => m.local || m.callSupport?.textGeneration);
   if (state.sort === 'release')
     models.sort((a, b) => (b.releaseDate || '').localeCompare(a.releaseDate || ''));
 

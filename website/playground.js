@@ -1,5 +1,6 @@
 import { playgroundExamples } from './playground-examples.js';
 import { verifyInference, successRecord, ProviderApi } from './inference.js';
+import { createReport, issueUrl } from './verification-report.js';
 const $ = (selector) => document.querySelector(selector);
 const editor = $('#playground-code'),
   output = $('#playground-output'),
@@ -320,6 +321,47 @@ $('#availability-run-btn')?.addEventListener('click', async () => {
       if (card) {
         card.querySelector('.status').textContent = `Verified ✓ (${result.latencyMs} ms)`;
         card.querySelector('.status').className = 'status badge passed';
+        try {
+          const report = createReport(job, result, record.id, key);
+          const oldActions = card.querySelector('.playground-card-actions');
+          if (oldActions) oldActions.remove();
+          const actions = document.createElement('div');
+          actions.className = 'playground-card-actions';
+          actions.style.marginTop = '10px';
+          actions.style.display = 'flex';
+          actions.style.gap = '8px';
+          actions.style.flexWrap = 'wrap';
+
+          const shareLink = document.createElement('a');
+          shareLink.className = 'button primary action-highlight';
+          shareLink.style.fontSize = '11.5px';
+          shareLink.style.padding = '4px 10px';
+          shareLink.textContent = 'Share on GitHub · claim badge ↗';
+          shareLink.href = issueUrl(report);
+          shareLink.target = '_blank';
+          shareLink.rel = 'noopener noreferrer';
+          shareLink.addEventListener('click', () => {
+            if (window.trackVerificationPublication) {
+              window.trackVerificationPublication(report);
+            }
+          });
+          actions.append(shareLink);
+
+          if (window.selectVerificationModel) {
+            const selectBtn = document.createElement('button');
+            selectBtn.type = 'button';
+            selectBtn.className = 'small-button';
+            selectBtn.textContent = 'Select in Hero Tester ↑';
+            selectBtn.addEventListener('click', () => {
+              window.selectVerificationModel(model.id, key);
+            });
+            actions.append(selectBtn);
+          }
+
+          card.append(actions);
+        } catch (e) {
+          console.warn('[byokit playground] could not create report for model', e);
+        }
       }
     } catch (err) {
       if (controller.signal.aborted) break;
@@ -343,7 +385,7 @@ $('#availability-run-btn')?.addEventListener('click', async () => {
   $('#availability-cancel-btn').hidden = true;
   $('#availability-status').textContent = controller.signal.aborted
     ? `Availability test canceled. ${verifiedCount} verified, ${failedCount} failed, ${skippedCount} skipped.`
-    : `Availability test complete: ${verifiedCount} verified, ${failedCount} failed, ${skippedCount} skipped.`;
+    : `Availability test complete: ${verifiedCount} verified, ${failedCount} failed, ${skippedCount} skipped.${verifiedCount ? ' Click "Share on GitHub" on any verified card above to submit your report and update the status via GitHub Actions!' : ''}`;
 });
 
 for (const [value, example] of Object.entries(playgroundExamples)) {

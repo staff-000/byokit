@@ -101,6 +101,7 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
       'context-filter',
       'price-filter',
       'sort-filter',
+      'callable-filter',
       'include-outdated',
     ])
       assert.ok($('#' + id).closest('thead'), id + ' belongs to the table header');

@@ -71,6 +71,26 @@ $('#share-verification').addEventListener('click', () => {
   trackPublication();
 });
 $('#check-publication').addEventListener('click', trackPublication);
+if (typeof window !== 'undefined') {
+  window.selectVerificationModel = (modelId, prefillKey) => {
+    const m = models.find((x) => x.id === modelId) || models.find((x) => x.apiModelId === modelId);
+    if (m) {
+      select(m);
+      if (prefillKey) {
+        $('#api-key').value = prefillKey;
+      }
+      renderModels();
+      $('#call-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      $('#api-key')?.focus({ preventScroll: true });
+    }
+  };
+  window.trackVerificationPublication = (report) => {
+    activeReport = report;
+    $('#check-publication').hidden = false;
+    publicationStatus(`Submit the GitHub issue for ${report.offeringId} to publish this result.`);
+    trackPublication();
+  };
+}
 const storageKey = 'byokit.inference-verifications.v1';
 let records = [],
   storageAvailable = true;
@@ -194,7 +214,10 @@ function select(model) {
   const changedProvider = selected?.providerId !== model.providerId;
   invalidate();
   selected = model;
-  if (changedProvider) $('#api-key').value = '';
+  if (changedProvider) {
+    $('#api-key').value = '';
+    $('#api-key').placeholder = `Paste your ${model.provider?.name || model.providerId} key`;
+  }
   $('#verify').textContent = model.local ? 'Verify local model ↗' : 'Verify model · earn a badge ↗';
   $('#badge-hint').textContent = model.local
     ? 'Local checks stay private. Publish a hosted-model report to earn a badge.'
@@ -224,7 +247,9 @@ function select(model) {
   } else {
     $('#verify').disabled = false;
     $('#verify').title = '';
-    status('Ready to verify. No call has been made.');
+    status(
+      `Ready to verify ${model.provider?.name || model.providerId} ${model.name}. Enter your API key above and click Verify model.`,
+    );
   }
   updateCostEstimate();
 }
@@ -244,6 +269,7 @@ function filteredModels() {
     sort: $('#sort-filter').value,
     verification: $('#verification-filter')?.value,
     verifications: publishedReports,
+    callableOnly: $('#callable-filter')?.checked,
     includeOutdated: $('#include-outdated').checked,
   });
 }
@@ -262,6 +288,8 @@ function renderModels() {
       if (e.target.closest('input, a, button, summary')) return;
       select(m);
       renderModels();
+      $('#call-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      $('#api-key')?.focus({ preventScroll: true });
     });
     checkbox.type = 'checkbox';
     checkbox.className = 'batch-pick';
@@ -867,6 +895,7 @@ for (const id of [
   'price-filter',
   'sort-filter',
   'verification-filter',
+  'callable-filter',
   'include-outdated',
 ])
   $('#' + id).addEventListener('input', () => {
