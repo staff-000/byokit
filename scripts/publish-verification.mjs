@@ -19,9 +19,48 @@ export function addReport(data, reports, submission) {
   )
     throw new Error('Daily publication limit reached.');
   const next = [...reports, record].sort(
-      (a, b) => a.checkedAt.localeCompare(b.checkedAt) || a.id.localeCompare(b.id),
-    ),
-    catalog = { ...data, verifications: next };
+    (a, b) => a.checkedAt.localeCompare(b.checkedAt) || a.id.localeCompare(b.id),
+  );
+  let updatedOfferings = data.offerings;
+  if (
+    record.tokensPerSecond &&
+    Number.isFinite(record.tokensPerSecond) &&
+    record.tokensPerSecond > 0
+  ) {
+    const offering = data.offerings.find((o) => o.id === record.offeringId);
+    if (offering) {
+      const validSpeeds = next
+        .filter(
+          (r) =>
+            r.offeringId === record.offeringId &&
+            Number.isFinite(r.tokensPerSecond) &&
+            r.tokensPerSecond > 0,
+        )
+        .map((r) => r.tokensPerSecond)
+        .sort((a, b) => a - b);
+      if (validSpeeds.length > 0) {
+        const mid = Math.floor(validSpeeds.length / 2);
+        const medianSpeed =
+          validSpeeds.length % 2 === 1
+            ? validSpeeds[mid]
+            : Math.round(((validSpeeds[mid - 1] + validSpeeds[mid]) / 2) * 10) / 10;
+        updatedOfferings = data.offerings.map((o) =>
+          o.id === record.offeringId
+            ? {
+                ...o,
+                speed: {
+                  timeToFirstTokenMs:
+                    record.timeToFirstTokenMs ?? o.speed?.timeToFirstTokenMs ?? null,
+                  tokensPerSecond: medianSpeed,
+                  source: record.evidence,
+                },
+              }
+            : o,
+        );
+      }
+    }
+  }
+  const catalog = { ...data, offerings: updatedOfferings, verifications: next };
   if (validateVerifications(next, catalog).length || validateCatalog(catalog).length)
     throw new Error('Invalid resulting catalog.');
   return { changed: true, data: catalog, reports: next, record };

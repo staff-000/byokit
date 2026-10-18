@@ -11,6 +11,7 @@
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./style.css" />
     <script type="module" src="./verification.js"></script>
+    <script type="module" src="./playground.js"></script>
   </head>
   <body>
     <a class="skip" href="#model-list">Skip to model list</a>
@@ -67,6 +68,9 @@
                 aria-describedby="key-note" /></label
             ><label>API protocol<select id="protocol"></select></label>
           </div>
+          <p id="cost-estimate" class="fine cost-estimate" role="status" aria-live="polite">
+            Calculating estimated cost…
+          </p>
           <p id="key-note" class="fine">
             Use a key for the selected provider. A small inference call may use your credits.
           </p>
@@ -90,18 +94,18 @@
             <summary>Prompt and output limit</summary>
             <label
               >Prompt<textarea id="prompt" rows="2" maxlength="8000">
-Reply with exactly: OK</textarea></label
+Count from 1 to 50 separated by spaces: 1 2 3...</textarea></label
             ><label
               >Maximum output tokens<input
                 id="max-tokens"
                 type="number"
-                value="256"
+                value="128"
                 min="16"
                 max="8192"
             /></label>
             <p class="fine">
-              Reasoning models may need a larger limit to produce visible text. This verifies text
-              generation only, not every model tag.
+              Short prompt benchmark minimizes time-to-first-token overhead for clean speed
+              measurement.
             </p>
           </details>
           <details id="request-example" class="call-settings">
@@ -167,52 +171,89 @@ Reply with exactly: OK</textarea></label
         >
         <pre id="response-text" class="response-text" hidden></pre>
       </section>
-      <section
-        id="api-verification"
-        class="tracker-section"
-        aria-labelledby="api-verification-title"
-      >
+      <section id="playground" class="section playground-section">
         <div class="section-head">
           <div>
-            <p class="eyebrow">API VERIFICATION / ALL MODELS UNDER AN API</p>
-            <h2 id="api-verification-title">Verify all models under an API.</h2>
+            <p class="eyebrow">PLAYGROUND / TEST ANY API QUERY</p>
+            <h2>Query and test models across APIs.</h2>
           </div>
-          <span id="api-verify-count" class="count" aria-live="polite"></span>
+          <p>
+            Filter models across protocols or providers with JavaScript.<br />Test live availability
+            and verify all models in the result.
+          </p>
         </div>
-        <p class="lede">
-          Select an API protocol or provider to test all of its supported models. When an API spans
-          multiple providers, provide an API key for each provider you wish to verify. Keys stay
-          strictly in memory and are sent directly to the providers.
+        <div class="playground-shell">
+          <div class="playground-toolbar">
+            <label for="playground-example">Example</label
+            ><select id="playground-example"></select
+            ><span class="playground-badge">JavaScript</span
+            ><span class="playground-import">byokit is already imported</span>
+          </div>
+          <div class="playground-panes">
+            <div class="playground-editor">
+              <label for="playground-code">YOUR CODE</label
+              ><textarea
+                id="playground-code"
+                spellcheck="false"
+                autocomplete="off"
+                autocapitalize="off"
+                aria-describedby="playground-help"
+              ></textarea>
+            </div>
+            <div class="playground-result">
+              <span id="playground-output-label">CONSOLE OUTPUT</span>
+              <pre id="playground-output" aria-labelledby="playground-output-label" tabindex="0">
+Your console output will appear here.</pre>
+            </div>
+          </div>
+          <div class="playground-actions">
+            <button id="playground-run" type="button" class="button primary">
+              Run JavaScript <span aria-hidden="true">▶</span></button
+            ><button id="playground-stop" type="button" class="small-button" disabled>Stop</button
+            ><button id="playground-save-config" type="button" class="button secondary">
+              Save config.json</button
+            ><button id="playground-reset" type="button" class="text-button">Reset example</button
+            ><button id="playground-copy" type="button" class="text-button">Copy code</button
+            ><span class="playground-shortcut">⌘ / Ctrl + Enter</span>
+          </div>
+          <p id="playground-status" role="status">Ready.</p>
+          <div id="playground-availability" class="playground-availability" hidden>
+            <div class="availability-header">
+              <div>
+                <span class="playground-badge">AVAILABILITY TEST</span>
+                <h3 id="availability-title">Test Generated Model Availability</h3>
+                <p id="availability-subtitle" class="fine">
+                  Test real availability of the models in your generated list with your API keys.
+                </p>
+              </div>
+              <button id="availability-start-btn" type="button" class="button secondary">
+                Test model availability
+              </button>
+            </div>
+            <div id="availability-drawer" class="availability-drawer" hidden>
+              <div id="availability-keys" class="api-keys-grid"></div>
+              <div class="call-actions">
+                <button id="availability-run-btn" type="button" class="button primary">
+                  Run availability test
+                </button>
+                <button id="availability-cancel-btn" type="button" class="small-button" hidden>
+                  Cancel test
+                </button>
+                <button id="availability-clear-btn" type="button" class="text-button">
+                  Clear keys
+                </button>
+              </div>
+              <p id="availability-status" class="call-status" role="status" aria-live="polite">
+                Enter your API keys above and click Run availability test.
+              </p>
+              <div id="availability-results" class="batch-results"></div>
+            </div>
+          </div>
+        </div>
+        <p id="playground-help" class="fine">
+          Runs locally in an isolated sandbox. Select "All models under an API" from the examples to
+          inspect and verify all models matching any API protocol.
         </p>
-        <div class="api-verification-panel">
-          <div class="call-fields">
-            <label for="api-verify-select">
-              Select API or protocol
-              <select id="api-verify-select">
-                <option value="">Choose an API…</option>
-              </select>
-            </label>
-          </div>
-          <p id="api-verify-summary" class="fine" role="status">
-            Choose an API above to see the matching models and required provider keys.
-          </p>
-          <div id="api-verify-keys" class="api-keys-grid"></div>
-          <div class="call-actions">
-            <button id="api-verify-run" type="button" class="button primary" disabled>
-              Verify all models under this API
-            </button>
-            <button id="api-verify-cancel" type="button" class="small-button" hidden>
-              Cancel verification
-            </button>
-            <button id="api-verify-clear-keys" type="button" class="text-button">
-              Clear API keys
-            </button>
-          </div>
-          <p id="api-verify-status" class="call-status" role="status" aria-live="polite">
-            No API verification in progress.
-          </p>
-          <div id="api-verify-results" class="batch-results"></div>
-        </div>
       </section>
       <section id="model-list" class="tracker-section">
         <div class="section-head">

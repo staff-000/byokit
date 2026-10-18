@@ -466,6 +466,14 @@
           },
           "notes": {
             "type": "string"
+          },
+          "tokensPerSecond": {
+            "type": "number",
+            "minimum": 0
+          },
+          "timeToFirstTokenMs": {
+            "type": "number",
+            "minimum": 0
           }
         }
       }

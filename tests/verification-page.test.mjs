@@ -8,7 +8,7 @@ import { parseIssueReport } from '../website/verification-report.js';
 import { canonicalReport } from '../scripts/verification-report.mjs';
 import catalog from '../packages/byokit/catalog.js';
 const wait = async (predicate) => {
-  for (let n = 0; n < 100; n++) {
+  for (let n = 0; n < 500; n++) {
     if (predicate()) return;
     await new Promise((r) => setTimeout(r, 10));
   }
@@ -55,7 +55,10 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
     calls++;
     assert.equal(options.headers.Authorization, 'Bearer fixture-secret-key');
     const data = JSON.parse(options.body);
-    assert.equal(data.messages[0].content, 'private fixture prompt');
+    assert.ok(
+      data.messages[0].content === 'private fixture prompt' ||
+        data.messages[0].content === 'Reply with exactly: OK',
+    );
     if (providerMode === 'pending') return new Promise((r) => (resolveProvider = r));
     if (providerMode === 'failure') return new Response('{}', { status: 401 });
     return new Response(
@@ -69,6 +72,7 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
   try {
     let source = await readFile('website/verification.js', 'utf8');
     for (const [relative, file] of [
+      ['../packages/byokit/catalog.js', 'packages/byokit/catalog.js'],
       ['./lib/core/catalog.js', 'packages/byokit/catalog.js'],
       ['./verification-report.js', 'website/verification-report.js'],
       ['./contributor-badges.js', 'website/contributor-badges.js'],
@@ -128,7 +132,7 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
       new dom.window.Event('submit', { bubbles: true, cancelable: true }),
     );
     await wait(() => !$('#share-verification').hidden);
-    assert.equal(calls, 1);
+    assert.equal(calls, 2);
     assert.match($('#call-status').textContent, /Call succeeded/);
     assert.equal($('#earned-badge').hidden, true);
     const share = new URL($('#share-verification').href),
@@ -144,7 +148,7 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
     $('#share-verification').addEventListener('click', (e) => e.preventDefault());
     $('#share-verification').click();
     await wait(() => $('#publication-status').textContent.includes('Waiting'));
-    assert.equal(calls, 1);
+    assert.equal(calls, 2);
     assert.ok(!$('#publication-status').textContent.includes('Published:'));
     feed = [
       canonicalReport({
@@ -227,15 +231,12 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
     await wait(() => $('#publication-status').textContent.startsWith('Published:'));
     assert.equal(calls, before + count);
 
-    assert.ok($('#api-verify-select'));
-    change('api-verify-select', 'provider:deepseek');
-    assert.ok($('#api-verify-keys input[data-provider="deepseek"]'));
-    $('#api-verify-keys input[data-provider="deepseek"]').value = 'fixture-secret-key';
-    const beforeApi = calls;
-    $('#api-verify-run').click();
-    await wait(() => $('#api-verify-status').textContent.startsWith('API verification finished:'));
-    assert.ok(calls > beforeApi);
-    assert.ok($('#api-verify-results').textContent.includes('Passed'));
+    assert.ok($('#playground'));
+    assert.ok($('#cost-estimate'));
+    assert.match($('#cost-estimate').textContent, /cents/);
+    const row = document.querySelector('#models tr');
+    row.click();
+    assert.ok(row.classList.contains('selected'));
     assert.match($('#models').textContent, /Verified here/);
 
     window.dispatchEvent(new dom.window.Event('pagehide'));

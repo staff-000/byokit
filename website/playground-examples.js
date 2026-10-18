@@ -109,4 +109,18 @@ console.log(models.at(-1));
 });
 console.log(model ?? 'No matching model');`,
   },
+  apiModels: {
+    label: 'All models under an API (verify all in result)',
+    code: `// Query all models under OpenAI-compatible chat API
+const models = byokit.getModels(byokit.COMPLETE, {
+  filters: { callable: true },
+  local: false,
+}).filter(m => m.connection?.protocol === byokit.ApiProtocol.OpenAI);
+
+console.log(\`Found \${models.length} models using OpenAI-compatible API protocol:\`);
+console.log(models.slice(0, 10).map(m => ({ provider: m.provider.name, model: m.name, apiModelId: m.apiModelId })));
+
+// Return models to test their availability in the test drawer below
+return models;`,
+  },
 };

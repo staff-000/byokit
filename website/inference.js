@@ -95,30 +95,99 @@ export function requestFor(settings, key) {
   return { url: request.url, body: request.body, headers };
 }
 export async function verifyInference(settings, key, options = {}) {
-  const model = verificationModel(settings),
-    input = verificationInput(settings);
+  const { benchmarkSpeed = false, ...clientOptions } = options;
+  const model = verificationModel(settings);
   const client = new OpenAI({
     baseURL: model.connection.baseUrl,
     protocol: model.connection.protocol,
     apiKey: key,
     runtimeChecks: false,
   });
+
+  if (benchmarkSpeed) {
+    // Query 1: Baseline Overhead Query ("Reply with exactly: OK", maxTokens: 16)
+    const baseInput = {
+      messages: [{ role: 'user', content: 'Reply with exactly: OK' }],
+      max_completion_tokens: 16,
+    };
+    const t1Start = Date.now();
+    const r1 = await client.chat.completions.create(
+      { model: model.apiModelId, ...baseInput },
+      clientOptions,
+    );
+    const t1Latency = Date.now() - t1Start;
+    const n1Out = r1.usage?.completion_tokens ?? 1;
+
+    // Query 2: Generation Benchmark Query
+    const mainInput = verificationInput(settings);
+    const t2Start = Date.now();
+    const r2 = await client.chat.completions.create(
+      { model: model.apiModelId, ...mainInput },
+      clientOptions,
+    );
+    const t2Latency = Date.now() - t2Start;
+    const text = r2.choices[0].message.content;
+    if (!text?.trim()) throw new Error('Call returned no visible text. No success recorded.');
+    const n2Out = r2.usage?.completion_tokens ?? (text.trim().split(/\s+/).length || 50);
+
+    // Delta calculations to eliminate network/TTFT overhead
+    const deltaT = t2Latency - t1Latency;
+    const deltaN = n2Out - n1Out;
+    let tokensPerSecond = null;
+    if (deltaT > 0 && deltaN > 0) {
+      tokensPerSecond = Math.round((deltaN / (deltaT / 1000)) * 10) / 10;
+    } else if (t2Latency > 0 && n2Out > 0) {
+      tokensPerSecond = Math.round((n2Out / (t2Latency / 1000)) * 10) / 10;
+    }
+    if (
+      tokensPerSecond != null &&
+      (!Number.isFinite(tokensPerSecond) || tokensPerSecond <= 0 || tokensPerSecond > 10000)
+    ) {
+      tokensPerSecond = tokensPerSecond > 10000 ? 10000 : null;
+    }
+    const timeToFirstTokenMs = Math.max(1, t1Latency);
+
+    return {
+      text: text.slice(0, 10000),
+      checkedAt: new Date().toISOString(),
+      latencyMs: t2Latency,
+      timeToFirstTokenMs,
+      ...(tokensPerSecond != null ? { tokensPerSecond } : {}),
+      returnedModel: r2.model,
+      usage: {
+        ...(r2.usage?.prompt_tokens !== undefined ? { inputTokens: r2.usage.prompt_tokens } : {}),
+        outputTokens: n2Out,
+      },
+      endpoint: prepareCall(model, mainInput, { runtimeChecks: false }).url,
+    };
+  }
+
+  // Single-query mode (fallback or when benchmarkSpeed is not requested)
+  const input = verificationInput(settings);
   const started = Date.now(),
-    result = await client.chat.completions.create({ model: model.apiModelId, ...input }, options);
+    result = await client.chat.completions.create(
+      { model: model.apiModelId, ...input },
+      clientOptions,
+    );
   const text = result.choices[0].message.content;
   if (!text?.trim()) throw new Error('Call returned no visible text. No success recorded.');
+  const latencyMs = Date.now() - started;
+  const outputTokens = result.usage?.completion_tokens;
+  const tokensPerSecond =
+    Number.isInteger(outputTokens) && outputTokens > 0 && latencyMs > 0
+      ? Math.round((outputTokens / (latencyMs / 1000)) * 10) / 10
+      : null;
   return {
     text: text.slice(0, 10000),
     checkedAt: new Date().toISOString(),
-    latencyMs: Date.now() - started,
+    latencyMs,
+    ...(tokensPerSecond != null ? { tokensPerSecond } : {}),
     returnedModel: result.model,
     usage: {
-      ...(result.usage.prompt_tokens !== undefined
+      ...(result.usage?.prompt_tokens !== undefined
         ? { inputTokens: result.usage.prompt_tokens }
         : {}),
-      ...(result.usage.completion_tokens !== undefined
-        ? { outputTokens: result.usage.completion_tokens }
-        : {}),
+      ...(outputTokens !== undefined ? { outputTokens } : {}),
     },
     endpoint: prepareCall(model, input, { runtimeChecks: false }).url,
   };
@@ -140,6 +209,8 @@ export function successRecord(settings, result, secret = '') {
     maxTokens: settings.maxTokens,
     checkedAt: result.checkedAt,
     latencyMs: result.latencyMs,
+    ...(result.timeToFirstTokenMs != null ? { timeToFirstTokenMs: result.timeToFirstTokenMs } : {}),
+    ...(result.tokensPerSecond != null ? { tokensPerSecond: result.tokensPerSecond } : {}),
     result: 'passed',
     checks: ['textGeneration'],
     adapter: 'byokit-website@1',
@@ -161,6 +232,8 @@ export function safeRecords(input) {
     'maxTokens',
     'checkedAt',
     'latencyMs',
+    'timeToFirstTokenMs',
+    'tokensPerSecond',
     'result',
     'checks',
     'adapter',

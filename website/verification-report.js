@@ -9,6 +9,9 @@ const fields = [
   'checkedAt',
   'latencyMs',
   'maxTokens',
+  'timeToFirstTokenMs',
+  'tokensPerSecond',
+  'outputTokens',
   'staging',
 ];
 export function reportFields(value) {
@@ -50,6 +53,25 @@ export function reportFields(value) {
     value.maxTokens > 8192
   )
     throw new Error('Invalid call settings.');
+  if (
+    value.timeToFirstTokenMs !== undefined &&
+    (!Number.isInteger(value.timeToFirstTokenMs) ||
+      value.timeToFirstTokenMs < 0 ||
+      value.timeToFirstTokenMs > 180000)
+  )
+    throw new Error('Invalid TTFT setting.');
+  if (
+    value.tokensPerSecond !== undefined &&
+    (!Number.isFinite(value.tokensPerSecond) ||
+      value.tokensPerSecond <= 0 ||
+      value.tokensPerSecond > 10000)
+  )
+    throw new Error('Invalid speed setting.');
+  if (
+    value.outputTokens !== undefined &&
+    (!Number.isInteger(value.outputTokens) || value.outputTokens < 0 || value.outputTokens > 8192)
+  )
+    throw new Error('Invalid output token count.');
   if (value.staging !== undefined && value.staging !== true)
     throw new Error('Invalid staging flag.');
   return value;
@@ -64,6 +86,9 @@ export function createReport(settings, result, operationId, secret = '') {
     checkedAt: result.checkedAt,
     latencyMs: result.latencyMs,
     maxTokens: settings.maxTokens,
+    ...(result.timeToFirstTokenMs != null ? { timeToFirstTokenMs: result.timeToFirstTokenMs } : {}),
+    ...(result.tokensPerSecond != null ? { tokensPerSecond: result.tokensPerSecond } : {}),
+    ...(result.usage?.outputTokens != null ? { outputTokens: result.usage.outputTokens } : {}),
   };
   reportFields(report);
   if (secret.trim() && JSON.stringify(report).includes(secret.trim()))

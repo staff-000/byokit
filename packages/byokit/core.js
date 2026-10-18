@@ -1234,7 +1234,19 @@ export function validateVerifications(records, data) {
       'evidence',
       'adapter',
       'notes',
+      'tokensPerSecond',
+      'timeToFirstTokenMs',
     ];
+    if (
+      r.tokensPerSecond !== undefined &&
+      (!Number.isFinite(r.tokensPerSecond) || r.tokensPerSecond <= 0)
+    )
+      errors.push('tokensPerSecond must be a positive number');
+    if (
+      r.timeToFirstTokenMs !== undefined &&
+      (!Number.isFinite(r.timeToFirstTokenMs) || r.timeToFirstTokenMs < 0)
+    )
+      errors.push('timeToFirstTokenMs must be a non-negative number');
     if (Object.keys(r).some((k) => !permitted.includes(k)))
       errors.push('Unknown verification field; do not record keys or request payloads');
   }

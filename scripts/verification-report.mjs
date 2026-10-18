@@ -55,6 +55,8 @@ export function issueSubmission(event, catalog) {
 export function canonicalReport(submission) {
   const { report, user, evidence, createdAt } = submission;
   if (report.staging) throw new Error('Pipeline fixtures are not model verification records.');
+  const speedNote = report.tokensPerSecond ? `; speed ${report.tokensPerSecond} tokens/sec` : '';
+  const ttftNote = report.timeToFirstTokenMs ? `; TTFT ${report.timeToFirstTokenMs} ms` : '';
   return {
     id: `website:${user.id}:${report.operationId}`,
     offeringId: report.offeringId,
@@ -62,8 +64,10 @@ export function canonicalReport(submission) {
     checkedAt: report.checkedAt,
     result: 'passed',
     checks: ['textGeneration'],
+    ...(report.tokensPerSecond ? { tokensPerSecond: report.tokensPerSecond } : {}),
+    ...(report.timeToFirstTokenMs ? { timeToFirstTokenMs: report.timeToFirstTokenMs } : {}),
     adapter: 'byokit-website@1',
     evidence,
-    notes: `Community-reported successful ${report.protocol} call. Output budget ${report.maxTokens}; latency ${report.latencyMs} ms. GitHub author ID ${user.id}; submitted ${createdAt}; Provider call ran in the contributor’s browser.`,
+    notes: `Community-reported successful ${report.protocol} call. Output budget ${report.maxTokens}; latency ${report.latencyMs} ms${ttftNote}${speedNote}. GitHub author ID ${user.id}; submitted ${createdAt}; Provider call ran in the contributor’s browser.`,
   };
 }

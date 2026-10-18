@@ -1404,6 +1404,16 @@ def validate_verifications(records, data):
             errors.append("Verification evidence is required")
         if not isinstance(r.get("adapter"), str) or not r["adapter"]:
             errors.append("Verification adapter and version are required")
+        if "tokensPerSecond" in r and (
+            not isinstance(r["tokensPerSecond"], (int, float))
+            or r["tokensPerSecond"] <= 0
+        ):
+            errors.append("tokensPerSecond must be a positive number")
+        if "timeToFirstTokenMs" in r and (
+            not isinstance(r["timeToFirstTokenMs"], (int, float))
+            or r["timeToFirstTokenMs"] < 0
+        ):
+            errors.append("timeToFirstTokenMs must be a non-negative number")
         if set(r) - {
             "id",
             "offeringId",
@@ -1414,6 +1424,8 @@ def validate_verifications(records, data):
             "evidence",
             "adapter",
             "notes",
+            "tokensPerSecond",
+            "timeToFirstTokenMs",
         }:
             errors.append(
                 "Unknown verification field; do not record keys or request payloads"
