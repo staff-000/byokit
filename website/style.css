@@ -2233,34 +2233,244 @@ dialog .record-actions {
   max-height: 100dvh;
   border: 0;
   border-radius: 20px 0 0 20px;
-  padding: 24px;
+  padding: 0 24px 24px;
+  background: var(--paper);
+  font-size: 13px;
+  line-height: 1.5;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
 #verification-drawer .call-panel {
   margin: 0;
-  padding: 20px 0;
+  padding: 18px 0;
   border: 0;
+  background: transparent;
   box-shadow: none;
 }
-.drawer-heading {
+#verification-drawer .drawer-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  margin: 0 -24px 18px;
+  padding: 18px 24px;
+  background: #fffffff5;
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+#verification-drawer .drawer-heading strong {
+  font-size: 14px;
+  font-weight: 700;
+}
+#verification-drawer .drawer-heading p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 11.5px;
+}
+#drawer-close {
+  min-height: 36px;
+}
+#drawer-close span {
+  margin-left: 6px;
+  font-size: 17px;
+}
+#verification-drawer h2 {
+  font-size: 20px;
+  line-height: 1.3;
+  letter-spacing: -0.5px;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+#verification-drawer .eyebrow {
+  font-size: 10px;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+#verification-drawer .call-heading {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+#verification-drawer .call-heading-actions {
+  justify-content: space-between;
+  font-size: 11.5px;
+}
+#verification-drawer .call-heading-actions .text-link {
+  font-size: 11.5px;
+}
+#verification-drawer code {
+  overflow-wrap: anywhere;
+}
+#verification-drawer .drawer-section,
+#verification-drawer #request-example {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white;
+  padding: 16px;
+  margin: 14px 0;
+}
+#verification-drawer h3 {
+  font-size: 12px;
+  font-weight: 700;
+  margin: 0 0 12px;
+}
+#verification-drawer .call-fields {
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 12px;
+}
+#verification-drawer label {
+  min-width: 0;
+  font-size: 11.5px;
+  color: var(--muted);
+  gap: 6px;
+}
+#verification-drawer :is(input, select, textarea) {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 9px 10px;
+  background: #fafbfe;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.5;
+}
+#verification-drawer textarea {
+  resize: vertical;
+}
+#verification-drawer :is(input, select, textarea):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+#verification-drawer .fine {
+  font-size: 11.5px;
+  line-height: 1.55;
+  margin-top: 8px;
+}
+#verification-drawer .call-destination {
+  margin: 12px 0 0;
+}
+#verification-drawer .call-settings {
+  margin: 14px 0;
+  padding: 12px 0;
+  font-size: 12px;
+}
+#verification-drawer .call-settings:last-child {
+  margin-bottom: 0;
+}
+#verification-drawer .call-settings label {
+  margin-top: 12px;
+}
+#verification-drawer .call-settings.drawer-section {
+  padding: 14px 16px;
+}
+#verification-drawer .button {
+  min-height: 40px;
+  padding: 10px 14px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+#verification-drawer .small-button {
+  min-height: 34px;
+  font-size: 11px;
+}
+#verification-drawer .call-actions {
+  gap: 10px;
+}
+#verification-drawer .call-status {
+  border-radius: 8px;
+  padding: 12px;
+  background: #e9edf5;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+#verification-drawer .response-text {
+  max-height: 240px;
+  font-size: 11px;
+}
+#batch-confirm-description {
+  margin-bottom: 18px;
+}
+#batch-confirm-models {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+#batch-confirm-models > li {
+  font-size: 12px;
+}
+#batch-confirm-models ul {
+  list-style: none;
+  padding: 0 0 0 10px;
+  border-left: 2px solid var(--line);
+  margin-top: 6px;
+}
+#batch-confirm-models ul li {
+  padding: 3px 0;
+  font: 11px / 1.5 var(--mono);
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+#verification-drawer #batch-keys {
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 12px;
 }
 #batch-confirm label {
   display: grid;
-  gap: 8px;
-  margin: 16px 0;
+  margin: 12px 0 0;
 }
-#batch-confirm input,
-#batch-confirm textarea {
-  width: 100%;
+#batch-keys label {
+  margin: 0;
+}
+#batch-confirm .record-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+}
+#verification-drawer #batch-status:not(:empty) {
   padding: 12px;
-  border: 1px solid var(--line);
+  background: #e9edf5;
+  border-radius: 8px;
+}
+#verification-drawer .batch-results .report {
+  padding: 12px 14px;
+  margin: 8px 0;
   border-radius: 10px;
-  font: inherit;
+  border-left-width: 3px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+#verification-drawer .report strong {
+  font-weight: 600;
+}
+#verification-drawer .report[data-state='running'] {
+  border-left-color: var(--accent);
+}
+#verification-drawer .report[data-state='passed'] {
+  border-left-color: #277147;
+}
+#verification-drawer .report[data-state='failed'],
+#verification-drawer .report[data-state='partial'] {
+  border-left-color: #b7791f;
+}
+#verification-drawer .publication-help {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+#verification-drawer .publication-help summary {
+  cursor: pointer;
+  font-size: 11.5px;
+  color: var(--muted);
 }
 .batch-toolbar {
   position: sticky;
@@ -2283,7 +2493,21 @@ dialog .record-actions {
   #verification-drawer {
     width: 100vw;
     border-radius: 0;
-    padding: 16px;
+    padding: 0 16px 16px;
+  }
+  #verification-drawer .drawer-heading {
+    margin: 0 -16px 16px;
+    padding: 14px 16px;
+  }
+  #verification-drawer .call-fields {
+    grid-template-columns: 1fr;
+  }
+  #verification-drawer :is(input, select, textarea) {
+    /* Prevent automatic zoom when focusing a field on iOS. */
+    font-size: 16px;
+  }
+  #verification-drawer .small-button {
+    min-height: 40px;
   }
   .batch-toolbar {
     bottom: 0;

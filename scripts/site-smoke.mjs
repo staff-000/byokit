@@ -145,6 +145,13 @@ try {
   await page.locator('#models button').first().click();
   assert.ok(Math.abs((await page.evaluate(() => scrollY)) - tableScroll) < 3);
   assert.equal(await page.locator('#verification-drawer').isVisible(), true);
+  assert.equal(
+    await page.locator('#selected-name').evaluate((el) => getComputedStyle(el).fontSize),
+    '20px',
+  );
+  await page.locator('#verification-drawer').screenshot({
+    path: join(tmpdir(), 'byokit-drawer-single.png'),
+  });
   await page.locator('#drawer-close').click();
   assert.equal(
     await page
@@ -348,6 +355,16 @@ try {
   await page.locator('#model-search').fill('');
   await page.locator('#batch-open').click();
   assert.equal(await page.locator('#batch-keys input').count(), 2);
+  assert.equal(
+    await page.locator('#batch-confirm-title').evaluate((el) => getComputedStyle(el).fontSize),
+    '20px',
+  );
+  assert.ok(
+    await page.locator('#verification-drawer').evaluate((el) => el.scrollWidth <= el.clientWidth),
+  );
+  await page.locator('#verification-drawer').screenshot({
+    path: join(tmpdir(), 'byokit-drawer-batch.png'),
+  });
   await page.locator('#batch-keys [data-provider="deepseek"]').fill('deep-batch-key');
   await page.locator('#batch-keys [data-provider="openai"]').fill('open-batch-key');
   let releaseBatch,
@@ -415,6 +432,14 @@ try {
   const desktopDrawer = await page.locator('#verification-drawer').boundingBox();
   assert.equal(desktopDrawer.width, 560);
   assert.equal(desktopDrawer.x, 880);
+  await page.locator('#verification-drawer').evaluate((el) => {
+    el.scrollTop = el.scrollHeight;
+  });
+  const closeButton = await page.locator('#drawer-close').boundingBox();
+  assert.ok(closeButton.y >= 0 && closeButton.y + closeButton.height <= 1050);
+  await page.locator('#verification-drawer').evaluate((el) => {
+    el.scrollTop = 0;
+  });
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({
     path: join(tmpdir(), 'byokit-verification-desktop.png'),

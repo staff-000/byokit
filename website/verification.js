@@ -766,8 +766,9 @@ $('#batch-open').addEventListener('click', () => {
   $('#batch-confirm-models').replaceChildren(
     ...batchProviders.map((provider) => {
       const group = pendingBatch.models.filter((m) => m.providerId === provider.id);
-      const item = el('li', group[0].provider.name),
+      const item = el('li'),
         list = el('ul');
+      item.append(el('strong', `${provider.name} · ${group.length}`));
       list.append(...group.map((m) => el('li', m.apiModelId)));
       item.append(list);
       return item;
@@ -847,6 +848,7 @@ $('#batch-confirm-send').addEventListener('click', async () => {
   let sent = 0;
   for (const job of pending.jobs) {
     const card = el('article', undefined, 'report');
+    card.dataset.state = 'queued';
     card.append(
       el('strong', `${ProviderApi[job.providerId].name} · ${job.modelId}`),
       el('p', 'Queued', 'fine'),
@@ -863,6 +865,7 @@ $('#batch-confirm-send').addEventListener('click', async () => {
         if (id !== batchSerial) return;
         const card = cards.get(entry.offeringId),
           job = pending.jobs.find((j) => j.offeringId === entry.offeringId);
+        card.dataset.state = entry.status;
         card.querySelector('p').textContent =
           entry.status === 'running'
             ? 'Calling provider…'

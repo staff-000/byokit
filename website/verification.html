@@ -36,8 +36,13 @@
       </div>
       <dialog id="verification-drawer" aria-label="Model verification">
         <div class="drawer-heading">
-          <strong>Model verification</strong
-          ><button id="drawer-close" type="button" class="small-button">Close</button>
+          <div>
+            <strong>Model verification</strong>
+            <p>Test with your key. Share what you learn.</p>
+          </div>
+          <button id="drawer-close" type="button" class="small-button">
+            Close <span aria-hidden="true">×</span>
+          </button>
         </div>
         <section id="call-panel" class="call-panel" aria-labelledby="selected-name">
           <div class="call-heading">
@@ -60,65 +65,73 @@
             </div>
           </div>
           <form id="verify-form">
-            <div class="call-fields">
-              <label
-                >API key <span id="key-optional"></span
-                ><input
-                  id="api-key"
-                  type="password"
-                  autocomplete="off"
-                  autocapitalize="off"
-                  spellcheck="false"
-                  placeholder="Paste your provider’s key"
-                  aria-describedby="key-note" /></label
-              ><label>API protocol<select id="protocol"></select></label>
-            </div>
-            <p id="cost-estimate" class="fine cost-estimate" role="status" aria-live="polite">
-              Calculating estimated cost…
-            </p>
-            <p id="key-note" class="fine">
-              Use a key for the selected provider. A small inference call may use your credits.
-            </p>
-            <div id="local-fields" class="call-fields" hidden>
-              <label
-                >Server URL<input
-                  id="endpoint"
-                  type="url"
-                  value="http://localhost:11434/v1"
-                  autocomplete="off" /></label
-              ><label
-                >Served model ID<input
-                  id="local-model"
-                  type="text"
-                  placeholder="Your installed model ID"
-                  autocomplete="off"
-              /></label>
-            </div>
-            <p class="call-destination">Request goes directly to <code id="destination"></code></p>
-            <p id="measurement-context" class="fine" role="status"></p>
-            <button id="standard-speed" type="button" class="small-button">
-              Use standard speed benchmark
-            </button>
-            <details class="call-settings">
-              <summary>Prompt and output limit</summary>
-              <label
-                >Prompt<textarea id="prompt" rows="2" maxlength="8000">
-Count from 1 to 50 separated by spaces: 1 2 3...</textarea></label
-              ><label
-                >Maximum output tokens<input
-                  id="max-tokens"
-                  type="number"
-                  value="128"
-                  min="16"
-                  max="8192"
-              /></label>
-              <p class="fine">
-                The standard benchmark uses this fixed counting prompt and 128 output tokens. Custom
-                settings still verify availability but are excluded from the standard speed median.
-                Speed is estimated from two non-streaming calls; actual time to first token is not
-                measured.
+            <div class="drawer-section">
+              <h3>Connection</h3>
+              <div class="call-fields">
+                <label
+                  >API key <span id="key-optional"></span
+                  ><input
+                    id="api-key"
+                    type="password"
+                    autocomplete="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                    placeholder="Paste your provider’s key"
+                    aria-describedby="key-note" /></label
+                ><label>API protocol<select id="protocol"></select></label>
+              </div>
+              <p id="cost-estimate" class="fine cost-estimate" role="status" aria-live="polite">
+                Calculating estimated cost…
               </p>
-            </details>
+              <p id="key-note" class="fine">
+                Use a key for the selected provider. A small inference call may use your credits.
+              </p>
+              <div id="local-fields" class="call-fields" hidden>
+                <label
+                  >Server URL<input
+                    id="endpoint"
+                    type="url"
+                    value="http://localhost:11434/v1"
+                    autocomplete="off" /></label
+                ><label
+                  >Served model ID<input
+                    id="local-model"
+                    type="text"
+                    placeholder="Your installed model ID"
+                    autocomplete="off"
+                /></label>
+              </div>
+              <p class="call-destination">
+                Request goes directly to <code id="destination"></code>
+              </p>
+            </div>
+            <div class="drawer-section">
+              <h3>Speed benchmark</h3>
+              <p id="measurement-context" class="fine" role="status"></p>
+              <button id="standard-speed" type="button" class="small-button">
+                Use standard speed benchmark
+              </button>
+              <details class="call-settings">
+                <summary>Prompt and output limit</summary>
+                <label
+                  >Prompt<textarea id="prompt" rows="2" maxlength="8000">
+Count from 1 to 50 separated by spaces: 1 2 3...</textarea></label
+                ><label
+                  >Maximum output tokens<input
+                    id="max-tokens"
+                    type="number"
+                    value="128"
+                    min="16"
+                    max="8192"
+                /></label>
+                <p class="fine">
+                  The standard benchmark uses this fixed counting prompt and 128 output tokens.
+                  Custom settings still verify availability but are excluded from the standard speed
+                  median. Speed is estimated from two non-streaming calls; actual time to first
+                  token is not measured.
+                </p>
+              </details>
+            </div>
             <details id="request-example" class="call-settings">
               <summary>Copy this API call</summary>
               <p class="fine">
@@ -178,21 +191,32 @@ Count from 1 to 50 separated by spaces: 1 2 3...</textarea></label
           <pre id="response-text" class="response-text" hidden></pre>
         </section>
         <section id="batch-confirm" hidden aria-labelledby="batch-confirm-title">
+          <p class="eyebrow">BATCH VERIFICATION</p>
           <h2 id="batch-confirm-title">Verify selected models</h2>
-          <p id="batch-confirm-description"></p>
-          <ul id="batch-confirm-models"></ul>
-          <div id="batch-keys" class="call-fields"></div>
-          <label
-            >Prompt<textarea id="batch-prompt" rows="2" maxlength="8000">
+          <p id="batch-confirm-description" class="fine"></p>
+          <div class="drawer-section">
+            <h3>Selected models</h3>
+            <ul id="batch-confirm-models"></ul>
+          </div>
+          <div class="drawer-section">
+            <h3>Provider credentials</h3>
+            <p class="fine">One key per provider. Keys stay in this page’s memory.</p>
+            <div id="batch-keys" class="call-fields"></div>
+          </div>
+          <details class="call-settings drawer-section">
+            <summary>Prompt and output limit</summary>
+            <label
+              >Prompt<textarea id="batch-prompt" rows="2" maxlength="8000">
 Count from 1 to 50 separated by spaces: 1 2 3...</textarea></label
-          ><label
-            >Maximum output tokens<input
-              id="batch-max-tokens"
-              type="number"
-              value="128"
-              min="16"
-              max="8192"
-          /></label>
+            ><label
+              >Maximum output tokens<input
+                id="batch-max-tokens"
+                type="number"
+                value="128"
+                min="16"
+                max="8192"
+            /></label>
+          </details>
           <p class="fine">
             This uses your provider credits. No request is sent until you confirm. Authentication,
             quota, or connection errors skip the remaining models for that provider. Successful
@@ -232,11 +256,14 @@ Count from 1 to 50 separated by spaces: 1 2 3...</textarea></label
         <button id="check-publication" class="small-button" type="button" hidden>
           Refresh report status
         </button>
-        <p class="fine">
-          After you submit your GitHub issue, we automatically check whether its reports are live on
-          this site. “Refresh report status” checks again; it never calls models or spends API
-          credits.
-        </p>
+        <details class="publication-help">
+          <summary>How sharing works</summary>
+          <p class="fine">
+            After you submit your GitHub issue, we automatically check whether its reports are live
+            on this site. “Refresh report status” checks again; it never calls models or spends API
+            credits.
+          </p>
+        </details>
         <p id="publication-status" class="fine" role="status" aria-live="polite"></p>
         <a id="earned-badge" class="earned-badge" hidden
           ><img id="earned-badge-image" alt="Your byokit Model Verifier badge" /><span
