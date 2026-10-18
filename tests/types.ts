@@ -43,7 +43,7 @@ byokit.getModels({providerIds:byokit.exact(byokit.ProviderId.DeepSeek)});
 byokit.getModels({preset:byokit.Preset.Global,filters:{verifiedBy:byokit.githubContributor('example')}});
 
 byokit.getModels({filters:{excludeTags:byokit.any(byokit.Tag.PricePremium),lifecycle:byokit.any(byokit.Lifecycle.Live),popularity:byokit.any(byokit.Popularity.Popular)}});
-byokit.getModels({includePreviews:true,filters:{includePreviews:true,includeTags:byokit.any(byokit.Tag.ModelFlash, byokit.Tag.Flash, byokit.Tag.ChannelPreview, byokit.Tag.Preview)}});
+byokit.getModels({includePreviews:true,filters:{tier:byokit.exact(byokit.Tier.Edge),includePreviews:true,includeTags:byokit.any(byokit.Tag.ModelFlash, byokit.Tag.Flash, byokit.Tag.ChannelPreview, byokit.Tag.Preview, byokit.Tag.TierEdge, byokit.Tag.Edge)}});
 // @ts-expect-error lifecycle values require enums
 byokit.getModels({filters:{lifecycle:byokit.any('LIVE')}});
 // @ts-expect-error unknown popularity label

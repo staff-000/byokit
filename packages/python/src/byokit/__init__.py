@@ -1018,6 +1018,15 @@ def get_model_tier(offering, model=None):
     text = f"{api_id} {name}".lower()
 
     if (
+        bool(re.search(r"(?:^|[-_./\s])edge(?:$|[-_./\s])", text, re.IGNORECASE))
+        or "on-device" in text
+        or "mobile" in text
+        or "pico" in text
+        or "tiny" in text
+        or "embedded" in text
+    ):
+        return Tier.EDGE.value
+    if (
         "flash-lite" in text
         or "flash_lite" in text
         or "nano" in text

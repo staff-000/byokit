@@ -281,6 +281,8 @@ export declare enum Tag {
   TierFlash = 'tier:flash',
   TierLite = 'tier:lite',
   TierMini = 'tier:mini',
+  TierEdge = 'tier:edge',
+  Edge = 'tier:edge',
   SpecialityCoding = 'speciality:coding',
   SpecialityUnknown = 'speciality:unknown',
   TierUnknown = 'tier:unknown',
@@ -311,6 +313,7 @@ export declare enum Tier {
   Flash = 'flash',
   Lite = 'lite',
   Mini = 'mini',
+  Edge = 'edge',
   Unknown = 'unknown',
 }
 
@@ -320,6 +323,7 @@ export declare enum ModelTier {
   Flash = 'flash',
   Lite = 'lite',
   Mini = 'mini',
+  Edge = 'edge',
   Unknown = 'unknown',
 }
 

@@ -25,7 +25,7 @@ byokit.get_models(
     {
         "filters": {
             "excludeTags": [byokit.Tag.PRICE_PREMIUM],
-            "includeTags": [byokit.Tag.MODEL_FLASH, byokit.Tag.FLASH, byokit.Tag.CHANNEL_PREVIEW, byokit.Tag.PREVIEW],
+            "includeTags": [byokit.Tag.MODEL_FLASH, byokit.Tag.FLASH, byokit.Tag.CHANNEL_PREVIEW, byokit.Tag.PREVIEW, byokit.Tag.TIER_EDGE, byokit.Tag.EDGE],
             "lifecycle": [byokit.Lifecycle.LIVE],
             "popularity": [byokit.Popularity.POPULAR],
             "includePreviews": True,
@@ -102,7 +102,7 @@ from byokit.types import Filters
 
 composable: Filters = {
     "speciality": byokit.exact(byokit.Speciality.GENERAL),
-    "tier": byokit.any(byokit.Tier.FLASH, byokit.Tier.WORKHORSE),
+    "tier": byokit.any(byokit.Tier.FLASH, byokit.Tier.WORKHORSE, byokit.Tier.EDGE),
     "releaseChannel": ["stable", "unknown"],
     "output": byokit.or_(byokit.exact(byokit.Modality.TEXT), byokit.exact(byokit.Modality.IMAGE)),
 }

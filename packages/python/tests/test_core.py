@@ -353,6 +353,7 @@ class CoreTests(unittest.TestCase):
             contain,
             any as any_,
             exclude,
+            get_model_tier,
         )
         cat = load_catalog()
 
@@ -384,6 +385,13 @@ class CoreTests(unittest.TestCase):
         })
         self.assertTrue(len(flash_models) > 0)
         self.assertTrue(all(m["tier"] == Tier.FLASH.value for m in flash_models))
+
+        # Test Edge tier inference
+        self.assertEqual(get_model_tier({"apiModelId": "reka-edge"}), Tier.EDGE.value)
+        self.assertEqual(get_model_tier({"apiModelId": "phi-3-mini-4k-instruct-on-device"}), Tier.EDGE.value)
+        self.assertEqual(get_model_tier({"apiModelId": "gemma-2b-mobile"}), Tier.EDGE.value)
+        self.assertEqual(get_model_tier({"apiModelId": "tiny-aya"}), Tier.EDGE.value)
+        self.assertEqual(get_model_tier({"apiModelId": "custom-model", "tier": Tier.EDGE.value}), Tier.EDGE.value)
 
         # Nested combinators: any(exact('general', exclude('lite')), exact('flash'))
         nested = cat.get_models({

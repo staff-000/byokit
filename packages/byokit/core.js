@@ -994,6 +994,16 @@ export function getModelTier(offering, model = {}) {
   const text = `${id} ${name}`;
 
   if (
+    /(?:^|[-_./\s])edge(?:$|[-_./\s])/i.test(text) ||
+    text.includes('on-device') ||
+    text.includes('mobile') ||
+    text.includes('pico') ||
+    text.includes('tiny') ||
+    text.includes('embedded')
+  ) {
+    return Tier.Edge;
+  }
+  if (
     text.includes('flash-lite') ||
     text.includes('flash_lite') ||
     text.includes('nano') ||

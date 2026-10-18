@@ -252,6 +252,8 @@ class Tag(str, Enum):
     TIER_FLASH = "tier:flash"
     TIER_LITE = "tier:lite"
     TIER_MINI = "tier:mini"
+    TIER_EDGE = "tier:edge"
+    EDGE = "tier:edge"
     SPECIALITY_CODING = "speciality:coding"
     SPECIALITY_UNKNOWN = "speciality:unknown"
     TIER_UNKNOWN = "tier:unknown"
@@ -280,6 +282,7 @@ class Tier(str, Enum):
     FLASH = "flash"
     LITE = "lite"
     MINI = "mini"
+    EDGE = "edge"
     UNKNOWN = "unknown"
 
 class ModelTier(str, Enum):
@@ -288,6 +291,7 @@ class ModelTier(str, Enum):
     FLASH = "flash"
     LITE = "lite"
     MINI = "mini"
+    EDGE = "edge"
     UNKNOWN = "unknown"
 
 class ModelList(str, Enum):

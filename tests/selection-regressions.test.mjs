@@ -115,6 +115,11 @@ test('coding classification covers different providers and respects editorial va
   }
   assert.equal(b.getModelSpeciality({ apiModelId: 'codex', speciality: 'general' }), 'general');
   assert.equal(b.getModelTier({ apiModelId: 'flash', tier: 'workhorse' }), 'workhorse');
+  assert.equal(b.getModelTier({ apiModelId: 'reka-edge' }), b.Tier.Edge);
+  assert.equal(b.getModelTier({ apiModelId: 'phi-3-mini-4k-instruct-on-device' }), b.Tier.Edge);
+  assert.equal(b.getModelTier({ apiModelId: 'gemma-2b-mobile' }), b.Tier.Edge);
+  assert.equal(b.getModelTier({ apiModelId: 'tiny-aya' }), b.Tier.Edge);
+  assert.equal(b.getModelTier({ apiModelId: 'custom-model', tier: b.Tier.Edge }), b.Tier.Edge);
   assert.equal(b.getModelSpeciality({ apiModelId: 'unreviewed-model' }), 'unknown');
   assert.equal(b.getModelTier({ apiModelId: 'unreviewed-model' }), 'unknown');
 });

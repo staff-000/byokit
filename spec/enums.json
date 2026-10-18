@@ -250,6 +250,8 @@
     "TierFlash": "tier:flash",
     "TierLite": "tier:lite",
     "TierMini": "tier:mini",
+    "TierEdge": "tier:edge",
+    "Edge": "tier:edge",
     "SpecialityCoding": "speciality:coding",
     "SpecialityUnknown": "speciality:unknown",
     "TierUnknown": "tier:unknown",
@@ -278,6 +280,7 @@
     "Flash": "flash",
     "Lite": "lite",
     "Mini": "mini",
+    "Edge": "edge",
     "Unknown": "unknown"
   },
   "ModelTier": {
@@ -286,6 +289,7 @@
     "Flash": "flash",
     "Lite": "lite",
     "Mini": "mini",
+    "Edge": "edge",
     "Unknown": "unknown"
   },
   "ModelList": {

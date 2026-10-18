@@ -222,6 +222,8 @@ export const Tag = Object.freeze({
   TierFlash: 'tier:flash',
   TierLite: 'tier:lite',
   TierMini: 'tier:mini',
+  TierEdge: 'tier:edge',
+  Edge: 'tier:edge',
   SpecialityCoding: 'speciality:coding',
   SpecialityUnknown: 'speciality:unknown',
   TierUnknown: 'tier:unknown',
@@ -250,6 +252,7 @@ export const Tier = Object.freeze({
   Flash: 'flash',
   Lite: 'lite',
   Mini: 'mini',
+  Edge: 'edge',
   Unknown: 'unknown',
 });
 export const ModelTier = Object.freeze({
@@ -258,6 +261,7 @@ export const ModelTier = Object.freeze({
   Flash: 'flash',
   Lite: 'lite',
   Mini: 'mini',
+  Edge: 'edge',
   Unknown: 'unknown',
 });
 export const ModelList = Object.freeze({
