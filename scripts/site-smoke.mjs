@@ -1,4 +1,4 @@
-import { playgroundSmoke } from './playground-browser-smoke.mjs';
+import { playgroundSmoke, playgroundVerificationSmoke } from './playground-browser-smoke.mjs';
 import { chromium } from 'playwright-core';
 import assert from 'node:assert/strict';
 import { tmpdir } from 'node:os';
@@ -87,6 +87,7 @@ try {
   assert.ok((await page.locator('#expected-return').textContent()).includes('type:'));
   await page.getByRole('button', { name: 'OpenAI format', exact: true }).click();
   await playgroundSmoke(page);
+  await playgroundVerificationSmoke(page);
   await page
     .locator('#api-examples')
     .screenshot({ path: join(tmpdir(), 'byokit-api-examples-desktop.png') });
@@ -444,6 +445,38 @@ try {
   await page.screenshot({
     path: join(tmpdir(), 'byokit-verification-desktop.png'),
   });
+  // The verification-page playground shares the table's controller without
+  // replacing its selections or creating another drawer.
+  await page.locator('#drawer-close').click();
+  const tableSelection = await page.locator('#batch-count').textContent();
+  await page
+    .locator('#playground-code')
+    .fill("return byokit.getModels({ providerIds: ['deepseek'], local: false, limit: 2 });");
+  await page.locator('#playground-run').click();
+  await page
+    .getByText('Finished. Output comes from the real byokit catalog.', { exact: true })
+    .waitFor();
+  assert.equal(await page.locator('#verification-drawer').count(), 1);
+  await page.locator('.playground-model-pick').first().check();
+  await page.locator('#playground-verify-selected').click();
+  await page.locator('#verification-drawer').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#batch-keys input').count(), 1);
+  assert.equal(mixedCalls, 2, 'opening the shared drawer never sends model requests');
+  await page.locator('#drawer-close').click();
+  assert.equal(await page.locator('#batch-count').textContent(), tableSelection);
+  assert.equal(await page.locator('.playground-model-pick:checked').count(), 1);
+  await page
+    .locator('#playground-models')
+    .screenshot({ path: join(tmpdir(), 'byokit-playground-results-desktop.png') });
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  await page
+    .locator('#playground-models')
+    .screenshot({ path: join(tmpdir(), 'byokit-playground-results-mobile.png') });
+  await page.locator('.playground-model-card button:not(:disabled)').first().click();
+  await page.locator('#verification-drawer').waitFor({ state: 'visible' });
+  assert.equal((await page.locator('#verification-drawer').boundingBox()).width, 390);
+  await page.locator('#drawer-close').click();
   assert.ok(moduleURLs.length >= 10);
   for (const url of moduleURLs)
     assert.equal(

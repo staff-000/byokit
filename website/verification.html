@@ -34,243 +34,7 @@
         directly to the selected provider. It is not saved in browser storage, included in records,
         or sent to byokit. Refreshing or leaving the page clears it.
       </div>
-      <dialog id="verification-drawer" aria-label="Model verification">
-        <div class="drawer-heading">
-          <div>
-            <strong>Model verification</strong>
-            <p>Test with your key. Share what you learn.</p>
-          </div>
-          <button id="drawer-close" type="button" class="small-button">
-            Close <span aria-hidden="true">×</span>
-          </button>
-        </div>
-        <section id="call-panel" class="call-panel" aria-labelledby="selected-name">
-          <div class="call-heading">
-            <div>
-              <p class="eyebrow">SELECTED MODEL</p>
-              <h2 id="selected-name">Loading catalog…</h2>
-              <code id="selected-id"></code>
-            </div>
-            <div class="call-heading-actions">
-              <button
-                id="next-unverified"
-                type="button"
-                class="small-button"
-                title="Skip to next unverified model"
-              >
-                Next unverified ↻</button
-              ><a id="provider-docs" class="text-link" target="_blank" rel="noopener noreferrer"
-                >Provider docs ↗</a
-              >
-            </div>
-          </div>
-          <form id="verify-form">
-            <div class="drawer-section">
-              <h3>Connection</h3>
-              <div class="call-fields">
-                <label
-                  >API key <span id="key-optional"></span
-                  ><input
-                    id="api-key"
-                    type="password"
-                    autocomplete="off"
-                    autocapitalize="off"
-                    spellcheck="false"
-                    placeholder="Paste your provider’s key"
-                    aria-describedby="key-note" /></label
-                ><label>API protocol<select id="protocol"></select></label>
-              </div>
-              <p id="cost-estimate" class="fine cost-estimate" role="status" aria-live="polite">
-                Calculating estimated cost…
-              </p>
-              <p id="key-note" class="fine">
-                Use a key for the selected provider. A small inference call may use your credits.
-              </p>
-              <div id="local-fields" class="call-fields" hidden>
-                <label
-                  >Server URL<input
-                    id="endpoint"
-                    type="url"
-                    value="http://localhost:11434/v1"
-                    autocomplete="off" /></label
-                ><label
-                  >Served model ID<input
-                    id="local-model"
-                    type="text"
-                    placeholder="Your installed model ID"
-                    autocomplete="off"
-                /></label>
-              </div>
-              <p class="call-destination">
-                Request goes directly to <code id="destination"></code>
-              </p>
-            </div>
-            <div class="drawer-section">
-              <h3>Speed benchmark</h3>
-              <p id="measurement-context" class="fine" role="status"></p>
-              <button id="standard-speed" type="button" class="small-button">
-                Use standard speed benchmark
-              </button>
-              <details class="call-settings">
-                <summary>Prompt and output limit</summary>
-                <label
-                  >Prompt<textarea id="prompt" rows="2" maxlength="8000">
-Count from 1 to 50 separated by spaces: 1 2 3...</textarea></label
-                ><label
-                  >Maximum output tokens<input
-                    id="max-tokens"
-                    type="number"
-                    value="128"
-                    min="16"
-                    max="8192"
-                /></label>
-                <p class="fine">
-                  The standard benchmark uses this fixed counting prompt and 128 output tokens.
-                  Custom settings still verify availability but are excluded from the standard speed
-                  median. Speed is estimated from two non-streaming calls; actual time to first
-                  token is not measured.
-                </p>
-              </details>
-            </div>
-            <details id="request-example" class="call-settings">
-              <summary>Copy this API call</summary>
-              <p class="fine">
-                This matches the selected endpoint, model, prompt, and output limit. Examples run in
-                Node.js, Python, or your terminal and use the <code>API_KEY</code> environment
-                variable. Your entered key is never included.
-              </p>
-              <div class="language-tabs" role="group" aria-label="Request example language">
-                <button
-                  type="button"
-                  data-request-language="javascript"
-                  class="active"
-                  aria-pressed="true"
-                >
-                  JavaScript / TS</button
-                ><button type="button" data-request-language="python" aria-pressed="false">
-                  Python</button
-                ><button type="button" data-request-language="curl" aria-pressed="false">
-                  cURL</button
-                ><button id="copy-request" type="button" class="copy-icon">Copy</button>
-              </div>
-              <pre id="request-code" class="request-code"></pre>
-              <p class="fine">
-                SDK calls return an OpenAI-compatible completion; cURL returns the provider's native
-                response. Making this request may use credits; displaying or copying it makes no
-                request.
-              </p>
-            </details>
-            <div class="call-actions">
-              <button id="verify" type="submit" class="button primary action-highlight">
-                Verify model · earn a badge ↗</button
-              ><button id="cancel" type="button" class="small-button" hidden>Cancel</button
-              ><button id="clear-key" type="button" class="text-button">Clear API key</button>
-            </div>
-            <p id="badge-hint" class="fine reward-hint">
-              <strong>Earn a Model Verifier badge.</strong> A successful hosted-model call plus a
-              published GitHub report earns your badge.
-            </p>
-          </form>
-          <p id="call-status" class="call-status" role="status" aria-live="polite">
-            No call has been made.
-          </p>
-          <p id="retry-guidance" class="fine" role="status" hidden></p>
-          <p id="attempt-community" class="fine" role="status"></p>
-          <div class="call-actions">
-            <a
-              id="share-verification"
-              class="button primary"
-              target="_blank"
-              rel="noopener noreferrer"
-              hidden
-              >Share on GitHub · claim badge ↗</a
-            ><button id="next-unverified-advance" class="button secondary" type="button" hidden>
-              Next unverified model →
-            </button>
-          </div>
-          <pre id="response-text" class="response-text" hidden></pre>
-        </section>
-        <section id="batch-confirm" hidden aria-labelledby="batch-confirm-title">
-          <p class="eyebrow">BATCH VERIFICATION</p>
-          <h2 id="batch-confirm-title">Verify selected models</h2>
-          <p id="batch-confirm-description" class="fine"></p>
-          <div class="drawer-section">
-            <h3>Selected models</h3>
-            <ul id="batch-confirm-models"></ul>
-          </div>
-          <div class="drawer-section">
-            <h3>Provider credentials</h3>
-            <p class="fine">One key per provider. Keys stay in this page’s memory.</p>
-            <div id="batch-keys" class="call-fields"></div>
-          </div>
-          <details class="call-settings drawer-section">
-            <summary>Prompt and output limit</summary>
-            <label
-              >Prompt<textarea id="batch-prompt" rows="2" maxlength="8000">
-Count from 1 to 50 separated by spaces: 1 2 3...</textarea></label
-            ><label
-              >Maximum output tokens<input
-                id="batch-max-tokens"
-                type="number"
-                value="128"
-                min="16"
-                max="8192"
-            /></label>
-          </details>
-          <p class="fine">
-            This uses your provider credits. No request is sent until you confirm. Authentication,
-            quota, or connection errors skip the remaining models for that provider. Successful
-            checks can be shared together in one GitHub issue; publication is limited to 10 model
-            reports per contributor per day.
-          </p>
-          <div class="record-actions">
-            <button id="batch-confirm-cancel" type="button" class="small-button">
-              Back to table</button
-            ><button id="batch-confirm-send" type="button" class="button primary action-highlight">
-              Send requests
-            </button>
-          </div>
-        </section>
-        <p id="batch-status" class="fine" role="status"></p>
-        <button id="drawer-batch-cancel" type="button" class="small-button" hidden>
-          Cancel batch
-        </button>
-        <div id="batch-results" class="batch-results"></div>
-        <div id="batch-share-actions" class="batch-share-actions" hidden>
-          <a
-            id="batch-share"
-            class="button primary action-highlight"
-            target="_blank"
-            rel="noopener noreferrer"
-            >Share batch on GitHub · earn badge ↗</a
-          >
-          <p id="batch-share-note" class="fine"></p>
-          <textarea
-            id="batch-report-body"
-            aria-label="Batch report to copy into GitHub"
-            readonly
-            rows="5"
-            hidden
-          ></textarea>
-        </div>
-        <button id="check-publication" class="small-button" type="button" hidden>
-          Refresh report status
-        </button>
-        <details class="publication-help">
-          <summary>How sharing works</summary>
-          <p class="fine">
-            After you submit your GitHub issue, we automatically check whether its reports are live
-            on this site. “Refresh report status” checks again; it never calls models or spends API
-            credits.
-          </p>
-        </details>
-        <p id="publication-status" class="fine" role="status" aria-live="polite"></p>
-        <a id="earned-badge" class="earned-badge" hidden
-          ><img id="earned-badge-image" alt="Your byokit Model Verifier badge" /><span
-            >Your badge is ready — view and share it ↗</span
-          ></a
-        >
-      </dialog>
+      <!-- verification-drawer -->
       <section id="playground" class="section playground-section">
         <div class="section-head">
           <div>
@@ -278,8 +42,8 @@ Count from 1 to 50 separated by spaces: 1 2 3...</textarea></label
             <h2>Query and test models across APIs.</h2>
           </div>
           <p>
-            Filter models across protocols or providers with JavaScript.<br />Test live availability
-            and verify all models in the result.
+            Filter models across protocols or providers with JavaScript.<br />Select models to
+            verify in the shared drawer.
           </p>
         </div>
         <div class="playground-shell">
@@ -317,50 +81,54 @@ Your console output will appear here.</pre>
             ><span class="playground-shortcut">⌘ / Ctrl + Enter</span>
           </div>
           <p id="playground-status" role="status">Ready.</p>
-          <div id="playground-availability" class="playground-availability" hidden>
-            <div class="availability-header">
+          <section
+            id="playground-models"
+            class="playground-models"
+            hidden
+            aria-labelledby="playground-models-title"
+          >
+            <div class="playground-models-heading">
               <div>
-                <span class="playground-badge">AVAILABILITY TEST</span>
-                <h3 id="availability-title">Test Generated Model Availability</h3>
-                <p id="availability-subtitle" class="fine">
-                  Test real availability of the models in your generated list with your API keys.
-                </p>
+                <h3 id="playground-models-title">Query results</h3>
+                <p id="playground-models-description" class="fine"></p>
               </div>
+              <span class="playground-badge">SELECT MODELS TO VERIFY</span>
+            </div>
+            <div class="playground-selection" role="group" aria-label="Playground model selection">
+              <span id="playground-selection-count" role="status">0 models selected</span>
+              <button id="playground-selection-clear" type="button" class="small-button">
+                Clear
+              </button>
               <button
-                id="availability-start-btn"
+                id="playground-verify-selected"
                 type="button"
-                class="button secondary action-highlight"
+                class="button primary action-highlight"
+                disabled
               >
-                Test model availability
+                Verify selected
+              </button>
+              <button id="playground-verification-reopen" type="button" class="small-button" hidden>
+                View verification results
+              </button>
+              <button id="playground-verification-cancel" type="button" class="small-button" hidden>
+                Cancel run
               </button>
             </div>
-            <div id="availability-drawer" class="availability-drawer" hidden>
-              <div id="availability-keys" class="api-keys-grid"></div>
-              <div class="call-actions">
-                <button
-                  id="availability-run-btn"
-                  type="button"
-                  class="button primary action-highlight"
-                >
-                  Run availability test
-                </button>
-                <button id="availability-cancel-btn" type="button" class="small-button" hidden>
-                  Cancel test
-                </button>
-                <button id="availability-clear-btn" type="button" class="text-button">
-                  Clear keys
-                </button>
-              </div>
-              <p id="availability-status" class="call-status" role="status" aria-live="polite">
-                Enter your API keys above and click Run availability test.
-              </p>
-              <div id="availability-results" class="batch-results"></div>
-            </div>
-          </div>
+            <p
+              id="playground-verification-status"
+              class="fine"
+              role="status"
+              aria-live="polite"
+            ></p>
+            <div id="playground-model-results" class="playground-model-results"></div>
+            <button id="playground-models-more" type="button" class="small-button" hidden>
+              Show more models
+            </button>
+          </section>
         </div>
         <p id="playground-help" class="fine">
-          Runs locally in an isolated sandbox. Select "All models under an API" from the examples to
-          inspect and verify all models matching any API protocol.
+          Queries run locally in an isolated sandbox. Select up to 10 models from the results, then
+          verify them in the drawer. Selection alone sends no provider requests.
         </p>
       </section>
       <section id="model-list" class="tracker-section">

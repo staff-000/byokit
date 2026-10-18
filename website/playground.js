@@ -1,8 +1,6 @@
-import { shouldStopProvider } from '../packages/byokit/verification.js';
-import { assessmentForError, attemptText, retryCountdown } from './attempt-display.js';
 import { playgroundExamples } from './playground-examples.js';
-import { verifyInference, successRecord, ProviderApi } from './inference.js';
-import { createReport, issueUrl } from './verification-report.js';
+import catalog, { verificationSummary } from '../packages/byokit/catalog.js';
+import { attemptText } from './attempt-display.js';
 const $ = (selector) => document.querySelector(selector);
 const editor = $('#playground-code'),
   output = $('#playground-output'),
@@ -37,14 +35,13 @@ function finish(message, state = 'ready') {
 }
 function stop(message = 'Stopped. Edit your code and run again.') {
   generation++;
-  availabilityController?.abort();
   finish(message);
 }
 function chooseExample() {
   stop('Ready. Run this example or edit it first.');
   editor.value = playgroundExamples[$('#playground-example').value].code;
   output.textContent = 'Your console output will appear here.';
-  $('#playground-availability').hidden = true;
+  resetGeneratedModels();
   capturedConfigs = [];
 }
 async function run() {
@@ -63,6 +60,7 @@ async function run() {
   $('#playground-run').disabled = true;
   $('#playground-stop').disabled = false;
   output.textContent = '';
+  resetGeneratedModels();
   status.textContent = 'Loading the offline runtime…';
   status.dataset.state = 'running';
   try {
@@ -101,85 +99,175 @@ async function run() {
 
 let generatedModels = [];
 let capturedConfigs = [];
-let availabilityController = null;
-const availabilityKeys = new Map();
-
-function renderAvailabilityResults() {
-  const container = $('#availability-results');
-  if (!container) return;
-  container.replaceChildren();
-  const storageKey = 'byokit.inference-verifications.v1';
-  let records = [];
+let shownModels = 40;
+let drawer = null;
+let drawerPromise;
+const selectedModels = new Set();
+const offeringIndex = new Map(catalog.offerings.map((m) => [m.id, m]));
+const MAX_SELECTION = 10;
+const node = (tag, text, className) => {
+  const element = document.createElement(tag);
+  if (text !== undefined) element.textContent = text;
+  if (className) element.className = className;
+  return element;
+};
+function modelSupport(model) {
+  const known = offeringIndex.get(model.id);
+  if (!known)
+    return {
+      single: false,
+      batch: false,
+      reason: 'Custom models need a reviewed browser adapter.',
+    };
+  const local = known.providerId === 'local';
+  const supported = !!known.callSupport?.textGeneration;
+  return {
+    single: local || supported,
+    batch: !local && supported,
+    reason: local
+      ? 'Local servers support single-model verification.'
+      : supported
+        ? null
+        : known.callSupport?.reason || 'No reviewed provider adapter.',
+  };
+}
+async function sharedDrawer() {
+  drawerPromise ??= import('./verification.js').then((module) => module.verificationDrawer);
   try {
-    records = JSON.parse(localStorage.getItem(storageKey) || '[]');
-  } catch {}
-
-  for (const m of generatedModels) {
-    const card = document.createElement('article');
-    card.className = 'report';
-    card.dataset.modelId = m.id;
-    const isVerifiedLocally = records.some((r) => r.offeringId === m.id);
-    const passed = isVerifiedLocally || m.verification?.status === 'passed';
-
-    const header = document.createElement('strong');
-    header.textContent = `${m.providerName} / ${m.name || m.apiModelId}`;
-    const badge = document.createElement('span');
-    badge.className = 'status badge ' + (passed ? 'passed' : '');
-    badge.textContent = passed ? 'Verified ✓' : 'Unverified';
-
-    const meta = document.createElement('p');
-    meta.className = 'fine';
-    meta.textContent = `${m.apiModelId} · ${m.protocol || 'chat'}`;
-
-    card.append(header, badge, meta);
+    drawer = await drawerPromise;
+    return drawer;
+  } catch (error) {
+    drawerPromise = null;
+    throw error;
+  }
+}
+async function openVerification(action) {
+  try {
+    if (!drawer) $('#playground-verification-status').textContent = 'Opening verification drawer…';
+    const controller = await sharedDrawer();
+    action(controller);
+    renderVerificationState();
+  } catch (error) {
+    $('#playground-verification-status').textContent =
+      error.message || 'The verification drawer could not load. Try again.';
+  }
+}
+function resetGeneratedModels() {
+  generatedModels = [];
+  selectedModels.clear();
+  shownModels = 40;
+  renderGeneratedModels();
+}
+function renderVerificationState() {
+  const state = drawer?.state;
+  $('#playground-models').hidden = !generatedModels.length && !state?.hasRun;
+  $('#playground-selection-count').textContent =
+    `${selectedModels.size} of ${MAX_SELECTION} selected`;
+  $('#playground-selection-clear').disabled = !selectedModels.size;
+  $('#playground-verify-selected').disabled = !selectedModels.size || !!state?.busy;
+  $('#playground-verification-reopen').hidden = !state?.hasRun;
+  $('#playground-verification-reopen').textContent = state?.busy
+    ? 'View verification progress'
+    : 'View verification results';
+  $('#playground-verification-cancel').hidden = !state?.busy;
+  $('#playground-verification-status').textContent = state?.hasRun
+    ? state.status
+    : 'Select up to 10 models. No requests are sent until you confirm in the drawer.';
+  for (const card of document.querySelectorAll(
+    '#playground-model-results .playground-model-card',
+  )) {
+    const record = drawer?.attempt(card.dataset.modelId);
+    const personal = card.querySelector('.playground-personal-attempt');
+    personal.hidden = !record;
+    if (record)
+      personal.textContent = `Your attempt: ${record.assessment ? attemptText(record.assessment) : record.result === 'passed' ? 'Call succeeded' : 'Inconclusive'}`;
+  }
+}
+function renderGeneratedModels() {
+  const container = $('#playground-model-results');
+  const focusedId = document.activeElement?.dataset.playgroundModel;
+  container.replaceChildren();
+  for (const model of generatedModels.slice(0, shownModels)) {
+    const support = modelSupport(model);
+    const card = node('article', undefined, 'playground-model-card');
+    card.dataset.modelId = model.id;
+    const select = node('input');
+    select.type = 'checkbox';
+    select.className = 'playground-model-pick';
+    select.dataset.playgroundModel = model.id;
+    select.setAttribute(
+      'aria-label',
+      `Select ${model.providerName} ${model.name} for verification`,
+    );
+    select.checked = selectedModels.has(model.id);
+    select.disabled = !support.batch || (!select.checked && selectedModels.size >= MAX_SELECTION);
+    select.title =
+      support.reason ||
+      (select.disabled ? 'Choose at most 10 models per batch.' : 'Select for batch verification');
+    select.addEventListener('change', () => {
+      if (select.checked && selectedModels.size < MAX_SELECTION) selectedModels.add(model.id);
+      else selectedModels.delete(model.id);
+      renderGeneratedModels();
+    });
+    const info = node('div', undefined, 'playground-model-info');
+    info.append(
+      node('span', model.providerName, 'provider-name'),
+      node('strong', model.name || model.apiModelId),
+      node('code', model.apiModelId || model.id),
+    );
+    const community = verificationSummary(catalog, model.id).community.status;
+    info.append(node('p', `Community: ${community.replaceAll('_', ' ')}`, 'fine'));
+    const personal = node('p', '', 'fine playground-personal-attempt');
+    personal.hidden = true;
+    info.append(personal);
+    if (support.reason) info.append(node('p', support.reason, 'fine'));
+    const verify = node('button', model.local ? 'Set up local' : 'Verify', 'small-button');
+    verify.type = 'button';
+    verify.disabled = !support.single;
+    if (support.reason) verify.title = support.reason;
+    verify.addEventListener('click', () =>
+      openVerification((controller) => controller.openModel(model.id)),
+    );
+    card.append(select, info, verify);
     container.append(card);
   }
+  $('#playground-models-title').textContent =
+    `${generatedModels.length} query ${generatedModels.length === 1 ? 'result' : 'results'}`;
+  $('#playground-models-description').textContent = generatedModels.length
+    ? 'Verify individual models or choose a batch. Keys, results, and sharing use the same verification drawer.'
+    : 'Run a query to discover models.';
+  $('#playground-models-more').hidden = shownModels >= generatedModels.length;
+  renderVerificationState();
+  if (focusedId)
+    [...container.querySelectorAll('input')]
+      .find((input) => input.dataset.playgroundModel === focusedId)
+      ?.focus({ preventScroll: true });
 }
-
-function renderAvailabilityKeys(providers) {
-  const container = $('#availability-keys');
-  if (!container) return;
-  container.replaceChildren();
-  for (const pId of providers) {
-    const pName = ProviderApi[pId]?.name || pId;
-    const label = document.createElement('label');
-    label.className = 'api-key-item';
-    const span = document.createElement('span');
-    span.textContent = `${pName} API key`;
-    const input = document.createElement('input');
-    input.type = 'password';
-    input.dataset.provider = pId;
-    input.placeholder = `Paste your ${pName} key`;
-    input.autocomplete = 'off';
-    input.autocapitalize = 'off';
-    input.spellcheck = false;
-    if (availabilityKeys.has(pId)) {
-      input.value = availabilityKeys.get(pId);
-    }
-    input.addEventListener('input', () => {
-      availabilityKeys.set(pId, input.value.trim());
-    });
-    label.append(span, input);
-    container.append(label);
-  }
-}
-
 function handleGeneratedModels(models) {
-  generatedModels = models;
-  const availSection = $('#playground-availability');
-  if (!availSection) return;
-  availSection.hidden = false;
-  const providers = [...new Set(models.map((m) => m.providerId))].filter((p) => p && p !== 'local');
-  $('#availability-title').textContent =
-    `Generated ${models.length} ${models.length === 1 ? 'model' : 'models'} across ${providers.length} ${providers.length === 1 ? 'provider' : 'providers'}`;
-  const provNames = providers.map((p) => ProviderApi[p]?.name || p);
-  $('#availability-subtitle').textContent = provNames.length
-    ? `Providers: ${provNames.join(', ')}. Test availability with your API keys.`
-    : 'All generated models are local or require no API keys.';
-
-  renderAvailabilityResults();
-  renderAvailabilityKeys(providers);
+  generatedModels = [
+    ...new Map(models.filter((m) => m && typeof m.id === 'string').map((m) => [m.id, m])).values(),
+  ];
+  selectedModels.clear();
+  shownModels = 40;
+  renderGeneratedModels();
 }
+$('#playground-selection-clear').addEventListener('click', () => {
+  selectedModels.clear();
+  renderGeneratedModels();
+});
+$('#playground-verify-selected').addEventListener('click', () => {
+  const ids = [...selectedModels];
+  openVerification((controller) => controller.openBatch(ids));
+});
+$('#playground-verification-reopen').addEventListener('click', () =>
+  openVerification((controller) => controller.reopen()),
+);
+$('#playground-verification-cancel').addEventListener('click', () => drawer?.cancel());
+$('#playground-models-more').addEventListener('click', () => {
+  shownModels += 40;
+  renderGeneratedModels();
+});
+window.addEventListener('byokit:verification-state', renderVerificationState);
 
 window.addEventListener('message', (event) => {
   if (!active || !frame || event.source !== frame.contentWindow) return;
@@ -197,226 +285,13 @@ window.addEventListener('message', (event) => {
     if (data.models && data.models.length > 0) {
       handleGeneratedModels(data.models);
     } else {
-      $('#playground-availability').hidden = true;
+      resetGeneratedModels();
     }
   } else if (data.type === 'error') {
     output.textContent +=
       (output.textContent ? '\n\n' : '') + String(data.text || 'Execution failed.').slice(0, 2000);
     finish('JavaScript error. Edit your code and try again.', 'error');
   }
-});
-
-$('#availability-start-btn')?.addEventListener('click', () => {
-  const drawer = $('#availability-drawer');
-  if (!drawer) return;
-  drawer.hidden = !drawer.hidden;
-  $('#availability-start-btn').textContent = drawer.hidden
-    ? 'Test model availability'
-    : 'Hide test panel';
-});
-
-$('#availability-clear-btn')?.addEventListener('click', () => {
-  availabilityKeys.clear();
-  for (const inp of document.querySelectorAll('#availability-keys input')) {
-    inp.value = '';
-  }
-  $('#availability-status').textContent = 'API keys cleared.';
-});
-
-$('#availability-cancel-btn')?.addEventListener('click', () => {
-  availabilityController?.abort();
-});
-
-$('#availability-run-btn')?.addEventListener('click', async () => {
-  if (availabilityController) return;
-  if (!generatedModels.length) return;
-  const keyInputs = document.querySelectorAll('#availability-keys input');
-  for (const inp of keyInputs) {
-    if (inp.value.trim()) availabilityKeys.set(inp.dataset.provider, inp.value.trim());
-  }
-  if (!availabilityKeys.size) {
-    $('#availability-status').textContent =
-      'Please enter an API key for at least one provider to test availability.';
-    return;
-  }
-  const controller = new AbortController();
-  availabilityController = controller;
-  $('#availability-run-btn').disabled = true;
-  $('#availability-cancel-btn').hidden = false;
-
-  const storageKey = 'byokit.inference-verifications.v1';
-  let records = [];
-  try {
-    records = JSON.parse(localStorage.getItem(storageKey) || '[]');
-  } catch {}
-
-  let verifiedCount = 0,
-    failedCount = 0,
-    skippedCount = 0;
-  const providerStops = new Map();
-
-  for (let i = 0; i < generatedModels.length; i++) {
-    if (controller.signal.aborted) break;
-    const model = generatedModels[i];
-    const card = document.querySelector(`#availability-results [data-model-id="${model.id}"]`);
-    const pId = model.providerId;
-    const key = availabilityKeys.get(pId);
-
-    if (model.local) {
-      if (card) {
-        card.querySelector('.status').textContent = 'Local setup';
-        card.querySelector('.status').className = 'status badge';
-      }
-      continue;
-    }
-
-    if (!key) {
-      skippedCount++;
-      if (card) {
-        card.querySelector('.status').textContent = `Skipped (no ${model.providerName} key)`;
-        card.querySelector('.status').className = 'status badge';
-      }
-      continue;
-    }
-
-    if (providerStops.has(pId)) {
-      skippedCount++;
-      if (card) {
-        card.querySelector('.status').textContent = `Not attempted: ${providerStops.get(pId)}`;
-        card.querySelector('.status').className = 'status badge uncertain';
-      }
-      continue;
-    }
-
-    if (card) card.querySelector('.status').textContent = 'Testing…';
-    $('#availability-status').textContent =
-      `Testing availability ${i + 1} of ${generatedModels.length}: ${model.name || model.apiModelId} (${model.providerName})…`;
-
-    const job = {
-      offeringId: model.id,
-      providerId: model.providerId,
-      modelId: model.apiModelId,
-      protocol: model.protocol || ProviderApi[model.providerId]?.protocols?.[0] || 'chat',
-      endpoint: model.endpoint,
-      prompt: 'Reply with exactly: OK',
-      maxTokens: 256,
-    };
-
-    try {
-      const result = await verifyInference(job, key, { signal: controller.signal });
-      if (controller.signal.aborted) break;
-      verifiedCount++;
-      const record = successRecord(job, result, key);
-      records = [record, ...records.filter((r) => r.offeringId !== record.offeringId)].slice(
-        0,
-        200,
-      );
-      try {
-        localStorage.setItem(storageKey, JSON.stringify(records));
-      } catch {}
-
-      model.verification = {
-        ...model.verification,
-        attempt: result.assessment.attempt,
-        personalChecks: result.assessment.checks,
-      };
-      // A local check does not replace published community evidence.
-
-      if (card) {
-        card.querySelector('.status').textContent =
-          `Your call succeeded ✓ (${result.latencyMs} ms)`;
-        card.querySelector('.status').className = 'status badge passed';
-        try {
-          const report = createReport(job, result, record.id, key);
-          const oldActions = card.querySelector('.playground-card-actions');
-          if (oldActions) oldActions.remove();
-          const actions = document.createElement('div');
-          actions.className = 'playground-card-actions';
-          actions.style.marginTop = '10px';
-          actions.style.display = 'flex';
-          actions.style.gap = '8px';
-          actions.style.flexWrap = 'wrap';
-
-          const shareLink = document.createElement('a');
-          shareLink.className = 'button primary action-highlight';
-          shareLink.style.fontSize = '11.5px';
-          shareLink.style.padding = '4px 10px';
-          shareLink.textContent = 'Share on GitHub · claim badge ↗';
-          shareLink.href = issueUrl(report);
-          shareLink.target = '_blank';
-          shareLink.rel = 'noopener noreferrer';
-          shareLink.addEventListener('click', () => {
-            if (window.trackVerificationPublication) {
-              window.trackVerificationPublication(report);
-            }
-          });
-          actions.append(shareLink);
-
-          if (window.selectVerificationModel) {
-            const selectBtn = document.createElement('button');
-            selectBtn.type = 'button';
-            selectBtn.className = 'small-button';
-            selectBtn.textContent = 'Open verification drawer';
-            selectBtn.addEventListener('click', () => {
-              window.selectVerificationModel(model.id, key);
-            });
-            actions.append(selectBtn);
-          }
-
-          card.append(actions);
-        } catch (e) {
-          console.warn('[byokit playground] could not create report for model', e);
-        }
-      }
-    } catch (err) {
-      if (controller.signal.aborted) break;
-      failedCount++;
-      const assessment = assessmentForError(err);
-      model.verification = { ...model.verification, attempt: assessment.attempt };
-      const observation = {
-        assessment,
-        checkedAt: err.checkedAt || new Date().toISOString(),
-        latencyMs: err.latencyMs || 0,
-        usage: {},
-      };
-      const record = successRecord(job, observation, key);
-      records = [record, ...records].slice(0, 200);
-      try {
-        localStorage.setItem(storageKey, JSON.stringify(records));
-      } catch {
-        /* Memory remains available. */
-      }
-      if (card) {
-        card.querySelector('.status').textContent = attemptText(assessment);
-        card.querySelector('.status').className = 'status badge uncertain';
-        const guidance = document.createElement('p');
-        guidance.className = 'fine';
-        card.append(guidance);
-        retryCountdown(guidance, assessment.attempt);
-        try {
-          const report = createReport(job, observation, record.id, key),
-            share = document.createElement('a');
-          share.className = 'text-link';
-          share.textContent = 'Share sanitized issue category on GitHub ↗';
-          share.href = issueUrl(report);
-          share.target = '_blank';
-          share.rel = 'noopener noreferrer';
-          share.addEventListener('click', () => window.trackVerificationPublication?.(report));
-          card.append(share);
-        } catch {
-          /* Unsupported local observations cannot be published. */
-        }
-      }
-      if (shouldStopProvider(assessment.attempt)) providerStops.set(pId, attemptText(assessment));
-    }
-  }
-
-  availabilityController = null;
-  $('#availability-run-btn').disabled = false;
-  $('#availability-cancel-btn').hidden = true;
-  $('#availability-status').textContent = controller.signal.aborted
-    ? `Availability test canceled. ${verifiedCount} verified, ${failedCount} blocked or inconclusive, ${skippedCount} skipped.`
-    : `Availability test complete: ${verifiedCount} verified, ${failedCount} blocked or inconclusive, ${skippedCount} skipped.${verifiedCount ? ' Click "Share on GitHub" on any verified card above to submit your report and update the status via GitHub Actions!' : ''}`;
 });
 
 for (const [value, example] of Object.entries(playgroundExamples)) {

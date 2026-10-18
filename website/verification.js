@@ -151,24 +151,6 @@ $('#batch-share').addEventListener('click', () => {
     }
   }
 });
-if (typeof window !== 'undefined') {
-  window.selectVerificationModel = (modelId, prefillKey) => {
-    const m = models.find((x) => x.id === modelId) || models.find((x) => x.apiModelId === modelId);
-    if (m) {
-      openModel(m);
-      if (prefillKey && !busy && !batchController && selected.id === m.id) {
-        $('#api-key').value = prefillKey;
-        providerKeys.set(m.providerId, prefillKey);
-      }
-    }
-  };
-  window.trackVerificationPublication = (report) => {
-    activeReport = report;
-    $('#check-publication').hidden = false;
-    publicationStatus(`Submit the GitHub issue for ${report.offeringId} to publish this result.`);
-    trackPublication();
-  };
-}
 let drawerOrigin = null,
   drawerOriginModel = null,
   lastRunMode = null;
@@ -207,7 +189,9 @@ $('#verification-drawer').addEventListener('close', () => {
     ? drawerOrigin
     : [...document.querySelectorAll('#models tr')].find(
         (row) => row.dataset.offering === drawerOriginModel,
-      ) || $('#batch-open');
+      ) ||
+      $('#batch-open') ||
+      $('#playground-verification-reopen');
   target?.focus({ preventScroll: true });
 });
 $('#api-key').addEventListener('input', () =>
@@ -227,7 +211,7 @@ const models = byokit.getModels(byokit.COMPLETE, {
     includeDeprecated: true,
   },
 });
-$('#setup-local').addEventListener('click', () => {
+$('#setup-local')?.addEventListener('click', () => {
   const local = models.find((m) => m.local);
   if (local) openModel(local);
 });
@@ -271,9 +255,13 @@ function settings() {
     maxTokens: Number($('#max-tokens').value),
   };
 }
+function notifyVerificationState() {
+  window.dispatchEvent(new window.Event('byokit:verification-state'));
+}
 function status(text, kind) {
   $('#call-status').textContent = text;
   $('#call-status').dataset.state = kind || '';
+  notifyVerificationState();
 }
 function invalidate() {
   retryCountdown($('#retry-guidance'), null);
@@ -378,7 +366,7 @@ function select(model) {
     $('#verify').disabled = true;
     $('#verify').title = model.callSupport?.reason || 'No reviewed browser adapter';
     status(
-      `Selected: ${model.provider?.name || model.providerId} ${model.name}. Text calls are unsupported directly in browser (${model.callSupport?.reason || 'No reviewed adapter'}). You can test this model via the playground below.`,
+      `Selected: ${model.provider?.name || model.providerId} ${model.name}. Text calls are unsupported in this verification flow (${model.callSupport?.reason || 'No reviewed adapter'}).`,
       'error',
     );
   } else {
@@ -391,6 +379,7 @@ function select(model) {
   updateCostEstimate();
 }
 function filteredModels() {
+  if (!$('#model-search')) return models.filter((m) => !m.local && m.callSupport?.textGeneration);
   const filtered = filterModels({
     search: $('#model-search').value,
     provider: $('#provider-filter').value,
@@ -450,6 +439,10 @@ $('#standard-speed').addEventListener('click', () => {
   );
 });
 function renderModels() {
+  if (!$('#models')) {
+    updateBatchControls();
+    return;
+  }
   const focusedRow = document.activeElement?.closest('#models tr'),
     focusedId = focusedRow?.dataset.offering;
   const focusedControl = focusedRow ? document.activeElement.tagName.toLowerCase() : null;
@@ -696,6 +689,8 @@ function renderModels() {
   }
 }
 function updateBatchControls() {
+  notifyVerificationState();
+  if (!$('#batch-count')) return;
   $('#batch-count').textContent =
     `${batchSelection.size} ${batchSelection.size === 1 ? 'model' : 'models'} selected`;
   $('#batch-open').disabled = !batchSelection.size && !batchController && !busy && !lastRunMode;
@@ -720,7 +715,7 @@ function toggleBatch(model, checked) {
   } else batchSelection.delete(model.id);
   renderModels();
 }
-$('#batch-select-shown').addEventListener('click', () => {
+$('#batch-select-shown')?.addEventListener('click', () => {
   const eligible = filteredModels()
     .slice(0, shown)
     .filter((m) => !m.local && m.callSupport?.textGeneration);
@@ -732,30 +727,31 @@ $('#batch-select-shown').addEventListener('click', () => {
   renderModels();
 });
 new window.MutationObserver(() => {
-  $('#selection-status').textContent = $('#batch-status').textContent;
+  if ($('#selection-status')) $('#selection-status').textContent = $('#batch-status').textContent;
+  notifyVerificationState();
 }).observe($('#batch-status'), { childList: true, characterData: true, subtree: true });
-$('#batch-clear').addEventListener('click', () => {
+$('#batch-clear')?.addEventListener('click', () => {
   batchSelection.clear();
   renderModels();
   if (!batchController) $('#selection-status').textContent = 'Selection cleared.';
 });
-$('#batch-open').addEventListener('click', () => {
+function openBatch(chosenModels = [...batchSelection.values()]) {
   if (busy || batchController) {
     openDrawer(batchController ? 'batch' : 'single');
     return;
   }
-  if (!batchSelection.size) {
+  if (!chosenModels.length) {
     if (lastRunMode) openDrawer(lastRunMode);
     return;
   }
   if (
     pendingBatch &&
-    pendingBatch.models.map((m) => m.id).join() === [...batchSelection.keys()].join()
+    pendingBatch.models.map((m) => m.id).join() === chosenModels.map((m) => m.id).join()
   ) {
     openDrawer('batch');
     return;
   }
-  pendingBatch = { models: [...batchSelection.values()] };
+  pendingBatch = { models: [...chosenModels] };
   $('#batch-confirm-description').textContent =
     `Send up to ${pendingBatch.models.length} AI requests, one per model. This may use provider credits.`;
   const batchProviders = [
@@ -794,11 +790,12 @@ $('#batch-open').addEventListener('click', () => {
   resetBatchSharing();
   $('#batch-status').textContent = '';
   openDrawer('batch');
-});
+}
+$('#batch-open')?.addEventListener('click', () => openBatch());
 $('#batch-confirm-cancel').addEventListener('click', () => {
   $('#verification-drawer').close();
 });
-$('#batch-cancel').addEventListener('click', () => {
+$('#batch-cancel')?.addEventListener('click', () => {
   batchController?.abort();
   controller?.abort();
 });
@@ -836,7 +833,7 @@ $('#batch-confirm-send').addEventListener('click', async () => {
     controller = new AbortController();
   batchController = controller;
   lastRunMode = 'batch';
-  $('#batch-cancel').hidden = false;
+  if ($('#batch-cancel')) $('#batch-cancel').hidden = false;
   $('#drawer-batch-cancel').hidden = false;
   $('#verify').disabled = true;
   $('#batch-confirm-send').disabled = true;
@@ -928,7 +925,7 @@ $('#batch-confirm-send').addEventListener('click', async () => {
       $('#batch-confirm-send').disabled = false;
       for (const field of $('#batch-confirm').querySelectorAll('input, textarea'))
         field.disabled = false;
-      $('#batch-cancel').hidden = true;
+      if ($('#batch-cancel')) $('#batch-cancel').hidden = true;
       $('#drawer-batch-cancel').hidden = true;
       $('#verify').disabled = false;
       renderModels();
@@ -937,6 +934,7 @@ $('#batch-confirm-send').addEventListener('click', async () => {
 });
 function renderContributors() {
   const list = $('#contributor-list');
+  if (!list) return;
   list.replaceChildren();
   const badges = contributorBadges(publishedReports);
   if (!badges.length) {
@@ -998,6 +996,7 @@ function renderContributors() {
 }
 function renderRecords() {
   const list = $('#records');
+  if (!list) return;
   list.replaceChildren();
   if (!records.length)
     list.append(el('div', 'No successful inference calls recorded in this browser yet.', 'report'));
@@ -1211,82 +1210,84 @@ for (const id of ['api-key', 'protocol', 'endpoint', 'local-model', 'prompt', 'm
     invalidate();
     destination();
   });
-// Catalog tags and typed capabilities drive the available selectors.
-for (const tag of [
-  ...new Set(
-    models.flatMap((m) => [...m.tags, ...(m.model.tags || []), ...(m.provider.tags || [])]),
-  ),
-].sort()) {
-  const option = el('option', tag);
-  option.value = tag;
-  $('#exclude-tag-filter').append(option);
-}
-for (const [id, values] of [
-  ['feature-filter', Object.values(byokit.FeatureName)],
-  ['modality-filter', Object.values(byokit.Modality)],
-  ['speciality-filter', Object.values(byokit.Speciality)],
-  ['tier-filter', Object.values(byokit.Tier)],
-]) {
-  const select = $('#' + id);
-  if (!select) continue;
-  select.replaceChildren();
-  const label =
-    id === 'feature-filter'
-      ? 'capability'
-      : id === 'modality-filter'
-        ? 'input'
-        : id === 'speciality-filter'
-          ? 'speciality'
-          : 'tier';
-  const any = el('option', 'Any ' + label);
-  any.value = 'any';
-  select.append(any);
-  for (const value of values) {
-    const option = el(
-      'option',
-      value
-        .replace(/([a-z])([A-Z])/g, '$1 $2')
-        .replace(/json/gi, 'JSON')
-        .replace(/^./, (c) => c.toUpperCase()),
-    );
-    option.value = value;
-    select.append(option);
+if ($('#models')) {
+  // Catalog tags and typed capabilities drive the available selectors.
+  for (const tag of [
+    ...new Set(
+      models.flatMap((m) => [...m.tags, ...(m.model.tags || []), ...(m.provider.tags || [])]),
+    ),
+  ].sort()) {
+    const option = el('option', tag);
+    option.value = tag;
+    $('#exclude-tag-filter').append(option);
   }
+  for (const [id, values] of [
+    ['feature-filter', Object.values(byokit.FeatureName)],
+    ['modality-filter', Object.values(byokit.Modality)],
+    ['speciality-filter', Object.values(byokit.Speciality)],
+    ['tier-filter', Object.values(byokit.Tier)],
+  ]) {
+    const select = $('#' + id);
+    if (!select) continue;
+    select.replaceChildren();
+    const label =
+      id === 'feature-filter'
+        ? 'capability'
+        : id === 'modality-filter'
+          ? 'input'
+          : id === 'speciality-filter'
+            ? 'speciality'
+            : 'tier';
+    const any = el('option', 'Any ' + label);
+    any.value = 'any';
+    select.append(any);
+    for (const value of values) {
+      const option = el(
+        'option',
+        value
+          .replace(/([a-z])([A-Z])/g, '$1 $2')
+          .replace(/json/gi, 'JSON')
+          .replace(/^./, (c) => c.toUpperCase()),
+      );
+      option.value = value;
+      select.append(option);
+    }
+  }
+  $('#filter-reference').textContent =
+    'Provider; include/exclude tags (including origin:cn); input/output modalities; file formats; capabilities; context; input/output price; open weights; commercial use; parameter count; speed/latency; lifecycle; popularity; contributor and verification freshness. This page exposes common selectors; the library supports the full list documented in README.';
+  const providers = [
+    ...new Map(models.filter((m) => !m.local).map((m) => [m.providerId, m.provider])).values(),
+  ].sort((a, b) =>
+    (a.name || a.id).localeCompare(b.name || b.id, undefined, { sensitivity: 'base' }),
+  );
+  for (const provider of providers) {
+    const option = el('option', provider.name);
+    option.value = provider.id;
+    $('#provider-filter').append(option);
+  }
+  for (const id of [
+    'model-search',
+    'provider-filter',
+    'region-filter',
+    'exclude-tag-filter',
+    'feature-filter',
+    'modality-filter',
+    'weights-filter',
+    'speciality-filter',
+    'tier-filter',
+    'context-filter',
+    'price-filter',
+    'sort-filter',
+    'verification-filter',
+    'callable-filter',
+    'include-outdated',
+  ])
+    $('#' + id).addEventListener('input', () => {
+      tracker.stop();
+      shown = 40;
+      renderModels();
+    });
 }
-$('#filter-reference').textContent =
-  'Provider; include/exclude tags (including origin:cn); input/output modalities; file formats; capabilities; context; input/output price; open weights; commercial use; parameter count; speed/latency; lifecycle; popularity; contributor and verification freshness. This page exposes common selectors; the library supports the full list documented in README.';
-const providers = [
-  ...new Map(models.filter((m) => !m.local).map((m) => [m.providerId, m.provider])).values(),
-].sort((a, b) =>
-  (a.name || a.id).localeCompare(b.name || b.id, undefined, { sensitivity: 'base' }),
-);
-for (const provider of providers) {
-  const option = el('option', provider.name);
-  option.value = provider.id;
-  $('#provider-filter').append(option);
-}
-for (const id of [
-  'model-search',
-  'provider-filter',
-  'region-filter',
-  'exclude-tag-filter',
-  'feature-filter',
-  'modality-filter',
-  'weights-filter',
-  'speciality-filter',
-  'tier-filter',
-  'context-filter',
-  'price-filter',
-  'sort-filter',
-  'verification-filter',
-  'callable-filter',
-  'include-outdated',
-])
-  $('#' + id).addEventListener('input', () => {
-    tracker.stop();
-    shown = 40;
-    renderModels();
-  });
 function advanceToNextUnverified() {
   if (busy || batchController) return;
   const currentProvider = selected?.providerId;
@@ -1305,11 +1306,11 @@ function advanceToNextUnverified() {
 }
 $('#next-unverified')?.addEventListener('click', advanceToNextUnverified);
 $('#next-unverified-advance')?.addEventListener('click', advanceToNextUnverified);
-$('#show-more').addEventListener('click', () => {
+$('#show-more')?.addEventListener('click', () => {
   shown += 40;
   renderModels();
 });
-$('#clear-records').addEventListener('click', () => {
+$('#clear-records')?.addEventListener('click', () => {
   records = [];
   try {
     localStorage.removeItem(storageKey);
@@ -1317,7 +1318,7 @@ $('#clear-records').addEventListener('click', () => {
   renderRecords();
   renderModels();
 });
-$('#export-records').addEventListener('click', () => {
+$('#export-records')?.addEventListener('click', () => {
   const blob = new Blob(
       [JSON.stringify({ schemaVersion: 1, scope: 'this-browser', records }, null, 2)],
       { type: 'application/json' },
@@ -1357,3 +1358,46 @@ renderModels();
 renderRecords();
 renderContributors();
 void tracker.check('').catch(() => {});
+
+// Both the verification table and playground resolve IDs against the reviewed catalog.
+export const verificationDrawer = Object.freeze({
+  openModel(id) {
+    const model = models.find((m) => m.id === id);
+    if (!model || (!model.local && !model.callSupport?.textGeneration))
+      throw new Error('This model has no supported verification adapter.');
+    openModel(model);
+  },
+  openBatch(ids) {
+    if (
+      !Array.isArray(ids) ||
+      !ids.length ||
+      ids.length > MAX_BATCH_REQUESTS ||
+      new Set(ids).size !== ids.length
+    )
+      throw new Error('Choose between 1 and 10 different models.');
+    const chosen = ids.map((id) => models.find((m) => m.id === id));
+    if (chosen.some((m) => !m || m.local || !m.callSupport?.textGeneration))
+      throw new Error('Only supported hosted models can be batch verified.');
+    openBatch(chosen);
+  },
+  reopen() {
+    if (lastRunMode) openDrawer(lastRunMode);
+  },
+  cancel() {
+    controller?.abort();
+    batchController?.abort();
+  },
+  attempt(id) {
+    return records.find((r) => r.offeringId === id);
+  },
+  get state() {
+    return {
+      busy: busy || !!batchController,
+      hasRun: !!lastRunMode,
+      status:
+        batchController || lastRunMode === 'batch'
+          ? $('#batch-status').textContent
+          : $('#call-status').textContent,
+    };
+  },
+});

@@ -124,11 +124,11 @@ test('playground captures generated models and updates verification status when 
   assert.equal(verifiedMessages.find((m) => m.type === 'log')?.text, 'passed');
 
   const ui = await readFile(new URL('../website/playground.js', import.meta.url), 'utf8');
-  assert.ok(ui.includes('availability-run-btn'));
-  assert.ok(ui.includes('verifyInference'));
-  assert.ok(ui.includes('successRecord'));
-  assert.ok(ui.includes('createReport'));
-  assert.ok(ui.includes('issueUrl'));
+  assert.ok(ui.includes("import('./verification.js')"));
+  assert.ok(ui.includes('controller.openBatch(ids)'));
+  assert.ok(ui.includes('controller.openModel(model.id)'));
+  assert.ok(!ui.includes('verifyInference'));
+  assert.ok(!ui.includes('availability-run-btn'));
 });
 
 test('playground captures query configs and warns on multiple calls', async () => {

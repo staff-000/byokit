@@ -80,7 +80,9 @@ badge registry in `contributors.json` and individual SVGs under `badges/`.
 
 ## Filters and batch checks
 
-The verification table includes LIVE and UNCERTAIN offerings by default. **Include outdated models** explicitly
+The verification table shows callable LIVE and UNCERTAIN offerings by default.
+Uncheck **Callable only** to browse unsupported catalog models as well; they show
+their disabled reason. **Include outdated models** explicitly
 adds retired offerings; unsupported adapters cannot be verified here and it never substitutes a model if an outdated one is rejected.
 Use the table-header selectors to filter by provider, origin tags, excluded tag,
 supported capability, input modality, weights, context, and input price. Separate
@@ -94,6 +96,20 @@ Select up to ten hosted models across providers, then click **Verify selected**.
 Selections survive filtering and pagination. The sticky selection bar keeps the
 selected count and progress visible. Clicking a row or **Verify** opens the same
 verification drawer without jumping to the top; on mobile it fills the screen.
+
+The homepage and verification-page playgrounds use this same drawer. Run an
+offline query, then use a model's **Verify** action or select up to ten models and
+click **Verify selected**. Nothing is selected automatically. Selections survive
+result pagination and closing the drawer; running a new query starts a new
+selection. Unsupported entries remain visible with their reasons. Local servers
+use single-model setup. Custom endpoints from editable query output are never
+trusted as verification destinations.
+
+The playground has no separate key form or availability runner. Both entry points
+share credential handling, request validation, results, cancellation, speed
+benchmarks, and GitHub publication. Closing restores focus without moving the
+document. A running check can be reopened or canceled from the playground;
+editing or running another query does not alter its captured configuration.
 
 The drawer groups selected models by provider and asks for each provider's API key.
 Review the shared prompt and output budget, then click **Send N requests**. All

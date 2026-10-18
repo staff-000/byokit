@@ -9,6 +9,14 @@ const root = resolve(new URL('..', import.meta.url).pathname),
   out = resolve(root, 'dist/site');
 await mkdir(out, { recursive: true });
 await cp(resolve(root, 'website'), out, { recursive: true });
+const drawerMarkup = await readFile(resolve(root, 'website/verification-drawer.html'), 'utf8');
+for (const page of ['index.html', 'verification.html']) {
+  const file = resolve(out, page);
+  await writeFile(
+    file,
+    (await readFile(file, 'utf8')).replace('<!-- verification-drawer -->', drawerMarkup),
+  );
+}
 for (const file of [
   'inference.js',
   'verification-filters.js',

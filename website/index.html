@@ -29,6 +29,7 @@
       </nav>
     </header>
     <main>
+      <!-- verification-drawer -->
       <section class="hero wrap">
         <div class="hero-copy">
           <p class="eyebrow"><span class="dot"></span> BYOK, WITHOUT THE UPKEEP</p>
@@ -215,46 +216,50 @@ Your console output will appear here.</pre>
             ><span class="playground-shortcut">⌘ / Ctrl + Enter</span>
           </div>
           <p id="playground-status" role="status">Ready.</p>
-          <div id="playground-availability" class="playground-availability" hidden>
-            <div class="availability-header">
+          <section
+            id="playground-models"
+            class="playground-models"
+            hidden
+            aria-labelledby="playground-models-title"
+          >
+            <div class="playground-models-heading">
               <div>
-                <span class="playground-badge">AVAILABILITY TEST</span>
-                <h3 id="availability-title">Test Generated Model Availability</h3>
-                <p id="availability-subtitle" class="fine">
-                  Test real availability of the models in your generated list with your API keys.
-                </p>
+                <h3 id="playground-models-title">Query results</h3>
+                <p id="playground-models-description" class="fine"></p>
               </div>
+              <span class="playground-badge">SELECT MODELS TO VERIFY</span>
+            </div>
+            <div class="playground-selection" role="group" aria-label="Playground model selection">
+              <span id="playground-selection-count" role="status">0 models selected</span>
+              <button id="playground-selection-clear" type="button" class="small-button">
+                Clear
+              </button>
               <button
-                id="availability-start-btn"
+                id="playground-verify-selected"
                 type="button"
-                class="button secondary action-highlight"
+                class="button primary action-highlight"
+                disabled
               >
-                Test model availability
+                Verify selected
+              </button>
+              <button id="playground-verification-reopen" type="button" class="small-button" hidden>
+                View verification results
+              </button>
+              <button id="playground-verification-cancel" type="button" class="small-button" hidden>
+                Cancel run
               </button>
             </div>
-            <div id="availability-drawer" class="availability-drawer" hidden>
-              <div id="availability-keys" class="api-keys-grid"></div>
-              <div class="call-actions">
-                <button
-                  id="availability-run-btn"
-                  type="button"
-                  class="button primary action-highlight"
-                >
-                  Run availability test
-                </button>
-                <button id="availability-cancel-btn" type="button" class="small-button" hidden>
-                  Cancel test
-                </button>
-                <button id="availability-clear-btn" type="button" class="text-button">
-                  Clear keys
-                </button>
-              </div>
-              <p id="availability-status" class="call-status" role="status" aria-live="polite">
-                Enter your API keys above and click Run availability test.
-              </p>
-              <div id="availability-results" class="batch-results"></div>
-            </div>
-          </div>
+            <p
+              id="playground-verification-status"
+              class="fine"
+              role="status"
+              aria-live="polite"
+            ></p>
+            <div id="playground-model-results" class="playground-model-results"></div>
+            <button id="playground-models-more" type="button" class="small-button" hidden>
+              Show more models
+            </button>
+          </section>
         </div>
         <p id="playground-help" class="fine">
           Runs locally in an isolated sandbox. No API key needed, no provider requests, and no saved

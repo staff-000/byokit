@@ -15,7 +15,10 @@ const wait = async (predicate) => {
   throw new Error('Page state did not arrive.');
 };
 test('anonymous page verifies, shares safely, fences stale calls and only confirms public evidence', async () => {
-  const html = await readFile('website/verification.html', 'utf8'),
+  const html = (await readFile('website/verification.html', 'utf8')).replace(
+      '<!-- verification-drawer -->',
+      await readFile('website/verification-drawer.html', 'utf8'),
+    ),
     dom = new JSDOM(html, {
       url: 'https://staff-000.github.io/byokit/verification.html',
       pretendToBeVisual: true,
@@ -85,7 +88,17 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
       ['./batch-verification.js', 'website/batch-verification.js'],
     ])
       source = source.replace(`'${relative}'`, JSON.stringify(pathToFileURL(resolve(file)).href));
-    await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
+    const { verificationDrawer } = await import(
+      'data:text/javascript;base64,' + Buffer.from(source).toString('base64')
+    );
+    const unsupportedId = catalog.offerings.find((m) => m.providerId === '302ai').id;
+    assert.throws(() => verificationDrawer.openModel(unsupportedId), /supported/);
+    assert.throws(() => verificationDrawer.openModel('custom/untrusted'), /supported/);
+    assert.throws(() => verificationDrawer.openBatch([unsupportedId]), /supported/);
+    assert.throws(
+      () => verificationDrawer.openBatch(Array(11).fill('deepseek/deepseek-chat')),
+      /1 and 10/,
+    );
     assert.equal($('#github-sign-in'), null);
     assert.equal($('#verify').disabled, false);
     assert.equal(calls, 0);
