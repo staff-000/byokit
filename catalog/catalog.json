@@ -1321924,6 +1321924,75 @@
         "textGeneration": false,
         "reason": "No reviewed provider adapter"
       }
+    },
+    {
+      "id": "deepseek/deepseek-chat",
+      "providerId": "deepseek",
+      "modelId": "deepseek/deepseek-chat",
+      "apiModelId": "deepseek-chat",
+      "name": "DeepSeek Chat",
+      "releaseDate": "2025-12-01",
+      "deployment": "hosted",
+      "callSupport": {
+        "textGeneration": true,
+        "reason": null
+      },
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "limits": {
+        "context": 128000,
+        "input": null,
+        "output": 8192,
+        "contextAccounting": "unknown"
+      },
+      "features": {
+        "functionCalling": {
+          "status": "supported",
+          "source": "https://api-docs.deepseek.com"
+        },
+        "jsonSchema": {
+          "status": "supported",
+          "source": "https://api-docs.deepseek.com"
+        }
+      },
+      "price": {
+        "currency": "USD",
+        "unit": "per-million-tokens",
+        "reasoning": null,
+        "inputAudio": null,
+        "outputAudio": null,
+        "input": 0.14,
+        "output": 0.28,
+        "cacheRead": 0.014,
+        "cacheWrite": null,
+        "tiers": []
+      },
+      "tags": [
+        "cap:functionCalling",
+        "cap:jsonSchema",
+        "context:128k+",
+        "deployment:hosted",
+        "input:text",
+        "output:text",
+        "price:budget",
+        "weights:open"
+      ],
+      "provenance": {
+        "source": "https://api-docs.deepseek.com/quick_start/pricing",
+        "reviewedAt": "2026-10-17"
+      },
+      "lifecycleEvidence": {
+        "status": "LIVE",
+        "basis": "provider",
+        "source": "https://api-docs.deepseek.com/quick_start/pricing",
+        "checkedAt": "2026-10-17T00:00:00Z"
+      }
     }
   ],
   "presets": [

@@ -266,14 +266,20 @@ for (const id of ['ollama', 'local']) {
   for (const p of catalog.presets) if (id === 'local' || p.id !== 'default') p.providerIds.push(id);
 }
 const manualIndex = args.indexOf('--manual');
-const manual = JSON.parse(
-  await readFile(
-    manualIndex >= 0
-      ? resolve(args[manualIndex + 1])
-      : new URL('../catalog/manual.json', import.meta.url),
-    'utf8',
-  ),
-);
+const manual =
+  manualIndex >= 0
+    ? JSON.parse(await readFile(resolve(args[manualIndex + 1]), 'utf8'))
+    : i >= 0
+      ? {
+          schemaVersion: 1,
+          providers: [],
+          models: [],
+          families: [],
+          offerings: [],
+          assets: [],
+          presets: [],
+        }
+      : JSON.parse(await readFile(new URL('../catalog/manual.json', import.meta.url), 'utf8'));
 // Carry explicit evidence forward without refreshing its timestamp.
 for (const old of previous?.offerings || []) {
   if (manual.offerings?.some((o) => o.id === old.id)) continue;
@@ -472,16 +478,32 @@ if (i < 0) {
   await mkdir(python, { recursive: true });
   await writeFile(
     new URL('catalog.js', byokitPkg),
-    'import {Catalog} from "./core.js";\nconst data=' +
+    'import { Catalog } from "./core.js";\nconst data = ' +
       JSON.stringify(catalog) +
-      ';\nexport default data;\nexport * from "./core.js";\nlet defaultCatalog;\nlet warned=false;\nexport function getModels(input={},options){\n' +
-      '  if(!warned&&!globalThis.__BYOKIT_NO_RUNTIME_WARNING__&&!(typeof process!=="undefined"&&process?.env?.BYOKIT_NO_RUNTIME_WARNING)){\n' +
-      '    warned=true;\n' +
-      '    console.warn("[byokit] Tip: byokit.getModels() evaluated the full bundled catalog at runtime. For production apps with a fixed query, precompile your model list at build time (`npx byokit build byok.config.json --out models.js`) to avoid bundling and querying the full catalog. Set BYOKIT_NO_RUNTIME_WARNING=1 to silence this message.");\n' +
-      '  }\n' +
-      '  if(!defaultCatalog)defaultCatalog=new Catalog(data, { trusted: true });\n' +
-      '  return defaultCatalog.getModels(input,options);\n' +
-      '}\n',
+      ';\nexport default data;\nexport * from "./core.js";\nlet defaultCatalog;\n' +
+      'export const catalog = new Catalog(data, { trusted: true });\n' +
+      'export function getModels(input = {}, options) {\n' +
+      '  if (!defaultCatalog) defaultCatalog = new Catalog(data, { trusted: true });\n' +
+      '  return defaultCatalog.getModels(input, options);\n' +
+      '}\n' +
+      'export function getModelsByProvider(input = {}, options) {\n' +
+      '  if (!defaultCatalog) defaultCatalog = new Catalog(data, { trusted: true });\n' +
+      '  return defaultCatalog.getModelsByProvider(input, options);\n' +
+      '}\n' +
+      'export function addVerifications(records) {\n' +
+      '  if (!defaultCatalog) defaultCatalog = new Catalog(data, { trusted: true });\n' +
+      '  return defaultCatalog.addVerifications(records);\n' +
+      '}\n' +
+      'export function getConfig(input = {}, options) {\n' +
+      '  if (!defaultCatalog) defaultCatalog = new Catalog(data, { trusted: true });\n' +
+      '  return defaultCatalog.getConfig(input, options);\n' +
+      '}\n' +
+      'export function getConfigJson(input = {}, options, indent = 2) {\n' +
+      '  if (!defaultCatalog) defaultCatalog = new Catalog(data, { trusted: true });\n' +
+      '  return defaultCatalog.getConfigJson(input, options, indent);\n' +
+      '}\n' +
+      'export const toConfig = getConfig;\n' +
+      'export const toConfigJson = getConfigJson;\n',
   );
   await writeFile(new URL('catalog.json', python), JSON.stringify(catalog) + '\n');
 }
