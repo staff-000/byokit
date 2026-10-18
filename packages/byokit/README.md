@@ -119,11 +119,23 @@ MIT © [staff-000](https://github.com/staff-000)
 Defaults are reviewed offering recommendations. COMPLETE includes every upstream
 provider and output modality, including retired and uncertain entries. GLOBAL and
 CHINA remain editorial collections. Filter `output` for image/audio/video generation
-and `callable` for reviewed text-call compatibility. Input/output arrays require all
-listed modalities. Newly discovered providers may have no connection adapter.
+and `callable` for reviewed text-call compatibility. Input arrays require all listed modalities; output arrays require the exact set. Newly discovered providers may have no connection adapter.
 
 `callSupport.textGeneration` is adapter compatibility; availability uses separate
 provider evidence. Catalog observation never establishes LIVE availability.
 Explicit lifecycle filters override `includeDeprecated`. Token prices are per
 million tokens; media prices may be unknown. See the repository README for migration
 details and examples.
+
+The default list contains OpenAI Terra/Luna, Gemini Flash, Claude Haiku, and
+DeepSeek Flash/Chat, plus a local setup entry. Pass `local: false` in JavaScript
+or `"local": False` in Python for the six hosted choices. The shortlist uses
+reviewed offering IDs rather than release-age or tier guesses; COMPLETE still
+provides full discovery.
+
+Array filters remain supported. Input arrays require all listed modalities;
+output arrays match the exact output set. Composable `exact`, `contain`, `any`,
+`exclude` and boolean expressions preserve these distinctions when nested.
+`filters.releaseChannel` accepts stable, preview, experimental, and unknown;
+missing status stays unknown. Release channel, availability, adapter support,
+and successful call verification are separate facts.

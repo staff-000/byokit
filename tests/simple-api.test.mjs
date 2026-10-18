@@ -9,7 +9,7 @@ test('default list contains explicit reviewed recommendations followed by Local'
   const list = byokit.getModels({ asOf });
   assert.deepEqual(
     list.map((o) => o.providerId),
-    ['anthropic', 'google', 'openai', 'openai', 'local'],
+    ['anthropic', 'deepseek', 'deepseek', 'google', 'openai', 'openai', 'local'],
   );
   assert.ok(list.slice(0, -1).every((o) => o.callSupport.textGeneration));
   const ids = JSON.parse(readFileSync('catalog/recommendations.json')).map((r) => r.offeringId);
@@ -37,7 +37,7 @@ test('COMPLETE removes shortlist limits and CHINA selects China providers', () =
       .getModels(byokit.COMPLETE, {
         asOf,
         local: false,
-        filters: { excludeTags: [byokit.Tag.OriginChina] },
+        filters: { excludeTags: byokit.any(byokit.Tag.OriginChina) },
       })
       .every((o) => !o.tags.includes('origin:cn') && !o.provider.tags.includes('origin:cn')),
   );
@@ -69,7 +69,7 @@ test('OFFICIAL selects only official providers and filters.official restricts to
 
   const anthropicFlagship = byokit.getModels({
     preset: 'official-flagship',
-    providerIds: ['anthropic'],
+    providerIds: byokit.exact('anthropic'),
   });
   assert.deepEqual(
     anthropicFlagship.map((o) => o.id),
@@ -127,12 +127,12 @@ test('Tag.ModelFlash and Tag.Flash filter flash models and agree with isFlashMod
   const flashByTag = byokit.getModels(byokit.COMPLETE, {
     asOf,
     local: false,
-    filters: { includeTags: [byokit.Tag.ModelFlash] },
+    filters: { includeTags: byokit.any(byokit.Tag.ModelFlash) },
   });
   const flashByShort = byokit.getModels(byokit.COMPLETE, {
     asOf,
     local: false,
-    filters: { includeTags: [byokit.Tag.Flash] },
+    filters: { includeTags: byokit.any(byokit.Tag.Flash) },
   });
   assert.ok(flashByTag.length > 500);
   assert.equal(flashByTag.length, flashByShort.length);
@@ -145,7 +145,7 @@ test('Tag.ModelFlash and Tag.Flash filter flash models and agree with isFlashMod
   const nonFlash = byokit.getModels(byokit.COMPLETE, {
     asOf,
     local: false,
-    filters: { excludeTags: [byokit.Tag.ModelFlash] },
+    filters: { excludeTags: byokit.any(byokit.Tag.ModelFlash) },
   });
   assert.ok(nonFlash.length > 5000);
   assert.ok(!nonFlash.some((m) => m.tags.includes('model:flash')));
@@ -184,7 +184,7 @@ test('lifecycle is provider-specific: retired direct model stays LIVE via aggreg
       .getModels(byokit.COMPLETE, {
         asOf,
         local: false,
-        filters: { lifecycle: [byokit.Lifecycle.Outdated] },
+        filters: { lifecycle: byokit.any(byokit.Lifecycle.Outdated) },
       })
       .some((o) => o.id === original.id),
   );
@@ -198,8 +198,8 @@ test('local URL/model entries bypass hosted metadata filters and never fabricate
     local,
     filters: {
       minContextTokens: 1e12,
-      excludeTags: [byokit.customTag('deployment:local')],
-      requiredFeatures: [byokit.FeatureName.StrictJsonSchema],
+      excludeTags: byokit.any(byokit.customTag('deployment:local')),
+      requiredFeatures: byokit.any(byokit.FeatureName.StrictJsonSchema),
     },
   };
   const list = byokit.getModels(q);
@@ -211,7 +211,7 @@ test('local URL/model entries bypass hosted metadata filters and never fabricate
   assert.equal(byokit.getModels({ ...q, local: false }).length, 0);
   assert.equal(
     byokit
-      .getModels({ ...q, filters: { deployment: [byokit.Deployment.Hosted] } })
+      .getModels({ ...q, filters: { deployment: byokit.any(byokit.Deployment.Hosted) } })
       .some((o) => o.local),
     false,
   );
@@ -234,8 +234,8 @@ test('simplified list modes and appended local entries agree with Python', () =>
       limit: 5,
       local: [{ endpoint: 'http://localhost:8080/v1', modelId: 'one' }],
     },
-    { asOf, local: false, filters: { lifecycle: ['UNCERTAIN'] } },
-    { asOf, local: false, filters: { includeTags: [byokit.Tag.ModelFlash] } },
+    { asOf, local: false, filters: { lifecycle: byokit.any('UNCERTAIN') } },
+    { asOf, local: false, filters: { includeTags: byokit.any(byokit.Tag.ModelFlash) } },
   ];
   const run = pythonModels({ data: d, queries });
   assert.equal(run.status, 0, run.stderr);

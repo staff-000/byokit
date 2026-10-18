@@ -34,6 +34,9 @@ import {
   Locale,
   SetupStatus,
   SetupEventType,
+  Speciality,
+  Tier,
+  ModelTier,
 } from './enums.js';
 export * from './enums.js';
 export interface Evidence {
@@ -67,6 +70,7 @@ export interface Model {
   name: string;
   familyId?: string;
   type?: string;
+  releaseChannel?: ReleaseChannel;
   releaseDate?: string | null;
   lastUpdated?: string | null;
   origin?: Country | CustomCountryCode;
@@ -78,6 +82,8 @@ export interface Model {
     activeParameters: number | null;
     architecture: Architecture;
   };
+  speciality: Speciality;
+  tier: Tier;
   tags: string[];
 }
 export interface Offering {
@@ -90,6 +96,9 @@ export interface Offering {
   releaseDate?: string | null;
   lastUpdated?: string | null;
   type?: string;
+  releaseChannel?: ReleaseChannel;
+  speciality: Speciality;
+  tier: Tier;
   providerShape?: 'responses' | 'completions';
   requiresProviderOverride?: boolean;
   callSupport?: { textGeneration: boolean; reason: string | null };
@@ -140,7 +149,13 @@ export interface CatalogData {
   families: { id: string; name: string; logoId?: string }[];
   offerings: Offering[];
   presets: { id: string; providerIds: string[]; offeringIds?: string[] }[];
-  recommendations?: { offeringId: string; reviewedAt: string; source: string; rationale: string }[];
+  recommendations?: {
+    offeringId: string;
+    reviewedAt: string;
+    source: string;
+    rationale: string;
+    default?: boolean;
+  }[];
   verifications?: VerificationRecord[];
   assets?: Asset[];
   provenance?: Evidence;
@@ -151,14 +166,38 @@ export interface LocalEndpoint {
   modelId?: string;
   name?: string;
 }
-export type ModalityMatcherMode = 'exact' | 'contain' | 'contains' | 'any';
-export interface ModalityMatcher {
-  mode: ModalityMatcherMode;
-  values: Modality[];
+export type SetMatcherMode = 'exact' | 'contain' | 'contains' | 'any' | 'exclude';
+export type BooleanOperator = 'and' | 'or' | 'xor' | 'not';
+
+export interface SetMatcher<T = any> {
+  mode: SetMatcherMode;
+  values: (T | ListFilter<T>)[];
 }
-export type ModalityShorthandMatcher =
-  { exact: Modality[] } | { contain: Modality[] } | { contains: Modality[] } | { any: Modality[] };
-export type ModalityFilter = Modality | Modality[] | ModalityMatcher | ModalityShorthandMatcher;
+
+export interface BooleanMatcher<T = any> {
+  op: BooleanOperator;
+  values: ListFilter<T>[];
+}
+
+export type ShorthandMatcher<T = any> =
+  | { exact: (T | ListFilter<T>)[] | T | ListFilter<T> }
+  | { contain: (T | ListFilter<T>)[] | T | ListFilter<T> }
+  | { contains: (T | ListFilter<T>)[] | T | ListFilter<T> }
+  | { any: (T | ListFilter<T>)[] | T | ListFilter<T> }
+  | { exclude: (T | ListFilter<T>)[] | T | ListFilter<T> }
+  | { and: ListFilter<T>[] | ListFilter<T> }
+  | { or: ListFilter<T>[] | ListFilter<T> }
+  | { xor: ListFilter<T>[] | ListFilter<T> }
+  | { not: ListFilter<T>[] | ListFilter<T> };
+
+export type ListFilter<T = any> = T | T[] | SetMatcher<T> | BooleanMatcher<T> | ShorthandMatcher<T>;
+
+export type ModalityMatcherMode = SetMatcherMode;
+export type ModalityMatcher = SetMatcher<Modality>;
+export type ModalityShorthandMatcher = ShorthandMatcher<Modality>;
+export type ModalityFilter = ListFilter<Modality>;
+
+export type ReleaseChannel = 'stable' | 'preview' | 'experimental' | 'unknown';
 
 export interface PickerConfig {
   sort?: ModelSort;
@@ -167,27 +206,30 @@ export interface PickerConfig {
   limit?: number;
   asOf?: string;
   preset?: Preset;
-  providerIds?: (ProviderId | CustomProviderId | (string & {}))[];
+  providerIds?: ListFilter<ProviderId | CustomProviderId | (string & {})>;
   unknownPolicy?: UnknownPolicy;
   filters?: {
-    deployment?: Offering['deployment'][];
-    origin?: (Country | CustomCountryCode)[];
+    releaseChannel?: ListFilter<ReleaseChannel>;
+    speciality?: ListFilter<Speciality>;
+    tier?: ListFilter<Tier>;
+    deployment?: ListFilter<Offering['deployment']>;
+    origin?: ListFilter<Country | CustomCountryCode>;
     openWeights?: boolean;
     commercialUse?: Model['commercialUse'];
-    input?: ModalityFilter;
-    output?: ModalityFilter;
-    requiredFeatures?: FeatureName[];
+    input?: ListFilter<Modality>;
+    output?: ListFilter<Modality>;
+    requiredFeatures?: ListFilter<FeatureName>;
     minContextTokens?: number;
     maxInputPricePerM?: number;
     maxOutputPricePerM?: number;
     maxParameters?: number;
-    fileFormats?: (FileFormat | CustomFileFormat)[];
+    fileFormats?: ListFilter<FileFormat | CustomFileFormat>;
     maxTimeToFirstTokenMs?: number;
     minTokensPerSecond?: number;
-    includeTags?: (Tag | CustomTag)[];
-    excludeTags?: (Tag | CustomTag)[];
-    lifecycle?: Lifecycle[];
-    popularity?: Popularity[];
+    includeTags?: ListFilter<Tag | CustomTag>;
+    excludeTags?: ListFilter<Tag | CustomTag>;
+    lifecycle?: ListFilter<Lifecycle>;
+    popularity?: ListFilter<Popularity>;
     includeDeprecated?: boolean;
     callable?: boolean;
     verified?:
@@ -269,20 +311,38 @@ export class Catalog {
   select(list: ModelList, config?: PickerConfig): { provider: Provider; offerings: Offering[] }[];
   select(config?: PickerConfig): { provider: Provider; offerings: Offering[] }[];
 }
-export function exact(values: Modality[] | Modality): ModalityMatcher;
-export function contain(values: Modality[] | Modality): ModalityMatcher;
-export function any(values: Modality[] | Modality): ModalityMatcher;
+export function exact<T>(...args: (T | ListFilter<T> | (T | ListFilter<T>)[])[]): SetMatcher<T>;
+export function contain<T>(...args: (T | ListFilter<T> | (T | ListFilter<T>)[])[]): SetMatcher<T>;
+export const contains: typeof contain;
+export function any<T>(...args: (T | ListFilter<T> | (T | ListFilter<T>)[])[]): SetMatcher<T>;
+export function exclude<T>(...args: (T | ListFilter<T> | (T | ListFilter<T>)[])[]): SetMatcher<T>;
+export function and<T>(...args: (T | ListFilter<T> | (T | ListFilter<T>)[])[]): BooleanMatcher<T>;
+export function or<T>(...args: (T | ListFilter<T> | (T | ListFilter<T>)[])[]): BooleanMatcher<T>;
+export function xor<T>(...args: (T | ListFilter<T> | (T | ListFilter<T>)[])[]): BooleanMatcher<T>;
+export function not<T>(...args: (T | ListFilter<T> | (T | ListFilter<T>)[])[]): BooleanMatcher<T>;
 export const Exact: typeof exact;
 export const Contain: typeof contain;
 export const Contains: typeof contain;
 export const Any: typeof any;
+export const Exclude: typeof exclude;
+export const And: typeof and;
+export const AND: typeof and;
+export const Or: typeof or;
+export const OR: typeof or;
+export const Xor: typeof xor;
+export const XOR: typeof xor;
+export const Not: typeof not;
+export const NOT: typeof not;
+export function getReleaseChannel(offering: Partial<Offering>): ReleaseChannel;
+export function getModelSpeciality(offering?: Offering | null, model?: Model | null): Speciality;
+export function getModelTier(offering?: Offering | null, model?: Model | null): Tier;
 export function normalizeModalityFilter(
   value: ModalityFilter | undefined | null,
   defaultMode?: ModalityMatcherMode,
-): ModalityMatcher | null;
+): SetMatcher<Modality> | BooleanMatcher<Modality> | null;
 export function matchesModality(
   modelValues: string[] | null | undefined,
-  filterSpec: ModalityMatcher | null | undefined,
+  filterSpec: SetMatcher<Modality> | BooleanMatcher<Modality> | null | undefined,
   allowUnknown?: boolean,
 ): boolean;
 export function validateCatalog(data: unknown): string[];

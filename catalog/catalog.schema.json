@@ -66,6 +66,25 @@
             },
             "required": []
           },
+          "speciality": {
+            "enum": [
+              "general",
+              "cybersecurity",
+              "music",
+              "safety",
+              "embedding",
+              "agent",
+              "translation",
+              "audio",
+              "image",
+              "video",
+              "coding",
+              "unknown"
+            ]
+          },
+          "tier": {
+            "enum": ["flagship", "workhorse", "flash", "lite", "mini", "unknown"]
+          },
           "tags": {
             "type": "array",
             "items": {
@@ -74,7 +93,16 @@
             }
           }
         },
-        "required": ["id", "name", "openWeights", "commercialUse", "license", "tags"]
+        "required": [
+          "id",
+          "name",
+          "openWeights",
+          "commercialUse",
+          "license",
+          "speciality",
+          "tier",
+          "tags"
+        ]
       }
     },
     "families": {
@@ -356,6 +384,28 @@
           },
           "type": {
             "type": "string"
+          },
+          "speciality": {
+            "enum": [
+              "general",
+              "cybersecurity",
+              "music",
+              "safety",
+              "embedding",
+              "agent",
+              "translation",
+              "audio",
+              "image",
+              "video",
+              "coding",
+              "unknown"
+            ]
+          },
+          "tier": {
+            "enum": ["flagship", "workhorse", "flash", "lite", "mini", "unknown"]
+          },
+          "releaseChannel": {
+            "enum": ["stable", "preview", "experimental", "unknown"]
           }
         },
         "required": [
@@ -369,6 +419,8 @@
           "limits",
           "features",
           "price",
+          "speciality",
+          "tier",
           "tags"
         ]
       }

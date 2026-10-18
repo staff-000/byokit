@@ -24,7 +24,9 @@
       "provenance": {
         "source": "https://api.example.com/docs",
         "reviewedAt": "2026-10-14"
-      }
+      },
+      "speciality": "unknown",
+      "tier": "unknown"
     }
   ],
   "families": [],
@@ -60,7 +62,9 @@
       "provenance": {
         "source": "https://api.example.com/docs",
         "reviewedAt": "2026-10-14"
-      }
+      },
+      "speciality": "unknown",
+      "tier": "unknown"
     }
   ],
   "assets": [],

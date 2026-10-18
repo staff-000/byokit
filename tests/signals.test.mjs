@@ -38,12 +38,15 @@ test('exclusions apply to model, offering, and provider tags; exclusion wins', (
     const q = {
       asOf,
       local: false,
-      filters: { includeTags: ['usecase:excluded'], excludeTags: ['usecase:excluded'] },
+      filters: {
+        includeTags: byokit.any('usecase:excluded'),
+        excludeTags: byokit.any('usecase:excluded'),
+      },
     };
     assert.deepEqual(c.getModels(q), []);
     assert.ok(
       !c
-        .getModels({ asOf, local: false, filters: { excludeTags: ['usecase:excluded'] } })
+        .getModels({ asOf, local: false, filters: { excludeTags: byokit.any('usecase:excluded') } })
         .some((o) => o.id === d.offerings[0].id),
     );
   }
@@ -54,7 +57,10 @@ test('lifecycle and objective popularity expose evidence, filter by enum and der
   const q = {
     asOf,
     local: false,
-    filters: { lifecycle: [byokit.Lifecycle.Live], popularity: [byokit.Popularity.Popular] },
+    filters: {
+      lifecycle: byokit.any(byokit.Lifecycle.Live),
+      popularity: byokit.any(byokit.Popularity.Popular),
+    },
   };
   const result = c.getModels(q);
   assert.equal(result.length, 1);
@@ -63,13 +69,17 @@ test('lifecycle and objective popularity expose evidence, filter by enum and der
     c.getModels({
       asOf,
       local: false,
-      filters: { includeTags: [byokit.Tag.LifecycleLive, byokit.Tag.PopularityPopular] },
+      filters: { includeTags: byokit.any(byokit.Tag.LifecycleLive, byokit.Tag.PopularityPopular) },
     }),
     result,
   );
   assert.ok(
     !c
-      .getModels({ asOf, local: false, filters: { excludeTags: [byokit.Tag.LifecycleLive] } })
+      .getModels({
+        asOf,
+        local: false,
+        filters: { excludeTags: byokit.any(byokit.Tag.LifecycleLive) },
+      })
       .some((o) => o.id === result[0].id),
   );
   result[0].popularity.evidence.rank = 99;
@@ -83,7 +93,11 @@ test('lifecycle and objective popularity expose evidence, filter by enum and der
   d.offerings[0].lifecycleEvidence = { ...live, status: 'OUTDATED' };
   assert.equal(
     new byokit.Catalog(d)
-      .getModels(byokit.COMPLETE, { asOf, local: false, filters: { lifecycle: ['OUTDATED'] } })
+      .getModels(byokit.COMPLETE, {
+        asOf,
+        local: false,
+        filters: { lifecycle: byokit.any('OUTDATED') },
+      })
       .find((o) => o.id === d.offerings[0].id).lifecycle.status,
     'OUTDATED',
   );
@@ -101,12 +115,16 @@ test('missing, stale, future evidence and forged tags cannot establish live/popu
       d[collection][0].tags = ['lifecycle:LIVE', 'popularity:POPULAR'];
     const c = new byokit.Catalog(d);
     assert.deepEqual(
-      c.getModels({ asOf, local: false, filters: { includeTags: [byokit.Tag.LifecycleLive] } }),
+      c.getModels({
+        asOf,
+        local: false,
+        filters: { includeTags: byokit.any(byokit.Tag.LifecycleLive) },
+      }),
       [],
     );
     assert.equal(
-      c.getModels({ asOf, local: false, filters: { lifecycle: ['UNCERTAIN'] } })[0].popularity
-        .status,
+      c.getModels({ asOf, local: false, filters: { lifecycle: byokit.any('UNCERTAIN') } })[0]
+        .popularity.status,
       'UNCERTAIN',
     );
   }
@@ -116,7 +134,7 @@ test('missing, stale, future evidence and forged tags cannot establish live/popu
       asOf,
       local: false,
       unknownPolicy: byokit.UnknownPolicy.Include,
-      filters: { lifecycle: [byokit.Lifecycle.Live] },
+      filters: { lifecycle: byokit.any(byokit.Lifecycle.Live) },
     }),
     [],
   );
@@ -125,8 +143,8 @@ test('missing, stale, future evidence and forged tags cannot establish live/popu
       asOf,
       local: false,
       filters: {
-        lifecycle: [byokit.Lifecycle.Uncertain],
-        popularity: [byokit.Popularity.Uncertain],
+        lifecycle: byokit.any(byokit.Lifecycle.Uncertain),
+        popularity: byokit.any(byokit.Popularity.Uncertain),
       },
     }).length,
   );
@@ -146,18 +164,19 @@ test('invalid evidence and enum filters are rejected', () => {
     assert.throws(() => new byokit.Catalog(d));
   }
   const c = new byokit.Catalog(data());
-  assert.throws(() => c.getModels({ filters: { lifecycle: ['live'] } }));
-  assert.throws(() => c.getModels({ filters: { popularity: ['famous'] } }));
+  assert.throws(() => c.getModels({ filters: { lifecycle: byokit.any('live') } }));
+  assert.throws(() => c.getModels({ filters: { popularity: byokit.any('famous') } }));
+  assert.throws(() => c.getModels({ filters: { lifecycle: ['live'] } }), /Unknown/);
 });
 test('signal and exclusion behavior matches Python including stale evidence', () => {
   const d = data();
   d.providers[0].tags = ['provider:test'];
   const queries = [
     { asOf, local: false },
-    { asOf, local: false, filters: { lifecycle: ['LIVE'] } },
-    { asOf, local: false, filters: { popularity: ['POPULAR'] } },
-    { asOf, local: false, filters: { excludeTags: ['lifecycle:LIVE'] } },
-    { asOf, local: false, filters: { excludeTags: ['provider:test'] } },
+    { asOf, local: false, filters: { lifecycle: byokit.any('LIVE') } },
+    { asOf, local: false, filters: { popularity: byokit.any('POPULAR') } },
+    { asOf, local: false, filters: { excludeTags: byokit.any('lifecycle:LIVE') } },
+    { asOf, local: false, filters: { excludeTags: byokit.any('provider:test') } },
     { asOf: '2027-01-20T00:00:00Z' },
   ];
   const run = spawnSync('python3', ['packages/python/tests/conformance_runner.py', 'models'], {
@@ -181,7 +200,11 @@ test('freshness boundaries, small populations and evidence validation agree in P
     windowStart: '2026-09-01T00:00:00Z',
     windowEnd: '2026-09-12T12:00:00Z',
   };
-  const q = { asOf, local: false, filters: { lifecycle: ['LIVE'], popularity: ['POPULAR'] } };
+  const q = {
+    asOf,
+    local: false,
+    filters: { lifecycle: byokit.any('LIVE'), popularity: byokit.any('POPULAR') },
+  };
   assert.equal(new byokit.Catalog(d).getModels(q).length, 1);
   assert.equal(new byokit.Catalog(d).getModels({ ...q, asOf: '2026-10-12T12:00:01Z' }).length, 0);
   const invalids = [
@@ -220,7 +243,7 @@ test('release date tags and releasedWithin filter by duration windows (1m, 3m, 6
   let [m1] = c.getModels({
     asOf,
     local: false,
-    filters: { includeTags: [byokit.Tag.ReleaseWithin1Month] },
+    filters: { includeTags: byokit.any(byokit.Tag.ReleaseWithin1Month) },
   });
   assert.ok(m1);
   assert.ok(m1.tags.includes('release:1m'));
@@ -231,8 +254,11 @@ test('release date tags and releasedWithin filter by duration windows (1m, 3m, 6
 
   // Also test ReleasedWithin... aliases
   assert.equal(
-    c.getModels({ asOf, local: false, filters: { includeTags: [byokit.Tag.ReleasedWithin1Month] } })
-      .length,
+    c.getModels({
+      asOf,
+      local: false,
+      filters: { includeTags: byokit.any(byokit.Tag.ReleasedWithin1Month) },
+    }).length,
     1,
   );
   assert.equal(c.getModels({ asOf, local: false, filters: { releasedWithin: '1m' } }).length, 1);
@@ -246,13 +272,19 @@ test('release date tags and releasedWithin filter by duration windows (1m, 3m, 6
   d.offerings[0].releaseDate = '2026-08-28';
   c = new byokit.Catalog(d);
   assert.equal(
-    c.getModels({ asOf, local: false, filters: { includeTags: [byokit.Tag.ReleaseWithin1Month] } })
-      .length,
+    c.getModels({
+      asOf,
+      local: false,
+      filters: { includeTags: byokit.any(byokit.Tag.ReleaseWithin1Month) },
+    }).length,
     0,
   );
   assert.equal(
-    c.getModels({ asOf, local: false, filters: { includeTags: [byokit.Tag.ReleaseWithin3Months] } })
-      .length,
+    c.getModels({
+      asOf,
+      local: false,
+      filters: { includeTags: byokit.any(byokit.Tag.ReleaseWithin3Months) },
+    }).length,
     1,
   );
   assert.equal(c.getModels({ asOf, local: false, filters: { releasedWithin: '1m' } }).length, 0);
@@ -262,13 +294,19 @@ test('release date tags and releasedWithin filter by duration windows (1m, 3m, 6
   d.offerings[0].releaseDate = '2026-06-14';
   c = new byokit.Catalog(d);
   assert.equal(
-    c.getModels({ asOf, local: false, filters: { includeTags: [byokit.Tag.ReleaseWithin3Months] } })
-      .length,
+    c.getModels({
+      asOf,
+      local: false,
+      filters: { includeTags: byokit.any(byokit.Tag.ReleaseWithin3Months) },
+    }).length,
     0,
   );
   assert.equal(
-    c.getModels({ asOf, local: false, filters: { includeTags: [byokit.Tag.ReleaseWithin6Months] } })
-      .length,
+    c.getModels({
+      asOf,
+      local: false,
+      filters: { includeTags: byokit.any(byokit.Tag.ReleaseWithin6Months) },
+    }).length,
     1,
   );
   assert.equal(c.getModels({ asOf, local: false, filters: { releasedWithin: '6m' } }).length, 1);
@@ -277,13 +315,19 @@ test('release date tags and releasedWithin filter by duration windows (1m, 3m, 6
   d.offerings[0].releaseDate = '2026-02-04';
   c = new byokit.Catalog(d);
   assert.equal(
-    c.getModels({ asOf, local: false, filters: { includeTags: [byokit.Tag.ReleaseWithin6Months] } })
-      .length,
+    c.getModels({
+      asOf,
+      local: false,
+      filters: { includeTags: byokit.any(byokit.Tag.ReleaseWithin6Months) },
+    }).length,
     0,
   );
   assert.equal(
-    c.getModels({ asOf, local: false, filters: { includeTags: [byokit.Tag.ReleaseWithin1Year] } })
-      .length,
+    c.getModels({
+      asOf,
+      local: false,
+      filters: { includeTags: byokit.any(byokit.Tag.ReleaseWithin1Year) },
+    }).length,
     1,
   );
   assert.equal(c.getModels({ asOf, local: false, filters: { releasedWithin: '1y' } }).length, 1);
@@ -292,13 +336,19 @@ test('release date tags and releasedWithin filter by duration windows (1m, 3m, 6
   d.offerings[0].releaseDate = '2025-05-30';
   c = new byokit.Catalog(d);
   assert.equal(
-    c.getModels({ asOf, local: false, filters: { includeTags: [byokit.Tag.ReleaseWithin1Year] } })
-      .length,
+    c.getModels({
+      asOf,
+      local: false,
+      filters: { includeTags: byokit.any(byokit.Tag.ReleaseWithin1Year) },
+    }).length,
     0,
   );
   assert.equal(
-    c.getModels({ asOf, local: false, filters: { includeTags: [byokit.Tag.ReleaseWithin2Years] } })
-      .length,
+    c.getModels({
+      asOf,
+      local: false,
+      filters: { includeTags: byokit.any(byokit.Tag.ReleaseWithin2Years) },
+    }).length,
     1,
   );
   assert.equal(c.getModels({ asOf, local: false, filters: { releasedWithin: '2y' } }).length, 1);
@@ -307,8 +357,11 @@ test('release date tags and releasedWithin filter by duration windows (1m, 3m, 6
   d.offerings[0].releaseDate = '2024-08-04';
   c = new byokit.Catalog(d);
   assert.equal(
-    c.getModels({ asOf, local: false, filters: { includeTags: [byokit.Tag.ReleaseWithin2Years] } })
-      .length,
+    c.getModels({
+      asOf,
+      local: false,
+      filters: { includeTags: byokit.any(byokit.Tag.ReleaseWithin2Years) },
+    }).length,
     0,
   );
   assert.equal(c.getModels({ asOf, local: false, filters: { releasedWithin: '2y' } }).length, 0);
@@ -322,8 +375,11 @@ test('release date tags and releasedWithin filter by duration windows (1m, 3m, 6
   d.offerings[0].releaseDate = '2024-08-04';
   c = new byokit.Catalog(d);
   assert.equal(
-    c.getModels({ asOf, local: false, filters: { includeTags: [byokit.Tag.ReleaseWithin1Month] } })
-      .length,
+    c.getModels({
+      asOf,
+      local: false,
+      filters: { includeTags: byokit.any(byokit.Tag.ReleaseWithin1Month) },
+    }).length,
     0,
   );
 
@@ -332,8 +388,11 @@ test('release date tags and releasedWithin filter by duration windows (1m, 3m, 6
   d.models[0].releaseDate = '2026-09-27';
   c = new byokit.Catalog(d);
   assert.equal(
-    c.getModels({ asOf, local: false, filters: { includeTags: [byokit.Tag.ReleaseWithin1Month] } })
-      .length,
+    c.getModels({
+      asOf,
+      local: false,
+      filters: { includeTags: byokit.any(byokit.Tag.ReleaseWithin1Month) },
+    }).length,
     1,
   );
   assert.equal(c.getModels({ asOf, local: false, filters: { releasedWithin: '1m' } }).length, 1);
@@ -346,8 +405,8 @@ test('release date tags and releasedWithin filter by duration windows (1m, 3m, 6
 
   // Cross-language conformance with Python
   const queries = [
-    { asOf, local: false, filters: { includeTags: [byokit.Tag.ReleaseWithin1Month] } },
-    { asOf, local: false, filters: { includeTags: [byokit.Tag.ReleaseWithin1Year] } },
+    { asOf, local: false, filters: { includeTags: byokit.any(byokit.Tag.ReleaseWithin1Month) } },
+    { asOf, local: false, filters: { includeTags: byokit.any(byokit.Tag.ReleaseWithin1Year) } },
     { asOf, local: false, filters: { releasedWithin: '1m' } },
     { asOf, local: false, filters: { releasedWithin: '1y' } },
   ];

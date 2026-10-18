@@ -19,7 +19,7 @@ test('website model list is the library catalog, including metadata and contribu
 });
 test('documented single selection is bounded, rejects empty matches and excludes Local', () => {
   const models = byokit.getModels({
-    providerIds: [byokit.ProviderId.DeepSeek],
+    providerIds: byokit.exact(byokit.ProviderId.DeepSeek),
     limit: 1,
     local: false,
   });
@@ -27,7 +27,7 @@ test('documented single selection is bounded, rejects empty matches and excludes
   assert.ok(models.every((m) => !m.local));
   assert.deepEqual(
     byokit.getModels({
-      providerIds: [byokit.ProviderId.DeepSeek],
+      providerIds: byokit.exact(byokit.ProviderId.DeepSeek),
       limit: 1,
       local: false,
       filters: { minContextTokens: Number.MAX_SAFE_INTEGER },

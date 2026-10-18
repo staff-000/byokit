@@ -66,7 +66,7 @@
   <span class="code-green">'byokit/catalog'</span>;
 
 <span class="code-muted">const</span> [model] = byokit.<span class="code-lime">getModels</span>({
-  providerIds: [byokit.ProviderId.DeepSeek],
+  providerIds: byokit.<span class="code-lime">exact</span>(byokit.ProviderId.DeepSeek),
   sort: byokit.ModelSort.PriceAscend,
   limit: 1, local: false,
 });
@@ -293,10 +293,13 @@ Your console output will appear here.</pre>
             </div>
             <div>
               <span class="number">02</span>
-              <h3>Presets, rich filters &amp; sorting</h3>
+              <h3>Presets, composable matchers &amp; rich filters</h3>
               <p>
-                Curated presets (DEFAULT, COMPLETE, CHINA, GLOBAL, OFFICIAL_FLAGSHIP) with filters
-                for modalities, capabilities, context, prices, and tag exclusions.
+                Curated presets paired with composable matchers (<code>exact</code>,
+                <code>any</code>, <code>contain</code>, <code>exclude</code>, <code>and</code>,
+                <code>or</code>, <code>xor</code>, <code>not</code>) for modalities, required
+                speciality, model tiers, context, and tag exclusions. Existing array filters remain
+                supported.
               </p>
             </div>
             <div>
@@ -374,8 +377,10 @@ Your console output will appear here.</pre>
             <div class="example-purpose" role="group" aria-label="Example purpose">
               <button type="button" data-example="query" aria-pressed="false">
                 1. Get a model list</button
+              ><button type="button" data-example="matchers" aria-pressed="false">
+                2. Filter with matchers</button
               ><button type="button" data-example="inference" class="active" aria-pressed="true">
-                2. Call a model
+                3. Call a model
               </button>
             </div>
             <div class="language-tabs" role="group" aria-label="Response format">

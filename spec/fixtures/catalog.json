@@ -23,13 +23,17 @@
       "commercialUse": "unknown",
       "license": null,
       "origin": "cn",
+      "speciality": "general",
+      "tier": "workhorse",
       "size": {
         "totalParameters": 8000000000,
         "activeParameters": null,
         "architecture": "dense"
       },
       "tags": [
-        "weights:open"
+        "weights:open",
+        "speciality:general",
+        "tier:workhorse"
       ]
     }
   ],
@@ -72,9 +76,13 @@
         "input": 0.1,
         "output": 0.3
       },
+      "speciality": "general",
+      "tier": "workhorse",
       "tags": [
         "input:text",
-        "cap:functionCalling"
+        "cap:functionCalling",
+        "speciality:general",
+        "tier:workhorse"
       ],
       "lifecycleEvidence": {
         "status": "LIVE",
@@ -124,9 +132,13 @@
         "input": 0.1,
         "output": 0.3
       },
+      "speciality": "general",
+      "tier": "workhorse",
       "tags": [
         "input:text",
-        "cap:functionCalling"
+        "cap:functionCalling",
+        "speciality:general",
+        "tier:workhorse"
       ],
       "lifecycleEvidence": {
         "status": "LIVE",
@@ -176,9 +188,13 @@
         "input": 0.1,
         "output": 0.3
       },
+      "speciality": "general",
+      "tier": "workhorse",
       "tags": [
         "input:text",
-        "cap:functionCalling"
+        "cap:functionCalling",
+        "speciality:general",
+        "tier:workhorse"
       ],
       "lifecycleEvidence": {
         "status": "LIVE",
@@ -228,9 +244,13 @@
         "input": 0.1,
         "output": 0.3
       },
+      "speciality": "general",
+      "tier": "workhorse",
       "tags": [
         "input:text",
-        "cap:functionCalling"
+        "cap:functionCalling",
+        "speciality:general",
+        "tier:workhorse"
       ],
       "callSupport": {
         "textGeneration": true,

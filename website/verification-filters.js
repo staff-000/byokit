@@ -4,24 +4,28 @@ export function filterModels(state = {}) {
     .getModels(byokit.COMPLETE, {
       local: false,
       sort: byokit.ModelSort.ProviderOrder,
-      filters: { lifecycle: Object.values(byokit.Lifecycle), includeDeprecated: true },
+      filters: {
+        lifecycle: byokit.any(...Object.values(byokit.Lifecycle)),
+        includeDeprecated: true,
+      },
     })
     .map((m) => m.providerId);
   providerIds = [...new Set(providerIds)];
   if (state.provider) providerIds = providerIds.filter((id) => id === state.provider);
   const filters = {
     lifecycle: state.includeOutdated
-      ? Object.values(byokit.Lifecycle)
-      : [byokit.Lifecycle.Live, byokit.Lifecycle.Uncertain],
+      ? byokit.any(...Object.values(byokit.Lifecycle))
+      : byokit.any(byokit.Lifecycle.Live, byokit.Lifecycle.Uncertain),
     includeDeprecated: !!state.includeOutdated,
   };
-  if (state.feature && state.feature !== 'any') filters.requiredFeatures = [state.feature];
-  if (state.modality && state.modality !== 'any') filters.input = [state.modality];
+  if (state.feature && state.feature !== 'any')
+    filters.requiredFeatures = byokit.any(state.feature);
+  if (state.modality && state.modality !== 'any') filters.input = byokit.any(state.modality);
   if (state.weights && state.weights !== 'any') filters.openWeights = state.weights === 'open';
   if (Number(state.context) > 0) filters.minContextTokens = Number(state.context);
   if (state.price && state.price !== 'any') filters.maxInputPricePerM = Number(state.price);
-  if (state.region === 'china') filters.includeTags = [byokit.Tag.OriginChina];
-  if (state.excludeTag) filters.excludeTags = [byokit.customTag(state.excludeTag)];
+  if (state.region === 'china') filters.includeTags = byokit.any(byokit.Tag.OriginChina);
+  if (state.excludeTag) filters.excludeTags = byokit.any(byokit.customTag(state.excludeTag));
   let sort = Object.values(byokit.ModelSort).includes(state.sort)
     ? state.sort
     : byokit.ModelSort.ProviderOrder;
@@ -38,7 +42,7 @@ export function filterModels(state = {}) {
     sort = byokit.ModelSort.ProviderOrder;
   }
   let models = byokit.getModels(byokit.COMPLETE, {
-    providerIds,
+    providerIds: byokit.any(...providerIds),
     local: false,
     filters,
     sort,

@@ -11,6 +11,8 @@ import data, {
   Lifecycle,
   Modality,
   call,
+  exact,
+  any,
 } from '../packages/byokit/catalog.js';
 import { pythonModels } from './python-fixture.mjs';
 
@@ -24,7 +26,7 @@ test('complete discovery includes direct providers, resellers, and every generat
       id,
     );
   for (const output of [Modality.Image, Modality.Audio, Modality.Video]) {
-    const matches = catalog.getModels(COMPLETE, { filters: { output: [output] } });
+    const matches = catalog.getModels(COMPLETE, { filters: { output: any(output) } });
     assert.ok(matches.length, output);
     assert.ok(matches.every((o) => !o.local && o.modalities.output.includes(output)));
   }
@@ -46,7 +48,7 @@ test('complete discovery includes direct providers, resellers, and every generat
 test('unsupported catalog calls fail before network access', async () => {
   const selected = catalog.getModels(COMPLETE, {
     local: false,
-    filters: { output: [Modality.Image], callable: false },
+    filters: { output: any(Modality.Image), callable: false },
     limit: 1,
   })[0];
   let requests = 0;
@@ -216,12 +218,12 @@ test('lifecycle precedence, mixed modalities, unknowns, callable and month dates
     { list: COMPLETE, local: false },
     { list: COMPLETE, local: false, filters: { includeDeprecated: false } },
     { local: false, filters: { includeDeprecated: true } },
-    { local: false, filters: { includeDeprecated: false, lifecycle: [Lifecycle.Outdated] } },
-    { local: false, filters: { includeDeprecated: true, lifecycle: [Lifecycle.Live] } },
-    { list: COMPLETE, filters: { output: [Modality.Text, Modality.Audio] } },
-    { list: COMPLETE, filters: { output: [Modality.Video] } },
+    { local: false, filters: { includeDeprecated: false, lifecycle: exact(Lifecycle.Outdated) } },
+    { local: false, filters: { includeDeprecated: true, lifecycle: exact(Lifecycle.Live) } },
+    { list: COMPLETE, filters: { output: exact(Modality.Text, Modality.Audio) } },
+    { list: COMPLETE, filters: { output: exact(Modality.Video) } },
     { list: COMPLETE, filters: { callable: false } },
-    { list: COMPLETE, unknownPolicy: 'include', filters: { output: [Modality.Video] } },
+    { list: COMPLETE, unknownPolicy: 'include', filters: { output: exact(Modality.Video) } },
   ].map((q) => ({ ...q, asOf: '2026-10-15T13:00:00Z' }));
   assert.equal(c.getModels(queries[4]).length, 0);
   assert.equal(c.getModels(queries[5]).length, 1);

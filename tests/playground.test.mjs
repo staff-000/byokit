@@ -81,7 +81,7 @@ test('playground captures generated models and updates verification status when 
   assert.ok(done.models && done.models.length > 0);
   assert.ok(done.models.some((m) => m.providerId === 'openai'));
 
-  const verifiedOffering = 'anthropic/claude-sonnet-5-5';
+  const verifiedOffering = 'anthropic/claude-haiku-5-5';
   const mockVerification = {
     id: 'test:verify-rec-1',
     offeringId: verifiedOffering,

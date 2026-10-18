@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { mergeManualCatalog } from '../scripts/manual-catalog.mjs';
-import { Catalog } from '../packages/byokit/index.js';
+import { Catalog, exact } from '../packages/byokit/index.js';
 const fixture = async () =>
   JSON.parse(await readFile(new URL('../spec/fixtures/catalog.json', import.meta.url), 'utf8'));
 const evidence = { source: 'https://example.com/models', reviewedAt: '2026-10-14' };
@@ -18,6 +18,8 @@ const manual = {
       openWeights: null,
       commercialUse: 'unknown',
       license: null,
+      speciality: 'general',
+      tier: 'workhorse',
       tags: [],
       provenance: evidence,
     },
@@ -30,6 +32,8 @@ const manual = {
       apiModelId: 'model',
       name: 'Manual model',
       deployment: 'hosted',
+      speciality: 'general',
+      tier: 'workhorse',
       connection: { baseUrl: 'https://example.com/v1', protocol: 'openai-compatible' },
       modalities: { input: ['text'], output: ['text'] },
       limits: { context: null, input: null, output: null, contextAccounting: 'unknown' },
@@ -56,7 +60,7 @@ test('manual additions survive repeated imports, preserve native connections, an
     false,
   );
   const model = new Catalog(a).getModels({
-    providerIds: ['manual'],
+    providerIds: exact('manual'),
     asOf: '2026-10-14T12:00:00Z',
   })[0];
   assert.equal(model.connection.baseUrl, 'https://example.com/v1');

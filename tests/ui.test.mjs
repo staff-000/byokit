@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { JSDOM } from 'jsdom';
 import { mountByok } from '../packages/byokit/dom/index.js';
+import { exact } from '../packages/byokit/index.js';
 const data = JSON.parse(readFileSync(new URL('../spec/fixtures/catalog.json', import.meta.url)));
 const tick = () => new Promise((r) => setTimeout(r, 0));
 function setup(options = {}) {
@@ -57,7 +58,7 @@ test('catalog logo URLs are never loaded implicitly', () => {
   ui.destroy();
 });
 test('empty filters explain failure instead of silently choosing a provider', () => {
-  const { root, ui } = setup({ config: { local: false, filters: { input: ['video'] } } });
+  const { root, ui } = setup({ config: { local: false, filters: { input: exact('video') } } });
   assert.ok(root.textContent.includes('No models match'));
   assert.ok(root.querySelector('button[type=submit]').disabled);
   ui.destroy();

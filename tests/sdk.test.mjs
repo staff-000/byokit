@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as byokit from '../packages/byokit/catalog.js';
-const [model] = byokit.getModels({ providerIds: [byokit.ProviderId.DeepSeek] });
+const [model] = byokit.getModels({ providerIds: byokit.exact(byokit.ProviderId.DeepSeek) });
 const response = () => ({
   ok: true,
   json: async () => ({
@@ -166,7 +166,7 @@ test('custom model ID keeps the provider endpoint and uses unknown fit metadata'
 
 test('unauthenticated local SDK clients can omit the key callback', async () => {
   const [local] = byokit.getModels({
-    providerIds: [],
+    providerIds: byokit.exact(),
     local: [{ endpoint: 'http://localhost:8080/v1', modelId: 'local-model' }],
   });
   const c = byokit.openAI({
@@ -299,7 +299,7 @@ test('Byokit routes both public formats identically to helpers across native pro
     byokit.ProviderId.Google,
   ]) {
     const [offering] = byokit.getModels({
-      providerIds: [provider],
+      providerIds: byokit.exact(provider),
       local: false,
       filters: { callable: true },
     });
@@ -383,7 +383,7 @@ test('Byokit cancellation and deadlines propagate; failures cannot expose keys',
 });
 test('Byokit local requests can omit authentication without sharing a previous key', async () => {
   const [local] = byokit.getModels({
-    providerIds: [],
+    providerIds: byokit.exact(),
     local: [{ endpoint: 'http://localhost:8080/v1', modelId: 'local-model' }],
   });
   const c = new byokit.Byokit({ runtimeChecks: false });

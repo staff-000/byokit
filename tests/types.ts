@@ -1,39 +1,53 @@
-import {Catalog,checkFit,PickerConfig,FeatureName,Modality,Preset,ProviderId,Deployment,UnknownPolicy,LocalRuntime,Locale,githubContributor,customTag,customProviderId} from 'byokit';
+import {Catalog,checkFit,PickerConfig,FeatureName,Modality,Preset,ProviderId,Deployment,UnknownPolicy,LocalRuntime,Locale,githubContributor,customTag,customProviderId,exact,any,Speciality,Tier} from 'byokit';
 import {mountByok} from 'byokit/dom';
 import {discoverLocal} from 'byokit/dom/local';
 import {getModels} from 'byokit/catalog';
-const config:PickerConfig={preset:Preset.Global,providerIds:[ProviderId.DeepSeek],filters:{input:[Modality.Image],requiredFeatures:[FeatureName.FunctionCalling],deployment:[Deployment.Hosted],includeTags:[customTag('usecase:summarization')]},unknownPolicy:UnknownPolicy.Exclude};
+const config:PickerConfig={
+  preset:Preset.Global,
+  providerIds:exact(ProviderId.DeepSeek),
+  filters:{
+    speciality:exact(Speciality.General),
+    tier:any(Tier.Flagship, Tier.Workhorse),
+    input:exact(Modality.Image),
+    requiredFeatures:any(FeatureName.FunctionCalling),
+    deployment:exact(Deployment.Hosted),
+    includeTags:any(customTag('usecase:summarization'))
+  },
+  unknownPolicy:UnknownPolicy.Exclude
+};
 declare const catalog:Catalog;
 checkFit(catalog.get('test/model'),{inputTokens:1000});
 mountByok(document.createElement('div'),{catalog,config,locale:Locale.English,onSave:selection=>{console.log(selection.credentialRef)}});
 discoverLocal('http://127.0.0.1:11434',{runtime:LocalRuntime.Ollama});
 getModels({limit:10,filters:{verified:true,verifiedBy:githubContributor('example')}});
-getModels({providerIds:[customProviderId('my-provider')]});
+getModels({providerIds:exact(customProviderId('my-provider'))});
+getModels({providerIds:[ProviderId.DeepSeek]});
 // @ts-expect-error fixed choices require enum members, not raw strings
 getModels({preset:'china'});
 // Catalog provider IDs are extensible; unknown IDs are validated at runtime.
-getModels({providerIds:['fireworks-ai'],filters:{callable:false}});
+getModels({providerIds:exact('fireworks-ai'),filters:{callable:false}});
+getModels({filters:{requiredFeatures:[FeatureName.FunctionCalling]}});
 // @ts-expect-error even a correctly spelled raw feature is rejected
-getModels({filters:{requiredFeatures:['functionCalling']}});
+getModels({filters:{requiredFeatures:exact('functionCalling')}});
 // @ts-expect-error modality typo
-getModels({filters:{input:['imag']}});
+getModels({filters:{input:exact('imag')}});
 // @ts-expect-error named constants must exist
 const bad=FeatureName.FunctionCallling;
 
 import {ProviderId as CatalogProviderId} from 'byokit/catalog';
-getModels({providerIds:[CatalogProviderId.DeepSeek]});
+getModels({providerIds:exact(CatalogProviderId.DeepSeek)});
 
 import * as byokit from 'byokit/catalog';
-byokit.getModels({providerIds:[byokit.ProviderId.DeepSeek]});
+byokit.getModels({providerIds:byokit.exact(byokit.ProviderId.DeepSeek)});
 
 byokit.getModels({preset:byokit.Preset.Global,filters:{verifiedBy:byokit.githubContributor('example')}});
 
-byokit.getModels({filters:{excludeTags:[byokit.Tag.PricePremium],lifecycle:[byokit.Lifecycle.Live],popularity:[byokit.Popularity.Popular]}});
-byokit.getModels({filters:{includeTags:[byokit.Tag.ModelFlash, byokit.Tag.Flash]}});
+byokit.getModels({filters:{excludeTags:byokit.any(byokit.Tag.PricePremium),lifecycle:byokit.any(byokit.Lifecycle.Live),popularity:byokit.any(byokit.Popularity.Popular)}});
+byokit.getModels({filters:{includeTags:byokit.any(byokit.Tag.ModelFlash, byokit.Tag.Flash)}});
 // @ts-expect-error lifecycle values require enums
-byokit.getModels({filters:{lifecycle:['LIVE']}});
+byokit.getModels({filters:{lifecycle:byokit.any('LIVE')}});
 // @ts-expect-error unknown popularity label
-byokit.getModels({filters:{popularity:['famous']}});
+byokit.getModels({filters:{popularity:byokit.any('famous')}});
 const lifecycle:byokit.Lifecycle=byokit.getModels()[0].lifecycle.status;
 
 byokit.getModels();
@@ -51,7 +65,7 @@ byokit.getModels('complete');
 byokit.getModels({local:[{endpoint:'http://localhost:8000',api:'vllm'}]});
 
 import * as calls from 'byokit/catalog';
-const chosen = calls.getModels({providerIds:[calls.ProviderId.DeepSeek]})[0];
+const chosen = calls.getModels({providerIds:calls.exact(calls.ProviderId.DeepSeek)})[0];
 calls.call(chosen,'Hi','key',{runtimeChecks:false});
 calls.callClaude(chosen,{messages:[{role:calls.Role.User,content:'Hi'}]},'key');
 // @ts-expect-error misspelled request parameter
@@ -103,3 +117,7 @@ standard.chat.completions.create({model:chosen,messages:[]});
 standard.chat.completions.create({messages:[]});
 // @ts-expect-error request options cannot change the client account
 standard.chat.completions.create({model:'test',messages:[]},{apiKey:'other'});
+
+getModels({filters:{releaseChannel:['stable','unknown'],output:{or:[{exact:[Modality.Text]},{exact:[Modality.Image]}]}}});
+// @ts-expect-error invalid release channel
+getModels({filters:{releaseChannel:['banana']}});

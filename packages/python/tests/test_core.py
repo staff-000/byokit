@@ -135,12 +135,13 @@ class CoreTests(unittest.TestCase):
         self.assertTrue(validate_config({"budget": {"maxInputTokens": True}}))
 
     def test_release_date_filters(self):
-        from byokit import Tag
+        from byokit import Tag, Any
         fixture = json.loads((root / "spec/fixtures/catalog.json").read_text())
         as_of = "2026-10-12T12:00:00Z"
         fixture["offerings"][0]["releaseDate"] = "2026-09-27"
         cat = Catalog(fixture)
-        m = cat.get_models({"asOf": as_of, "local": False, "filters": {"includeTags": [Tag.RELEASE_WITHIN_1_MONTH]}})
+        self.assertEqual(len(cat.get_models({"asOf": as_of, "local": False, "filters": {"includeTags": [Tag.RELEASE_WITHIN_1_MONTH]}})), 1)
+        m = cat.get_models({"asOf": as_of, "local": False, "filters": {"includeTags": Any(Tag.RELEASE_WITHIN_1_MONTH)}})
         self.assertEqual(len(m), 1)
         self.assertIn("release:1m", m[0]["tags"])
         self.assertIn("release:1y", m[0]["tags"])
@@ -192,9 +193,8 @@ class CoreTests(unittest.TestCase):
 
         cat = Catalog(data)
 
-        # 1. Bare array on output defaults to exact
-        text_exact_bare = [m["id"] for m in cat.get_models({"local": False, "filters": {"output": [Modality.TEXT]}})]
-        self.assertEqual(text_exact_bare, ["test/small", "test/vision-in"])
+        # Legacy output arrays still require the exact output set.
+        self.assertEqual([m["id"] for m in cat.get_models({"local": False, "filters": {"output": [Modality.TEXT]}})], ["test/small", "test/vision-in"])
 
         # 2. Exact on output
         text_exact_explicit = [m["id"] for m in cat.get_models({"local": False, "filters": {"output": Exact([Modality.TEXT])}})]
@@ -212,8 +212,8 @@ class CoreTests(unittest.TestCase):
         image_or_audio = [m["id"] for m in cat.get_models({"local": False, "filters": {"output": Any([Modality.IMAGE, Modality.AUDIO])}})]
         self.assertEqual(image_or_audio, ["test/audio-out", "test/image-text"])
 
-        # 6. Bare array on input defaults to contain
-        image_in = [m["id"] for m in cat.get_models({"local": False, "filters": {"input": [Modality.IMAGE]}})]
+        self.assertEqual([m["id"] for m in cat.get_models({"local": False, "filters": {"input": [Modality.IMAGE]}})], ["test/vision-in"])
+        image_in = [m["id"] for m in cat.get_models({"local": False, "filters": {"input": Contain([Modality.IMAGE])}})]
         self.assertEqual(image_in, ["test/vision-in"])
 
         # 7. Shorthand format
@@ -225,8 +225,8 @@ class CoreTests(unittest.TestCase):
         bundled_text_only = [
             m["id"]
             for m in bundled_cat.get_models({
-                "providerIds": ["openai", "google"],
-                "filters": {"output": [Modality.TEXT], "callable": False},
+                "providerIds": Any("openai", "google"),
+                "filters": {"output": Exact(Modality.TEXT), "callable": False},
             })
         ]
         self.assertNotIn("openai/chatgpt-image-latest", bundled_text_only)
@@ -235,14 +235,14 @@ class CoreTests(unittest.TestCase):
         bundled_contain = [
             m["id"]
             for m in bundled_cat.get_models({
-                "providerIds": ["openai"],
+                "providerIds": Exact("openai"),
                 "filters": {"output": Contain([Modality.TEXT]), "callable": False},
             })
         ]
         self.assertIn("openai/chatgpt-image-latest", bundled_contain)
 
     def test_get_models_by_provider(self):
-        from byokit import get_models_by_provider, Catalog
+        from byokit import get_models_by_provider, Catalog, Any
 
         data = json.loads((root / "spec/fixtures/catalog.json").read_text())
         cat = Catalog(data)
@@ -254,7 +254,7 @@ class CoreTests(unittest.TestCase):
         self.assertEqual(grouped["test"][0]["id"], "test/large")
 
         bundled_grouped = get_models_by_provider({
-            "providerIds": ["anthropic", "openai"],
+            "providerIds": Any("anthropic", "openai"),
             "local": False,
         })
         self.assertIn("anthropic", bundled_grouped)
@@ -265,15 +265,15 @@ class CoreTests(unittest.TestCase):
         self.assertTrue(all(m["provider"]["id"] == "openai" for m in bundled_grouped["openai"]))
 
     def test_callable_default_and_override(self):
-        from byokit import load_catalog
+        from byokit import load_catalog, Exact
         bundled_cat = load_catalog()
-        default_callable = bundled_cat.get_models({"providerIds": ["openai"], "local": False})
+        default_callable = bundled_cat.get_models({"providerIds": Exact("openai"), "local": False})
         self.assertGreater(len(default_callable), 0)
         self.assertTrue(all(m.get("callSupport", {}).get("textGeneration") is True for m in default_callable))
         self.assertFalse(any(m["id"] == "openai/chatgpt-image-latest" for m in default_callable))
 
         explicit_non_callable = bundled_cat.get_models({
-            "providerIds": ["openai"],
+            "providerIds": Exact("openai"),
             "local": False,
             "filters": {"callable": False},
         })
@@ -282,7 +282,7 @@ class CoreTests(unittest.TestCase):
         self.assertTrue(any(m["id"] == "openai/chatgpt-image-latest" for m in explicit_non_callable))
 
     def test_official_flagship_preset(self):
-        from byokit import load_catalog, OFFICIAL_FLAGSHIP, OFFICIAL, ModelSort
+        from byokit import load_catalog, OFFICIAL_FLAGSHIP, OFFICIAL, ModelSort, Exact
         bundled_cat = load_catalog()
         models = bundled_cat.get_models(OFFICIAL_FLAGSHIP, {"sort": ModelSort.PROVIDER_ORDER})
         self.assertEqual(
@@ -298,9 +298,78 @@ class CoreTests(unittest.TestCase):
         )
         anthropic_flagship = bundled_cat.get_models({
             "preset": "official-flagship",
-            "providerIds": ["anthropic"],
+            "providerIds": Exact("anthropic"),
         })
         self.assertEqual([m["id"] for m in anthropic_flagship], ["anthropic/claude-opus-5-5"])
+
+    def test_combinators_and_speciality_tier(self):
+        from byokit import (
+            load_catalog,
+            Speciality,
+            Tier,
+            Exact,
+            Contain,
+            Any,
+            Exclude,
+            and_,
+            or_,
+            xor,
+            not_,
+            exact,
+            contain,
+            any as any_,
+            exclude,
+        )
+        cat = load_catalog()
+
+        self.assertGreater(len(cat.get_models({"providerIds": ["openai"], "local": False})), 0)
+        for sel in ["speciality", "tier", "deployment", "origin", "input", "output", "requiredFeatures", "lifecycle", "popularity"]:
+            with self.assertRaises(ValueError):
+                cat.get_models({"filters": {sel: ["foo"]}})
+
+        # Speciality exact selection
+        general_models = cat.get_models({
+            "providerIds": Any("openai", "google", "anthropic", "deepseek"),
+            "filters": {"speciality": Exact(Speciality.GENERAL)},
+        })
+        self.assertTrue(len(general_models) > 0)
+        self.assertTrue(all(m["speciality"] == Speciality.GENERAL.value for m in general_models))
+
+        # Check cybersecurity models like daybreak
+        cyber_models = cat.get_models({
+            "providerIds": Exact("openai"),
+            "filters": {"speciality": Exact(Speciality.CYBERSECURITY)},
+        })
+        self.assertTrue(len(cyber_models) > 0)
+        self.assertTrue(any("daybreak" in m["id"] for m in cyber_models))
+
+        # Tier selection
+        flash_models = cat.get_models({
+            "providerIds": Any("google", "deepseek"),
+            "filters": {"tier": Exact(Tier.FLASH)},
+        })
+        self.assertTrue(len(flash_models) > 0)
+        self.assertTrue(all(m["tier"] == Tier.FLASH.value for m in flash_models))
+
+        # Nested combinators: any(exact('general', exclude('lite')), exact('flash'))
+        nested = cat.get_models({
+            "providerIds": Any("google"),
+            "filters": {
+                "speciality": Exact(Speciality.GENERAL),
+                "tier": any_(
+                    and_(Exact(Tier.FLASH), not_(Exact(Tier.LITE))),
+                    Exact(Tier.WORKHORSE),
+                ),
+            },
+        })
+        self.assertTrue(len(nested) > 0)
+
+        # Boolean logic: xor
+        xor_result = cat.get_models({
+            "providerIds": xor(Exact("openai"), Exact("google")),
+            "limit": 5,
+        })
+        self.assertTrue(len(xor_result) > 0)
 
 
 

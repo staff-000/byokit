@@ -38,7 +38,7 @@ try {
     (await page.locator('#hero-code').textContent()).includes('sort: byokit.ModelSort.PriceAscend'),
   );
   assert.ok((await page.locator('#hero-providers').textContent()).includes('Anthropic'));
-  assert.equal(await page.locator('#results tr').count(), 5);
+  assert.equal(await page.locator('#results tr').count(), 7);
   await page.locator('#output').selectOption('video');
   assert.ok(
     (await page
@@ -50,7 +50,7 @@ try {
   assert.ok(!(await page.locator('#results').textContent()).includes('LOCAL SETUP'));
   await page.locator('#output').selectOption('');
   await page.getByRole('button', { name: 'Default', exact: true }).click();
-  assert.equal(await page.locator('#results tr').count(), 5);
+  assert.equal(await page.locator('#results tr').count(), 7);
   await page.getByRole('button', { name: 'Complete', exact: true }).click();
   assert.equal(await page.locator('#results tr').count(), 12);
   await page.locator('#more').click();
@@ -69,7 +69,7 @@ try {
   assert.ok((await page.locator('#query').textContent()).includes('byokit.Tag.PricePremium'));
   await page.getByRole('button', { name: 'Python', exact: true }).click();
   assert.ok((await page.locator('#start-code').textContent()).includes('byokit.get_models'));
-  await page.getByRole('button', { name: '2. Call a model', exact: true }).click();
+  await page.locator('[data-example="inference"]').click();
   assert.ok((await page.locator('#start-code').textContent()).includes('DEEPSEEK_API_KEY'));
   assert.ok((await page.locator('#start-code').textContent()).includes('byokit.OpenAI('));
   assert.ok(
@@ -113,7 +113,7 @@ try {
   assert.equal(await page.locator('#verified-only').count(), 0);
   assert.equal(await page.locator('#include-outdated').count(), 1);
   assert.equal(await page.locator('#feature-filter').count(), 1);
-  assert.equal(await page.locator('.verification-models thead select').count(), 9);
+  assert.equal(await page.locator('.verification-models thead select').count(), 10);
   assert.equal(await page.locator('.verification-models thead #include-outdated').count(), 1);
   assert.equal(await page.locator('#models tr').first().locator('td').count(), 8);
   await page.locator('#sort-filter').selectOption('priceDescend');
@@ -148,7 +148,8 @@ try {
   assert.equal(calls, 0);
   await page.locator('#verify').click();
   await page.getByText(/Call succeeded in/).waitFor();
-  assert.equal(calls, 1);
+  // Single-model verification uses a baseline request plus its speed benchmark.
+  assert.equal(calls, 2);
   assert.equal(await page.locator('#share-verification').isVisible(), true);
   assert.equal(await page.locator('#earned-badge').isVisible(), false);
   const share = new URL(await page.locator('#share-verification').getAttribute('href'));
@@ -167,7 +168,8 @@ try {
       exact: true,
     })
     .waitFor();
-  assert.equal(calls, 1);
+  // Single-model verification uses a baseline request plus its speed benchmark.
+  assert.equal(calls, 2);
   await page.route('**/badges/github-1.svg', (route) =>
     route.fulfill({
       status: 200,
@@ -199,7 +201,8 @@ try {
   await page.getByText(/Published: community verified by @fixture-user/).waitFor();
   assert.equal(await page.locator('#earned-badge').isVisible(), true);
   assert.ok((await page.locator('#contributor-list').textContent()).includes('@fixture-user'));
-  assert.equal(calls, 1);
+  // Single-model verification uses a baseline request plus its speed benchmark.
+  assert.equal(calls, 2);
   const stored = await page.evaluate(() =>
     localStorage.getItem('byokit.inference-verifications.v1'),
   );
@@ -210,7 +213,7 @@ try {
   await page.locator('#models tr').first().waitFor();
   assert.equal(await page.locator('#api-key').inputValue(), '');
   assert.equal(await page.locator('#verify').isDisabled(), false);
-  assert.ok((await page.locator('#records').textContent()).includes('deepseek/deepseek-flash'));
+  assert.ok((await page.locator('#records').textContent()).includes(report.offeringId));
   await page.locator('#provider-filter').selectOption('deepseek');
   await page.locator('#models button').first().click();
   await page.locator('#api-key').fill('another-dummy-key');

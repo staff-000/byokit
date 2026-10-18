@@ -43,9 +43,9 @@ It is an illustrative fixture, never imported by default. Copy the relevant
 records into [catalog/manual.json](../catalog/manual.json), keeping existing records.
 
 - **Provider:** unique ID, name, auth requirement, deployment, known origin/tags.
-- **Model:** unique ID, name, known weights/license/size/origin, and custom tags.
+- **Model:** unique ID, name, known weights/license/size/origin, speciality, tier, and custom tags. Use `unknown` for unreviewed speciality/tier.
 - **Offering:** unique provider/model pairing, exact API model ID, display name,
-  explicit `connection: { baseUrl, protocol }`, modalities, limits, prices/features.
+  explicit `connection: { baseUrl, protocol }`, speciality/tier, modalities, limits, prices/features.
 - **Evidence:** every provider, model, and offering needs
   `provenance: { source: "https://…", reviewedAt: "YYYY-MM-DD" }`.
 - **Availability:** to establish LIVE availability, supply current
@@ -54,7 +54,7 @@ checkedAt: "…Z" }` after checking provider documentation. Without evidence it 
   UNCERTAIN and visible in discovery; narrow with `filters.lifecycle: [byokit.Lifecycle.Uncertain]`.
   Nightly fetching does not refresh manual evidence dates automatically.
 - **Shortlists:** manual providers join Global/COMPLETE. To extend another list,
-  add offering IDs with evidence and rationale to `catalog/recommendations.json` for DEFAULT.
+  add offering IDs with `default: true`, evidence and rationale to `catalog/recommendations.json` for DEFAULT.
 - **Existing provider:** omit the provider record and refer to its existing ID.
   You can reuse an existing model ID; omit that model record too.
 

@@ -7,17 +7,51 @@ console.log(models.map(model => ({
   model: model.apiModelId || '(configure local server)',
 })));`,
   },
+  matchers: {
+    label: 'Filter with matchers (exact, any, and, or)',
+    code: `// Composable matchers: exact, any, contain, exclude, and, or, xor, not
+// Arrays remain supported; explicit matchers allow nested conditions.
+const models = byokit.getModels(byokit.COMPLETE, {
+  local: false,
+  // Match any of these providers
+  providerIds: byokit.any(
+    byokit.ProviderId.OpenAI,
+    byokit.ProviderId.Google,
+    byokit.ProviderId.Anthropic,
+    byokit.ProviderId.DeepSeek,
+  ),
+  filters: {
+    // Only general-purpose models (speciality is a required field)
+    speciality: byokit.exact(byokit.Speciality.General),
+    // Either flash models OR workhorse models (excluding lite models)
+    tier: byokit.or(
+      byokit.exact(byokit.Tier.Flash),
+      byokit.and(
+        byokit.exact(byokit.Tier.Workhorse),
+        byokit.not(byokit.exact(byokit.Tier.Lite)),
+      ),
+    ),
+  },
+});
+
+console.log(\`Found \${models.length} matching models:\`);
+console.log(models.map(m => ({
+  provider: m.provider.name,
+  model: m.name || m.apiModelId,
+  speciality: m.speciality,
+  tier: m.tier,
+})));`,
+  },
   providers: {
     label: 'Select from certain providers',
     code: `const models = byokit.getModels({
-  providerIds: [
+  providerIds: byokit.any(
     byokit.ProviderId.Anthropic,
     byokit.ProviderId.Google,
     byokit.ProviderId.OpenAI,
-  ],
+  ),
   filters: {
-    // Bare array for output defaults to exact match (only text output models)
-    output: [byokit.Modality.Text],
+    output: byokit.exact(byokit.Modality.Text),
   },
   local: false,
 });
@@ -30,7 +64,7 @@ console.log(models.map(model => ({
   image: {
     label: 'Select image models',
     code: `// Use byokit.Contain to match models that output images (pure image or text+image)
-// Or use [byokit.Modality.Image] to match strictly image-only output models.
+// Or use byokit.exact(byokit.Modality.Image) to match strictly image-only output models.
 const models = byokit.getModels(byokit.COMPLETE, {
   filters: {
     output: byokit.Contain([byokit.Modality.Image]),
@@ -77,9 +111,9 @@ console.log(models.map(model => ({
   limit: 5,
   sort: byokit.ModelSort.AlphabeticalAscend,
   filters: {
-    requiredFeatures: [byokit.FeatureName.FunctionCalling],
+    requiredFeatures: byokit.any(byokit.FeatureName.FunctionCalling),
     minContextTokens: 32_000,
-    excludeTags: [byokit.Tag.OriginChina, byokit.Tag.PricePremium],
+    excludeTags: byokit.any(byokit.Tag.OriginChina, byokit.Tag.PricePremium),
   },
 });
 console.log(models.map(model => ({
@@ -103,7 +137,7 @@ console.log(models.at(-1));
   inspect: {
     label: 'Inspect full model metadata',
     code: `const [model] = byokit.getModels({
-  providerIds: [byokit.ProviderId.DeepSeek],
+  providerIds: byokit.exact(byokit.ProviderId.DeepSeek),
   limit: 1,
   local: false,
 });

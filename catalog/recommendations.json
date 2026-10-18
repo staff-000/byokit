@@ -3,54 +3,91 @@
     "offeringId": "openai/gpt-6.1-sol",
     "source": "https://developers.openai.com/api/docs/models",
     "reviewedAt": "2026-10-15",
-    "rationale": "Current general-purpose model balancing capability and cost."
+    "rationale": "Current general-purpose model balancing capability and cost.",
+    "default": false
   },
   {
     "offeringId": "openai/gpt-6-luna",
     "source": "https://developers.openai.com/api/docs/models",
     "reviewedAt": "2026-10-15",
-    "rationale": "Current economical option for focused text workloads."
+    "rationale": "Current economical option for focused text workloads.",
+    "default": true
   },
   {
     "offeringId": "anthropic/claude-sonnet-5-5",
     "source": "https://platform.claude.com/docs/en/models/overview",
     "reviewedAt": "2026-10-15",
-    "rationale": "Current Sonnet model for everyday coding and knowledge work."
+    "rationale": "Current Sonnet model for everyday coding and knowledge work.",
+    "default": false
   },
   {
     "offeringId": "google/gemini-3.8-flash",
     "source": "https://ai.google.dev/gemini-api/docs/models",
     "reviewedAt": "2026-10-15",
-    "rationale": "Stable Flash model recommended for new projects."
+    "rationale": "Stable Flash model recommended for new projects.",
+    "default": true
   },
   {
     "offeringId": "anthropic/claude-opus-5-5",
     "source": "https://platform.claude.com/docs/en/models/overview",
     "reviewedAt": "2026-10-15",
-    "rationale": "Flagship frontier Opus model for complex reasoning and advanced capabilities."
+    "rationale": "Flagship frontier Opus model for complex reasoning and advanced capabilities.",
+    "default": false
   },
   {
     "offeringId": "google/gemini-4-argon",
     "source": "https://ai.google.dev/gemini-api/docs/models",
     "reviewedAt": "2026-10-15",
-    "rationale": "Flagship multimodal frontier model with next-generation reasoning."
+    "rationale": "Flagship multimodal frontier model with next-generation reasoning.",
+    "default": false
   },
   {
     "offeringId": "mistral/mistral-large-4",
     "source": "https://docs.mistral.ai/getting-started/models/models_overview",
     "reviewedAt": "2026-10-15",
-    "rationale": "Flagship Mistral Large model for multilingual reasoning and code."
+    "rationale": "Flagship Mistral Large model for multilingual reasoning and code.",
+    "default": false
   },
   {
     "offeringId": "deepseek/deepseek-v4-pro",
     "source": "https://api-docs.deepseek.com/quick_start/pricing",
     "reviewedAt": "2026-10-15",
-    "rationale": "Flagship DeepSeek Pro model for advanced reasoning and coding."
+    "rationale": "Flagship DeepSeek Pro model for advanced reasoning and coding.",
+    "default": false
   },
   {
     "offeringId": "zhipuai/glm-5.3",
     "source": "https://open.bigmodel.cn/dev/api#overview",
     "reviewedAt": "2026-10-15",
-    "rationale": "Flagship GLM frontier model for comprehensive language understanding."
+    "rationale": "Flagship GLM frontier model for comprehensive language understanding.",
+    "default": false
+  },
+  {
+    "offeringId": "openai/gpt-5.6-terra",
+    "source": "https://developers.openai.com/api/docs/models",
+    "reviewedAt": "2026-10-18",
+    "rationale": "Selected Terra offering for the default general-purpose picker; product-line choice is maintained explicitly.",
+    "default": true
+  },
+  {
+    "offeringId": "anthropic/claude-haiku-5-5",
+    "source": "https://platform.claude.com/docs/en/models/overview",
+    "reviewedAt": "2026-10-18",
+    "rationale": "Selected Haiku offering for the default general-purpose picker; excludes Sonnet and Opus from this shortlist.",
+    "default": true
+  },
+  {
+    "offeringId": "deepseek/deepseek-flash",
+    "source": "https://api-docs.deepseek.com/quick_start/pricing",
+    "reviewedAt": "2026-10-18",
+    "rationale": "Selected Flash API alias; dated and experimental alternatives remain available through catalog discovery.",
+    "default": true
+  },
+  {
+    "offeringId": "deepseek/deepseek-chat",
+    "source": "https://api-docs.deepseek.com/quick_start/pricing",
+    "reviewedAt": "2026-10-18",
+    "rationale": "Selected Chat API alias. Release age does not remove a reviewed product-line choice.",
+    "default": true
   }
 ]

@@ -251,28 +251,62 @@ function renderExample() {
   $('#start-code').textContent =
     tutorials[example === 'inference' && format === 'claude' ? 'claude' : example][language];
   const inference = example === 'inference';
+  const formatTabs = document.querySelector('.language-tabs[aria-label="Response format"]');
+  if (formatTabs) formatTabs.hidden = !inference;
   $('#example-note').textContent = inference
     ? `Server-side example: set ${format === 'claude' ? 'ANTHROPIC_API_KEY' : 'DEEPSEEK_API_KEY'} in your environment. Reuse the client for multiple requests. Keys stay in memory and are never persisted.`
     : 'Catalog queries run offline. No API key or provider request is needed.';
   $('#return-label').textContent = inference
     ? 'EXAMPLE GENERATED TEXT'
-    : 'RETURN (FIRST ENTRY, SELECTED FIELDS)';
+    : 'RETURN (SELECTED FIELDS)';
   $('#expected-return').textContent = inference
     ? format === 'claude'
       ? '[{ type: "text", text: "Hello!" }] — actual model output varies.'
       : 'Hello! — actual model output varies.'
-    : JSON.stringify(
-        byokit
-          .getModels()
-          .slice(0, 1)
-          .map((model) => ({
-            provider: model.provider.id,
-            model: model.apiModelId,
-            context: model.limits.context,
-          })),
-        null,
-        2,
-      );
+    : example === 'matchers'
+      ? JSON.stringify(
+          byokit
+            .getModels(byokit.COMPLETE, {
+              providerIds: byokit.any(
+                byokit.ProviderId.OpenAI,
+                byokit.ProviderId.Google,
+                byokit.ProviderId.Anthropic,
+                byokit.ProviderId.DeepSeek,
+              ),
+              filters: {
+                speciality: byokit.exact(byokit.Speciality.General),
+                tier: byokit.or(
+                  byokit.exact(byokit.Tier.Flash),
+                  byokit.and(
+                    byokit.exact(byokit.Tier.Workhorse),
+                    byokit.not(byokit.exact(byokit.Tier.Lite)),
+                  ),
+                ),
+              },
+              local: false,
+            })
+            .slice(0, 2)
+            .map((model) => ({
+              provider: model.provider.id,
+              model: model.apiModelId,
+              speciality: model.speciality,
+              tier: model.tier,
+            })),
+          null,
+          2,
+        )
+      : JSON.stringify(
+          byokit
+            .getModels()
+            .slice(0, 1)
+            .map((model) => ({
+              provider: model.provider.id,
+              model: model.apiModelId,
+              context: model.limits.context,
+            })),
+          null,
+          2,
+        );
 }
 for (const button of document.querySelectorAll('[data-language]'))
   button.addEventListener('click', () => {

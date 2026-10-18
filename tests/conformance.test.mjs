@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
-import { Catalog, checkFit } from '../packages/byokit/index.js';
+import { Catalog, checkFit, exact } from '../packages/byokit/index.js';
 const catalog = new Catalog(
   JSON.parse(readFileSync(new URL('../spec/fixtures/catalog.json', import.meta.url))),
 );
@@ -26,11 +26,11 @@ test('selection filtering/ranking agree across languages', () => {
     { preset: 'china', ui: { maxProviders: 1, maxModelsPerProvider: 1 } },
     { filters: { minContextTokens: 9000 } },
     { filters: { openWeights: true, commercialUse: 'allowed' } },
-    { filters: { requiredFeatures: ['strictJsonSchema'] }, unknownPolicy: 'include' },
+    { filters: { requiredFeatures: exact('strictJsonSchema') }, unknownPolicy: 'include' },
     { filters: { includeDeprecated: true }, prefer: { lowerCost: true } },
-    { filters: { input: ['image'] } },
+    { filters: { input: exact('image') } },
     { filters: { minTokensPerSecond: 20 } },
-    { filters: { fileFormats: ['pdf'] }, unknownPolicy: 'include' },
+    { filters: { fileFormats: exact('pdf') }, unknownPolicy: 'include' },
   ];
   const result = spawnSync(
     process.env.BYOKIT_PYTHON || (process.platform === 'win32' ? 'python' : 'python3'),

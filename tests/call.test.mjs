@@ -28,11 +28,11 @@ const tool = {
   function: { name: 'lookup', parameters: { type: 'object', properties: {} } },
 };
 test('discovery includes endpoint metadata without initiating network or changing API IDs', () => {
-  const selected = byokit.getModels({ providerIds: [byokit.ProviderId.DeepSeek] });
+  const selected = byokit.getModels({ providerIds: byokit.exact(byokit.ProviderId.DeepSeek) });
   assert.ok(selected.length);
   assert.equal(selected[0].connection.baseUrl, providerConnections.deepseek.baseUrl);
   const [local] = byokit.getModels({
-    providerIds: [],
+    providerIds: byokit.exact(),
     local: [{ endpoint: 'http://localhost:8080', modelId: 'my-model' }],
   });
   assert.equal(local.connection.baseUrl, 'http://localhost:8080/v1');

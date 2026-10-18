@@ -80,7 +80,7 @@ try {
   storageAvailable = false;
 }
 const models = byokit.getModels(byokit.COMPLETE, {
-  filters: { lifecycle: Object.values(byokit.Lifecycle), includeDeprecated: true },
+  filters: { lifecycle: byokit.any(...Object.values(byokit.Lifecycle)), includeDeprecated: true },
 });
 function isUnverified(m) {
   if (!m || m.local) return false;

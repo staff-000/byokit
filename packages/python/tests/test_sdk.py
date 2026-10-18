@@ -196,7 +196,7 @@ class ByokitTests(unittest.TestCase):
             self.assertEqual(Connection.requests, [])
             local = byokit.get_models(
                 {
-                    "providerIds": [],
+                    "providerIds": byokit.exact(),
                     "local": [
                         {"endpoint": "http://localhost:8080/v1", "modelId": "local"}
                     ],

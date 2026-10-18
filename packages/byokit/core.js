@@ -25,75 +25,260 @@ import {
   LocalApi,
   LifecycleBasis,
   ModelSort,
+  Country,
+  Speciality,
+  Tier,
 } from './enums.js';
 export * from './enums.js';
 
-function normalizeValuesList(values) {
-  if (values === undefined || values === null) return [];
-  if (Array.isArray(values)) return [...values];
-  return [values];
+function normalizeArgs(args) {
+  if (args.length === 1 && Array.isArray(args[0])) {
+    return args[0].map((v) => (v !== null && typeof v === 'object' ? v : String(v)));
+  }
+  return args.map((v) => (v !== null && typeof v === 'object' ? v : String(v)));
 }
 
-export function exact(values) {
-  return { mode: 'exact', values: normalizeValuesList(values) };
+export function exact(...args) {
+  return { mode: 'exact', values: normalizeArgs(args) };
 }
 
-export function contain(values) {
-  return { mode: 'contain', values: normalizeValuesList(values) };
+export function contain(...args) {
+  return { mode: 'contain', values: normalizeArgs(args) };
 }
 
-export function any(values) {
-  return { mode: 'any', values: normalizeValuesList(values) };
+export const contains = contain;
+
+export function any(...args) {
+  return { mode: 'any', values: normalizeArgs(args) };
+}
+
+export function exclude(...args) {
+  return { mode: 'exclude', values: normalizeArgs(args) };
+}
+
+export function and(...args) {
+  return { op: 'and', values: normalizeArgs(args) };
+}
+
+export function or(...args) {
+  return { op: 'or', values: normalizeArgs(args) };
+}
+
+export function xor(...args) {
+  return { op: 'xor', values: normalizeArgs(args) };
+}
+
+export function not(...args) {
+  return { op: 'not', values: normalizeArgs(args) };
 }
 
 export const Exact = exact;
 export const Contain = contain;
 export const Contains = contain;
 export const Any = any;
+export const Exclude = exclude;
+export const And = and;
+export const AND = and;
+export const Or = or;
+export const OR = or;
+export const Xor = xor;
+export const XOR = xor;
+export const Not = not;
+export const NOT = not;
 
-export function normalizeModalityFilter(value, defaultMode = 'contain') {
+function defaultFilterMode(fieldName) {
+  const field = fieldName.replace(/^filters\./, '');
+  if (field === 'output') return 'exact';
+  return ['input', 'modality', 'requiredFeatures', 'fileFormats', 'includeTags'].includes(field)
+    ? 'contain'
+    : 'any';
+}
+
+export function normalizeListFilter(value, fieldName = 'filter') {
   if (value === undefined || value === null) return null;
-  if (Array.isArray(value)) {
-    return { mode: defaultMode, values: [...value] };
+  if (Array.isArray(value) || typeof value === 'string') {
+    return {
+      mode: defaultFilterMode(fieldName),
+      values: Array.isArray(value) ? [...value] : [value],
+    };
   }
   if (typeof value === 'object') {
-    if ('mode' in value && 'values' in value) {
-      const mode = value.mode === 'contains' ? 'contain' : value.mode;
-      return { mode, values: normalizeValuesList(value.values) };
+    let mode;
+    let op;
+    let values;
+    if ('op' in value) {
+      op = String(value.op).toLowerCase();
+      values =
+        value.values !== undefined
+          ? value.values
+          : value.list !== undefined
+            ? value.list
+            : value.items;
+    } else if ('and' in value) {
+      op = 'and';
+      values = value.and;
+    } else if ('or' in value) {
+      op = 'or';
+      values = value.or;
+    } else if ('xor' in value) {
+      op = 'xor';
+      values = value.xor;
+    } else if ('not' in value) {
+      op = 'not';
+      values = value.not;
+    } else if ('mode' in value) {
+      mode = String(value.mode).toLowerCase();
+      if (mode === 'contains') mode = 'contain';
+      values =
+        value.values !== undefined
+          ? value.values
+          : value.list !== undefined
+            ? value.list
+            : value.items;
+    } else if ('exact' in value) {
+      mode = 'exact';
+      values = value.exact;
+    } else if ('contain' in value) {
+      mode = 'contain';
+      values = value.contain;
+    } else if ('contains' in value) {
+      mode = 'contain';
+      values = value.contains;
+    } else if ('any' in value) {
+      mode = 'any';
+      values = value.any;
+    } else if ('exclude' in value) {
+      mode = 'exclude';
+      values = value.exclude;
     }
-    if ('exact' in value) {
-      return { mode: 'exact', values: normalizeValuesList(value.exact) };
+    if (op) {
+      const list = Array.isArray(values) ? values : [values];
+      if (op === 'not' && list.length !== 1) throw new Error('not requires exactly one expression');
+      return {
+        op,
+        values: list.map((child) =>
+          typeof child === 'object' && child !== null
+            ? normalizeListFilter(child, fieldName)
+            : String(child),
+        ),
+      };
     }
-    if ('contain' in value) {
-      return { mode: 'contain', values: normalizeValuesList(value.contain) };
-    }
-    if ('contains' in value) {
-      return { mode: 'contain', values: normalizeValuesList(value.contains) };
-    }
-    if ('any' in value) {
-      return { mode: 'any', values: normalizeValuesList(value.any) };
+    if (mode) {
+      const list = Array.isArray(values) ? values : [values];
+      return {
+        mode,
+        values: list.map((child) =>
+          typeof child === 'object' && child !== null
+            ? normalizeListFilter(child, fieldName)
+            : String(child),
+        ),
+      };
     }
   }
-  if (typeof value === 'string') {
-    return { mode: defaultMode, values: [value] };
+  throw new Error(`Invalid matcher for '${fieldName}'`);
+}
+
+export function evaluateFilterNode(targetSet, node, isExactSetMatch = false) {
+  if (node === null || node === undefined) return true;
+  if (typeof node === 'string') {
+    return targetSet.has(node);
   }
-  return null;
+  if (typeof node !== 'object') {
+    return false;
+  }
+  const values = node.values !== undefined ? node.values : node.items;
+  if (node.op) {
+    const op = String(node.op).toLowerCase();
+    const list = Array.isArray(values) ? values : [values];
+    if (op === 'and') {
+      return list.every((child) => evaluateFilterNode(targetSet, child, isExactSetMatch));
+    }
+    if (op === 'or') {
+      return list.some((child) => evaluateFilterNode(targetSet, child, isExactSetMatch));
+    }
+    if (op === 'xor') {
+      return (
+        list.filter((child) => evaluateFilterNode(targetSet, child, isExactSetMatch)).length === 1
+      );
+    }
+    if (op === 'not') {
+      return list.length === 1 && !evaluateFilterNode(targetSet, list[0], isExactSetMatch);
+    }
+    return false;
+  }
+  if (node.mode) {
+    const mode = (node.mode === 'contains' ? 'contain' : node.mode).toLowerCase();
+    const list = Array.isArray(values) ? values : [values];
+    const literals = [];
+    const subMatchers = [];
+    for (const item of list) {
+      if (typeof item === 'string') {
+        literals.push(item);
+      } else if (item && typeof item === 'object') {
+        subMatchers.push(item);
+      }
+    }
+    if (mode === 'any') {
+      if (list.length === 0) return false;
+      return (
+        literals.some((lit) => targetSet.has(lit)) ||
+        subMatchers.some((sub) => evaluateFilterNode(targetSet, sub, isExactSetMatch))
+      );
+    }
+    if (mode === 'exclude') {
+      return (
+        literals.every((lit) => !targetSet.has(lit)) &&
+        subMatchers.every((sub) => !evaluateFilterNode(targetSet, sub))
+      );
+    }
+    for (const sub of subMatchers) {
+      if (!evaluateFilterNode(targetSet, sub, isExactSetMatch)) return false;
+    }
+    if (mode === 'exact') {
+      // Nested predicates constrain the same set; literals define its exact contents.
+      if (!literals.length && subMatchers.length) return true;
+      const requested = new Set(literals);
+      return targetSet.size === requested.size && [...requested].every((lit) => targetSet.has(lit));
+    }
+    // contain
+    return literals.every((lit) => targetSet.has(lit));
+  }
+  return false;
+}
+
+export function matchesListFilter(
+  targetValues,
+  filterSpec,
+  allowUnknown = false,
+  isExactSetMatch = false,
+) {
+  if (filterSpec === null || filterSpec === undefined) return true;
+  if (targetValues == null) return allowUnknown;
+  const targetSet =
+    targetValues instanceof Set
+      ? targetValues
+      : new Set(Array.isArray(targetValues) ? targetValues : [targetValues]);
+  return evaluateFilterNode(targetSet, filterSpec, isExactSetMatch);
+}
+
+export function normalizeModalityFilter(value, fieldName = 'modality') {
+  const name = fieldName === 'contain' ? 'input' : fieldName === 'exact' ? 'output' : fieldName;
+  return normalizeListFilter(value, name);
 }
 
 export function matchesModality(modelValues, filterSpec, allowUnknown = false) {
-  if (!filterSpec || !filterSpec.values || filterSpec.values.length === 0) return true;
-  if (modelValues == null) return allowUnknown;
-  const valSet = new Set(modelValues);
-  const reqList = filterSpec.values;
-  const mode = filterSpec.mode || 'contain';
-  if (mode === 'exact') {
-    const reqSet = new Set(reqList);
-    return valSet.size === reqSet.size && [...reqSet].every((x) => valSet.has(x));
-  }
-  if (mode === 'any') {
-    return reqList.some((x) => valSet.has(x));
-  }
-  return reqList.every((x) => valSet.has(x));
+  return matchesListFilter(modelValues, filterSpec, allowUnknown);
+}
+
+export function getReleaseChannel(offering) {
+  if (offering?.releaseChannel) return offering.releaseChannel;
+  const id = offering?.apiModelId || offering?.id || '';
+  if (/(?:^|[-_./])(experimental|exp)(?:$|[-_./])/i.test(id)) return 'experimental';
+  if (/(?:^|[-_./])(preview|beta|alpha)(?:$|[-_./])/i.test(id)) return 'preview';
+  const status = offering?.status;
+  if (['preview', 'beta', 'alpha'].includes(status)) return 'preview';
+  if (['experimental', 'exp'].includes(status)) return 'experimental';
+  return status === 'stable' ? 'stable' : 'unknown';
 }
 
 /** Framework-independent catalog, selection and preflight rules. No network or storage. */
@@ -121,7 +306,17 @@ export function validateCatalog(data) {
   }
   const providers = new Set(data.providers.map((x) => x.id)),
     models = new Set(data.models.map((x) => x.id));
+  for (const m of data.models) {
+    if (!m.speciality || !Object.values(Speciality).includes(m.speciality))
+      errors.push(`${m.id}: invalid or missing speciality`);
+    if (!m.tier || !Object.values(Tier).includes(m.tier))
+      errors.push(`${m.id}: invalid or missing tier`);
+  }
   for (const o of data.offerings) {
+    if (!o.speciality || !Object.values(Speciality).includes(o.speciality))
+      errors.push(`${o.id}: invalid or missing speciality`);
+    if (!o.tier || !Object.values(Tier).includes(o.tier))
+      errors.push(`${o.id}: invalid or missing tier`);
     if (o.connection !== undefined)
       try {
         validateConnection(o.connection);
@@ -135,6 +330,11 @@ export function validateCatalog(data) {
         (o.callSupport.reason !== null && typeof o.callSupport.reason !== 'string'))
     )
       errors.push(`${o.id}: invalid callSupport`);
+    if (
+      o.releaseChannel !== undefined &&
+      !['stable', 'preview', 'experimental', 'unknown'].includes(o.releaseChannel)
+    )
+      errors.push(`${o.id}: invalid release channel`);
     if (
       o.releaseDate !== undefined &&
       o.releaseDate !== null &&
@@ -274,6 +474,8 @@ export function validateConfig(c = {}) {
       'tasks',
     ],
     filters: [
+      'speciality',
+      'tier',
       'deployment',
       'origin',
       'openWeights',
@@ -299,6 +501,7 @@ export function validateConfig(c = {}) {
       'verifiedWithinDays',
       'official',
       'releasedWithin',
+      'releaseChannel',
     ],
     prefer: ['features', 'lowerCost'],
     ui: ['maxProviders', 'maxModelsPerProvider', 'allowCustomModel'],
@@ -307,66 +510,133 @@ export function validateConfig(c = {}) {
   for (const [group, keys] of Object.entries(allowed))
     for (const key of Object.keys(group === 'root' ? c : c[group] || {}))
       if (!keys.includes(key)) errors.push(`Unknown ${group}.${key}`);
-  for (const key of [
+
+  const vocabs = {
+    releaseChannel: ['stable', 'preview', 'experimental', 'unknown'],
+    speciality: Object.values(Speciality),
+    tier: Object.values(Tier),
+    deployment: Object.values(Deployment),
+    origin: Object.values(Country),
+    input: Object.values(Modality),
+    output: Object.values(Modality),
+    requiredFeatures: Object.values(FeatureName),
+    lifecycle: Object.values(Lifecycle),
+    popularity: Object.values(Popularity),
+  };
+
+  const validateSelectorNode = (node, path, vocab) => {
+    if (node === null || node === undefined) return;
+    if (Array.isArray(node)) {
+      for (const child of node) validateSelectorNode(child, path, vocab);
+      return;
+    }
+    if (typeof node === 'string') {
+      if (vocab && !vocab.includes(node)) {
+        errors.push(`Unknown ${path} value`);
+      }
+      return;
+    }
+    if (typeof node === 'object') {
+      let mode;
+      let op;
+      let values;
+      if ('op' in node) {
+        op = node.op;
+        values =
+          node.values !== undefined
+            ? node.values
+            : node.list !== undefined
+              ? node.list
+              : node.items;
+      } else if ('and' in node) {
+        op = 'and';
+        values = node.and;
+      } else if ('or' in node) {
+        op = 'or';
+        values = node.or;
+      } else if ('xor' in node) {
+        op = 'xor';
+        values = node.xor;
+      } else if ('not' in node) {
+        op = 'not';
+        values = node.not;
+      } else if ('mode' in node) {
+        mode = node.mode;
+        values =
+          node.values !== undefined
+            ? node.values
+            : node.list !== undefined
+              ? node.list
+              : node.items;
+      } else if ('exact' in node) {
+        mode = 'exact';
+        values = node.exact;
+      } else if ('contain' in node) {
+        mode = 'contain';
+        values = node.contain;
+      } else if ('contains' in node) {
+        mode = 'contain';
+        values = node.contains;
+      } else if ('any' in node) {
+        mode = 'any';
+        values = node.any;
+      } else if ('exclude' in node) {
+        mode = 'exclude';
+        values = node.exclude;
+      } else {
+        errors.push(`${path} matcher must specify mode or op`);
+        return;
+      }
+      if (op && !['and', 'or', 'xor', 'not'].includes(String(op).toLowerCase())) {
+        errors.push(`${path} operator must be and, or, xor, or not`);
+      }
+      if (
+        mode &&
+        !['exact', 'contain', 'contains', 'any', 'exclude'].includes(String(mode).toLowerCase())
+      ) {
+        errors.push(`${path} matcher mode must be exact, contain, any, or exclude`);
+      }
+      if (op === 'not' && Array.isArray(values) && values.length !== 1)
+        errors.push('not requires exactly one expression');
+      if (values !== undefined) {
+        if (Array.isArray(values)) {
+          for (const child of values) {
+            validateSelectorNode(child, path, vocab);
+          }
+        } else {
+          validateSelectorNode(values, path, vocab);
+        }
+      }
+      return;
+    }
+    errors.push(`${path} must be a string or matcher`);
+  };
+
+  if (c.providerIds !== undefined && c.providerIds !== null) {
+    validateSelectorNode(c.providerIds, 'providerIds');
+  }
+
+  const filterSelectors = [
+    'releaseChannel',
+    'speciality',
+    'tier',
     'deployment',
     'origin',
+    'input',
+    'output',
     'requiredFeatures',
     'fileFormats',
     'includeTags',
     'excludeTags',
     'lifecycle',
     'popularity',
-  ])
-    if (
-      c.filters?.[key] !== undefined &&
-      (!Array.isArray(c.filters[key]) || c.filters[key].some((v) => typeof v !== 'string'))
-    )
-      errors.push(`filters.${key} must be a string array`);
-  for (const key of ['input', 'output']) {
-    const val = c.filters?.[key];
-    if (val !== undefined && val !== null) {
-      if (Array.isArray(val)) {
-        if (val.some((v) => typeof v !== 'string')) {
-          errors.push(`filters.${key} must be a string array or matcher`);
-        } else if (val.some((v) => !Object.values(Modality).includes(v))) {
-          errors.push(`Unknown filters.${key} value`);
-        }
-      } else if (typeof val === 'object') {
-        let mode;
-        let values;
-        if ('mode' in val && 'values' in val) {
-          mode = val.mode;
-          values = val.values;
-        } else if ('exact' in val) {
-          mode = 'exact';
-          values = val.exact;
-        } else if ('contain' in val) {
-          mode = 'contain';
-          values = val.contain;
-        } else if ('contains' in val) {
-          mode = 'contain';
-          values = val.contains;
-        } else if ('any' in val) {
-          mode = 'any';
-          values = val.any;
-        } else {
-          errors.push(`filters.${key} matcher must specify mode and values`);
-        }
-        if (mode && !['exact', 'contain', 'contains', 'any'].includes(mode)) {
-          errors.push(`filters.${key} matcher mode must be exact, contain, or any`);
-        }
-        if (values !== undefined) {
-          if (!Array.isArray(values) || values.some((v) => typeof v !== 'string')) {
-            errors.push(`filters.${key} values must be a string array`);
-          } else if (values.some((v) => !Object.values(Modality).includes(v))) {
-            errors.push(`Unknown filters.${key} value`);
-          }
-        }
-      } else {
-        errors.push(`filters.${key} must be a string array or matcher`);
-      }
+  ];
+  for (const key of filterSelectors) {
+    if (c.filters?.[key] !== undefined && c.filters[key] !== null) {
+      validateSelectorNode(c.filters[key], `filters.${key}`, vocabs[key]);
     }
   }
+
   for (const key of [
     'minContextTokens',
     'maxInputPricePerM',
@@ -416,18 +686,6 @@ export function validateConfig(c = {}) {
     errors.push(
       'filters.releasedWithin must be a valid duration (e.g. 1m, 3m, 6m, 1y, 2y) or positive number of days',
     );
-  const vocab = {
-    requiredFeatures: FeatureName,
-    deployment: Deployment,
-    lifecycle: Lifecycle,
-    popularity: Popularity,
-  };
-  for (const [key, values] of Object.entries(vocab))
-    if (
-      Array.isArray(c.filters?.[key]) &&
-      c.filters[key].some((v) => !Object.values(values).includes(v))
-    )
-      errors.push(`Unknown filters.${key} value`);
   if (
     c.prefer?.features !== undefined &&
     (!Array.isArray(c.prefer.features) ||
@@ -451,8 +709,34 @@ function unknown(c) {
 }
 function matches(o, m, c, providerTags = []) {
   const f = c.filters || {};
-  if (f.deployment && !f.deployment.includes(o.deployment)) return false;
-  if (f.origin && (!m.origin || !f.origin.includes(m.origin))) return false;
+  const allowUnknown = unknown(c);
+  if (
+    f.releaseChannel != null &&
+    !matchesListFilter(
+      getReleaseChannel(o),
+      normalizeListFilter(f.releaseChannel, 'releaseChannel'),
+    )
+  )
+    return false;
+
+  if (f.speciality !== undefined && f.speciality !== null) {
+    const spec = normalizeListFilter(f.speciality, 'speciality');
+    const actual = o.speciality || getModelSpeciality(o, m);
+    if (!matchesListFilter(actual, spec, allowUnknown)) return false;
+  }
+  if (f.tier !== undefined && f.tier !== null) {
+    const spec = normalizeListFilter(f.tier, 'tier');
+    const actual = o.tier || getModelTier(o, m);
+    if (!matchesListFilter(actual, spec, allowUnknown)) return false;
+  }
+  if (f.deployment !== undefined && f.deployment !== null) {
+    const spec = normalizeListFilter(f.deployment, 'deployment');
+    if (!matchesListFilter(o.deployment, spec, allowUnknown)) return false;
+  }
+  if (f.origin !== undefined && f.origin !== null) {
+    const spec = normalizeListFilter(f.origin, 'origin');
+    if (!m.origin ? !allowUnknown : !matchesListFilter(m.origin, spec, allowUnknown)) return false;
+  }
   if (
     f.openWeights !== undefined &&
     (m.openWeights === null ? !unknown(c) : m.openWeights !== f.openWeights)
@@ -463,23 +747,30 @@ function matches(o, m, c, providerTags = []) {
     (m.commercialUse === 'unknown' ? !unknown(c) : m.commercialUse !== f.commercialUse)
   )
     return false;
-  const allowUnknown = unknown(c);
+
   if (f.input !== undefined && f.input !== null) {
-    const spec = normalizeModalityFilter(f.input, 'contain');
+    const spec = normalizeListFilter(f.input, 'input');
     if (!matchesModality(o.modalities?.input, spec, allowUnknown)) return false;
   }
   if (f.output !== undefined && f.output !== null) {
-    const spec = normalizeModalityFilter(f.output, 'exact');
+    const spec = normalizeListFilter(f.output, 'output');
     if (!matchesModality(o.modalities?.output, spec, allowUnknown)) return false;
   }
-  if (
-    f.fileFormats?.length &&
-    (o.fileFormats == null ? !unknown(c) : !f.fileFormats.every((x) => o.fileFormats.includes(x)))
-  )
-    return false;
-  for (const feature of f.requiredFeatures || []) {
-    const s = o.features?.[feature]?.status || FeatureStatus.Unknown;
-    if (s !== FeatureStatus.Supported && !(s === FeatureStatus.Unknown && unknown(c))) return false;
+  if (f.fileFormats !== undefined && f.fileFormats !== null) {
+    const spec = normalizeListFilter(f.fileFormats, 'fileFormats');
+    if (
+      o.fileFormats == null ? !allowUnknown : !matchesListFilter(o.fileFormats, spec, allowUnknown)
+    )
+      return false;
+  }
+  if (f.requiredFeatures !== undefined && f.requiredFeatures !== null) {
+    const spec = normalizeListFilter(f.requiredFeatures, 'requiredFeatures');
+    const supportedFeatures = Object.keys(o.features || {}).filter(
+      (k) =>
+        o.features[k]?.status === FeatureStatus.Supported ||
+        (o.features[k]?.status === FeatureStatus.Unknown && allowUnknown),
+    );
+    if (!matchesListFilter(supportedFeatures, spec, allowUnknown)) return false;
   }
   const constraints = [
     [f.minContextTokens, o.limits?.context, 'min'],
@@ -502,14 +793,24 @@ function matches(o, m, c, providerTags = []) {
     (o.callSupport?.textGeneration ?? callSupportFor(o).textGeneration) !== callable
   )
     return false;
-  const lifecycle =
-    f.lifecycle ||
-    (f.includeDeprecated === true ||
-    (c.list === ModelList.Complete && f.includeDeprecated !== false)
-      ? Object.values(Lifecycle)
-      : [Lifecycle.Live, Lifecycle.Uncertain]);
-  if (!lifecycle.includes(o.lifecycle.status)) return false;
-  if (f.popularity && !f.popularity.includes(o.popularity.status)) return false;
+
+  if (f.lifecycle !== undefined && f.lifecycle !== null) {
+    const spec = normalizeListFilter(f.lifecycle, 'lifecycle');
+    if (!matchesListFilter(o.lifecycle.status, spec, allowUnknown)) return false;
+  } else {
+    const defaultLifecycle =
+      f.includeDeprecated === true ||
+      (c.list === ModelList.Complete && f.includeDeprecated !== false)
+        ? Object.values(Lifecycle)
+        : [Lifecycle.Live, Lifecycle.Uncertain];
+    if (!defaultLifecycle.includes(o.lifecycle.status)) return false;
+  }
+
+  if (f.popularity !== undefined && f.popularity !== null) {
+    const spec = normalizeListFilter(f.popularity, 'popularity');
+    if (!matchesListFilter(o.popularity.status, spec, allowUnknown)) return false;
+  }
+
   if (f.releasedWithin !== undefined) {
     const maxDays = parseReleasedWithinDays(f.releasedWithin);
     if (maxDays === undefined) return false;
@@ -532,35 +833,164 @@ function matches(o, m, c, providerTags = []) {
       }
     }
   }
-  if ((f.includeTags && f.includeTags.length > 0) || (f.excludeTags && f.excludeTags.length > 0)) {
-    const tags = new Set([
-      ...[...(m.tags || []), ...providerTags].filter(
-        (t) =>
-          !t.startsWith('lifecycle:') &&
-          !t.startsWith('popularity:') &&
-          !t.startsWith('release:') &&
-          !t.startsWith('released:'),
-      ),
-      ...(o.tags || []),
-    ]);
-    if (isFlashModel(o, m)) {
-      tags.add('model:flash');
-    }
-    if (o.releaseDate) {
-      for (const t of getReleaseTags(o.releaseDate, c.asOf)) tags.add(t);
-    } else if (m?.releaseDate) {
-      for (const t of getReleaseTags(m.releaseDate, c.asOf)) tags.add(t);
-    }
-    if (
-      (f.includeTags || []).some((t) => !tags.has(t)) ||
-      (f.excludeTags || []).some((t) => tags.has(t))
-    )
+
+  const tags = new Set([
+    ...[...(m.tags || []), ...providerTags].filter(
+      (t) =>
+        !t.startsWith('lifecycle:') &&
+        !t.startsWith('popularity:') &&
+        !t.startsWith('release:') &&
+        !t.startsWith('released:'),
+    ),
+    ...(o.tags || []),
+  ]);
+  const specVal = o.speciality || getModelSpeciality(o, m);
+  if (specVal) tags.add(`speciality:${specVal}`);
+  const tierVal = o.tier || getModelTier(o, m);
+  if (tierVal) tags.add(`tier:${tierVal}`);
+  if (isFlashModel(o, m)) {
+    tags.add('model:flash');
+  }
+  if (o.releaseDate) {
+    for (const t of getReleaseTags(o.releaseDate, c.asOf)) tags.add(t);
+  } else if (m?.releaseDate) {
+    for (const t of getReleaseTags(m.releaseDate, c.asOf)) tags.add(t);
+  }
+
+  if (f.includeTags !== undefined && f.includeTags !== null) {
+    const spec = normalizeListFilter(f.includeTags, 'includeTags');
+    if (!matchesListFilter(tags, spec, allowUnknown)) return false;
+  }
+  if (f.excludeTags !== undefined && f.excludeTags !== null) {
+    const spec = normalizeListFilter(f.excludeTags, 'excludeTags');
+    if (spec.mode === 'exclude' ? !evaluateFilterNode(tags, spec) : evaluateFilterNode(tags, spec))
       return false;
   }
+
   if (f.official !== undefined && isOfficialOffering(o, m, providerTags) !== f.official)
     return false;
 
   return true;
+}
+
+export function getModelSpeciality(offering, model = {}) {
+  if (offering?.speciality) return offering.speciality;
+  if (model?.speciality) return model.speciality;
+  const id =
+    `${offering?.providerId || ''}/${offering?.apiModelId || offering?.id || model?.id || ''}`.toLowerCase();
+  const name = `${offering?.name || ''} ${model?.name || ''}`.toLowerCase();
+  const text = `${id} ${name}`;
+
+  if (
+    text.includes('daybreak') ||
+    text.includes('cybersecurity') ||
+    text.includes('security') ||
+    text.includes('red-team') ||
+    text.includes('blue-team')
+  ) {
+    return Speciality.Cybersecurity;
+  }
+  if (
+    /codex|codestral|devstral|(?:^|[-_./\s])coder(?:$|[-_./\s])|starcoder|code-llama/i.test(text)
+  ) {
+    return Speciality.Coding;
+  }
+  if (text.includes('lyria') || text.includes('music')) {
+    return Speciality.Music;
+  }
+  if (
+    text.includes('guard') ||
+    text.includes('safety') ||
+    text.includes('shield') ||
+    text.includes('moderation')
+  ) {
+    return Speciality.Safety;
+  }
+  if (
+    text.includes('customtools') ||
+    text.includes('deep-research') ||
+    text.includes('computer-use')
+  ) {
+    return Speciality.Agent;
+  }
+  if (text.includes('live-translate') || text.includes('translate')) {
+    return Speciality.Translation;
+  }
+  if (text.includes('embed') || text.includes('embedding') || text.includes('bge-')) {
+    return Speciality.Embedding;
+  }
+  const outMods = offering?.modalities?.output || [];
+  if (outMods.length === 1 && outMods[0] === 'image' && !outMods.includes('text')) {
+    return Speciality.Image;
+  }
+  if (outMods.length === 1 && outMods[0] === 'audio' && !outMods.includes('text')) {
+    return Speciality.Audio;
+  }
+  if (outMods.length === 1 && outMods[0] === 'video' && !outMods.includes('text')) {
+    return Speciality.Video;
+  }
+  if (
+    text.includes('dall-e') ||
+    text.includes('imagen') ||
+    text.includes('flux') ||
+    text.includes('midjourney') ||
+    text.includes('image-latest')
+  ) {
+    return Speciality.Image;
+  }
+  if (text.includes('whisper') || text.includes('tts') || text.includes('speech')) {
+    return Speciality.Audio;
+  }
+  if (
+    text.includes('sora') ||
+    text.includes('veo') ||
+    text.includes('gen-3') ||
+    text.includes('video-latest')
+  ) {
+    return Speciality.Video;
+  }
+  return /gpt|claude|gemini|deepseek|llama|qwen|mistral|gemma|glm|grok|kimi|minimax/i.test(text)
+    ? Speciality.General
+    : Speciality.Unknown;
+}
+
+export function getModelTier(offering, model = {}) {
+  if (offering?.tier) return offering.tier;
+  if (model?.tier) return model.tier;
+  const id = `${offering?.apiModelId || offering?.id || model?.id || ''}`.toLowerCase();
+  const name = `${offering?.name || ''} ${model?.name || ''}`.toLowerCase();
+  const text = `${id} ${name}`;
+
+  if (
+    text.includes('flash-lite') ||
+    text.includes('flash_lite') ||
+    text.includes('nano') ||
+    /(?:^|[-_./\s])lite(?:$|[-_./\s])/i.test(text)
+  ) {
+    return Tier.Lite;
+  }
+  if (
+    /(?:^|[-_./\s])mini(?:$|[-_./\s])/i.test(text) ||
+    text.includes('gemma') ||
+    text.includes('micro')
+  ) {
+    return Tier.Mini;
+  }
+  if (isFlashModel(offering, model) || text.includes('luna') || text.includes('haiku')) {
+    return Tier.Flash;
+  }
+  if (
+    text.includes('astra') ||
+    text.includes('opus') ||
+    text.includes('fable') ||
+    text.includes('argon') ||
+    /(?:^|[-_./\s])pro(?:$|[-_./\s])/i.test(text)
+  ) {
+    return Tier.Flagship;
+  }
+  return /gpt|claude|gemini|deepseek|llama|qwen|mistral|glm|grok|kimi|minimax/i.test(text)
+    ? Tier.Workhorse
+    : Tier.Unknown;
 }
 
 export function isFlashModel(offering, model = {}) {
@@ -843,21 +1273,37 @@ export class Catalog {
         ? this.data.presets.find((p) => p.id === 'global')
         : undefined);
     if (!preset) throw new Error(`Unknown preset: ${config.preset}`);
-    const ids =
-      config.providerIds ||
-      (config.list === ModelList.Complete
-        ? this.data.providers.map((p) => p.id)
-        : preset.providerIds);
-    if (!Array.isArray(ids) || ids.some((id) => !this.providers.has(id)))
-      throw new Error('Unknown provider in providerIds');
+    let ids;
+    if (config.providerIds !== undefined && config.providerIds !== null) {
+      const spec = normalizeListFilter(config.providerIds, 'providerIds');
+      const collectLiterals = (node) => {
+        if (!node) return [];
+        if (typeof node === 'string') return [node];
+        const val = node.values !== undefined ? node.values : node.items;
+        return (Array.isArray(val) ? val : [val]).flatMap(collectLiterals);
+      };
+      const requested = collectLiterals(spec);
+      if (requested.some((id) => !this.providers.has(id))) {
+        throw new Error('Unknown provider in providerIds');
+      }
+      ids = Array.isArray(config.providerIds)
+        ? [...new Set(config.providerIds)]
+        : this.data.providers
+            .map((p) => p.id)
+            .filter((id) => evaluateFilterNode(new Set([id]), spec));
+    } else {
+      ids =
+        config.list === ModelList.Complete
+          ? this.data.providers.map((p) => p.id)
+          : preset.providerIds;
+    }
     const groups = [];
     const recommended = preset.offeringIds ? new Set(preset.offeringIds) : null;
     for (const id of ids) {
       if (this.providers.get(id).deployment === Deployment.Local) continue;
       const providerOfferings = this.offeringsByProvider.get(id) || [];
-      const hasPresetOffering = recommended && providerOfferings.some((o) => recommended.has(o.id));
       let choices = providerOfferings
-        .filter((o) => !hasPresetOffering || recommended.has(o.id))
+        .filter((o) => !recommended || recommended.has(o.id))
         .map((o) => withSignals(o, config.asOf))
         .filter(
           (o) =>
@@ -1157,6 +1603,8 @@ export function deriveTags(offering, model = {}) {
         'lifecycle:',
         'popularity:',
         'model:',
+        'speciality:',
+        'tier:',
       ].some((p) => t.startsWith(p)),
   );
   for (const [name, feature] of Object.entries(offering.features || {}))
@@ -1167,13 +1615,17 @@ export function deriveTags(offering, model = {}) {
   if (model.openWeights === true) tags.push('weights:open');
   if (model.origin) tags.push(`origin:${model.origin}`);
   tags.push(`deployment:${offering.deployment}`);
+  const specVal = offering.speciality || getModelSpeciality(offering, model);
+  if (specVal) tags.push(`speciality:${specVal}`);
+  const tierVal = offering.tier || getModelTier(offering, model);
+  if (tierVal) tags.push(`tier:${tierVal}`);
   const ctx = offering.limits?.context;
   if (positive(ctx))
     tags.push(
       `context:${ctx >= 1000000 ? '1m+' : ctx >= 128000 ? '128k+' : ctx >= 32000 ? '32k+' : 'under-32k'}`,
     );
   const p = offering.price;
-  if (p?.currency === Currency.USD && finite(p.input) && finite(p.output) && !p.tiers?.length) {
+  if (p?.currency === Currency.USD && finite(p.input) && finite(p.output)) {
     const cost = (p.input + p.output) / 1000;
     tags.push(
       `price:${cost === 0 ? 'zero-token-rate' : cost <= 0.002 ? 'budget' : cost <= 0.02 ? 'mid' : 'premium'}`,
@@ -1463,20 +1915,11 @@ function normalizeQuery(input = {}, options) {
   if (config.filters) {
     const f = { ...config.filters };
     if (f.input !== undefined && f.input !== null) {
-      const norm = normalizeModalityFilter(f.input, 'contain');
-      if (norm && norm.values.length > 0) {
-        f.input = { mode: norm.mode, values: [...norm.values].sort() };
-      } else {
-        delete f.input;
-      }
+      const norm = normalizeModalityFilter(f.input, 'input');
+      f.input = norm;
     }
     if (f.output !== undefined && f.output !== null) {
-      const norm = normalizeModalityFilter(f.output, 'exact');
-      if (norm && norm.values.length > 0) {
-        f.output = { mode: norm.mode, values: [...norm.values].sort() };
-      } else {
-        delete f.output;
-      }
+      f.output = normalizeModalityFilter(f.output, 'output');
     }
     config.filters = f;
   }
@@ -1515,12 +1958,20 @@ function hasModalityFilter(spec) {
   if (!spec) return false;
   if (Array.isArray(spec)) return spec.length > 0;
   if (typeof spec === 'object') {
+    if (spec.mode || spec.op) return true;
     const vals = spec.values || spec.exact || spec.contain || spec.contains || spec.any;
     return Array.isArray(vals) ? vals.length > 0 : Boolean(vals);
   }
   return true;
 }
 function localGroups(config, catalog) {
+  for (const field of ['speciality', 'tier', 'releaseChannel']) {
+    if (
+      config.filters?.[field] != null &&
+      !matchesListFilter('unknown', normalizeListFilter(config.filters[field], field))
+    )
+      return [];
+  }
   if (
     hasModalityFilter(config.filters?.input) ||
     hasModalityFilter(config.filters?.output) ||
@@ -1529,11 +1980,26 @@ function localGroups(config, catalog) {
     config.preset === 'official-flagship' ||
     config.preset === 'official' ||
     config.local === false ||
-    (config.filters?.deployment && !config.filters.deployment.includes(Deployment.Local))
+    (config.filters?.deployment &&
+      !evaluateFilterNode(
+        new Set([Deployment.Local]),
+        normalizeListFilter(config.filters.deployment, 'deployment'),
+        true,
+      ))
   )
     return [];
   const ids =
-    config.providerIds || catalog.data.presets.find((p) => p.id === config.preset)?.providerIds;
+    config.providerIds !== undefined && config.providerIds !== null
+      ? catalog.data.providers
+          .map((p) => p.id)
+          .filter((id) =>
+            evaluateFilterNode(
+              new Set([id]),
+              normalizeListFilter(config.providerIds, 'providerIds'),
+              true,
+            ),
+          )
+      : catalog.data.presets.find((p) => p.id === config.preset)?.providerIds;
   if (
     config.local === undefined &&
     ids &&
@@ -1556,6 +2022,9 @@ function localGroups(config, catalog) {
     apiModelId: entry.modelId || '',
     name: entry.name || entry.modelId || 'Local — enter your server URL',
     deployment: 'local',
+    speciality: Speciality.Unknown,
+    tier: Tier.Unknown,
+    releaseChannel: 'unknown',
     local: {
       endpoint: entry.endpoint || '',
       api: entry.api || LocalApi.OpenAI,

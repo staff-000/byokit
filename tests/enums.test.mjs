@@ -12,6 +12,7 @@ import {
   customProviderId,
   githubContributor,
   customTag,
+  any,
 } from 'byokit';
 
 test('runtime enum objects match the shared definitions and are immutable', () => {
@@ -25,12 +26,13 @@ test('enum calls work and typo values are rejected at runtime for JavaScript/JSO
   assert.ok(
     getModels({
       preset: Preset.China,
-      providerIds: [ProviderId.DeepSeek],
-      filters: { input: [Modality.Text], requiredFeatures: [FeatureName.FunctionCalling] },
+      providerIds: any(ProviderId.DeepSeek),
+      filters: { input: any(Modality.Text), requiredFeatures: any(FeatureName.FunctionCalling) },
     }).length,
   );
-  assert.throws(() => getModels({ filters: { input: ['imag'] } }));
-  assert.throws(() => getModels({ filters: { requiredFeatures: ['functionCallling'] } }));
+  assert.throws(() => getModels({ filters: { input: any('imag') } }));
+  assert.throws(() => getModels({ filters: { requiredFeatures: any('functionCallling') } }));
+  assert.throws(() => getModels({ filters: { input: ['imag'] } }), /Unknown/);
   assert.throws(() => getModels({ prefer: { features: ['madeUp'] } }));
   assert.equal(customProviderId('my-provider'), 'my-provider');
   assert.equal(githubContributor('example'), 'github:example');
@@ -43,7 +45,7 @@ test('Python enums serialize to the same values and use the same query validatio
     process.env.BYOKIT_PYTHON || (process.platform === 'win32' ? 'python' : 'python3'),
     [
       '-c',
-      `import sys,json;sys.path.insert(0,'packages/python/src');from byokit import ProviderId,Preset,Modality,get_models,validate_config; print(json.dumps({'provider':ProviderId.DEEP_SEEK,'preset':Preset.CHINA,'modality':Modality.TEXT,'models':len(get_models({'providerIds':[ProviderId.DEEP_SEEK],'limit':1})),'invalid':bool(validate_config({'filters':{'requiredFeatures':['madeUp']}}))}))`,
+      `import sys,json;sys.path.insert(0,'packages/python/src');from byokit import ProviderId,Preset,Modality,get_models,validate_config,any_; print(json.dumps({'provider':ProviderId.DEEP_SEEK,'preset':Preset.CHINA,'modality':Modality.TEXT,'models':len(get_models({'providerIds':any_(ProviderId.DEEP_SEEK),'limit':1})),'invalid':bool(validate_config({'filters':{'requiredFeatures':any_('madeUp')}}))}))`,
     ],
     { encoding: 'utf8' },
   );

@@ -4,7 +4,13 @@ import { mergeManualCatalog } from './manual-catalog.mjs';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { createHash } from 'node:crypto';
-import { validateCatalog, deriveTags } from '../packages/byokit/index.js';
+import {
+  validateCatalog,
+  deriveTags,
+  getModelSpeciality,
+  getModelTier,
+  getReleaseChannel,
+} from '../packages/byokit/index.js';
 const [source, ...args] = process.argv.slice(2);
 if (!source)
   throw new Error(
@@ -113,6 +119,8 @@ for (const [id, p] of Object.entries(upstream).sort(([a], [b]) => a.localeCompar
         openWeights: typeof base?.open_weights === 'boolean' ? base.open_weights : null,
         commercialUse: 'unknown',
         license: base?.license || null,
+        speciality: getModelSpeciality(base, base),
+        tier: getModelTier(base, base),
         size: { totalParameters: null, activeParameters: null, architecture: 'unknown' },
         tags: base?.open_weights === true ? ['weights:open'] : [],
         provenance: { source: 'models.dev', reviewedAt: catalog.provenance.reviewedAt },
@@ -172,6 +180,8 @@ for (const [id, p] of Object.entries(upstream).sort(([a], [b]) => a.localeCompar
       releaseDate: m.release_date || null,
       lastUpdated: m.last_updated || null,
       type: m.type,
+      speciality: getModelSpeciality(m, base),
+      tier: getModelTier(m, base),
       providerShape: m.provider?.shape,
       requiresProviderOverride: Boolean(
         m.provider && Object.keys(m.provider).some((key) => key !== 'shape'),
@@ -190,7 +200,8 @@ for (const [id, p] of Object.entries(upstream).sort(([a], [b]) => a.localeCompar
       ...(observedAt
         ? { listingEvidence: { source: catalog.provenance.source, checkedAt: observedAt } }
         : {}),
-      status: m.status || 'stable',
+      status: m.status || 'unknown',
+      releaseChannel: getReleaseChannel({ apiModelId: m.id, status: m.status }),
       fileFormats: (m.modalities?.input || []).filter(
         (x) => !['text', 'image', 'audio', 'video', 'embedding'].includes(x),
       ),
@@ -248,6 +259,8 @@ for (const id of ['ollama', 'local']) {
     openWeights: null,
     commercialUse: 'unknown',
     license: null,
+    speciality: 'unknown',
+    tier: 'unknown',
     tags: [],
   });
   catalog.offerings.push({
@@ -257,6 +270,8 @@ for (const id of ['ollama', 'local']) {
     apiModelId: '',
     name: 'Enter an installed model ID',
     deployment: 'local',
+    speciality: 'unknown',
+    tier: 'unknown',
     modalities: { input: null, output: null },
     limits: { context: null, input: null, output: null, contextAccounting: 'unknown' },
     features: {},
@@ -314,7 +329,10 @@ for (const old of previous?.offerings || []) {
 catalog = mergeManualCatalog(catalog, manual);
 // Explicit evidence-backed overlays; identities/endpoints/auth cannot be overridden.
 for (const [collection, allowed] of [
-  ['models', ['origin', 'openWeights', 'commercialUse', 'license', 'size', 'tags']],
+  [
+    'models',
+    ['origin', 'openWeights', 'commercialUse', 'license', 'size', 'tags', 'speciality', 'tier'],
+  ],
   [
     'offerings',
     [
@@ -328,6 +346,9 @@ for (const [collection, allowed] of [
       'hosting',
       'rank',
       'status',
+      'releaseChannel',
+      'speciality',
+      'tier',
       'releaseDate',
       'lifecycleEvidence',
       'popularityEvidence',
@@ -353,21 +374,36 @@ for (const [collection, allowed] of [
     record.provenance = { source: override.source, reviewedAt: override.reviewedAt };
   }
 }
-for (const o of catalog.offerings) o.callSupport = callSupportFor(o);
+for (const o of catalog.offerings) {
+  // A reviewed canonical correction applies unless this offering has an explicit correction.
+  for (const field of ['speciality', 'tier']) {
+    const canonical = overlay.models?.[o.modelId]?.fields?.[field];
+    if (
+      canonical &&
+      !overlay.offerings?.[o.id]?.fields?.[field] &&
+      !manual.offerings?.some((m) => m.id === o.id && m[field])
+    )
+      o[field] = canonical;
+  }
+  o.callSupport = callSupportFor(o);
+}
 const recommendations = JSON.parse(
   await readFile(new URL('../catalog/recommendations.json', import.meta.url), 'utf8'),
 );
 catalog.recommendations = recommendations;
 const defaults = catalog.presets.find((p) => p.id === 'default');
-const defaultRecommendedIds = [
-  'openai/gpt-6.1-sol',
-  'openai/gpt-6-luna',
-  'anthropic/claude-sonnet-5-5',
-  'google/gemini-3.8-flash',
-];
+const defaultRecommendedIds = recommendations
+  .filter((r) => r.default === true)
+  .map((r) => r.offeringId);
 for (const id of defaultRecommendedIds) {
   const o = catalog.offerings.find((o) => o.id === id);
-  if (!o || o.status === 'deprecated' || !o.callSupport?.textGeneration) continue;
+  if (
+    !o ||
+    o.status === 'deprecated' ||
+    ['preview', 'experimental'].includes(getReleaseChannel(o)) ||
+    !o.callSupport?.textGeneration
+  )
+    continue;
   defaults.offeringIds.push(o.id);
   if (!defaults.providerIds.includes(o.providerId)) defaults.providerIds.push(o.providerId);
 }
@@ -390,6 +426,10 @@ for (const pid of ['official-flagship', 'official']) {
       if (!p.providerIds.includes(o.providerId)) p.providerIds.push(o.providerId);
     }
   }
+}
+for (const m of catalog.models) {
+  m.tags = (m.tags || []).filter((t) => !t.startsWith('speciality:') && !t.startsWith('tier:'));
+  m.tags.push(`speciality:${m.speciality}`, `tier:${m.tier}`);
 }
 for (const o of catalog.offerings)
   o.tags = deriveTags(

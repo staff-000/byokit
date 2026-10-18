@@ -12,6 +12,8 @@
       "name": "DeepSeek Chat",
       "releaseDate": "2025-12-01",
       "deployment": "hosted",
+      "speciality": "general",
+      "tier": "workhorse",
       "callSupport": {
         "textGeneration": true,
         "reason": null

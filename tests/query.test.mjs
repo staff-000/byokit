@@ -12,9 +12,17 @@ import {
   Exact,
   Contain,
   Any,
+  Exclude,
   exact,
   contain,
   any,
+  exclude,
+  and,
+  or,
+  xor,
+  not,
+  Speciality,
+  Tier,
 } from '../packages/byokit/index.js';
 import bundled, { getModels } from 'byokit/catalog';
 const fixture = () => JSON.parse(readFileSync('spec/fixtures/catalog.json'));
@@ -35,7 +43,7 @@ test('simple query returns a bounded flat list with provider/model metadata and 
   const data = structuredClone(bundled);
   data.verifications = [];
   const catalog = new Catalog(data);
-  const list = catalog.getModels({ providerIds: ['deepseek'], limit: 1 });
+  const list = catalog.getModels({ providerIds: exact('deepseek'), limit: 1 });
   assert.equal(list.length, 1);
   assert.equal(list[0].provider.id, 'deepseek');
   assert.ok(list[0].apiModelId);
@@ -47,13 +55,21 @@ test('simple query returns a bounded flat list with provider/model metadata and 
 });
 test('bundled provider results preserve real published contributor reports', () => {
   const asOf = new Date().toISOString();
-  for (const model of getModels({ providerIds: ['deepseek'], asOf }))
+  for (const model of getModels({ providerIds: exact('deepseek'), asOf }))
     assert.deepEqual(model.verification, verificationSummary(bundled, model.id, { asOf }));
 });
 test('README example matches the bundled catalog', () => {
   const run = spawnSync('node', ['examples/query.mjs'], { encoding: 'utf8' });
   assert.equal(run.status, 0, run.stderr);
-  assert.deepEqual(JSON.parse(run.stdout), ['anthropic', 'google', 'openai', 'openai', 'local']);
+  assert.deepEqual(JSON.parse(run.stdout), [
+    'anthropic',
+    'deepseek',
+    'deepseek',
+    'google',
+    'openai',
+    'openai',
+    'local',
+  ]);
 });
 test('reports retain author and evidence, but never promote unknown capabilities', () => {
   const data = fixture();
@@ -71,7 +87,7 @@ test('reports retain author and evidence, but never promote unknown capabilities
     c.getModels({
       asOf,
       local: false,
-      filters: { verified: true, requiredFeatures: ['strictJsonSchema'] },
+      filters: { verified: true, requiredFeatures: exact('strictJsonSchema') },
     }),
     [],
   );
@@ -146,13 +162,13 @@ test('explicit provider queries return all non-deprecated matches unless a limit
   }));
   data.offerings.push({ ...base, id: 'test/deprecated', status: 'deprecated' });
   const c = new Catalog(data);
-  assert.equal(c.getModels({ providerIds: ['test'] }).length, 125);
-  assert.equal(c.getModels({ providerIds: ['test'], limit: 5 }).length, 5);
+  assert.equal(c.getModels({ providerIds: exact('test') }).length, 125);
+  assert.equal(c.getModels({ providerIds: exact('test'), limit: 5 }).length, 5);
   assert.equal(c.getModels().length, 2);
   assert.equal(c.select()[0].offerings.length, 4);
   const run = pythonModels({
     data,
-    queries: [{ providerIds: ['test'] }, { providerIds: ['test'], limit: 5 }, {}],
+    queries: [{ providerIds: exact('test') }, { providerIds: exact('test'), limit: 5 }, {}],
   });
   assert.equal(run.status, 0, run.stderr);
   assert.deepEqual(
@@ -204,7 +220,7 @@ test('release dates validate actual calendar days; unknown metadata remains null
   }
 });
 
-test('modality filters support Exact, Contain, Any with bare array defaults and Python parity', () => {
+test('modality filters support Exact, Contain, Any with backward-compatible arrays and Python parity', () => {
   assert.deepEqual(exact([Modality.Text]), { mode: 'exact', values: ['text'] });
   assert.deepEqual(Exact(Modality.Text), { mode: 'exact', values: ['text'] });
   assert.deepEqual(contain([Modality.Text]), { mode: 'contain', values: ['text'] });
@@ -216,6 +232,21 @@ test('modality filters support Exact, Contain, Any with bare array defaults and 
   assert.deepEqual(Any([Modality.Text, Modality.Image]), {
     mode: 'any',
     values: ['text', 'image'],
+  });
+  assert.deepEqual(exclude([Modality.Image]), {
+    mode: 'exclude',
+    values: ['image'],
+  });
+  assert.deepEqual(Exclude(Modality.Image), {
+    mode: 'exclude',
+    values: ['image'],
+  });
+  assert.deepEqual(and(exact('text'), not(exact('image'))), {
+    op: 'and',
+    values: [
+      { mode: 'exact', values: ['text'] },
+      { op: 'not', values: [{ mode: 'exact', values: ['image'] }] },
+    ],
   });
 
   const data = fixture();
@@ -237,13 +268,16 @@ test('modality filters support Exact, Contain, Any with bare array defaults and 
 
   const c = new Catalog(data);
 
-  // 1. Bare array on output defaults to exact -> only pure text output matches
-  const textExactBare = c
-    .getModels({ local: false, filters: { output: [Modality.Text] } })
-    .map((m) => m.id);
-  assert.deepEqual(textExactBare, ['test/small', 'test/vision-in']);
+  assert.deepEqual(
+    c.getModels({ local: false, filters: { output: ['text'] } }).map((m) => m.id),
+    ['test/small', 'test/vision-in'],
+  );
+  assert.deepEqual(
+    c.getModels({ local: false, filters: { input: ['image'] } }).map((m) => m.id),
+    ['test/vision-in'],
+  );
 
-  // 2. Exact on output -> identical to bare array
+  // 2. Exact on output -> only pure text output matches
   const textExactExplicit = c
     .getModels({ local: false, filters: { output: Exact([Modality.Text]) } })
     .map((m) => m.id);
@@ -272,9 +306,9 @@ test('modality filters support Exact, Contain, Any with bare array defaults and 
     .map((m) => m.id);
   assert.deepEqual(imageOrAudio, ['test/audio-out', 'test/image-text']);
 
-  // 6. Bare array on input defaults to contain -> vision models match [Modality.Image]
+  // 6. Contain on input -> vision models match contain(Modality.Image)
   const imageInContain = c
-    .getModels({ local: false, filters: { input: [Modality.Image] } })
+    .getModels({ local: false, filters: { input: contain(Modality.Image) } })
     .map((m) => m.id);
   assert.deepEqual(imageInContain, ['test/vision-in']);
 
@@ -286,12 +320,12 @@ test('modality filters support Exact, Contain, Any with bare array defaults and 
 
   // 8. Python parity check
   const queries = [
-    { local: false, filters: { output: [Modality.Text] } },
-    { local: false, filters: { output: { mode: 'exact', values: ['text'] } } },
-    { local: false, filters: { output: { mode: 'contain', values: ['text'] } } },
-    { local: false, filters: { output: { mode: 'exact', values: ['text', 'image'] } } },
-    { local: false, filters: { output: { mode: 'any', values: ['image', 'audio'] } } },
-    { local: false, filters: { input: [Modality.Image] } },
+    { local: false, filters: { output: exact(Modality.Text) } },
+    { local: false, filters: { output: { mode: 'exact', list: ['text'] } } },
+    { local: false, filters: { output: { mode: 'contain', list: ['text'] } } },
+    { local: false, filters: { output: { mode: 'exact', list: ['text', 'image'] } } },
+    { local: false, filters: { output: { mode: 'any', list: ['image', 'audio'] } } },
+    { local: false, filters: { input: contain(Modality.Image) } },
     { local: false, filters: { output: { contain: ['text'] } } },
   ];
   const pyResult = pythonModels({ data, queries });
@@ -299,7 +333,7 @@ test('modality filters support Exact, Contain, Any with bare array defaults and 
   const pyData = JSON.parse(pyResult.stdout);
   assert.deepEqual(
     pyData[0].map((m) => m.id),
-    textExactBare,
+    textExactExplicit,
   );
   assert.deepEqual(
     pyData[1].map((m) => m.id),
@@ -328,14 +362,14 @@ test('modality filters support Exact, Contain, Any with bare array defaults and 
 
   // Bundled catalog check for chatgpt-image-latest and lyria-3-pro-preview
   const textOnlyBundled = getModels({
-    providerIds: ['openai', 'google'],
-    filters: { output: [Modality.Text], callable: false },
+    providerIds: any('openai', 'google'),
+    filters: { output: exact(Modality.Text), callable: false },
   }).map((m) => m.id);
   assert.ok(!textOnlyBundled.includes('openai/chatgpt-image-latest'));
   assert.ok(!textOnlyBundled.includes('google/lyria-3-pro-preview'));
 
   const containBundled = getModels({
-    providerIds: ['openai'],
+    providerIds: exact('openai'),
     filters: { output: Contain([Modality.Text]), callable: false },
   }).map((m) => m.id);
   assert.ok(containBundled.includes('openai/chatgpt-image-latest'));
@@ -353,7 +387,7 @@ test('getModelsByProvider returns structure of {provider: model list}', async ()
   // Top-level exported getModelsByProvider on bundled catalog
   const { getModelsByProvider } = await import('../packages/byokit/index.js');
   const bundledGrouped = getModelsByProvider({
-    providerIds: ['anthropic', 'openai'],
+    providerIds: any('anthropic', 'openai'),
     local: false,
   });
   assert.ok(bundledGrouped.anthropic && bundledGrouped.openai);
@@ -364,17 +398,88 @@ test('getModelsByProvider returns structure of {provider: model list}', async ()
 });
 
 test('callable defaults to true for queries and respects explicit overrides', () => {
-  const defaultCallable = getModels({ providerIds: ['openai'], local: false });
+  const defaultCallable = getModels({ providerIds: exact('openai'), local: false });
   assert.ok(defaultCallable.length > 0);
   assert.ok(defaultCallable.every((m) => m.callSupport?.textGeneration === true));
   assert.ok(!defaultCallable.some((m) => m.id === 'openai/chatgpt-image-latest'));
 
   const explicitNonCallable = getModels({
-    providerIds: ['openai'],
+    providerIds: exact('openai'),
     local: false,
     filters: { callable: false },
   });
   assert.ok(explicitNonCallable.length > 0);
   assert.ok(explicitNonCallable.every((m) => m.callSupport?.textGeneration === false));
   assert.ok(explicitNonCallable.some((m) => m.id === 'openai/chatgpt-image-latest'));
+});
+
+test('speciality, tier and nested combinator logic (any, exact, exclude, and, or, xor, not)', () => {
+  const models = getModels(COMPLETE, { local: false });
+  assert.ok(models.every((m) => m.speciality && m.tier));
+
+  const generalModels = getModels(COMPLETE, {
+    local: false,
+    filters: { speciality: exact(Speciality.General) },
+  });
+  assert.ok(generalModels.length > 0);
+  assert.ok(generalModels.every((m) => m.speciality === Speciality.General));
+
+  const codingModels = getModels(COMPLETE, {
+    local: false,
+    filters: { speciality: exact(Speciality.Codex) },
+  });
+  assert.ok(codingModels.length > 0);
+  assert.ok(codingModels.every((m) => m.speciality === Speciality.Codex));
+
+  const flashModels = getModels(COMPLETE, {
+    local: false,
+    filters: { tier: exact(Tier.Flash) },
+  });
+  assert.ok(flashModels.length > 0);
+  assert.ok(flashModels.every((m) => m.tier === Tier.Flash));
+
+  // Nested combinator: any(exact('workhorse', exclude('lite')), exact('flash'))
+  const customQuery = getModels(COMPLETE, {
+    local: false,
+    providerIds: any('openai', 'google', 'anthropic', 'deepseek'),
+    filters: {
+      tier: any(exact(Tier.Workhorse, exclude(Tier.Lite)), exact(Tier.Flash)),
+    },
+  });
+  assert.ok(customQuery.length > 0);
+  assert.ok(
+    customQuery.every(
+      (m) => (m.tier === Tier.Workhorse && m.tier !== Tier.Lite) || m.tier === Tier.Flash,
+    ),
+  );
+  assert.ok(!customQuery.some((m) => m.tier === Tier.Lite));
+
+  // Boolean logic: and, not, or
+  const andQuery = getModels(COMPLETE, {
+    local: false,
+    filters: {
+      tier: and(exact(Tier.Flash), not(exact(Tier.Lite))),
+    },
+  });
+  assert.ok(andQuery.length > 0);
+  assert.ok(andQuery.every((m) => m.tier === Tier.Flash));
+
+  const orQuery = getModels(COMPLETE, {
+    local: false,
+    filters: {
+      tier: or(exact(Tier.Flash), exact(Tier.Lite)),
+    },
+  });
+  assert.ok(orQuery.length > 0);
+  assert.ok(orQuery.every((m) => m.tier === Tier.Flash || m.tier === Tier.Lite));
+
+  // Boolean logic: xor
+  const xorQuery = getModels(COMPLETE, {
+    local: false,
+    filters: {
+      tier: xor(exact(Tier.Flash), exact(Tier.Flagship)),
+    },
+  });
+  assert.ok(xorQuery.length > 0);
+  assert.ok(xorQuery.every((m) => m.tier === Tier.Flash || m.tier === Tier.Flagship));
 });

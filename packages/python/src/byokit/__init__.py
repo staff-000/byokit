@@ -1,6 +1,8 @@
 """Offline discovery and stateless, explicitly invoked inference."""
 
 from .enums import *
+from .types import FilterMatcher
+from typing import Any as TypingAny
 import builtins as _builtins
 _any = _builtins.any
 import copy
@@ -43,60 +45,255 @@ def _normalize_values_list(values):
     return [values.value if hasattr(values, "value") else str(values)]
 
 
-def exact(values):
-    return {"mode": "exact", "values": _normalize_values_list(values)}
+def _normalize_args(args):
+    if len(args) == 1 and isinstance(args[0], (list, tuple, set)):
+        return [
+            v if isinstance(v, dict) else (v.value if hasattr(v, "value") else str(v))
+            for v in args[0]
+        ]
+    return [
+        v if isinstance(v, dict) else (v.value if hasattr(v, "value") else str(v))
+        for v in args
+    ]
 
 
-def contain(values):
-    return {"mode": "contain", "values": _normalize_values_list(values)}
+def exact(*args) -> FilterMatcher[TypingAny]:
+    return {"mode": "exact", "values": _normalize_args(args)}
 
 
-def any(values):
-    return {"mode": "any", "values": _normalize_values_list(values)}
+def contain(*args) -> FilterMatcher[TypingAny]:
+    return {"mode": "contain", "values": _normalize_args(args)}
+
+
+contains = contain
+
+
+def any(*args) -> FilterMatcher[TypingAny]:
+    return {"mode": "any", "values": _normalize_args(args)}
+
+
+def exclude(*args) -> FilterMatcher[TypingAny]:
+    return {"mode": "exclude", "values": _normalize_args(args)}
+
+
+def and_(*args) -> FilterMatcher[TypingAny]:
+    return {"op": "and", "values": _normalize_args(args)}
+
+
+def or_(*args) -> FilterMatcher[TypingAny]:
+    return {"op": "or", "values": _normalize_args(args)}
+
+
+def xor(*args) -> FilterMatcher[TypingAny]:
+    return {"op": "xor", "values": _normalize_args(args)}
+
+
+def not_(*args) -> FilterMatcher[TypingAny]:
+    return {"op": "not", "values": _normalize_args(args)}
 
 
 Exact = exact
 Contain = contain
-Contains = contain
-Any = any
+Contains = contains
+Any = ANY = any_ = any
+Exclude = exclude
+And = AND = and_
+Or = OR = or_
+Xor = XOR = xor
+Not = NOT = not_
 
 
-def _normalize_modality_filter(value, default_mode="contain"):
+def normalize_list_filter(value, field_name="filter"):
     if value is None:
         return None
-    if isinstance(value, (list, tuple, set)):
-        return {"mode": default_mode, "values": _normalize_values_list(value)}
+    if isinstance(value, (list, tuple, set, str)) or hasattr(value, "value"):
+        field = field_name.removeprefix("filters.")
+        mode = "exact" if field == "output" else "contain" if field in ("input", "modality", "requiredFeatures", "fileFormats", "includeTags") else "any"
+        return {"mode": mode, "values": _normalize_values_list(value)}
     if isinstance(value, dict):
-        if "mode" in value and "values" in value:
-            mode = "contain" if value["mode"] == "contains" else value["mode"]
-            return {"mode": mode, "values": _normalize_values_list(value["values"])}
-        if "exact" in value:
-            return {"mode": "exact", "values": _normalize_values_list(value["exact"])}
-        if "contain" in value:
-            return {"mode": "contain", "values": _normalize_values_list(value["contain"])}
-        if "contains" in value:
-            return {"mode": "contain", "values": _normalize_values_list(value["contains"])}
-        if "any" in value:
-            return {"mode": "any", "values": _normalize_values_list(value["any"])}
-    if isinstance(value, str) or hasattr(value, "value"):
-        return {"mode": default_mode, "values": _normalize_values_list(value)}
-    return None
+        op = None
+        mode = None
+        values = None
+        if "op" in value:
+            op = str(value["op"]).lower()
+            values = value.get("values", value.get("list", value.get("items")))
+        elif "and" in value:
+            op = "and"
+            values = value["and"]
+        elif "or" in value:
+            op = "or"
+            values = value["or"]
+        elif "xor" in value:
+            op = "xor"
+            values = value["xor"]
+        elif "not" in value:
+            op = "not"
+            values = value["not"]
+        elif "mode" in value:
+            mode = str(value["mode"]).lower()
+            if mode == "contains":
+                mode = "contain"
+            values = value.get("values", value.get("list", value.get("items")))
+        elif "exact" in value:
+            mode = "exact"
+            values = value["exact"]
+        elif "contain" in value:
+            mode = "contain"
+            values = value["contain"]
+        elif "contains" in value:
+            mode = "contain"
+            values = value["contains"]
+        elif "any" in value:
+            mode = "any"
+            values = value["any"]
+        elif "exclude" in value:
+            mode = "exclude"
+            values = value["exclude"]
+
+        if op:
+            items = values if isinstance(values, (list, tuple)) else [values]
+            if op == "not" and len(items) != 1:
+                raise ValueError("not requires exactly one expression")
+            return {
+                "op": op,
+                "values": [
+                    normalize_list_filter(child, field_name)
+                    if isinstance(child, dict)
+                    else (child.value if hasattr(child, "value") else str(child))
+                    for child in items
+                ],
+            }
+        if mode:
+            items = values if isinstance(values, (list, tuple)) else [values]
+            return {
+                "mode": mode,
+                "values": [
+                    normalize_list_filter(child, field_name)
+                    if isinstance(child, dict)
+                    else (child.value if hasattr(child, "value") else str(child))
+                    for child in items
+                ],
+            }
+    raise ValueError(f"Invalid matcher for '{field_name}'")
+
+
+def _normalize_modality_filter(value, field_name="modality"):
+    name = "input" if field_name == "contain" else "output" if field_name == "exact" else field_name
+    return normalize_list_filter(value, name)
+
+
+def evaluate_filter_node(target_set, node, is_exact_set_match=False):
+    if node is None:
+        return True
+    if isinstance(node, str):
+        return node in target_set
+    if hasattr(node, "value"):
+        return node.value in target_set
+    if not isinstance(node, dict):
+        return False
+    values = node.get("values", node.get("items", []))
+    if "op" in node:
+        op = str(node["op"]).lower()
+        items = values if isinstance(values, (list, tuple)) else [values]
+        if op == "and":
+            return all(
+                evaluate_filter_node(target_set, child, is_exact_set_match)
+                for child in items
+            )
+        if op == "or":
+            return _any(
+                evaluate_filter_node(target_set, child, is_exact_set_match)
+                for child in items
+            )
+        if op == "xor":
+            return (
+                sum(
+                    1
+                    for child in items
+                    if evaluate_filter_node(target_set, child, is_exact_set_match)
+                )
+                == 1
+            )
+        if op == "not":
+            return len(items) == 1 and not evaluate_filter_node(target_set, items[0])
+        return False
+    if "mode" in node:
+        mode = str(node["mode"]).lower()
+        if mode == "contains":
+            mode = "contain"
+        items = values if isinstance(values, (list, tuple)) else [values]
+        literals = []
+        sub_matchers = []
+        for child in items:
+            if isinstance(child, dict):
+                sub_matchers.append(child)
+            elif hasattr(child, "value"):
+                literals.append(child.value)
+            elif isinstance(child, str):
+                literals.append(child)
+        if mode == "any":
+            if not items:
+                return False
+            return _any(lit in target_set for lit in literals) or _any(
+                evaluate_filter_node(target_set, sub, is_exact_set_match)
+                for sub in sub_matchers
+            )
+        if mode == "exclude":
+            return all(lit not in target_set for lit in literals) and all(
+                not evaluate_filter_node(target_set, sub) for sub in sub_matchers
+            )
+        for sub in sub_matchers:
+            if not evaluate_filter_node(target_set, sub, is_exact_set_match):
+                return False
+        if mode == "exact":
+            if not literals and sub_matchers:
+                return True
+            return target_set == set(literals)
+        # contain
+        return all(lit in target_set for lit in literals)
+    return False
+
+
+def matches_list_filter(
+    target_values, filter_spec, allow_unknown=False, is_exact_set_match=False
+):
+    if filter_spec is None:
+        return True
+    if target_values is None:
+        return allow_unknown
+    if isinstance(target_values, set):
+        target_set = target_values
+    elif isinstance(target_values, (list, tuple)):
+        target_set = {
+            v.value if hasattr(v, "value") else str(v) for v in target_values
+        }
+    else:
+        target_set = {
+            target_values.value
+            if hasattr(target_values, "value")
+            else str(target_values)
+        }
+    return evaluate_filter_node(target_set, filter_spec, is_exact_set_match)
 
 
 def _matches_modality(model_values, filter_spec, allow_unknown=False):
-    if not filter_spec or not filter_spec.get("values"):
-        return True
-    if model_values is None:
-        return allow_unknown
-    val_set = set(model_values)
-    req_list = filter_spec.get("values", [])
-    mode = filter_spec.get("mode", "contain")
-    if mode == "exact":
-        req_set = set(req_list)
-        return len(val_set) == len(req_set) and req_set == val_set
-    if mode == "any":
-        return _any(x in val_set for x in req_list)
-    return all(x in val_set for x in req_list)
+    return matches_list_filter(model_values, filter_spec, allow_unknown)
+
+
+def get_release_channel(offering):
+    if offering.get("releaseChannel"):
+        return offering["releaseChannel"]
+    model_id = offering.get("apiModelId") or offering.get("id", "")
+    if re.search(r"(?:^|[-_./])(experimental|exp)(?:$|[-_./])", model_id, re.I):
+        return "experimental"
+    if re.search(r"(?:^|[-_./])(preview|beta|alpha)(?:$|[-_./])", model_id, re.I):
+        return "preview"
+    status = offering.get("status")
+    if status in ("preview", "beta", "alpha"):
+        return "preview"
+    if status in ("experimental", "exp"):
+        return "experimental"
+    return "stable" if status == "stable" else "unknown"
 
 
 def validate_catalog(data):
@@ -117,7 +314,26 @@ def validate_catalog(data):
             seen.add(item_id)
     providers = {p["id"] for p in data["providers"]}
     models = {m["id"] for m in data["models"]}
+    valid_specialities = {s.value for s in Speciality}
+    valid_tiers = {t.value for t in Tier}
+    for m in data["models"]:
+        spec = m.get("speciality")
+        spec_val = spec.value if hasattr(spec, "value") else spec
+        if not spec_val or spec_val not in valid_specialities:
+            errors.append(f"{m.get('id')}: invalid or missing speciality")
+        tier = m.get("tier")
+        tier_val = tier.value if hasattr(tier, "value") else tier
+        if not tier_val or tier_val not in valid_tiers:
+            errors.append(f"{m.get('id')}: invalid or missing tier")
     for o in data["offerings"]:
+        spec = o.get("speciality")
+        spec_val = spec.value if hasattr(spec, "value") else spec
+        if not spec_val or spec_val not in valid_specialities:
+            errors.append(f"{o.get('id')}: invalid or missing speciality")
+        tier = o.get("tier")
+        tier_val = tier.value if hasattr(tier, "value") else tier
+        if not tier_val or tier_val not in valid_tiers:
+            errors.append(f"{o.get('id')}: invalid or missing tier")
         errors.extend(_validate_signals(o))
         support = o.get("callSupport")
         if "callSupport" in o and (
@@ -127,6 +343,8 @@ def validate_catalog(data):
             or support["reason"] is not None and not isinstance(support["reason"], str)
         ):
             errors.append(f"{o['id']}: invalid callSupport")
+        if "releaseChannel" in o and o["releaseChannel"] not in ("stable", "preview", "experimental", "unknown"):
+            errors.append(f"{o['id']}: invalid release channel")
         if o.get("releaseDate") is not None:
             try:
                 value = o["releaseDate"]
@@ -288,6 +506,8 @@ def validate_config(config):
             "tasks",
         ],
         "filters": [
+            "speciality",
+            "tier",
             "deployment",
             "origin",
             "openWeights",
@@ -313,6 +533,7 @@ def validate_config(config):
             "verifiedWithinDays",
             "official",
             "releasedWithin",
+            "releaseChannel",
         ],
         "prefer": ["features", "lowerCost"],
         "ui": ["maxProviders", "maxModelsPerProvider", "allowCustomModel"],
@@ -322,65 +543,115 @@ def validate_config(config):
         for key in config if group == "root" else config.get(group, {}) or {}:
             if key not in keys:
                 errors.append(f"Unknown {group}.{key}")
-    for key in [
+
+    vocabs = {
+        "releaseChannel": {"stable", "preview", "experimental", "unknown"},
+        "speciality": {s.value for s in Speciality},
+        "tier": {t.value for t in Tier},
+        "deployment": {d.value for d in Deployment},
+        "origin": {c.value for c in Country},
+        "input": {m.value for m in Modality},
+        "output": {m.value for m in Modality},
+        "requiredFeatures": {f.value for f in FeatureName},
+        "lifecycle": {l.value for l in Lifecycle},
+        "popularity": {p.value for p in Popularity},
+    }
+
+    def validate_selector_node(node, path, vocab=None):
+        if node is None:
+            return
+        if isinstance(node, (list, tuple, set)):
+            for child in node:
+                validate_selector_node(child, path, vocab)
+            return
+        if isinstance(node, str) or hasattr(node, "value"):
+            val_str = node.value if hasattr(node, "value") else str(node)
+            if vocab is not None and val_str not in vocab:
+                errors.append(f"Unknown {path} value")
+            return
+        if isinstance(node, dict):
+            op = None
+            mode = None
+            values = None
+            if "op" in node:
+                op = node["op"]
+                values = node.get("values", node.get("list", node.get("items")))
+            elif "and" in node:
+                op = "and"
+                values = node["and"]
+            elif "or" in node:
+                op = "or"
+                values = node["or"]
+            elif "xor" in node:
+                op = "xor"
+                values = node["xor"]
+            elif "not" in node:
+                op = "not"
+                values = node["not"]
+            elif "mode" in node:
+                mode = node["mode"]
+                values = node.get("values", node.get("list", node.get("items")))
+            elif "exact" in node:
+                mode = "exact"
+                values = node["exact"]
+            elif "contain" in node:
+                mode = "contain"
+                values = node["contain"]
+            elif "contains" in node:
+                mode = "contain"
+                values = node["contains"]
+            elif "any" in node:
+                mode = "any"
+                values = node["any"]
+            elif "exclude" in node:
+                mode = "exclude"
+                values = node["exclude"]
+            else:
+                errors.append(f"{path} matcher must specify mode or op")
+                return
+
+            if op and str(op).lower() not in ["and", "or", "xor", "not"]:
+                errors.append(f"{path} operator must be and, or, xor, or not")
+            if (
+                mode
+                and str(mode).lower()
+                not in ["exact", "contain", "contains", "any", "exclude"]
+            ):
+                errors.append(
+                    f"{path} matcher mode must be exact, contain, any, or exclude"
+                )
+            if op == "not" and isinstance(values, (list, tuple)) and len(values) != 1:
+                errors.append("not requires exactly one expression")
+            if values is not None:
+                items = values if isinstance(values, (list, tuple, set)) else [values]
+                for child in items:
+                    validate_selector_node(child, path, vocab)
+            return
+        errors.append(f"{path} must be a string or matcher")
+
+    if "providerIds" in config and config["providerIds"] is not None:
+        validate_selector_node(config["providerIds"], "providerIds")
+
+    filter_selectors = [
+        "releaseChannel",
+        "speciality",
+        "tier",
         "deployment",
         "origin",
+        "input",
+        "output",
         "requiredFeatures",
         "fileFormats",
         "includeTags",
         "excludeTags",
         "lifecycle",
         "popularity",
-    ]:
-        if key in config.get("filters", {}) and (
-            not isinstance(config["filters"][key], list)
-            or _any(not isinstance(v, str) for v in config["filters"][key])
-        ):
-            errors.append(f"filters.{key} must be a string array")
+    ]
+    f = config.get("filters", {})
+    for key in filter_selectors:
+        if key in f and f[key] is not None:
+            validate_selector_node(f[key], f"filters.{key}", vocabs.get(key))
 
-    valid_modalities = {m.value for m in Modality}
-    for key in ["input", "output"]:
-        val = config.get("filters", {}).get(key)
-        if val is not None:
-            if isinstance(val, list):
-                if _any(not isinstance(v, str) for v in val):
-                    errors.append(f"filters.{key} must be a string array or matcher")
-                elif _any(v not in valid_modalities for v in val):
-                    errors.append(f"Unknown filters.{key} value")
-            elif isinstance(val, dict):
-                mode = None
-                values = None
-                if "mode" in val and "values" in val:
-                    mode = val["mode"]
-                    values = val["values"]
-                elif "exact" in val:
-                    mode = "exact"
-                    values = val["exact"]
-                elif "contain" in val:
-                    mode = "contain"
-                    values = val["contain"]
-                elif "contains" in val:
-                    mode = "contain"
-                    values = val["contains"]
-                elif "any" in val:
-                    mode = "any"
-                    values = val["any"]
-                else:
-                    errors.append(f"filters.{key} matcher must specify mode and values")
-                if mode and mode not in ["exact", "contain", "contains", "any"]:
-                    errors.append(f"filters.{key} matcher mode must be exact, contain, or any")
-                if values is not None:
-                    if not isinstance(values, list) or _any(
-                        not isinstance(v, str) for v in values
-                    ):
-                        errors.append(f"filters.{key} values must be a string array")
-                    elif _any(
-                        (v.value if hasattr(v, "value") else v) not in valid_modalities
-                        for v in values
-                    ):
-                        errors.append(f"Unknown filters.{key} value")
-            else:
-                errors.append(f"filters.{key} must be a string array or matcher")
     for key in [
         "minContextTokens",
         "maxInputPricePerM",
@@ -436,18 +707,6 @@ def validate_config(config):
         errors.append(
             "filters.releasedWithin must be a valid duration (e.g. 1m, 3m, 6m, 1y, 2y) or positive number of days"
         )
-    vocab = {
-        "requiredFeatures": FeatureName,
-        "deployment": Deployment,
-        "lifecycle": Lifecycle,
-        "popularity": Popularity,
-    }
-    for key, enum in vocab.items():
-        values = f.get(key)
-        if isinstance(values, list) and _any(
-            v not in {m.value for m in enum} for v in values
-        ):
-            errors.append(f"Unknown filters.{key} value")
     preferred = config.get("prefer", {}).get("features")
     if preferred is not None and (
         not isinstance(preferred, list)
@@ -469,47 +728,75 @@ def validate_config(config):
 def matches(o, m, config, provider_tags=None):
     f = config.get("filters", {})
     unknown = config.get("unknownPolicy") == "include"
-    if "deployment" in f and o["deployment"] not in f["deployment"]:
-        return False
-    if "origin" in f and m.get("origin") not in f["origin"]:
-        return False
+
+    if f.get("releaseChannel") is not None:
+        if not matches_list_filter(get_release_channel(o), normalize_list_filter(f["releaseChannel"], "releaseChannel")):
+            return False
+    if "speciality" in f and f["speciality"] is not None:
+        spec = normalize_list_filter(f["speciality"], "speciality")
+        actual = o.get("speciality") or get_model_speciality(o, m)
+        if not matches_list_filter(actual, spec, unknown):
+            return False
+    if "tier" in f and f["tier"] is not None:
+        spec = normalize_list_filter(f["tier"], "tier")
+        actual = o.get("tier") or get_model_tier(o, m)
+        if not matches_list_filter(actual, spec, unknown):
+            return False
+    if "deployment" in f and f["deployment"] is not None:
+        spec = normalize_list_filter(f["deployment"], "deployment")
+        if not matches_list_filter(o.get("deployment"), spec, unknown):
+            return False
+    if "origin" in f and f["origin"] is not None:
+        spec = normalize_list_filter(f["origin"], "origin")
+        orig = m.get("origin") if m else None
+        if not orig:
+            if not unknown:
+                return False
+        elif not matches_list_filter(orig, spec, unknown):
+            return False
     if "openWeights" in f:
-        value = m.get("openWeights")
+        value = m.get("openWeights") if m else None
         if (value is None and not unknown) or (
             value is not None and value != f["openWeights"]
         ):
             return False
     if "commercialUse" in f:
-        value = m.get("commercialUse", "unknown")
+        value = m.get("commercialUse", "unknown") if m else "unknown"
         if (value == "unknown" and not unknown) or (
             value != "unknown" and value != f["commercialUse"]
         ):
             return False
     if "input" in f and f["input"] is not None:
-        spec = _normalize_modality_filter(f["input"], default_mode="contain")
+        spec = normalize_list_filter(f["input"], "input")
         if not _matches_modality(o.get("modalities", {}).get("input"), spec, unknown):
             return False
     if "output" in f and f["output"] is not None:
-        spec = _normalize_modality_filter(f["output"], default_mode="exact")
+        spec = normalize_list_filter(f["output"], "output")
         if not _matches_modality(o.get("modalities", {}).get("output"), spec, unknown):
             return False
-    if f.get("fileFormats") and (
-        (o.get("fileFormats") is None and not unknown)
-        or (
-            o.get("fileFormats") is not None
-            and not all(v in o["fileFormats"] for v in f["fileFormats"])
-        )
-    ):
-        return False
-    for feature in f.get("requiredFeatures", []):
-        state = o.get("features", {}).get(feature, {}).get("status", "unknown")
-        if state != "supported" and not (state == "unknown" and unknown):
+    if "fileFormats" in f and f["fileFormats"] is not None:
+        spec = normalize_list_filter(f["fileFormats"], "fileFormats")
+        ff = o.get("fileFormats")
+        if ff is None:
+            if not unknown:
+                return False
+        elif not matches_list_filter(ff, spec, unknown):
             return False
+    if "requiredFeatures" in f and f["requiredFeatures"] is not None:
+        spec = normalize_list_filter(f["requiredFeatures"], "requiredFeatures")
+        supported = [
+            k
+            for k, feat in o.get("features", {}).items()
+            if feat.get("status") == "supported" or (feat.get("status") == "unknown" and unknown)
+        ]
+        if not matches_list_filter(supported, spec, unknown):
+            return False
+
     constraints = [
         ("minContextTokens", o.get("limits", {}).get("context"), "min"),
         ("maxInputPricePerM", o.get("price", {}).get("input"), "max"),
         ("maxOutputPricePerM", o.get("price", {}).get("output"), "max"),
-        ("maxParameters", m.get("size", {}).get("totalParameters"), "max"),
+        ("maxParameters", m.get("size", {}).get("totalParameters") if m else None, "max"),
         ("maxTimeToFirstTokenMs", o.get("speed", {}).get("timeToFirstTokenMs"), "max"),
         ("minTokensPerSecond", o.get("speed", {}).get("tokensPerSecond"), "min"),
     ]
@@ -527,17 +814,24 @@ def matches(o, m, config, provider_tags=None):
     )
     if callable_filter is not None and support["textGeneration"] != callable_filter:
         return False
-    include_retired = f.get("includeDeprecated") is True or (
-        config.get("list") == ModelList.COMPLETE and f.get("includeDeprecated") is not False
-    )
-    lifecycle = f.get(
-        "lifecycle",
-        list(Lifecycle) if include_retired else [Lifecycle.LIVE, Lifecycle.UNCERTAIN],
-    )
-    if o["lifecycle"]["status"] not in lifecycle:
-        return False
-    if "popularity" in f and o["popularity"]["status"] not in f["popularity"]:
-        return False
+
+    if "lifecycle" in f and f["lifecycle"] is not None:
+        spec = normalize_list_filter(f["lifecycle"], "lifecycle")
+        if not matches_list_filter(o["lifecycle"]["status"], spec, unknown):
+            return False
+    else:
+        include_retired = f.get("includeDeprecated") is True or (
+            config.get("list") == ModelList.COMPLETE and f.get("includeDeprecated") is not False
+        )
+        allowed_lifecycle = list(Lifecycle) if include_retired else [Lifecycle.LIVE, Lifecycle.UNCERTAIN]
+        if o["lifecycle"]["status"] not in allowed_lifecycle:
+            return False
+
+    if "popularity" in f and f["popularity"] is not None:
+        spec = normalize_list_filter(f["popularity"], "popularity")
+        if not matches_list_filter(o["popularity"]["status"], spec, unknown):
+            return False
+
     if "releasedWithin" in f:
         max_days = parse_released_within_days(f["releasedWithin"])
         if max_days is None:
@@ -559,13 +853,19 @@ def matches(o, m, config, provider_tags=None):
     tags = set(
         [
             t
-            for t in m.get("tags", []) + (provider_tags or [])
+            for t in (m.get("tags", []) if m else []) + (provider_tags or [])
             if not t.startswith(
                 ("lifecycle:", "popularity:", "release:", "released:")
             )
         ]
         + o.get("tags", [])
     )
+    spec_val = o.get("speciality") or get_model_speciality(o, m)
+    if spec_val:
+        tags.add(f"speciality:{spec_val}")
+    tier_val = o.get("tier") or get_model_tier(o, m)
+    if tier_val:
+        tags.add(f"tier:{tier_val}")
     if is_flash_model(o, m):
         tags.add("model:flash")
     if o.get("releaseDate"):
@@ -574,14 +874,119 @@ def matches(o, m, config, provider_tags=None):
     elif m and m.get("releaseDate"):
         for t in get_release_tags(m["releaseDate"], config.get("asOf")):
             tags.add(t)
-    if _any(t not in tags for t in f.get("includeTags", [])) or _any(
-        t in tags for t in f.get("excludeTags", [])
-    ):
-        return False
+
+    if "includeTags" in f and f["includeTags"] is not None:
+        spec = normalize_list_filter(f["includeTags"], "includeTags")
+        if not matches_list_filter(tags, spec, unknown):
+            return False
+    if "excludeTags" in f and f["excludeTags"] is not None:
+        spec = normalize_list_filter(f["excludeTags"], "excludeTags")
+        matches_exclusion = evaluate_filter_node(tags, spec)
+        if (not matches_exclusion) if spec.get("mode") == "exclude" else matches_exclusion:
+            return False
+
     if "official" in f:
         if is_official_offering(o, m, provider_tags) != f["official"]:
             return False
     return True
+
+
+def get_model_speciality(offering, model=None):
+    model = model or {}
+    if offering and offering.get("speciality"):
+        return getattr(offering["speciality"], "value", offering["speciality"])
+    if model.get("speciality"):
+        return getattr(model["speciality"], "value", model["speciality"])
+    prov = offering.get("providerId", "") if offering else ""
+    api_id = (
+        offering.get("apiModelId", offering.get("id", model.get("id", "")))
+        if offering
+        else model.get("id", "")
+    )
+    full_id = f"{prov}/{api_id}".lower()
+    name = (
+        f"{offering.get('name', '') if offering else ''} {model.get('name', '')}".lower()
+    )
+    text = f"{full_id} {name}"
+
+    if (
+        "daybreak" in text
+        or "cybersecurity" in text
+        or "security" in text
+        or "red-team" in text
+        or "blue-team" in text
+    ):
+        return Speciality.CYBERSECURITY.value
+    if re.search(r"codex|codestral|devstral|(?:^|[-_./\s])coder(?:$|[-_./\s])|starcoder|code-llama", text, re.I):
+        return Speciality.CODING.value
+    if "lyria" in text or "music" in text:
+        return Speciality.MUSIC.value
+    if "guard" in text or "safety" in text or "shield" in text or "moderation" in text:
+        return Speciality.SAFETY.value
+    if "customtools" in text or "deep-research" in text or "computer-use" in text:
+        return Speciality.AGENT.value
+    if "live-translate" in text or "translate" in text:
+        return Speciality.TRANSLATION.value
+    if "embed" in text or "embedding" in text or "bge-" in text:
+        return Speciality.EMBEDDING.value
+    out_mods = offering.get("modalities", {}).get("output", []) if offering else []
+    if len(out_mods) == 1 and out_mods[0] == "image" and "text" not in out_mods:
+        return Speciality.IMAGE.value
+    if len(out_mods) == 1 and out_mods[0] == "audio" and "text" not in out_mods:
+        return Speciality.AUDIO.value
+    if len(out_mods) == 1 and out_mods[0] == "video" and "text" not in out_mods:
+        return Speciality.VIDEO.value
+    if (
+        "dall-e" in text
+        or "imagen" in text
+        or "flux" in text
+        or "midjourney" in text
+        or "image-latest" in text
+    ):
+        return Speciality.IMAGE.value
+    if "whisper" in text or "tts" in text or "speech" in text:
+        return Speciality.AUDIO.value
+    if "sora" in text or "veo" in text or "gen-3" in text or "video-latest" in text:
+        return Speciality.VIDEO.value
+    return Speciality.GENERAL.value if re.search(r"gpt|claude|gemini|deepseek|llama|qwen|mistral|gemma|glm|grok|kimi|minimax", text, re.I) else Speciality.UNKNOWN.value
+
+
+def get_model_tier(offering, model=None):
+    model = model or {}
+    if offering and offering.get("tier"):
+        return getattr(offering["tier"], "value", offering["tier"])
+    if model.get("tier"):
+        return getattr(model["tier"], "value", model["tier"])
+    api_id = (
+        offering.get("apiModelId", offering.get("id", model.get("id", "")))
+        if offering
+        else model.get("id", "")
+    )
+    name = (
+        f"{offering.get('name', '') if offering else ''} {model.get('name', '')}".lower()
+    )
+    text = f"{api_id} {name}".lower()
+
+    if (
+        "flash-lite" in text
+        or "flash_lite" in text
+        or "nano" in text
+        or bool(re.search(r"(?:^|[-_./\s])lite(?:$|[-_./\s])", text, re.IGNORECASE))
+    ):
+        return Tier.LITE.value
+    if bool(re.search(r"(?:^|[-_./\s])mini(?:$|[-_./\s])", text, re.IGNORECASE)) or "gemma" in text or "micro" in text:
+        return Tier.MINI.value
+    if is_flash_model(offering, model) or "luna" in text or "haiku" in text:
+        return Tier.FLASH.value
+    if (
+        "astra" in text
+        or "opus" in text
+        or "fable" in text
+        or "argon" in text
+        or bool(re.search(r"(?:^|[-_./\s])pro(?:$|[-_./\s])", text, re.IGNORECASE))
+    ):
+        return Tier.FLAGSHIP.value
+    return Tier.WORKHORSE.value if re.search(r"gpt|claude|gemini|deepseek|llama|qwen|mistral|glm|grok|kimi|minimax", text, re.I) else Tier.UNKNOWN.value
 
 
 def is_flash_model(offering, model=None):
@@ -896,14 +1301,33 @@ class Catalog:
             )
         if not preset:
             raise ValueError(f"Unknown preset: {config.get('preset')}")
-        ids = config.get(
-            "providerIds",
-            list(self.providers)
-            if config.get("list") == ModelList.COMPLETE
-            else preset["providerIds"],
-        )
-        if _any(i not in self.providers for i in ids):
-            raise ValueError("Unknown provider in providerIds")
+        if config.get("providerIds") is not None:
+            spec = normalize_list_filter(config["providerIds"], "providerIds")
+
+            def collect_literals(node):
+                if not node:
+                    return []
+                if isinstance(node, str):
+                    return [node]
+                val = node.get("values", node.get("items", []))
+                items = val if isinstance(val, list) else [val]
+                res = []
+                for item in items:
+                    res.extend(collect_literals(item))
+                return res
+
+            requested = collect_literals(spec)
+            if _any(i not in self.providers for i in requested):
+                raise ValueError("Unknown provider in providerIds")
+            ids = list(dict.fromkeys(config["providerIds"])) if isinstance(config["providerIds"], list) else [
+                p["id"] for p in self.data["providers"] if evaluate_filter_node({p["id"]}, spec)
+            ]
+        else:
+            ids = (
+                list(self.providers)
+                if config.get("list") == ModelList.COMPLETE
+                else preset["providerIds"]
+            )
         groups = []
         recommended = (
             set(preset["offeringIds"])
@@ -936,17 +1360,13 @@ class Catalog:
             if self.providers[provider_id]["deployment"] == "local":
                 continue
             provider_offerings = self.offerings_by_provider.get(provider_id, [])
-            has_preset_offering = (
-                recommended is not None
-                and _any(item["id"] in recommended for item in provider_offerings)
-            )
             choices = sorted(
                 (
                     o
                     for o in (
                         _with_signals(item, config.get("asOf"))
                         for item in provider_offerings
-                        if not has_preset_offering or item["id"] in recommended
+                        if recommended is None or item["id"] in recommended
                     )
                     if matches(
                         o,
@@ -1256,6 +1676,8 @@ def derive_tags(offering, model=None):
         "lifecycle:",
         "popularity:",
         "model:",
+        "speciality:",
+        "tier:",
     )
     tags = [t for t in offering.get("tags", []) if not t.startswith(prefixes)]
     tags.extend(
@@ -1273,6 +1695,18 @@ def derive_tags(offering, model=None):
     if model.get("origin"):
         tags.append("origin:" + model["origin"])
     tags.append("deployment:" + offering["deployment"])
+    spec_val = (
+        (offering.get("speciality").value if hasattr(offering.get("speciality"), "value") else offering.get("speciality"))
+        or get_model_speciality(offering, model)
+    )
+    if spec_val:
+        tags.append(f"speciality:{spec_val}")
+    tier_val = (
+        (offering.get("tier").value if hasattr(offering.get("tier"), "value") else offering.get("tier"))
+        or get_model_tier(offering, model)
+    )
+    if tier_val:
+        tags.append(f"tier:{tier_val}")
     ctx = offering.get("limits", {}).get("context")
     if positive(ctx):
         tags.append(
@@ -1292,7 +1726,6 @@ def derive_tags(offering, model=None):
         p.get("currency") == "USD"
         and finite(p.get("input"))
         and finite(p.get("output"))
-        and not p.get("tiers")
     ):
         cost = (p["input"] + p["output"]) / 1000
         tags.append(
@@ -1736,17 +2169,10 @@ def _normalize_query(input=None, options=None):
     if "filters" in config and isinstance(config["filters"], dict):
         f = dict(config["filters"])
         if "input" in f and f["input"] is not None:
-            norm = _normalize_modality_filter(f["input"], "contain")
-            if norm and norm.get("values"):
-                f["input"] = {"mode": norm["mode"], "values": sorted(norm["values"])}
-            else:
-                f.pop("input", None)
+            norm = _normalize_modality_filter(f["input"], "input")
+            f["input"] = norm
         if "output" in f and f["output"] is not None:
-            norm = _normalize_modality_filter(f["output"], "exact")
-            if norm and norm.get("values"):
-                f["output"] = {"mode": norm["mode"], "values": sorted(norm["values"])}
-            else:
-                f.pop("output", None)
+            f["output"] = _normalize_modality_filter(f["output"], "output")
         config["filters"] = f
     return config
 
@@ -1843,6 +2269,8 @@ def _has_modality_filter(spec):
     if isinstance(spec, list):
         return len(spec) > 0
     if isinstance(spec, dict):
+        if spec.get("mode") or spec.get("op"):
+            return True
         vals = (
             spec.get("values")
             or spec.get("exact")
@@ -1855,6 +2283,9 @@ def _has_modality_filter(spec):
 
 
 def _local_groups(config, catalog):
+    for field in ("speciality", "tier", "releaseChannel"):
+        if config.get("filters", {}).get(field) is not None and not matches_list_filter("unknown", normalize_list_filter(config["filters"][field], field)):
+            return []
     if (
         _has_modality_filter(config.get("filters", {}).get("input"))
         or _has_modality_filter(config.get("filters", {}).get("output"))
@@ -1862,14 +2293,28 @@ def _local_groups(config, catalog):
         or config.get("filters", {}).get("official") is True
         or config.get("preset") in ("official-flagship", "official")
         or config.get("local") is False
-        or "deployment" in config.get("filters", {})
-        and "local" not in config["filters"]["deployment"]
+        or (
+            "deployment" in config.get("filters", {})
+            and not evaluate_filter_node(
+                {"local"},
+                normalize_list_filter(config["filters"]["deployment"], "deployment"),
+                is_exact_set_match=True,
+            )
+        )
     ):
         return []
     preset = next(
         (p for p in catalog.data["presets"] if p["id"] == config.get("preset")), None
     )
-    ids = config.get("providerIds", preset["providerIds"] if preset else None)
+    if config.get("providerIds") is not None:
+        spec = normalize_list_filter(config["providerIds"], "providerIds")
+        ids = [
+            p["id"]
+            for p in catalog.data["providers"]
+            if evaluate_filter_node({p["id"]}, spec, is_exact_set_match=True)
+        ]
+    else:
+        ids = preset["providerIds"] if preset else None
     if (
         "local" not in config
         and ids is not None
@@ -1900,6 +2345,9 @@ def _local_groups(config, catalog):
                     "name", entry.get("modelId", "Local — enter your server URL")
                 ),
                 "deployment": "local",
+                "speciality": "unknown",
+                "tier": "unknown",
+                "releaseChannel": "unknown",
                 "local": {
                     "endpoint": entry.get("endpoint", ""),
                     "api": entry.get("api", "openai-compatible"),

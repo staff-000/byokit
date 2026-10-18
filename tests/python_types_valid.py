@@ -95,3 +95,13 @@ client2.messages.create(
 )
 
 byokit.get_models(byokit.COMPLETE, {"providerIds": ["fireworks-ai"], "filters": {"callable": False}})
+
+from byokit.types import Filters
+
+composable: Filters = {
+    "speciality": byokit.exact(byokit.Speciality.GENERAL),
+    "tier": byokit.any(byokit.Tier.FLASH, byokit.Tier.WORKHORSE),
+    "releaseChannel": ["stable", "unknown"],
+    "output": byokit.or_(byokit.exact(byokit.Modality.TEXT), byokit.exact(byokit.Modality.IMAGE)),
+}
+byokit.get_models({"filters": composable})

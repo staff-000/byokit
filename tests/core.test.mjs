@@ -16,18 +16,20 @@ import {
   getConfigJson,
   toConfig,
   toConfigJson,
+  exact,
+  contain,
 } from '../packages/byokit/index.js';
 const data = JSON.parse(readFileSync(new URL('../spec/fixtures/catalog.json', import.meta.url)));
 const catalog = new Catalog(data);
 test('capability filters, unknown policy, limits, origins, open weights and commercial use are distinct', () => {
   assert.deepEqual(
-    catalog.select({ local: false, filters: { requiredFeatures: ['strictJsonSchema'] } }),
+    catalog.select({ local: false, filters: { requiredFeatures: contain('strictJsonSchema') } }),
     [],
   );
   assert.equal(
     catalog.select({
       local: false,
-      filters: { requiredFeatures: ['strictJsonSchema'] },
+      filters: { requiredFeatures: contain('strictJsonSchema') },
       unknownPolicy: 'include',
     }).length,
     1,
@@ -41,8 +43,8 @@ test('capability filters, unknown policy, limits, origins, open weights and comm
     catalog.select({ local: false, filters: { minContextTokens: 16000 } })[0].offerings[0].id,
     'test/large',
   );
-  assert.equal(catalog.select({ local: false, filters: { origin: ['us'] } }).length, 0);
-  assert.equal(catalog.select({ local: false, filters: { input: ['image'] } }).length, 0);
+  assert.equal(catalog.select({ local: false, filters: { origin: exact('us') } }).length, 0);
+  assert.equal(catalog.select({ local: false, filters: { input: exact('image') } }).length, 0);
   assert.equal(
     catalog.select({ ui: { maxProviders: 1, maxModelsPerProvider: 1 } })[0].offerings.length,
     1,

@@ -56,7 +56,7 @@ byokit.getModels(byokit.COMPLETE, { sort: byokit.ModelSort.SpeedDescend }); // T
 ```
 
 Unknown values and non-USD prices sort last; ties use alphabetical order. Local stays appended.
-Default/Global/China/Official first pick their recommended model per provider; use COMPLETE
+DEFAULT uses an explicit offering shortlist; Global/China select a model per provider and Official uses its flagship shortlist. Use COMPLETE
 or `providerIds` to sort every matching offering. `ModelSort.ProviderOrder` retains
 provider order and existing per-provider preference ranking.
 
@@ -420,3 +420,46 @@ persists across refreshes, including when an offering disappears upstream.
 `unit: 'per-million-tokens'`; `inputAudio`, `outputAudio`, `reasoning`, and tiers are
 preserved where known. Missing media pricing stays unknown. A provider's country
 does not establish the origin of models it serves.
+
+The default picker selects six reviewed product-line choices: OpenAI Terra and Luna,
+Gemini Flash, Claude Haiku, and DeepSeek Flash and Chat. `getModels({ local: false })`
+returns just these hosted offerings; the default also includes a local setup entry.
+`get_models({"local": False})` provides the same list in Python. Recommendations are
+maintained in `catalog/recommendations.json` with `default: true`, review dates, and
+rationale. Imports never promote a newer version automatically or substitute another
+product line when a recommendation disappears. Release age alone does not remove Chat.
+
+Discovery remains customizable:
+
+```js
+byokit.getModels(byokit.COMPLETE, {
+  providerIds: ['openai', 'google', 'anthropic', 'deepseek'],
+  local: false,
+  filters: {
+    speciality: byokit.Speciality.General,
+    releaseChannel: ['stable'],
+    output: byokit.or(byokit.exact(byokit.Modality.Text), byokit.exact(byokit.Modality.Image)),
+  },
+});
+```
+
+`filters.releaseChannel` accepts `stable`, `preview`, `experimental`, and `unknown`.
+Missing upstream status stays unknown; preview/experimental model IDs are recognized
+when upstream omits a channel. Stable release channel does not prove provider
+availability or a successful call. Include `unknown` explicitly when desired.
+`speciality` and `tier` are editorial classifications; unrecognized models may be
+`unknown`. `Speciality.Coding` covers Codex and other coding models; `Codex` remains
+an alias. Explicit offering classifications override canonical classifications and
+name heuristics. Evidence-backed catalog overlays can set these fields.
+
+Array filters remain compatible: provider/scalar lists match any requested value;
+input, features, file formats, and included tags require all requested values;
+output arrays match the exact set. `exact(...)` always compares sets, including
+inside nested expressions; duplicate literals do not matter. `contain(...)` permits
+extra values, `any(...)` requires at least one matching value or child, and
+`exclude(...)` requires every value and child to be absent/false. `not(...)` takes
+one expression; `xor(...)` matches exactly one child. Empty `exact()` matches a
+known empty set, while empty `any()` matches nothing. Unknown capabilities follow
+`unknownPolicy` and are excluded by default even under negation.
+For `excludeTags`, the supplied expression identifies tags to reject; a direct
+`exclude(...)` expression is also accepted as an absence requirement.

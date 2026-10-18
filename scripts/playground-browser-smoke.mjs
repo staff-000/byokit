@@ -8,9 +8,7 @@ export async function playgroundSmoke(page) {
   await page
     .getByText('Finished. Output comes from the real byokit catalog.', { exact: true })
     .waitFor();
-  const expected = byokit
-    .getModels(byokit.COMPLETE, { local: false, limit: 5, sort: byokit.ModelSort.PriceAscend })
-    .map((m) => m.apiModelId);
+  const expected = byokit.getModels().map((m) => m.apiModelId || '(configure local server)');
   assert.deepEqual(
     JSON.parse(await output.textContent()).map((m) => m.model),
     expected,

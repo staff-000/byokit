@@ -1,4 +1,4 @@
-from typing import TypedDict, NewType, Literal, Callable
+from typing import TypedDict, NewType, Literal, Callable, Generic, TypeVar, Union, TypeAlias
 from .enums import (
     FeatureStatus,
     Modality,
@@ -16,6 +16,8 @@ from .enums import (
     ModelList,
     LocalApi,
     ModelSort,
+    Speciality,
+    Tier,
 )
 
 CustomProviderId = NewType("CustomProviderId", str)
@@ -51,40 +53,51 @@ class Selection(_SelectionOptional):
     modelId: str
 
 
-ModalityMatcherMode = Literal["exact", "contain", "contains", "any"]
+T = TypeVar("T")
+SetMatcherMode = Literal["exact", "contain", "contains", "any", "exclude"]
+BooleanOperator = Literal["and", "or", "xor", "not"]
+ReleaseChannel = Literal["stable", "preview", "experimental", "unknown"]
 
 
-class ModalityMatcher(TypedDict, total=False):
-    mode: ModalityMatcherMode
-    values: list[Modality | str]
-    exact: list[Modality | str]
-    contain: list[Modality | str]
-    contains: list[Modality | str]
-    any: list[Modality | str]
+class FilterMatcher(TypedDict, Generic[T], total=False):
+    mode: SetMatcherMode
+    op: BooleanOperator
+    values: list[Union[T, "FilterMatcher[T]"]]
+    exact: Union[T, list[Union[T, "FilterMatcher[T]"]]]
+    contain: Union[T, list[Union[T, "FilterMatcher[T]"]]]
+    contains: Union[T, list[Union[T, "FilterMatcher[T]"]]]
+    any: Union[T, list[Union[T, "FilterMatcher[T]"]]]
+    exclude: Union[T, list[Union[T, "FilterMatcher[T]"]]]
 
 
-ModalityFilter = list[Modality | str] | ModalityMatcher | Modality | str
+ListFilter: TypeAlias = Union[T, list[T], FilterMatcher[T]]
+ModalityMatcherMode = SetMatcherMode
+ModalityMatcher = FilterMatcher[Modality | str]
+ModalityFilter = ListFilter[Modality | str]
 
 
 class Filters(TypedDict, total=False):
-    deployment: list[Deployment]
-    origin: list[Country | CustomCountryCode]
+    speciality: ListFilter[Speciality]
+    tier: ListFilter[Tier]
+    releaseChannel: ListFilter[ReleaseChannel]
+    deployment: ListFilter[Deployment]
+    origin: ListFilter[Country | CustomCountryCode]
     input: ModalityFilter
     output: ModalityFilter
-    requiredFeatures: list[FeatureName]
+    requiredFeatures: ListFilter[FeatureName]
     commercialUse: CommercialUse
     openWeights: bool
-    fileFormats: list[FileFormat | CustomFileFormat]
+    fileFormats: ListFilter[FileFormat | CustomFileFormat]
     minContextTokens: int
     maxInputPricePerM: float
     maxOutputPricePerM: float
     maxParameters: int
     maxTimeToFirstTokenMs: float
     minTokensPerSecond: float
-    includeTags: list[Tag | CustomTag]
-    excludeTags: list[Tag | CustomTag]
-    lifecycle: list[Lifecycle]
-    popularity: list[Popularity]
+    includeTags: ListFilter[Tag | CustomTag]
+    excludeTags: ListFilter[Tag | CustomTag]
+    lifecycle: ListFilter[Lifecycle]
+    popularity: ListFilter[Popularity]
     includeDeprecated: bool
     callable: bool
     verified: bool
@@ -120,7 +133,7 @@ class PickerConfig(TypedDict, total=False):
     list: ModelList
     local: list[LocalEndpoint] | Literal[False]
     preset: Preset
-    providerIds: list[str]
+    providerIds: ListFilter[str]
     limit: int
     asOf: str
     unknownPolicy: UnknownPolicy

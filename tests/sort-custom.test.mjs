@@ -19,7 +19,7 @@ test('sorts across providers before limit with deterministic ties, zero prices a
   d.providers.push({ ...d.providers[0], id: 'second' });
   d.offerings[1].providerId = 'second';
   const c = new byokit.Catalog(d),
-    q = { asOf, local: false, providerIds: ['test', 'second'] };
+    q = { asOf, local: false, providerIds: byokit.any('test', 'second') };
   assert.deepEqual(
     c.getModels(q).map((m) => m.name),
     ['Alpha', 'Beta', 'Gamma', 'Zulu'],
@@ -86,7 +86,7 @@ test('directional price sorts leave missing and non-USD values last, with Local 
   const c = new byokit.Catalog(d),
     q = {
       asOf,
-      providerIds: ['test'],
+      providerIds: byokit.exact('test'),
       local: [{ endpoint: 'http://localhost:8080/v1', modelId: 'local' }],
     };
   for (const sort of [byokit.ModelSort.PriceAscend, byokit.ModelSort.PriceDescend]) {
