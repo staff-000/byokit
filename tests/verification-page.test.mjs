@@ -96,6 +96,8 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
       'feature-filter',
       'modality-filter',
       'weights-filter',
+      'speciality-filter',
+      'tier-filter',
       'context-filter',
       'price-filter',
       'sort-filter',
@@ -195,6 +197,8 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
     assert.ok($('#include-outdated'));
     assert.ok($('#region-filter'));
     assert.ok($('#feature-filter'));
+    assert.ok($('#speciality-filter'));
+    assert.ok($('#tier-filter'));
     const picks = [...document.querySelectorAll('.batch-pick')].slice(0, 2);
     for (const pick of picks) {
       const current = document.querySelectorAll('.batch-pick')[picks.indexOf(pick)];

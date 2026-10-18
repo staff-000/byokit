@@ -22,6 +22,9 @@ export function filterModels(state = {}) {
     filters.requiredFeatures = byokit.any(state.feature);
   if (state.modality && state.modality !== 'any') filters.input = byokit.any(state.modality);
   if (state.weights && state.weights !== 'any') filters.openWeights = state.weights === 'open';
+  if (state.speciality && state.speciality !== 'any')
+    filters.speciality = byokit.exact(state.speciality);
+  if (state.tier && state.tier !== 'any') filters.tier = byokit.exact(state.tier);
   if (Number(state.context) > 0) filters.minContextTokens = Number(state.context);
   if (state.price && state.price !== 'any') filters.maxInputPricePerM = Number(state.price);
   if (state.region === 'china') filters.includeTags = byokit.any(byokit.Tag.OriginChina);
@@ -49,7 +52,13 @@ export function filterModels(state = {}) {
   });
 
   if (!state.provider || state.provider === byokit.ProviderId.Local) {
-    models.push(...byokit.getModels().filter((m) => m.local));
+    let locals = byokit.getModels().filter((m) => m.local);
+    if (state.feature && state.feature !== 'any') locals = [];
+    if (state.modality && state.modality !== 'any') locals = [];
+    if (state.speciality && state.speciality !== 'any')
+      locals = locals.filter((m) => m.speciality === state.speciality);
+    if (state.tier && state.tier !== 'any') locals = locals.filter((m) => m.tier === state.tier);
+    models.push(...locals);
   }
   if (state.verification && state.verification !== 'any') {
     const vData = state.verifications ? { verifications: state.verifications } : undefined;

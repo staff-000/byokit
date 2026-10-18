@@ -29,6 +29,8 @@ function query() {
   if (!$('#local').checked) config.local = false;
   const filters = {};
   if ($('#output').value) filters.output = [$('#output').value];
+  if ($('#speciality').value) filters.speciality = byokit.exact($('#speciality').value);
+  if ($('#tier').value) filters.tier = byokit.exact($('#tier').value);
   if ($('#tools').checked) filters.requiredFeatures = [byokit.FeatureName.FunctionCalling];
   const excluded = [];
   if ($('#premium').checked) excluded.push(byokit.Tag.PricePremium);
@@ -51,6 +53,20 @@ function snippet(config) {
     filters.push(
       `output: [byokit.Modality.${config.filters.output[0][0].toUpperCase() + config.filters.output[0].slice(1)}]`,
     );
+  if (config.filters?.speciality) {
+    const val = config.filters.speciality.value || config.filters.speciality;
+    const enumKey =
+      Object.keys(byokit.Speciality).find((k) => byokit.Speciality[k] === val) ||
+      val[0].toUpperCase() + val.slice(1);
+    filters.push(`speciality: byokit.exact(byokit.Speciality.${enumKey})`);
+  }
+  if (config.filters?.tier) {
+    const val = config.filters.tier.value || config.filters.tier;
+    const enumKey =
+      Object.keys(byokit.Tier).find((k) => byokit.Tier[k] === val) ||
+      val[0].toUpperCase() + val.slice(1);
+    filters.push(`tier: byokit.exact(byokit.Tier.${enumKey})`);
+  }
   if (config.filters?.requiredFeatures)
     filters.push('requiredFeatures: [byokit.FeatureName.FunctionCalling]');
   if (config.filters?.excludeTags)
@@ -180,13 +196,24 @@ for (const button of document.querySelectorAll('[data-mode]'))
     }
     render();
   });
-for (const id of ['output', 'search', 'tools', 'premium', 'exclude-china', 'local'])
+for (const id of [
+  'output',
+  'speciality',
+  'tier',
+  'search',
+  'tools',
+  'premium',
+  'exclude-china',
+  'local',
+])
   $('#' + id).addEventListener('input', () => {
     if (
-      id === 'output' &&
-      mode === 'default' &&
-      $('#output').value &&
-      $('#output').value !== 'text'
+      (id === 'output' &&
+        mode === 'default' &&
+        $('#output').value &&
+        $('#output').value !== 'text') ||
+      (id === 'speciality' && mode === 'default' && $('#speciality').value) ||
+      (id === 'tier' && mode === 'default' && $('#tier').value)
     ) {
       mode = 'complete';
       for (const b of document.querySelectorAll('[data-mode]')) {

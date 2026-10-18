@@ -17,6 +17,15 @@ test('website model list is the library catalog, including metadata and contribu
     assert.deepEqual(model.verification, expected.find((m) => m.id === model.id).verification);
   }
 });
+test('filterModels filters accurately by speciality and tier', () => {
+  const codingModels = filterModels({ speciality: 'coding', includeOutdated: true });
+  assert.ok(codingModels.length > 0);
+  assert.ok(codingModels.every((m) => m.speciality === 'coding'));
+
+  const flashModels = filterModels({ tier: 'flash', includeOutdated: true });
+  assert.ok(flashModels.length > 0);
+  assert.ok(flashModels.every((m) => m.tier === 'flash'));
+});
 test('documented single selection is bounded, rejects empty matches and excludes Local', () => {
   const models = byokit.getModels({
     providerIds: byokit.exact(byokit.ProviderId.DeepSeek),

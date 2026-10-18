@@ -237,6 +237,8 @@ function filteredModels() {
     feature: $('#feature-filter').value,
     modality: $('#modality-filter').value,
     weights: $('#weights-filter').value,
+    speciality: $('#speciality-filter')?.value,
+    tier: $('#tier-filter')?.value,
     context: $('#context-filter').value,
     price: $('#price-filter').value,
     sort: $('#sort-filter').value,
@@ -815,10 +817,21 @@ for (const tag of [
 for (const [id, values] of [
   ['feature-filter', Object.values(byokit.FeatureName)],
   ['modality-filter', Object.values(byokit.Modality)],
+  ['speciality-filter', Object.values(byokit.Speciality)],
+  ['tier-filter', Object.values(byokit.Tier)],
 ]) {
   const select = $('#' + id);
+  if (!select) continue;
   select.replaceChildren();
-  const any = el('option', 'Any ' + (id === 'feature-filter' ? 'capability' : 'input'));
+  const label =
+    id === 'feature-filter'
+      ? 'capability'
+      : id === 'modality-filter'
+        ? 'input'
+        : id === 'speciality-filter'
+          ? 'speciality'
+          : 'tier';
+  const any = el('option', 'Any ' + label);
   any.value = 'any';
   select.append(any);
   for (const value of values) {
@@ -848,6 +861,8 @@ for (const id of [
   'feature-filter',
   'modality-filter',
   'weights-filter',
+  'speciality-filter',
+  'tier-filter',
   'context-filter',
   'price-filter',
   'sort-filter',
