@@ -322,3 +322,63 @@ test('native Claude content order and stop sequence survive normalization withou
   const o = await byokit.call(model('anthropic'), 'Hi', 'key', { runtimeChecks: false, fetch });
   assert.ok(!Object.keys(o).some((k) => k.startsWith('_')));
 });
+
+test('Gemini thinking parts, thoughtSignature, and reasoning content parse correctly', async () => {
+  const geminiModel = model('google');
+  // 1. Thinking part + final answer part
+  const resWithThinking = await byokit.call(geminiModel, 'Hi', 'key', {
+    ...noChecks,
+    fetch: async () =>
+      ok({
+        candidates: [
+          {
+            content: {
+              parts: [{ text: 'Thinking process...', thought: true }, { text: 'Final answer' }],
+            },
+            finishReason: 'STOP',
+          },
+        ],
+      }),
+  });
+  assert.equal(resWithThinking.choices[0].message.content, 'Final answer');
+  assert.equal(resWithThinking.choices[0].message.reasoning_content, 'Thinking process...');
+
+  // 2. Thought signature
+  const resWithSignature = await byokit.call(geminiModel, 'Hi', 'key', {
+    ...noChecks,
+    fetch: async () =>
+      ok({
+        candidates: [
+          {
+            content: {
+              parts: [
+                { text: 'Thinking...', thought: true },
+                { text: 'Signed answer', thoughtSignature: 'sig123' },
+              ],
+            },
+            finishReason: 'STOP',
+          },
+        ],
+      }),
+  });
+  assert.equal(resWithSignature.choices[0].message.content, 'Signed answer');
+  assert.equal(resWithSignature.choices[0].message.reasoning_content, 'Thinking...');
+
+  // 3. Only thinking parts fallback
+  const resOnlyThinking = await byokit.call(geminiModel, 'Hi', 'key', {
+    ...noChecks,
+    fetch: async () =>
+      ok({
+        candidates: [
+          {
+            content: {
+              parts: [{ text: 'Deep thoughts only', thought: true }],
+            },
+            finishReason: 'STOP',
+          },
+        ],
+      }),
+  });
+  assert.equal(resOnlyThinking.choices[0].message.content, 'Deep thoughts only');
+  assert.equal(resOnlyThinking.choices[0].message.reasoning_content, 'Deep thoughts only');
+});

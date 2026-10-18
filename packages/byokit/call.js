@@ -531,7 +531,8 @@ function parsed(data, protocol, model) {
     finish = 'stop',
     usage = {},
     id = data.id || '',
-    returned = data.model || data.modelVersion || model.apiModelId;
+    returned = data.model || data.modelVersion || model.apiModelId,
+    reasoningContent = null;
   if (protocol === ApiProtocol.Claude) {
     if (!Array.isArray(data.content))
       throw new CallError('INVALID_RESPONSE', 'Missing message content.');
@@ -556,12 +557,12 @@ function parsed(data, protocol, model) {
   } else if (protocol === ApiProtocol.Gemini) {
     const c = data.candidates?.[0];
     if (!c?.content?.parts) throw new CallError('INVALID_RESPONSE', 'Missing candidate content.');
+    let thoughtText = '';
     for (const b of c.content.parts) {
-      if (b.thought || b.thoughtSignature)
-        throw new CallError(
-          'UNSUPPORTED_RESPONSE',
-          'Gemini thinking signatures require a native adapter and are not supported in this version.',
-        );
+      if (b.thought) {
+        if (typeof b.text === 'string') thoughtText += b.text;
+        continue;
+      }
       if (typeof b.text === 'string') content += b.text;
       else if (b.functionCall)
         calls.push({
@@ -572,7 +573,15 @@ function parsed(data, protocol, model) {
             arguments: JSON.stringify(b.functionCall.args || {}),
           },
         });
-      else throw new CallError('UNSUPPORTED_RESPONSE', 'Unsupported Gemini content block.');
+      else if (b.thoughtSignature && typeof b.text === 'string') {
+        content += b.text;
+      } else {
+        continue;
+      }
+    }
+    if (thoughtText) reasoningContent = thoughtText;
+    if (!content && !calls.length && thoughtText) {
+      content = thoughtText;
     }
     finish = c.finishReason === 'MAX_TOKENS' ? 'length' : calls.length ? 'tool_calls' : 'stop';
     usage = {
@@ -593,6 +602,8 @@ function parsed(data, protocol, model) {
     if (!c?.message) throw new CallError('INVALID_RESPONSE', 'Missing completion message.');
     if (c.message.content !== null && c.message.content !== undefined)
       content = text(c.message.content);
+    if (typeof c.message.reasoning_content === 'string')
+      reasoningContent = c.message.reasoning_content;
     calls = c.message.tool_calls || [];
     finish = c.finish_reason || 'stop';
     usage = {
@@ -630,6 +641,7 @@ function parsed(data, protocol, model) {
         message: {
           role: 'assistant',
           content: content || null,
+          ...(reasoningContent ? { reasoning_content: reasoningContent } : {}),
           ...(calls.length ? { tool_calls: calls } : {}),
         },
         finish_reason: finish,

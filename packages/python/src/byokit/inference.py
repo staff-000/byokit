@@ -604,6 +604,7 @@ def _parse(data, protocol, model):
     finish = "stop"
     u = {}
     returned = data.get("model", data.get("modelVersion", model["apiModelId"]))
+    reasoning_content = None
     if protocol == ApiProtocol.CLAUDE:
         for b in data["content"]:
             if b["type"] == "text":
@@ -632,12 +633,12 @@ def _parse(data, protocol, model):
         )
     elif protocol == ApiProtocol.GEMINI:
         candidate = data["candidates"][0]
-        for b in candidate["content"]["parts"]:
-            if b.get("thought") or b.get("thoughtSignature"):
-                raise CallError(
-                    "UNSUPPORTED_RESPONSE",
-                    "Gemini thinking signatures require a native adapter and are unsupported in this version.",
-                )
+        thought_text = ""
+        for b in candidate.get("content", {}).get("parts", []):
+            if b.get("thought"):
+                if "text" in b:
+                    thought_text += b["text"]
+                continue
             if "text" in b:
                 content += b["text"]
             elif "functionCall" in b:
@@ -651,10 +652,12 @@ def _parse(data, protocol, model):
                         ),
                     )
                 )
-            else:
-                raise CallError(
-                    "UNSUPPORTED_RESPONSE", "Unsupported Gemini content block."
-                )
+            elif b.get("thoughtSignature") and "text" in b:
+                content += b["text"]
+        if thought_text:
+            reasoning_content = thought_text
+        if not content and not calls and thought_text:
+            content = thought_text
         finish = (
             "length"
             if candidate.get("finishReason") == "MAX_TOKENS"
@@ -693,6 +696,8 @@ def _parse(data, protocol, model):
     else:
         c = data["choices"][0]
         content = _text(c["message"].get("content") or "")
+        if isinstance(c["message"].get("reasoning_content"), str):
+            reasoning_content = c["message"]["reasoning_content"]
         calls = c["message"].get("tool_calls", [])
         finish = c.get("finish_reason", "stop")
         u = dict(
@@ -736,6 +741,7 @@ def _parse(data, protocol, model):
                 message=dict(
                     role="assistant",
                     content=content or None,
+                    **({"reasoning_content": reasoning_content} if reasoning_content else {}),
                     **({"tool_calls": calls} if calls else {}),
                 ),
                 finish_reason=finish,

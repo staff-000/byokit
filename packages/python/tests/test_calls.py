@@ -215,3 +215,64 @@ class CallTests(unittest.TestCase):
             self.assertEqual(e.exception.code, "PROVIDER_ERROR")
             self.assertEqual(e.exception.status, 302)
             self.assertNotIn("dummy-key", str(e.exception))
+
+    def test_gemini_thinking_and_reasoning_content(self):
+        gemini_model = model("google")
+        # 1. Thinking part + final answer part
+        Connection.response_data = {
+            "candidates": [
+                {
+                    "content": {
+                        "parts": [
+                            {"text": "Thinking process...", "thought": True},
+                            {"text": "Final answer"},
+                        ]
+                    },
+                    "finishReason": "STOP",
+                }
+            ]
+        }
+        with patch("byokit.inference.http.client.HTTPSConnection", Connection):
+            r = byokit.call(gemini_model, "Hi", "dummy-key", {"runtime_checks": False})
+        self.assertEqual(r["choices"][0]["message"]["content"], "Final answer")
+        self.assertEqual(
+            r["choices"][0]["message"]["reasoning_content"], "Thinking process..."
+        )
+
+        # 2. Thought signature
+        Connection.response_data = {
+            "candidates": [
+                {
+                    "content": {
+                        "parts": [
+                            {"text": "Thinking...", "thought": True},
+                            {"text": "Signed answer", "thoughtSignature": "sig123"},
+                        ]
+                    },
+                    "finishReason": "STOP",
+                }
+            ]
+        }
+        with patch("byokit.inference.http.client.HTTPSConnection", Connection):
+            r = byokit.call(gemini_model, "Hi", "dummy-key", {"runtime_checks": False})
+        self.assertEqual(r["choices"][0]["message"]["content"], "Signed answer")
+        self.assertEqual(r["choices"][0]["message"]["reasoning_content"], "Thinking...")
+
+        # 3. Only thinking parts fallback
+        Connection.response_data = {
+            "candidates": [
+                {
+                    "content": {
+                        "parts": [{"text": "Deep thoughts only", "thought": True}]
+                    },
+                    "finishReason": "STOP",
+                }
+            ]
+        }
+        with patch("byokit.inference.http.client.HTTPSConnection", Connection):
+            r = byokit.call(gemini_model, "Hi", "dummy-key", {"runtime_checks": False})
+        self.assertEqual(r["choices"][0]["message"]["content"], "Deep thoughts only")
+        self.assertEqual(
+            r["choices"][0]["message"]["reasoning_content"], "Deep thoughts only"
+        )
+
