@@ -128,7 +128,98 @@ export function createReport(settings, result, operationId, secret = '') {
     throw new Error('Report contains private data and cannot be shared.');
   return report;
 }
+export function createBatchReport(reports, batchId = crypto.randomUUID()) {
+  if (
+    !Array.isArray(reports) ||
+    reports.length < 1 ||
+    reports.length > 10 ||
+    typeof batchId !== 'string' ||
+    !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(batchId)
+  )
+    throw new Error('Choose 1–10 reports for one batch issue.');
+  const ids = new Set(),
+    offerings = new Set();
+  for (const report of reports) {
+    reportFields(report);
+    if (report.staging || ids.has(report.operationId) || offerings.has(report.offeringId))
+      throw new Error('Duplicate or staging reports cannot enter a batch issue.');
+    ids.add(report.operationId);
+    offerings.add(report.offeringId);
+  }
+  return { schemaVersion: 1, batchId, reports: structuredClone(reports) };
+}
+function packBatch(batch) {
+  const common = {},
+    assessments = [];
+  for (const key of fields.filter(
+    (k) => !['operationId', 'offeringId', 'modelId', 'assessment'].includes(k),
+  )) {
+    if (
+      batch.reports[0][key] !== undefined &&
+      batch.reports.every((r) => JSON.stringify(r[key]) === JSON.stringify(batch.reports[0][key]))
+    )
+      common[key] = batch.reports[0][key];
+  }
+  const reports = batch.reports.map((report) => {
+    const row = Object.fromEntries(
+      Object.entries(report).filter(([k]) => !Object.hasOwn(common, k)),
+    );
+    if (row.assessment) {
+      let index = assessments.findIndex(
+        (a) => JSON.stringify(a) === JSON.stringify(row.assessment),
+      );
+      if (index < 0) {
+        index = assessments.length;
+        assessments.push(row.assessment);
+      }
+      row.assessment = index;
+    }
+    return row;
+  });
+  return { kind: 'batch', schemaVersion: 1, batchId: batch.batchId, common, assessments, reports };
+}
+function unpackBatch(payload) {
+  if (
+    payload.kind !== 'batch' ||
+    payload.schemaVersion !== 1 ||
+    typeof payload.batchId !== 'string' ||
+    Object.keys(payload).some(
+      (k) => !['kind', 'schemaVersion', 'batchId', 'common', 'assessments', 'reports'].includes(k),
+    ) ||
+    !payload.common ||
+    typeof payload.common !== 'object' ||
+    Array.isArray(payload.common) ||
+    Object.keys(payload.common).some((k) => !fields.includes(k) || k === 'assessment') ||
+    !Array.isArray(payload.assessments) ||
+    payload.assessments.length > 10 ||
+    payload.assessments.some((a) => !validAssessment(a)) ||
+    !Array.isArray(payload.reports) ||
+    payload.reports.length > 10
+  )
+    throw new Error('Invalid batch issue payload.');
+  const reports = payload.reports.map((row) => {
+    if (
+      !row ||
+      typeof row !== 'object' ||
+      Array.isArray(row) ||
+      Object.keys(row).some((k) => !fields.includes(k))
+    )
+      throw new Error('Invalid batch report.');
+    const report = { ...payload.common, ...row };
+    if (Object.hasOwn(row, 'assessment')) {
+      if (!Number.isInteger(row.assessment) || !payload.assessments[row.assessment])
+        throw new Error('Invalid batch assessment.');
+      report.assessment = payload.assessments[row.assessment];
+    }
+    return report;
+  });
+  return createBatchReport(reports, payload.batchId);
+}
 export function issueBody(report) {
+  if (report?.reports) {
+    const batch = createBatchReport(report.reports, report.batchId);
+    return `${REPORT_MARKER}\nCommunity batch: ${batch.reports.length} model observations in one issue. A published successful text check earns the Model Verifier badge.\n\nNo API key, prompt, raw provider error, or generated text is included.\n\n\`\`\`json\n${JSON.stringify(packBatch(batch))}\n\`\`\`\n`;
+  }
   reportFields(report);
   return `${REPORT_MARKER}\n${report.staging ? 'Staging pipeline fixture. No real inference occurred. This must never enter the model catalog.' : 'Community observation from my provider account. This describes one attempt, not universal model access.'}\n\nNo API key, prompt, or generated text is included.\n\n\`\`\`json\n${JSON.stringify(report, null, 2)}\n\`\`\`\n`;
 }
@@ -137,19 +228,25 @@ export function issueUrl(report) {
   url.searchParams.set('template', 'model-verification.md');
   url.searchParams.set(
     'title',
-    `[byokit ${report.staging ? 'staging ' : ''}verification] ${report.offeringId}`,
+    report.reports
+      ? `[byokit batch verification] ${report.reports.length} models`
+      : `[byokit ${report.staging ? 'staging ' : ''}verification] ${report.offeringId}`,
   );
   url.searchParams.set('body', issueBody(report));
   return url.href;
 }
 export function parseIssueReport(body) {
   if (typeof body !== 'string' || !body.includes(REPORT_MARKER)) return null;
-  if (body.length > 6000 || body.split(REPORT_MARKER).length !== 2)
+  if (body.length > 60000 || body.split(REPORT_MARKER).length !== 2)
     throw new Error('Verification report is too large or ambiguous.');
   const blocks = [...body.matchAll(/```json\s*\n([\s\S]*?)\n```/g)];
-  if (blocks.length !== 1 || blocks[0][1].length > 4096)
+  if (blocks.length !== 1 || blocks[0][1].length > 50000)
     throw new Error('Include exactly one bounded JSON report.');
-  return reportFields(JSON.parse(blocks[0][1]));
+  const payload = JSON.parse(blocks[0][1]);
+  if (payload?.kind === 'batch') return unpackBatch(payload);
+  if (body.length > 6000 || blocks[0][1].length > 4096)
+    throw new Error('Verification report is too large.');
+  return reportFields(payload);
 }
 export class PublicationTracker {
   constructor(onFeed, fetcher = (...args) => fetch(...args)) {
@@ -178,6 +275,14 @@ export class PublicationTracker {
     if (!Array.isArray(feed.reports)) throw new Error('Invalid publication feed.');
     if (revision !== this.revision) return null;
     this.onFeed(feed.reports);
+    if (Array.isArray(operationId)) {
+      const matches = operationId.map((target) =>
+        feed.reports.find(
+          (r) => r.id.endsWith(':' + target.operationId) && r.offeringId === target.offeringId,
+        ),
+      );
+      return matches.every(Boolean) ? matches : null;
+    }
     return (
       feed.reports.find(
         (r) => r.id.endsWith(':' + operationId) && (!offeringId || r.offeringId === offeringId),

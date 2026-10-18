@@ -9,7 +9,13 @@ import {
 import { filterModels } from './verification-filters.js';
 import { runBatch, validateBatch, MAX_BATCH_REQUESTS } from './batch-verification.js';
 import { contributorBadges, badgeMarkdown } from './contributor-badges.js';
-import { createReport, issueUrl, PublicationTracker } from './verification-report.js';
+import {
+  createReport,
+  createBatchReport,
+  issueUrl,
+  issueBody,
+  PublicationTracker,
+} from './verification-report.js';
 import catalog, * as byokit from '../packages/byokit/catalog.js';
 import { requestExample } from './request-examples.js';
 import {
@@ -46,11 +52,15 @@ const tracker = new PublicationTracker((reports) => {
 function trackPublication() {
   if (!activeReport) return;
   tracker.start(
-    activeReport.operationId,
+    activeReport.reports
+      ? activeReport.reports.map((r) => ({ operationId: r.operationId, offeringId: r.offeringId }))
+      : activeReport.operationId,
     (state, record) => {
       if (state === 'published') {
+        const published = Array.isArray(record) ? record : [record];
+        record = published.find(textWasVerified) || published[0];
         publicationStatus(
-          `Published: ${textWasVerified(record) ? 'community verified' : 'issue observation'} by ${record.contributor.replace('github:', '@')} on ${new Date(record.checkedAt).toLocaleDateString()}.`,
+          `${published.length > 1 ? `Published: ${published.length} batch results. ` : 'Published: '}${textWasVerified(record) ? 'community verified' : 'issue observation'} by ${record.contributor.replace('github:', '@')} on ${new Date(record.checkedAt).toLocaleDateString()}.`,
         );
         $('#check-publication').hidden = true;
         const badge =
@@ -69,7 +79,7 @@ function trackPublication() {
           state === 'unavailable'
             ? 'Publication feed is unavailable. Check again later.'
             : state === 'pending'
-              ? 'Publication is not confirmed yet. Submit the issue on GitHub, or check its workflow and try Check publication.'
+              ? 'Publication is not confirmed yet. Submit the issue on GitHub, or check its workflow and try Refresh report status.'
               : 'Submit the issue on GitHub. Waiting for it to appear on the website…',
         );
     },
@@ -82,6 +92,65 @@ $('#share-verification').addEventListener('click', () => {
   trackPublication();
 });
 $('#check-publication').addEventListener('click', trackPublication);
+let batchReports = [],
+  batchDraft = null,
+  batchClipboardBody = null;
+function resetBatchSharing() {
+  batchReports = [];
+  batchDraft = null;
+  batchClipboardBody = null;
+  $('#batch-share-actions').hidden = true;
+  $('#batch-report-body').hidden = true;
+}
+function prepareBatchSharing() {
+  if (!batchReports.length) return;
+  batchDraft = createBatchReport(batchReports);
+  const href = issueUrl(batchDraft),
+    eligible = batchReports.some(
+      (r) => !r.assessment || r.assessment.checks.textGeneration === 'passed',
+    );
+  $('#batch-share').textContent = eligible
+    ? 'Share batch on GitHub · earn badge ↗'
+    : 'Share batch observations on GitHub ↗';
+  $('#batch-share').href = href;
+  if (href.length > 7800) {
+    batchClipboardBody = issueBody(batchDraft);
+    const short = new URL(href);
+    short.searchParams.delete('body');
+    $('#batch-share').href = short.href;
+    $('#batch-share').textContent = 'Copy batch report & open GitHub ↗';
+  }
+  $('#batch-share-note').textContent =
+    `One issue includes ${batchReports.length} sanitized observations. ${eligible ? 'A published successful text check earns your badge.' : 'These issue observations do not earn a success badge.'} GitHub asks you to review and submit the issue; we check its status automatically.`;
+  $('#batch-share-actions').hidden = false;
+}
+$('#batch-share').addEventListener('click', () => {
+  if (!batchDraft) return;
+  activeReport = batchDraft;
+  $('#check-publication').hidden = false;
+  publicationStatus(
+    'Submit the single batch issue on GitHub. We check all included reports automatically; no model calls are repeated.',
+  );
+  trackPublication();
+  if (batchClipboardBody) {
+    $('#batch-report-body').value = batchClipboardBody;
+    try {
+      Promise.resolve(navigator.clipboard.writeText(batchClipboardBody)).then(
+        () =>
+          publicationStatus(
+            'Batch report copied. Paste it into the GitHub issue body and submit. We check the report status automatically.',
+          ),
+        () => {
+          $('#batch-report-body').hidden = false;
+          publicationStatus('Copy the report below into the GitHub issue body and submit.');
+        },
+      );
+    } catch {
+      $('#batch-report-body').hidden = false;
+      publicationStatus('Copy the report below into the GitHub issue body and submit.');
+    }
+  }
+});
 if (typeof window !== 'undefined') {
   window.selectVerificationModel = (modelId, prefillKey) => {
     const m = models.find((x) => x.id === modelId) || models.find((x) => x.apiModelId === modelId);
@@ -107,6 +176,7 @@ const providerKeys = new Map();
 function openDrawer(mode) {
   $('#batch-status').hidden = mode !== 'batch';
   $('#batch-results').hidden = mode !== 'batch';
+  $('#batch-share-actions').hidden = mode !== 'batch' || !batchDraft;
   $('#call-panel').hidden = mode !== 'single';
   $('#batch-confirm').hidden = mode !== 'batch';
   if (!$('#verification-drawer').open) {
@@ -710,6 +780,7 @@ $('#batch-open').addEventListener('click', () => {
   }
   $('#batch-confirm-send').textContent = `Send ${pendingBatch.models.length} requests`;
   $('#batch-results').replaceChildren();
+  resetBatchSharing();
   $('#batch-status').textContent = '';
   openDrawer('batch');
 });
@@ -761,6 +832,7 @@ $('#batch-confirm-send').addEventListener('click', async () => {
   for (const field of $('#batch-confirm').querySelectorAll('input, textarea'))
     field.disabled = true;
   $('#batch-results').replaceChildren();
+  resetBatchSharing();
   const cards = new Map();
   let sent = 0;
   for (const job of pending.jobs) {
@@ -814,30 +886,16 @@ $('#batch-confirm-send').addEventListener('click', async () => {
             storageAvailable = false;
           }
           try {
-            const report = createReport(job, observed, record.id, keys[job.providerId]),
-              share = el(
-                'a',
-                entry.status === 'passed'
-                  ? 'Share this success on GitHub · claim badge ↗'
-                  : 'Share sanitized observation on GitHub ↗',
-                'text-link',
-              );
-            share.href = issueUrl(report);
-            share.target = '_blank';
-            share.rel = 'noopener noreferrer';
-            share.addEventListener('click', () => {
-              activeReport = report;
-              $('#check-publication').hidden = false;
-              publicationStatus(
-                `Submit the GitHub issue for ${job.modelId} to publish this result.`,
-              );
-              trackPublication();
-            });
-            card.append(share);
+            const report = createReport(job, observed, record.id, keys[job.providerId]);
+            if (
+              [...Object.values(keys)].some(
+                (key) => key.trim() && JSON.stringify(report).includes(key.trim()),
+              )
+            )
+              throw new Error('Private batch data');
+            batchReports.push(report);
           } catch {
-            card.append(
-              el('p', 'Call succeeded, but this record cannot be shared safely.', 'fine'),
-            );
+            card.append(el('p', 'This observation cannot be shared safely.', 'fine'));
           }
           renderRecords();
         }
@@ -845,7 +903,7 @@ $('#batch-confirm-send').addEventListener('click', async () => {
     });
     if (id === batchSerial)
       $('#batch-status').textContent =
-        `${controller.signal.aborted ? 'Batch canceled.' : 'Batch finished.'} ${sent} requests sent · ${entries.filter((e) => e.status === 'passed').length} succeeded · ${entries.filter((e) => e.assessment?.attempt.outcome === 'blocked').length} blocked · ${entries.filter((e) => e.assessment?.attempt.outcome === 'inconclusive').length} inconclusive · ${entries.filter((e) => e.status === 'partial').length} partial · ${entries.filter((e) => e.status === 'skipped').length} skipped. Share sanitized observations individually on GitHub.`;
+        `${controller.signal.aborted ? 'Batch canceled.' : 'Batch finished.'} ${sent} requests sent · ${entries.filter((e) => e.status === 'passed').length} succeeded · ${entries.filter((e) => e.assessment?.attempt.outcome === 'blocked').length} blocked · ${entries.filter((e) => e.assessment?.attempt.outcome === 'inconclusive').length} inconclusive · ${entries.filter((e) => e.status === 'partial').length} partial · ${entries.filter((e) => e.status === 'skipped').length} skipped. Share the batch in one GitHub issue using the highlighted button below.`;
   } catch {
     if (id === batchSerial)
       $('#batch-status').textContent =
@@ -853,6 +911,7 @@ $('#batch-confirm-send').addEventListener('click', async () => {
   } finally {
     if (id === batchSerial) {
       batchController = null;
+      prepareBatchSharing();
       $('#batch-confirm-send').disabled = false;
       for (const field of $('#batch-confirm').querySelectorAll('input, textarea'))
         field.disabled = false;

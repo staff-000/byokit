@@ -312,7 +312,11 @@ try {
     .filter({ hasText: /Batch finished\./ })
     .waitFor();
   assert.equal(batchCalls, batchCount);
-  assert.equal(await page.locator('#batch-results a').count(), batchCount);
+  assert.equal(await page.locator('#batch-results a').count(), 0);
+  assert.equal(await page.locator('#batch-share-actions').isVisible(), true);
+  const batchHref = await page.locator('#batch-share').getAttribute('href');
+  assert.match(batchHref, /github.com/);
+  assert.ok(!decodeURIComponent(batchHref).includes('another-dummy-key'));
   await page.locator('#drawer-close').click();
   await page.locator('#models button').first().click();
   await page.locator('#clear-key').click();
@@ -367,7 +371,8 @@ try {
     .first()
     .waitFor();
   assert.equal(mixedCalls, 2);
-  assert.equal(await page.locator('#batch-results a').count(), 2);
+  assert.equal(await page.locator('#batch-results .report').count(), 2);
+  assert.equal(await page.locator('#batch-share').isVisible(), true);
   const privateRecords = await page.evaluate(() =>
     localStorage.getItem('byokit.inference-verifications.v1'),
   );
@@ -376,7 +381,8 @@ try {
   );
   await page.locator('#drawer-close').click();
   await page.locator('#batch-open').click();
-  assert.equal(await page.locator('#batch-results a').count(), 2);
+  assert.equal(await page.locator('#batch-results .report').count(), 2);
+  assert.equal(await page.locator('#batch-share').isVisible(), true);
   assert.ok(
     await page
       .locator('#verification-drawer')
@@ -391,6 +397,9 @@ try {
   assert.equal(mobileDrawer.width, 390);
   await page.screenshot({ path: join(tmpdir(), 'byokit-verification-mobile.png') });
   await page.setViewportSize({ width: 1440, height: 1050 });
+  const desktopDrawer = await page.locator('#verification-drawer').boundingBox();
+  assert.equal(desktopDrawer.width, 560);
+  assert.equal(desktopDrawer.x, 880);
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({
     path: join(tmpdir(), 'byokit-verification-desktop.png'),

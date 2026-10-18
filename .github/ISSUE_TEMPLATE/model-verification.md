@@ -5,7 +5,7 @@ title: '[byokit verification] '
 ---
 
 Create this report using https://staff-000.github.io/byokit/verification.html.
-Use the Share action after an attempt to fill this form with successful checks or sanitized failure categories.
+Use the highlighted Share batch action for one issue covering all batch results, or the Share action after an individual attempt to fill this form with successful checks or sanitized failure categories.
 
 Never paste API keys, authentication headers, prompts, or generated text here.
 The verification is a public community report, not an independent inference proof.

@@ -20,33 +20,37 @@ export function issueSubmission(event, catalog) {
     !/^[-a-z0-9]{1,39}$/i.test(user.login || '')
   )
     throw new Error('Invalid GitHub issue identity.');
-  const createdAt = Date.parse(issue.created_at),
-    checkedAt = Date.parse(report.checkedAt);
-  if (
-    !Number.isFinite(createdAt) ||
-    checkedAt > createdAt + 60000 ||
-    createdAt - checkedAt > 86400000
-  )
-    throw new Error('The check must be within 24 hours before issue submission.');
-  const offering = catalog.offerings.find((o) => o.id === report.offeringId),
-    expected =
-      offering?.providerId === 'anthropic'
-        ? 'anthropic'
-        : offering?.providerId === 'google'
-          ? 'gemini'
-          : 'chat';
-  if (
-    !offering ||
-    offering.deployment !== 'hosted' ||
-    offering.apiModelId !== report.modelId ||
-    report.protocol !== expected
-  )
-    throw new Error('Report does not match a supported catalog-hosted offering.');
-  if (report.staging && user.login.toLowerCase() !== 'staff-000')
-    throw new Error('Only the repository owner may submit pipeline staging fixtures.');
+  const bundle = report.reports || [report];
+  for (const report of bundle) {
+    const createdAt = Date.parse(issue.created_at),
+      checkedAt = Date.parse(report.checkedAt);
+    if (
+      !Number.isFinite(createdAt) ||
+      checkedAt > createdAt + 60000 ||
+      createdAt - checkedAt > 86400000
+    )
+      throw new Error('The check must be within 24 hours before issue submission.');
+    const offering = catalog.offerings.find((o) => o.id === report.offeringId),
+      expected =
+        offering?.providerId === 'anthropic'
+          ? 'anthropic'
+          : offering?.providerId === 'google'
+            ? 'gemini'
+            : 'chat';
+    if (
+      !offering ||
+      offering.deployment !== 'hosted' ||
+      offering.apiModelId !== report.modelId ||
+      report.protocol !== expected
+    )
+      throw new Error('Report does not match a supported catalog-hosted offering.');
+    if (report.staging && user.login.toLowerCase() !== 'staff-000')
+      throw new Error('Only the repository owner may submit pipeline staging fixtures.');
+  }
   const evidence = `https://github.com/${REPOSITORY}/issues/${issue.number}`;
   return {
-    report,
+    report: bundle[0],
+    ...(report.reports ? { reports: bundle, batchId: report.batchId } : {}),
     user: { id: user.id, login: user.login },
     issueNumber: issue.number,
     createdAt: issue.created_at,

@@ -196,8 +196,8 @@ Count from 1 to 50 separated by spaces: 1 2 3...</textarea></label
           <p class="fine">
             This uses your provider credits. No request is sent until you confirm. Authentication,
             quota, or connection errors skip the remaining models for that provider. Successful
-            checks can be shared individually on GitHub; publication is limited to 10 reports per
-            contributor per day.
+            checks can be shared together in one GitHub issue; publication is limited to 10 model
+            reports per contributor per day.
           </p>
           <div class="record-actions">
             <button id="batch-confirm-cancel" type="button" class="small-button">
@@ -212,9 +212,31 @@ Count from 1 to 50 separated by spaces: 1 2 3...</textarea></label
           Cancel batch
         </button>
         <div id="batch-results" class="batch-results"></div>
+        <div id="batch-share-actions" class="batch-share-actions" hidden>
+          <a
+            id="batch-share"
+            class="button primary action-highlight"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Share batch on GitHub · earn badge ↗</a
+          >
+          <p id="batch-share-note" class="fine"></p>
+          <textarea
+            id="batch-report-body"
+            aria-label="Batch report to copy into GitHub"
+            readonly
+            rows="5"
+            hidden
+          ></textarea>
+        </div>
         <button id="check-publication" class="small-button" type="button" hidden>
-          Check publication
+          Refresh report status
         </button>
+        <p class="fine">
+          After you submit your GitHub issue, we automatically check whether its reports are live on
+          this site. “Refresh report status” checks again; it never calls models or spends API
+          credits.
+        </p>
         <p id="publication-status" class="fine" role="status" aria-live="polite"></p>
         <a id="earned-badge" class="earned-badge" hidden
           ><img id="earned-badge-image" alt="Your byokit Model Verifier badge" /><span

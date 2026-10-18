@@ -12,7 +12,7 @@ No byokit login is needed. A small call may consume your provider quota.
 4. GitHub opens a prefilled issue. Sign in there if necessary, review the report,
    and click **Submit new issue**. Opening or closing the form does not publish it.
 5. GitHub Actions validates the report, commits the catalog update, and deploys Pages.
-   Return to the website to see **Published**, or use **Check publication**.
+   Return to the website to see **Published**, or use **Refresh report status**.
 
 The page polls the public feed every 15 seconds for up to five minutes after sharing
 or returning to the tab. A pending or failed publication never repeats inference.
@@ -104,9 +104,11 @@ other providers continue. Cancel stops the entire queue.
 
 Closing the drawer leaves a running verification active; reopen it from the
 selection bar to see progress and individual results. Browsing or changing table
-filters does not interrupt a run. Already completed successes remain saved. Share
-each success separately through its GitHub link; the existing ten-publications-per-day
-limit still applies. Keys stay only in page memory and never enter saved records.
+filters does not interrupt a run. Completed observations remain saved. Use the
+highlighted **Share batch on GitHub · earn badge** button to prepare one issue
+containing all publishable results. Review and submit it on GitHub; status checks
+then wait for every included result automatically. The existing limit of ten model
+reports per contributor per day still applies, regardless of issue count. Keys stay only in page memory and never enter saved records.
 Local-server entries support single-model verification only. Single-model checks
 retain their baseline call and speed benchmark (up to two requests).
 
@@ -203,3 +205,25 @@ constants remain, and deprecated `failed`/`verified to be failure` filters match
 unsuccessful text-generation attempts within the freshness window, including
 models that also have successful evidence. A custom account/region problem never
 means a model is universally broken.
+
+## One issue for a batch
+
+A batch issue contains up to ten sanitized model observations. Successful checks
+and classified issues are retained separately; canceled and skipped entries are
+excluded. A published successful text-generation check qualifies for the Model
+Verifier badge. A batch containing only issues does not qualify for a success
+badge. The publisher validates all models before committing, applies daily limits
+to model reports, and preserves report IDs so resubmission cannot add duplicate
+measurements. A publication error cannot commit a partial batch.
+
+The highlighted sharing action automatically prepares one compact GitHub draft.
+Submitting without a GitHub confirmation would require GitHub authentication that
+this static site does not collect. If the draft is too long for a reliable URL,
+the action copies the complete sanitized body and opens GitHub for you to paste
+it. If clipboard access is denied, the copyable report appears in the drawer.
+
+**Refresh report status** only reads the public report feed to see whether the
+GitHub submission is live. It does not verify models, repeat inference, or use
+provider credits. Status checks already run automatically after sharing; the
+button is a manual refresh for delayed publication. For batches, publication is
+confirmed only when every included report is present.

@@ -252,22 +252,27 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
     $('#batch-confirm-send').click();
     await wait(() => $('#batch-status').textContent.startsWith('Batch finished.'));
     assert.equal(calls, before + count);
-    assert.equal(document.querySelectorAll('#batch-results a').length, count);
-    for (const link of document.querySelectorAll('#batch-results a'))
-      assert.ok(!decodeURIComponent(link.href).includes('fixture-secret-key'));
-    const batchShare = document.querySelector('#batch-results a'),
+    assert.equal(document.querySelectorAll('#batch-results a').length, 0);
+    assert.equal($('#batch-share-actions').hidden, false);
+    assert.match($('#batch-share').textContent, /Share batch/);
+    const batchShare = $('#batch-share'),
       batchReport = parseIssueReport(new URL(batchShare.href).searchParams.get('body'));
-    feed.push(
-      canonicalReport({
-        report: batchReport,
-        user: { id: 123, login: 'fixture-user' },
-        evidence: 'https://github.com/staff-000/byokit/issues/43',
-        createdAt: batchReport.checkedAt,
-      }),
-    );
+    assert.equal(batchReport.reports.length, count);
+    assert.ok(!decodeURIComponent(batchShare.href).includes('fixture-secret-key'));
     batchShare.addEventListener('click', (e) => e.preventDefault());
     batchShare.click();
+    const publishedBatch = batchReport.reports.map((report) =>
+      canonicalReport({
+        report,
+        user: { id: 123, login: 'fixture-user' },
+        evidence: 'https://github.com/staff-000/byokit/issues/43',
+        createdAt: report.checkedAt,
+      }),
+    );
+    feed.push(...publishedBatch);
+    $('#check-publication').click();
     await wait(() => $('#publication-status').textContent.startsWith('Published:'));
+    assert.match($('#publication-status').textContent, /batch results/);
     assert.equal(calls, before + count);
 
     assert.ok($('#playground'));

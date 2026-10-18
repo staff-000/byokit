@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { contributorBadges, badgeMarkdown } from '../website/contributor-badges.js';
-import { REPORT_MARKER } from '../website/verification-report.js';
+import { REPORT_MARKER, parseIssueReport } from '../website/verification-report.js';
 const repository = 'staff-000/byokit',
   site = 'https://staff-000.github.io/byokit/';
 const event = JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH, 'utf8')),
@@ -30,6 +30,13 @@ async function api(path, method, body) {
   );
   if (!response.ok) throw new Error('GitHub issue status update failed.');
 }
+let expectedReports = [];
+try {
+  const payload = parseIssueReport(issue.body);
+  expectedReports = payload.reports || [payload];
+} catch {
+  /* Invalid reports use the existing failure notice. */
+}
 let published = false,
   earnedBadge = null;
 if (process.env.RECORD_RESULT === 'success') {
@@ -48,9 +55,21 @@ if (process.env.RECORD_RESULT === 'success') {
           ? feed.receipts?.some(
               (r) => r.operationId === process.env.OPERATION_ID && r.issue === issue.html_url,
             )
-          : feed.reports?.some((r) => r.evidence === issue.html_url);
+          : expectedReports.length > 0 &&
+            expectedReports.every((report) =>
+              feed.reports?.some(
+                (r) =>
+                  r.id === `website:${issue.user.id}:${report.operationId}` &&
+                  r.offeringId === report.offeringId,
+              ),
+            );
         if (published) {
-          if (!staging)
+          if (
+            !staging &&
+            expectedReports.some(
+              (r) => !r.assessment || r.assessment.checks.textGeneration === 'passed',
+            )
+          )
             earnedBadge = contributorBadges(feed.reports).find(
               (b) => b.login.toLowerCase() === issue.user.login.toLowerCase(),
             );
