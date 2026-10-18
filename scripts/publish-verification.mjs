@@ -187,9 +187,32 @@ async function run() {
       );
       await writeFile(
         'packages/byokit/catalog.js',
-        'import {Catalog} from "./index.js";\nconst data=' +
+        'import { Catalog } from "./core.js";\nconst data = ' +
           JSON.stringify(next.data) +
-          ';\nexport default data;\nexport * from "./index.js";\nexport function getModels(input={},options){return new Catalog(data).getModels(input,options)}\n',
+          ';\nexport default data;\nexport * from "./core.js";\nlet defaultCatalog;\n' +
+          'export const catalog = new Catalog(data, { trusted: true });\n' +
+          'export function getModels(input = {}, options) {\n' +
+          '  if (!defaultCatalog) defaultCatalog = new Catalog(data, { trusted: true });\n' +
+          '  return defaultCatalog.getModels(input, options);\n' +
+          '}\n' +
+          'export function getModelsByProvider(input = {}, options) {\n' +
+          '  if (!defaultCatalog) defaultCatalog = new Catalog(data, { trusted: true });\n' +
+          '  return defaultCatalog.getModelsByProvider(input, options);\n' +
+          '}\n' +
+          'export function addVerifications(records) {\n' +
+          '  if (!defaultCatalog) defaultCatalog = new Catalog(data, { trusted: true });\n' +
+          '  return defaultCatalog.addVerifications(records);\n' +
+          '}\n' +
+          'export function getConfig(input = {}, options) {\n' +
+          '  if (!defaultCatalog) defaultCatalog = new Catalog(data, { trusted: true });\n' +
+          '  return defaultCatalog.getConfig(input, options);\n' +
+          '}\n' +
+          'export function getConfigJson(input = {}, options, indent = 2) {\n' +
+          '  if (!defaultCatalog) defaultCatalog = new Catalog(data, { trusted: true });\n' +
+          '  return defaultCatalog.getConfigJson(input, options, indent);\n' +
+          '}\n' +
+          'export const toConfig = getConfig;\n' +
+          'export const toConfigJson = getConfigJson;\n',
       );
       const lock = JSON.parse(await readFile('catalog/catalog.lock.json', 'utf8'));
       lock.verificationsSha256 = createHash('sha256')
