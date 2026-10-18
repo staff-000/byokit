@@ -420,19 +420,21 @@ A tiny text verification is not treated as a generation-throughput benchmark.
 
 ```mermaid
 flowchart LR
-  Filters[Filters + include outdated] --> Select[Select up to 10 models / one provider]
+  Filters[Filters + include outdated] --> Select[Select up to 10 models / multiple providers]
   Select --> Confirm[Confirm request count + models + output budget]
   Confirm --> Queue[Sequential calls / no retries]
   Queue --> Results[Per-model success, failure, or skipped]
   Results --> Share[Share successful reports on GitHub]
 ```
 
-Canceling confirmation sends no requests. Canceling or editing execution settings
-aborts the running request and remaining queue. Authentication, quota, network,
-and timeout failures stop the queue; unavailable models can fail independently.
-Keys are supplied transiently from the provider's form entry and never saved with
-results. Batch results preserve provider-specific IDs and require explicit sharing
-per successful model; the publication limits and badge rules are unchanged.
+Closing the drawer before sending makes no requests. Closing it during execution
+keeps the queue running; reopening restores progress. Cancellation aborts the
+current request and skips remaining work. Authentication, quota, network, and
+timeout failures skip remaining models for that provider; other providers continue.
+Selections persist across table filters and pagination. Provider-key mappings are
+validated before execution, captured with the jobs, and held only in page memory.
+Batch results preserve provider-specific IDs and require explicit sharing per
+successful model; publication limits and badge rules are unchanged.
 
 Global includes editorial providers. Exclude origin:cn with filters.excludeTags to omit China-origin providers/models; missing origin remains unknown.
 

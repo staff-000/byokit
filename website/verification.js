@@ -75,13 +75,11 @@ if (typeof window !== 'undefined') {
   window.selectVerificationModel = (modelId, prefillKey) => {
     const m = models.find((x) => x.id === modelId) || models.find((x) => x.apiModelId === modelId);
     if (m) {
-      select(m);
-      if (prefillKey) {
+      openModel(m);
+      if (prefillKey && !busy && !batchController && selected.id === m.id) {
         $('#api-key').value = prefillKey;
+        providerKeys.set(m.providerId, prefillKey);
       }
-      renderModels();
-      $('#call-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      $('#api-key')?.focus({ preventScroll: true });
     }
   };
   window.trackVerificationPublication = (report) => {
@@ -91,6 +89,47 @@ if (typeof window !== 'undefined') {
     trackPublication();
   };
 }
+let drawerOrigin = null,
+  drawerOriginModel = null,
+  lastRunMode = null;
+const providerKeys = new Map();
+function openDrawer(mode) {
+  $('#batch-status').hidden = mode !== 'batch';
+  $('#batch-results').hidden = mode !== 'batch';
+  $('#call-panel').hidden = mode !== 'single';
+  $('#batch-confirm').hidden = mode !== 'batch';
+  if (!$('#verification-drawer').open) {
+    drawerOrigin = document.activeElement;
+    drawerOriginModel = drawerOrigin?.closest('tr')?.dataset.offering;
+    $('#verification-drawer').showModal();
+  }
+}
+function openModel(model) {
+  if (busy || batchController) {
+    openDrawer(batchController ? 'batch' : 'single');
+    return;
+  }
+  if (!model.local && !model.callSupport?.textGeneration) return;
+  providerKeys.set(selected.providerId, $('#api-key').value);
+  select(model);
+  for (const row of document.querySelectorAll('#models tr'))
+    row.classList.toggle('selected', row.dataset.offering === model.id);
+  $('#api-key').value = providerKeys.get(model.providerId) || '';
+  openDrawer('single');
+  $('#api-key').focus({ preventScroll: true });
+}
+$('#drawer-close').addEventListener('click', () => $('#verification-drawer').close());
+$('#verification-drawer').addEventListener('close', () => {
+  const target = drawerOrigin?.isConnected
+    ? drawerOrigin
+    : [...document.querySelectorAll('#models tr')].find(
+        (row) => row.dataset.offering === drawerOriginModel,
+      ) || $('#batch-open');
+  target?.focus({ preventScroll: true });
+});
+$('#api-key').addEventListener('input', () =>
+  providerKeys.set(selected.providerId, $('#api-key').value),
+);
 const storageKey = 'byokit.inference-verifications.v1';
 let records = [],
   storageAvailable = true;
@@ -150,7 +189,6 @@ function invalidate() {
   revision++;
   batchController?.abort();
   pendingBatch = null;
-  if ($('#batch-confirm').open) $('#batch-confirm').close();
   controller?.abort();
   busy = false;
   $('#verify').disabled = false;
@@ -218,7 +256,9 @@ function select(model) {
     $('#api-key').value = '';
     $('#api-key').placeholder = `Paste your ${model.provider?.name || model.providerId} key`;
   }
-  $('#verify').textContent = model.local ? 'Verify local model ↗' : 'Verify model · earn a badge ↗';
+  $('#verify').textContent = model.local
+    ? 'Verify local model · 2 requests'
+    : 'Verify model · 2 requests · earn a badge ↗';
   $('#badge-hint').textContent = model.local
     ? 'Local checks stay private. Publish a hosted-model report to earn a badge.'
     : 'Earn a Model Verifier badge: verify a hosted model, share the success on GitHub, and receive your badge after publication.';
@@ -248,7 +288,7 @@ function select(model) {
     $('#verify').disabled = false;
     $('#verify').title = '';
     status(
-      `Ready to verify ${model.provider?.name || model.providerId} ${model.name}. Enter your API key above and click Verify model.`,
+      `Ready to verify ${model.provider?.name || model.providerId} ${model.name}. Enter your API key and click Verify model.`,
     );
   }
   updateCostEstimate();
@@ -274,6 +314,9 @@ function filteredModels() {
   });
 }
 function renderModels() {
+  const focusedRow = document.activeElement?.closest('#models tr'),
+    focusedId = focusedRow?.dataset.offering;
+  const focusedControl = focusedRow ? document.activeElement.tagName.toLowerCase() : null;
   const filtered = filteredModels();
   $('#model-count').textContent = `${filtered.length} entries`;
   const rows = filtered.slice(0, shown).map((m) => {
@@ -284,23 +327,27 @@ function renderModels() {
       tr.classList.add('selected');
     }
     tr.style.cursor = 'pointer';
+    tr.tabIndex = 0;
+    tr.dataset.offering = m.id;
+    tr.addEventListener('keydown', (e) => {
+      if (e.target === tr && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        openModel(m);
+      }
+    });
     tr.addEventListener('click', (e) => {
       if (e.target.closest('input, a, button, summary')) return;
-      select(m);
-      renderModels();
-      $('#call-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      $('#api-key')?.focus({ preventScroll: true });
+      openModel(m);
     });
     checkbox.type = 'checkbox';
     checkbox.className = 'batch-pick';
     checkbox.setAttribute('aria-label', `Select ${m.provider.name} ${m.name} for batch`);
     checkbox.checked = batchSelection.has(m.id);
-    checkbox.disabled =
-      !!m.local ||
-      !m.callSupport?.textGeneration ||
-      busy ||
-      !!batchController ||
-      (!!batchSelection.size && batchSelection.values().next().value.providerId !== m.providerId);
+    if (m.local || !m.callSupport?.textGeneration)
+      checkbox.title = m.local
+        ? 'Local servers support single-model verification.'
+        : m.callSupport?.reason || 'No reviewed adapter.';
+    checkbox.disabled = !!m.local || !m.callSupport?.textGeneration;
     checkbox.addEventListener('change', () => toggleBatch(m, checkbox.checked));
     pick.append(checkbox);
     const name = el('td');
@@ -425,10 +472,7 @@ function renderModels() {
     );
     button.addEventListener('click', (e) => {
       e.stopPropagation();
-      select(m);
-      renderModels();
-      $('#call-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
-      $('#api-key').focus({ preventScroll: true });
+      openModel(m);
     });
     action.append(button);
     pick.dataset.label = 'Batch';
@@ -447,25 +491,33 @@ function renderModels() {
     `Showing ${Math.min(shown, filtered.length)} of ${filtered.length} entries.`;
   $('#show-more').hidden = shown >= filtered.length;
   updateBatchControls();
+  if (focusedId) {
+    const row = [...$('#models').rows].find((row) => row.dataset.offering === focusedId);
+    const target = focusedControl === 'tr' ? row : row?.querySelector(focusedControl);
+    target?.focus({ preventScroll: true });
+  }
 }
 function updateBatchControls() {
   $('#batch-count').textContent =
-    `${batchSelection.size} ${batchSelection.size === 1 ? 'model' : 'models'} selected${batchSelection.size ? ' · ' + batchSelection.values().next().value.provider.name : ''}`;
-  $('#batch-open').disabled = !batchSelection.size || busy || !!batchController;
-  $('#batch-clear').disabled = !!batchController;
-  $('#batch-select-shown').disabled = busy || !!batchController;
+    `${batchSelection.size} ${batchSelection.size === 1 ? 'model' : 'models'} selected`;
+  $('#batch-open').disabled = !batchSelection.size && !batchController && !busy && !lastRunMode;
+  $('#batch-cancel').hidden = !busy && !batchController;
+  $('#batch-open').textContent =
+    batchController || busy
+      ? 'View verification progress'
+      : !batchSelection.size && lastRunMode
+        ? 'View verification results'
+        : 'Verify selected';
+  $('#batch-clear').disabled = !batchSelection.size;
+  $('#batch-select-shown').disabled = batchSelection.size >= MAX_BATCH_REQUESTS;
 }
 function toggleBatch(model, checked) {
-  if (batchController || busy) return;
   if (checked) {
     if (batchSelection.size >= MAX_BATCH_REQUESTS) {
-      $('#batch-status').textContent = 'Choose at most 10 models per batch.';
+      $('#selection-status').textContent = 'Choose at most 10 models per batch.';
       renderModels();
       return;
     }
-    if (batchSelection.size && batchSelection.values().next().value.providerId !== model.providerId)
-      return;
-    if (!batchSelection.size) select(model);
     batchSelection.set(model.id, model);
   } else batchSelection.delete(model.id);
   renderModels();
@@ -475,84 +527,134 @@ $('#batch-select-shown').addEventListener('click', () => {
     .slice(0, shown)
     .filter((m) => !m.local && m.callSupport?.textGeneration);
   if (!eligible.length) return;
-  const provider = batchSelection.size
-    ? batchSelection.values().next().value.providerId
-    : eligible[0].providerId;
-  if (!batchSelection.size) select(eligible.find((m) => m.providerId === provider));
-  for (const model of eligible.filter((m) => m.providerId === provider)) {
+  for (const model of eligible) {
     if (batchSelection.size >= MAX_BATCH_REQUESTS) break;
     batchSelection.set(model.id, model);
   }
   renderModels();
 });
+new window.MutationObserver(() => {
+  $('#selection-status').textContent = $('#batch-status').textContent;
+}).observe($('#batch-status'), { childList: true, characterData: true, subtree: true });
 $('#batch-clear').addEventListener('click', () => {
   batchSelection.clear();
   renderModels();
-  $('#batch-status').textContent = 'Selection cleared.';
+  if (!batchController) $('#selection-status').textContent = 'Selection cleared.';
 });
 $('#batch-open').addEventListener('click', () => {
-  const common = settings(),
-    jobs = [...batchSelection.values()].map((model) => ({
-      ...common,
-      offeringId: model.id,
-      providerId: model.providerId,
-      modelId: model.apiModelId,
-      protocol: ProviderApi[model.providerId].protocols[0],
-      endpoint: undefined,
-    }));
+  if (busy || batchController) {
+    openDrawer(batchController ? 'batch' : 'single');
+    return;
+  }
+  if (!batchSelection.size) {
+    if (lastRunMode) openDrawer(lastRunMode);
+    return;
+  }
+  if (
+    pendingBatch &&
+    pendingBatch.models.map((m) => m.id).join() === [...batchSelection.keys()].join()
+  ) {
+    openDrawer('batch');
+    return;
+  }
+  pendingBatch = { models: [...batchSelection.values()] };
+  $('#batch-confirm-description').textContent =
+    `Send up to ${pendingBatch.models.length} AI requests, one per model. This may use provider credits.`;
+  $('#batch-confirm-models').replaceChildren(
+    ...Array.from(new Set(pendingBatch.models.map((m) => m.providerId)), (providerId) => {
+      const group = pendingBatch.models.filter((m) => m.providerId === providerId);
+      const item = el('li', group[0].provider.name),
+        list = el('ul');
+      list.append(...group.map((m) => el('li', m.apiModelId)));
+      item.append(list);
+      return item;
+    }),
+  );
+  $('#batch-keys').replaceChildren();
+  for (const provider of new Map(
+    pendingBatch.models.map((m) => [m.providerId, m.provider]),
+  ).values()) {
+    const label = el('label', `${provider.name} API key`),
+      input = el('input');
+    input.type = 'password';
+    input.autocomplete = 'off';
+    input.spellcheck = false;
+    input.dataset.provider = provider.id;
+    input.value =
+      providerKeys.get(provider.id) ||
+      (selected.providerId === provider.id ? $('#api-key').value : '');
+    input.addEventListener('input', () => providerKeys.set(provider.id, input.value));
+    label.append(input);
+    $('#batch-keys').append(label);
+  }
+  $('#batch-confirm-send').textContent = `Send ${pendingBatch.models.length} requests`;
+  $('#batch-results').replaceChildren();
+  $('#batch-status').textContent = '';
+  openDrawer('batch');
+});
+$('#batch-confirm-cancel').addEventListener('click', () => {
+  $('#verification-drawer').close();
+});
+$('#batch-cancel').addEventListener('click', () => {
+  batchController?.abort();
+  controller?.abort();
+});
+$('#drawer-batch-cancel').addEventListener('click', () => batchController?.abort());
+$('#batch-confirm-send').addEventListener('click', async () => {
+  if (!pendingBatch || batchController || busy) return;
+  const keys = Object.fromEntries(
+    [...$('#batch-keys').querySelectorAll('input')].map((input) => [
+      input.dataset.provider,
+      input.value.trim(),
+    ]),
+  );
+  const jobs = pendingBatch.models.map((model) => ({
+    offeringId: model.id,
+    providerId: model.providerId,
+    modelId: model.apiModelId,
+    protocol: ProviderApi[model.providerId]?.protocols[0],
+    prompt: $('#batch-prompt').value,
+    maxTokens: Number($('#batch-max-tokens').value),
+  }));
   try {
-    validateBatch(jobs, $('#api-key').value.trim());
+    validateBatch(jobs, keys);
   } catch (error) {
     $('#batch-status').textContent = error.message;
     return;
   }
-  pendingBatch = { jobs, revision };
-  $('#batch-confirm-description').textContent =
-    `Send up to ${jobs.length} AI ${jobs.length === 1 ? 'request' : 'requests'} to ${ProviderApi[jobs[0].providerId].name}? One request per model, with up to ${common.maxTokens} output tokens each.`;
-  $('#batch-confirm-models').replaceChildren(...jobs.map((job) => el('li', job.modelId)));
-  $('#batch-confirm-send').textContent =
-    `Send ${jobs.length} ${jobs.length === 1 ? 'request' : 'requests'}`;
-  $('#batch-confirm').showModal();
-});
-$('#batch-confirm-cancel').addEventListener('click', () => {
-  pendingBatch = null;
-  $('#batch-confirm').close();
-});
-$('#batch-confirm').addEventListener('cancel', () => {
-  pendingBatch = null;
-});
-$('#batch-cancel').addEventListener('click', () => batchController?.abort());
-$('#batch-confirm-send').addEventListener('click', async () => {
-  const pending = pendingBatch;
-  if (!pending || pending.revision !== revision || batchController) return;
-  pendingBatch = null;
-  $('#batch-confirm').close();
+  const pending = { jobs };
   tracker.stop();
   activeReport = null;
   $('#share-verification').hidden = true;
   $('#check-publication').hidden = true;
   $('#earned-badge').hidden = true;
   publicationStatus('');
-  const key = $('#api-key').value.trim(),
-    id = ++batchSerial,
-    capturedRevision = revision,
+  const id = ++batchSerial,
     controller = new AbortController();
   batchController = controller;
+  lastRunMode = 'batch';
   $('#batch-cancel').hidden = false;
+  $('#drawer-batch-cancel').hidden = false;
   $('#verify').disabled = true;
+  $('#batch-confirm-send').disabled = true;
+  for (const field of $('#batch-confirm').querySelectorAll('input, textarea'))
+    field.disabled = true;
   $('#batch-results').replaceChildren();
   const cards = new Map();
   let sent = 0;
   for (const job of pending.jobs) {
     const card = el('article', undefined, 'report');
-    card.append(el('strong', job.modelId), el('p', 'Queued', 'fine'));
+    card.append(
+      el('strong', `${ProviderApi[job.providerId].name} · ${job.modelId}`),
+      el('p', 'Queued', 'fine'),
+    );
     cards.set(job.offeringId, card);
     $('#batch-results').append(card);
   }
   renderModels();
   $('#batch-status').textContent = `Confirmed ${pending.jobs.length} requests. Starting…`;
   try {
-    const entries = await runBatch(pending.jobs, key, {
+    const entries = await runBatch(pending.jobs, keys, {
       signal: controller.signal,
       onResult: (entry) => {
         if (id !== batchSerial) return;
@@ -569,12 +671,8 @@ $('#batch-confirm-send').addEventListener('click', async () => {
           $('#batch-status').textContent =
             `Request ${sent} of ${pending.jobs.length}: ${job.modelId}`;
         }
-        if (
-          entry.status === 'passed' &&
-          capturedRevision === revision &&
-          !controller.signal.aborted
-        ) {
-          const record = successRecord(job, entry.result, key);
+        if (entry.status === 'passed' && !controller.signal.aborted) {
+          const record = successRecord(job, entry.result, keys[job.providerId]);
           records = [record, ...records].slice(0, 200);
           try {
             localStorage.setItem(storageKey, JSON.stringify(records));
@@ -582,7 +680,7 @@ $('#batch-confirm-send').addEventListener('click', async () => {
             storageAvailable = false;
           }
           try {
-            const report = createReport(job, entry.result, record.id, key),
+            const report = createReport(job, entry.result, record.id, keys[job.providerId]),
               share = el('a', 'Share this success on GitHub · claim badge ↗', 'text-link');
             share.href = issueUrl(report);
             share.target = '_blank';
@@ -615,7 +713,11 @@ $('#batch-confirm-send').addEventListener('click', async () => {
   } finally {
     if (id === batchSerial) {
       batchController = null;
+      $('#batch-confirm-send').disabled = false;
+      for (const field of $('#batch-confirm').querySelectorAll('input, textarea'))
+        field.disabled = false;
       $('#batch-cancel').hidden = true;
+      $('#drawer-batch-cancel').hidden = true;
       $('#verify').disabled = false;
       renderModels();
     }
@@ -716,6 +818,8 @@ $('#verify-form').addEventListener('submit', async (event) => {
     key = $('#api-key').value.trim(),
     id = ++revision;
   busy = true;
+  lastRunMode = 'single';
+  updateBatchControls();
   controller = new AbortController();
   $('#verify').disabled = true;
   $('#cancel').hidden = false;
@@ -791,6 +895,7 @@ $('#verify-form').addEventListener('submit', async (event) => {
   } finally {
     if (id === revision) {
       busy = false;
+      updateBatchControls();
       $('#verify').disabled = false;
       $('#cancel').hidden = true;
     }
@@ -822,13 +927,17 @@ $('#copy-request').addEventListener('click', async () => {
 $('#cancel').addEventListener('click', () => controller?.abort());
 $('#clear-key').addEventListener('click', () => {
   $('#api-key').value = '';
+  providerKeys.delete(selected.providerId);
   invalidate();
   destination();
   status('API key cleared.');
 });
 for (const id of ['api-key', 'protocol', 'endpoint', 'local-model', 'prompt', 'max-tokens'])
   $('#' + id).addEventListener('input', () => {
-    if (id === 'endpoint') $('#api-key').value = '';
+    if (id === 'endpoint') {
+      $('#api-key').value = '';
+      providerKeys.delete(selected.providerId);
+    }
     invalidate();
     destination();
   });
@@ -899,21 +1008,12 @@ for (const id of [
   'include-outdated',
 ])
   $('#' + id).addEventListener('input', () => {
-    if (id === 'provider-filter') {
-      invalidate();
-      $('#api-key').value = '';
-      batchSelection.clear();
-      const model =
-        nextUnverifiedModel(null, filteredModels()) ||
-        filteredModels().find((m) => !m.local) ||
-        filteredModels()[0];
-      if (model) select(model);
-    }
-    if (batchController) invalidate();
+    tracker.stop();
     shown = 40;
     renderModels();
   });
 function advanceToNextUnverified() {
+  if (busy || batchController) return;
   const currentProvider = selected?.providerId;
   const providerModels = filteredModels().filter((m) => m.providerId === currentProvider);
   const next =
@@ -924,7 +1024,7 @@ function advanceToNextUnverified() {
     const currentKey = $('#api-key').value;
     select(next);
     if (keepKey && currentKey) $('#api-key').value = currentKey;
-    $('#call-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    openDrawer('single');
     $('#api-key').focus({ preventScroll: true });
   }
 }
@@ -960,6 +1060,8 @@ document.addEventListener('visibilitychange', () => {
 });
 window.addEventListener('pagehide', () => {
   $('#api-key').value = '';
+  providerKeys.clear();
+  for (const input of $('#batch-keys').querySelectorAll('input')) input.value = '';
   controller?.abort();
   batchController?.abort();
   tracker.stop();

@@ -113,7 +113,7 @@ try {
   assert.equal(await page.locator('#verified-only').count(), 0);
   assert.equal(await page.locator('#include-outdated').count(), 1);
   assert.equal(await page.locator('#feature-filter').count(), 1);
-  assert.equal(await page.locator('.verification-models thead select').count(), 10);
+  assert.equal(await page.locator('.verification-models thead select').count(), 12);
   assert.equal(await page.locator('.verification-models thead #include-outdated').count(), 1);
   assert.equal(await page.locator('#models tr').first().locator('td').count(), 8);
   await page.locator('#sort-filter').selectOption('priceDescend');
@@ -125,7 +125,22 @@ try {
   assert.ok((await page.locator('#models').textContent()).includes('lifecycle:UNCERTAIN'));
   assert.ok(!(await page.locator('body').textContent()).includes('unit test'));
   await page.locator('#provider-filter').selectOption('deepseek');
+  await page.locator('#models button').first().scrollIntoViewIfNeeded();
+  const tableScroll = await page.evaluate(() => scrollY);
   await page.locator('#models button').first().click();
+  assert.ok(Math.abs((await page.evaluate(() => scrollY)) - tableScroll) < 3);
+  assert.equal(await page.locator('#verification-drawer').isVisible(), true);
+  await page.locator('#drawer-close').click();
+  assert.equal(
+    await page
+      .locator('#models button')
+      .first()
+      .evaluate((el) => el === document.activeElement),
+    true,
+  );
+  assert.ok(Math.abs((await page.evaluate(() => scrollY)) - tableScroll) < 3);
+  await page.locator('#models button').first().press('Enter');
+  assert.equal(await page.locator('#verification-drawer').isVisible(), true);
   let calls = 0;
   await page.route('https://api.deepseek.com/**', async (route) => {
     calls++;
@@ -242,6 +257,7 @@ try {
       }),
     });
   });
+  await page.locator('#drawer-close').click();
   const batchCount = Math.min(2, await page.locator('.batch-pick').count());
   for (let i = 0; i < batchCount; i++) await page.locator('.batch-pick').nth(i).check();
   await page.locator('#batch-open').click();
@@ -255,18 +271,93 @@ try {
   assert.equal(batchCalls, 0);
   await page.locator('#batch-open').click();
   await page.locator('#batch-confirm-send').click();
-  await page.getByText(/Batch finished\./).waitFor();
+  await page
+    .locator('#batch-status')
+    .filter({ hasText: /Batch finished\./ })
+    .waitFor();
   assert.equal(batchCalls, batchCount);
   assert.equal(await page.locator('#batch-results a').count(), batchCount);
+  await page.locator('#drawer-close').click();
+  await page.locator('#models button').first().click();
   await page.locator('#clear-key').click();
   assert.equal(await page.locator('#api-key').inputValue(), '');
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
-  await page.screenshot({ path: join(tmpdir(), 'byokit-verification-mobile.png'), fullPage: true });
+  await page.locator('#drawer-close').click();
+  await page.locator('#batch-clear').click();
+  await page.locator('.batch-pick:not(:disabled)').first().check();
+  await page.locator('#provider-filter').selectOption('openai');
+  await page.locator('.batch-pick:not(:disabled)').first().check();
+  assert.match(await page.locator('#batch-count').textContent(), /2 models selected/);
+  await page.locator('#model-search').fill('no-match-fixture');
+  assert.match(await page.locator('#batch-count').textContent(), /2 models selected/);
+  await page.locator('#model-search').fill('');
+  await page.locator('#batch-open').click();
+  assert.equal(await page.locator('#batch-keys input').count(), 2);
+  await page.locator('#batch-keys [data-provider="deepseek"]').fill('deep-batch-key');
+  await page.locator('#batch-keys [data-provider="openai"]').fill('open-batch-key');
+  let releaseBatch,
+    mixedCalls = 0;
+  const gate = new Promise((resolve) => {
+    releaseBatch = resolve;
+  });
+  await page.route('https://api.deepseek.com/**', async (route) => {
+    mixedCalls++;
+    assert.equal(route.request().headers().authorization, 'Bearer deep-batch-key');
+    await gate;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ choices: [{ message: { content: 'OK' } }] }),
+    });
+  });
+  await page.route('https://api.openai.com/**', async (route) => {
+    mixedCalls++;
+    assert.equal(route.request().headers().authorization, 'Bearer open-batch-key');
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ choices: [{ message: { content: 'OK' } }] }),
+    });
+  });
+  await page.locator('#batch-confirm-send').click();
+  await page.getByText('Calling provider…', { exact: true }).waitFor();
+  await page.locator('#drawer-close').click();
+  await page.locator('#provider-filter').selectOption('deepseek');
+  await page.locator('#batch-open').click();
+  assert.equal(await page.locator('#batch-confirm-send').isDisabled(), true);
+  releaseBatch();
+  await page
+    .getByText(/Batch finished\./, { exact: false })
+    .first()
+    .waitFor();
+  assert.equal(mixedCalls, 2);
+  assert.equal(await page.locator('#batch-results a').count(), 2);
+  const privateRecords = await page.evaluate(() =>
+    localStorage.getItem('byokit.inference-verifications.v1'),
+  );
+  assert.ok(
+    !privateRecords.includes('deep-batch-key') && !privateRecords.includes('open-batch-key'),
+  );
+  await page.locator('#drawer-close').click();
+  await page.locator('#batch-open').click();
+  assert.equal(await page.locator('#batch-results a').count(), 2);
+  assert.ok(
+    await page
+      .locator('#verification-drawer')
+      .evaluate((el) => el.getBoundingClientRect().width <= innerWidth),
+  );
+  await page.locator('#verification-drawer').evaluate((el) => {
+    el.scrollTop = 0;
+  });
+  const mobileDrawer = await page.locator('#verification-drawer').boundingBox();
+  assert.equal(mobileDrawer.x, 0);
+  assert.equal(mobileDrawer.y, 0);
+  assert.equal(mobileDrawer.width, 390);
+  await page.screenshot({ path: join(tmpdir(), 'byokit-verification-mobile.png') });
   await page.setViewportSize({ width: 1440, height: 1050 });
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({
     path: join(tmpdir(), 'byokit-verification-desktop.png'),
-    fullPage: true,
   });
   assert.ok(moduleURLs.length >= 10);
   for (const url of moduleURLs)

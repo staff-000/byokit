@@ -1,13 +1,22 @@
 import { verifyInference, requestFor } from './inference.js';
 export const MAX_BATCH_REQUESTS = 10;
-export function validateBatch(jobs, key) {
-  if (typeof key !== 'string' || !key.trim()) throw new Error('Enter this provider’s API key.');
+function providerKey(keys, providerId) {
+  return typeof keys === 'string'
+    ? keys
+    : Object.hasOwn(keys || {}, providerId)
+      ? keys[providerId]
+      : '';
+}
+export function validateBatch(jobs, keys) {
   if (!Array.isArray(jobs) || !jobs.length || jobs.length > MAX_BATCH_REQUESTS)
     throw new Error('Choose between 1 and 10 models for a batch.');
   const provider = jobs[0].providerId,
     ids = new Set();
   for (const job of jobs) {
-    if (job.providerId === 'local' || job.providerId !== provider)
+    const key = providerKey(keys, job.providerId);
+    if (typeof key !== 'string' || !key.trim())
+      throw new Error(`Enter the API key for ${job.providerId}.`);
+    if (job.providerId === 'local' || (typeof keys === 'string' && job.providerId !== provider))
       throw new Error('A batch must use one hosted provider and its own API key.');
     if (ids.has(job.offeringId)) throw new Error('Duplicate batch model.');
     ids.add(job.offeringId);
@@ -16,15 +25,18 @@ export function validateBatch(jobs, key) {
 }
 export async function runBatch(
   jobs,
-  key,
+  keys,
   { signal, onResult = () => {}, verify = verifyInference } = {},
 ) {
-  validateBatch(jobs, key);
+  jobs = jobs.map((job) => ({ ...job }));
+  keys = typeof keys === 'string' ? keys : Object.fromEntries(Object.entries(keys || {}));
+  validateBatch(jobs, keys);
   const entries = [];
-  let stopped = false;
+  const stopped = new Set();
   for (const job of jobs) {
+    const key = providerKey(keys, job.providerId);
     let entry;
-    if (stopped || signal?.aborted)
+    if (stopped.has(job.providerId) || signal?.aborted)
       entry = {
         offeringId: job.offeringId,
         status: 'skipped',
@@ -40,16 +52,22 @@ export async function runBatch(
           ? { offeringId: job.offeringId, status: 'canceled', error: 'Call canceled.' }
           : { offeringId: job.offeringId, status: 'passed', result };
       } catch (error) {
-        const safe = String(error.message || 'Call failed.')
-          .split(key)
-          .join('[redacted]');
+        const safe = Object.values(typeof keys === 'string' ? { key: keys } : keys)
+          .filter(Boolean)
+          .reduce(
+            (message, secret) => message.split(secret).join('[redacted]'),
+            String(error.message || 'Call failed.'),
+          );
         entry = {
           offeringId: job.offeringId,
           status: signal?.aborted ? 'canceled' : 'failed',
           error: safe,
         };
-        stopped =
-          ['NETWORK_ERROR', 'TIMEOUT'].includes(error.code) || /HTTP (401|402|403|429)/.test(safe);
+        if (
+          ['NETWORK_ERROR', 'TIMEOUT'].includes(error.code) ||
+          /HTTP (401|402|403|429)/.test(safe)
+        )
+          stopped.add(job.providerId);
       }
     }
     entries.push(entry);

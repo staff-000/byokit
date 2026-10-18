@@ -34,143 +34,186 @@
         directly to the selected provider. It is not saved in browser storage, included in records,
         or sent to byokit. Refreshing or leaving the page clears it.
       </div>
-      <section id="call-panel" class="call-panel" aria-labelledby="selected-name">
-        <div class="call-heading">
-          <div>
-            <p class="eyebrow">SELECTED MODEL</p>
-            <h2 id="selected-name">Loading catalog…</h2>
-            <code id="selected-id"></code>
-          </div>
-          <div class="call-heading-actions">
-            <button
-              id="next-unverified"
-              type="button"
-              class="small-button"
-              title="Skip to next unverified model"
-            >
-              Next unverified ↻</button
-            ><a id="provider-docs" class="text-link" target="_blank" rel="noopener noreferrer"
-              >Provider docs ↗</a
-            >
-          </div>
+      <dialog id="verification-drawer" aria-label="Model verification">
+        <div class="drawer-heading">
+          <strong>Model verification</strong
+          ><button id="drawer-close" type="button" class="small-button">Close</button>
         </div>
-        <form id="verify-form">
-          <div class="call-fields">
-            <label
-              >API key <span id="key-optional"></span
-              ><input
-                id="api-key"
-                type="password"
-                autocomplete="off"
-                autocapitalize="off"
-                spellcheck="false"
-                placeholder="Paste your provider’s key"
-                aria-describedby="key-note" /></label
-            ><label>API protocol<select id="protocol"></select></label>
-          </div>
-          <p id="cost-estimate" class="fine cost-estimate" role="status" aria-live="polite">
-            Calculating estimated cost…
-          </p>
-          <p id="key-note" class="fine">
-            Use a key for the selected provider. A small inference call may use your credits.
-          </p>
-          <div id="local-fields" class="call-fields" hidden>
-            <label
-              >Server URL<input
-                id="endpoint"
-                type="url"
-                value="http://localhost:11434/v1"
-                autocomplete="off" /></label
-            ><label
-              >Served model ID<input
-                id="local-model"
-                type="text"
-                placeholder="Your installed model ID"
-                autocomplete="off"
-            /></label>
-          </div>
-          <p class="call-destination">Request goes directly to <code id="destination"></code></p>
-          <details class="call-settings">
-            <summary>Prompt and output limit</summary>
-            <label
-              >Prompt<textarea id="prompt" rows="2" maxlength="8000">
-Count from 1 to 50 separated by spaces: 1 2 3...</textarea></label
-            ><label
-              >Maximum output tokens<input
-                id="max-tokens"
-                type="number"
-                value="128"
-                min="16"
-                max="8192"
-            /></label>
-            <p class="fine">
-              Short prompt benchmark minimizes time-to-first-token overhead for clean speed
-              measurement.
-            </p>
-          </details>
-          <details id="request-example" class="call-settings">
-            <summary>Copy this API call</summary>
-            <p class="fine">
-              This matches the selected endpoint, model, prompt, and output limit. Examples run in
-              Node.js, Python, or your terminal and use the <code>API_KEY</code> environment
-              variable. Your entered key is never included.
-            </p>
-            <div class="language-tabs" role="group" aria-label="Request example language">
-              <button
-                type="button"
-                data-request-language="javascript"
-                class="active"
-                aria-pressed="true"
-              >
-                JavaScript / TS</button
-              ><button type="button" data-request-language="python" aria-pressed="false">
-                Python</button
-              ><button type="button" data-request-language="curl" aria-pressed="false">cURL</button
-              ><button id="copy-request" type="button" class="copy-icon">Copy</button>
+        <section id="call-panel" class="call-panel" aria-labelledby="selected-name">
+          <div class="call-heading">
+            <div>
+              <p class="eyebrow">SELECTED MODEL</p>
+              <h2 id="selected-name">Loading catalog…</h2>
+              <code id="selected-id"></code>
             </div>
-            <pre id="request-code" class="request-code"></pre>
-            <p class="fine">
-              SDK calls return an OpenAI-compatible completion; cURL returns the provider's native
-              response. Making this request may use credits; displaying or copying it makes no
-              request.
-            </p>
-          </details>
-          <div class="call-actions">
-            <button id="verify" type="submit" class="button primary action-highlight">
-              Verify model · earn a badge ↗</button
-            ><button id="cancel" type="button" class="small-button" hidden>Cancel</button
-            ><button id="clear-key" type="button" class="text-button">Clear API key</button>
+            <div class="call-heading-actions">
+              <button
+                id="next-unverified"
+                type="button"
+                class="small-button"
+                title="Skip to next unverified model"
+              >
+                Next unverified ↻</button
+              ><a id="provider-docs" class="text-link" target="_blank" rel="noopener noreferrer"
+                >Provider docs ↗</a
+              >
+            </div>
           </div>
-          <p id="badge-hint" class="fine reward-hint">
-            <strong>Earn a Model Verifier badge.</strong> A successful hosted-model call plus a
-            published GitHub report earns your badge.
+          <form id="verify-form">
+            <div class="call-fields">
+              <label
+                >API key <span id="key-optional"></span
+                ><input
+                  id="api-key"
+                  type="password"
+                  autocomplete="off"
+                  autocapitalize="off"
+                  spellcheck="false"
+                  placeholder="Paste your provider’s key"
+                  aria-describedby="key-note" /></label
+              ><label>API protocol<select id="protocol"></select></label>
+            </div>
+            <p id="cost-estimate" class="fine cost-estimate" role="status" aria-live="polite">
+              Calculating estimated cost…
+            </p>
+            <p id="key-note" class="fine">
+              Use a key for the selected provider. A small inference call may use your credits.
+            </p>
+            <div id="local-fields" class="call-fields" hidden>
+              <label
+                >Server URL<input
+                  id="endpoint"
+                  type="url"
+                  value="http://localhost:11434/v1"
+                  autocomplete="off" /></label
+              ><label
+                >Served model ID<input
+                  id="local-model"
+                  type="text"
+                  placeholder="Your installed model ID"
+                  autocomplete="off"
+              /></label>
+            </div>
+            <p class="call-destination">Request goes directly to <code id="destination"></code></p>
+            <details class="call-settings">
+              <summary>Prompt and output limit</summary>
+              <label
+                >Prompt<textarea id="prompt" rows="2" maxlength="8000">
+Count from 1 to 50 separated by spaces: 1 2 3...</textarea></label
+              ><label
+                >Maximum output tokens<input
+                  id="max-tokens"
+                  type="number"
+                  value="128"
+                  min="16"
+                  max="8192"
+              /></label>
+              <p class="fine">
+                Short prompt benchmark minimizes time-to-first-token overhead for clean speed
+                measurement.
+              </p>
+            </details>
+            <details id="request-example" class="call-settings">
+              <summary>Copy this API call</summary>
+              <p class="fine">
+                This matches the selected endpoint, model, prompt, and output limit. Examples run in
+                Node.js, Python, or your terminal and use the <code>API_KEY</code> environment
+                variable. Your entered key is never included.
+              </p>
+              <div class="language-tabs" role="group" aria-label="Request example language">
+                <button
+                  type="button"
+                  data-request-language="javascript"
+                  class="active"
+                  aria-pressed="true"
+                >
+                  JavaScript / TS</button
+                ><button type="button" data-request-language="python" aria-pressed="false">
+                  Python</button
+                ><button type="button" data-request-language="curl" aria-pressed="false">
+                  cURL</button
+                ><button id="copy-request" type="button" class="copy-icon">Copy</button>
+              </div>
+              <pre id="request-code" class="request-code"></pre>
+              <p class="fine">
+                SDK calls return an OpenAI-compatible completion; cURL returns the provider's native
+                response. Making this request may use credits; displaying or copying it makes no
+                request.
+              </p>
+            </details>
+            <div class="call-actions">
+              <button id="verify" type="submit" class="button primary action-highlight">
+                Verify model · earn a badge ↗</button
+              ><button id="cancel" type="button" class="small-button" hidden>Cancel</button
+              ><button id="clear-key" type="button" class="text-button">Clear API key</button>
+            </div>
+            <p id="badge-hint" class="fine reward-hint">
+              <strong>Earn a Model Verifier badge.</strong> A successful hosted-model call plus a
+              published GitHub report earns your badge.
+            </p>
+          </form>
+          <p id="call-status" class="call-status" role="status" aria-live="polite">
+            No call has been made.
           </p>
-        </form>
-        <p id="call-status" class="call-status" role="status" aria-live="polite">
-          No call has been made.
-        </p>
-        <div class="call-actions">
-          <a
-            id="share-verification"
-            class="button primary"
-            target="_blank"
-            rel="noopener noreferrer"
-            hidden
-            >Share on GitHub · claim badge ↗</a
-          ><button id="next-unverified-advance" class="button secondary" type="button" hidden>
-            Next unverified model →</button
-          ><button id="check-publication" class="small-button" type="button" hidden>
-            Check publication
-          </button>
-        </div>
+          <div class="call-actions">
+            <a
+              id="share-verification"
+              class="button primary"
+              target="_blank"
+              rel="noopener noreferrer"
+              hidden
+              >Share on GitHub · claim badge ↗</a
+            ><button id="next-unverified-advance" class="button secondary" type="button" hidden>
+              Next unverified model →
+            </button>
+          </div>
+          <pre id="response-text" class="response-text" hidden></pre>
+        </section>
+        <section id="batch-confirm" hidden aria-labelledby="batch-confirm-title">
+          <h2 id="batch-confirm-title">Verify selected models</h2>
+          <p id="batch-confirm-description"></p>
+          <ul id="batch-confirm-models"></ul>
+          <div id="batch-keys" class="call-fields"></div>
+          <label
+            >Prompt<textarea id="batch-prompt" rows="2" maxlength="8000">
+Count from 1 to 50 separated by spaces: 1 2 3...</textarea></label
+          ><label
+            >Maximum output tokens<input
+              id="batch-max-tokens"
+              type="number"
+              value="128"
+              min="16"
+              max="8192"
+          /></label>
+          <p class="fine">
+            This uses your provider credits. No request is sent until you confirm. Authentication,
+            quota, or connection errors skip the remaining models for that provider. Successful
+            checks can be shared individually on GitHub; publication is limited to 10 reports per
+            contributor per day.
+          </p>
+          <div class="record-actions">
+            <button id="batch-confirm-cancel" type="button" class="small-button">
+              Back to table</button
+            ><button id="batch-confirm-send" type="button" class="button primary action-highlight">
+              Send requests
+            </button>
+          </div>
+        </section>
+        <p id="batch-status" class="fine" role="status"></p>
+        <button id="drawer-batch-cancel" type="button" class="small-button" hidden>
+          Cancel batch
+        </button>
+        <div id="batch-results" class="batch-results"></div>
+        <button id="check-publication" class="small-button" type="button" hidden>
+          Check publication
+        </button>
         <p id="publication-status" class="fine" role="status" aria-live="polite"></p>
         <a id="earned-badge" class="earned-badge" hidden
           ><img id="earned-badge-image" alt="Your byokit Model Verifier badge" /><span
             >Your badge is ready — view and share it ↗</span
           ></a
         >
-        <pre id="response-text" class="response-text" hidden></pre>
-      </section>
+      </dialog>
       <section id="playground" class="section playground-section">
         <div class="section-head">
           <div>
@@ -277,41 +320,24 @@ Your console output will appear here.</pre>
         </details>
         <div class="batch-toolbar">
           <div>
+            <p id="selection-status" class="fine" role="status"></p>
             <strong id="batch-count">0 models selected</strong>
             <p class="fine">
-              Batch one provider at a time, up to 10 models. Use that provider’s key in the form
-              above. Requests run one at a time without retries.
+              Select up to 10 models across providers. Enter each provider’s key in the verification
+              drawer. Requests run one at a time without retries.
             </p>
           </div>
           <div class="record-actions">
             <button id="batch-select-shown" type="button" class="small-button">
               Select up to 10 shown</button
             ><button id="batch-clear" type="button" class="text-button">Clear selection</button
-            ><button id="batch-open" type="button" class="button primary" disabled>
-              Review batch</button
+            ><button id="batch-open" type="button" class="button primary action-highlight" disabled>
+              Verify selected</button
             ><button id="batch-cancel" type="button" class="small-button" hidden>
               Cancel batch
             </button>
           </div>
         </div>
-        <p id="batch-status" class="fine" role="status"></p>
-        <div id="batch-results" class="batch-results"></div>
-        <dialog id="batch-confirm" aria-labelledby="batch-confirm-title">
-          <h2 id="batch-confirm-title">Confirm batch verification</h2>
-          <p id="batch-confirm-description"></p>
-          <ul id="batch-confirm-models"></ul>
-          <p class="fine">
-            This uses your provider credits. No request is sent until you confirm. Authentication,
-            quota, or connection errors stop the remaining queue. Successful checks can be shared
-            individually on GitHub; publication is limited to 10 reports per contributor per day.
-          </p>
-          <div class="record-actions">
-            <button id="batch-confirm-cancel" type="button" class="small-button">Cancel</button
-            ><button id="batch-confirm-send" type="button" class="button primary">
-              Send requests
-            </button>
-          </div>
-        </dialog>
         <div class="table-scroll verification-table">
           <table class="models verification-models">
             <caption class="sr-only">
@@ -320,7 +346,7 @@ Your console output will appear here.</pre>
             <thead>
               <tr>
                 <th scope="col" class="batch-column">
-                  <span class="column-title sr-only">Batch</span>
+                  <span class="column-title">Select</span>
                 </th>
                 <th scope="col" class="identity-column">
                   <span class="column-title">Provider / model</span>

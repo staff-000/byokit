@@ -120,3 +120,68 @@ test('China exclusions use library tags, not a separate audience', () => {
     ),
   );
 });
+
+test('cross-provider batches validate every key before sending and isolate provider failures', async () => {
+  const mixed = [
+    jobs()[0],
+    { ...jobs()[0], offeringId: 'openai/fixture', providerId: 'openai' },
+    jobs()[1],
+  ];
+  let calls = [];
+  await assert.rejects(
+    runBatch(mixed, { deepseek: 'deep-secret' }, { verify: async () => calls.push('unexpected') }),
+  );
+  assert.deepEqual(calls, []);
+  const entries = await runBatch(
+    mixed,
+    { deepseek: 'deep-secret', openai: 'open-secret' },
+    {
+      verify: async (job, key) => {
+        calls.push(job.providerId);
+        assert.equal(key, job.providerId === 'deepseek' ? 'deep-secret' : 'open-secret');
+        if (job.providerId === 'deepseek') throw new Error('HTTP 401 deep-secret open-secret');
+        return { text: 'OK' };
+      },
+    },
+  );
+  assert.deepEqual(calls, ['deepseek', 'openai']);
+  assert.deepEqual(
+    entries.map((e) => e.status),
+    ['failed', 'passed', 'skipped'],
+  );
+  assert.ok(!JSON.stringify(entries).includes('secret'));
+});
+
+test('unsupported providers send no requests and inherited credentials are rejected', async () => {
+  let calls = 0;
+  const verify = async () => {
+    calls++;
+  };
+  await assert.rejects(
+    runBatch(
+      [{ ...jobs()[0], providerId: 'unreviewed-provider' }],
+      { 'unreviewed-provider': 'secret' },
+      { verify },
+    ),
+  );
+  await assert.rejects(runBatch(jobs(), Object.create({ deepseek: 'secret' }), { verify }));
+  assert.equal(calls, 0);
+});
+
+test('a running batch captures jobs and credentials before callers mutate them', async () => {
+  const selected = jobs(),
+    keys = { deepseek: 'original-key' };
+  const seen = [];
+  await runBatch(selected, keys, {
+    verify: async (job, key) => {
+      seen.push([job.modelId, key]);
+      selected[1].modelId = 'changed';
+      keys.deepseek = 'changed';
+      return { text: 'OK' };
+    },
+  });
+  assert.deepEqual(seen, [
+    ['test-0', 'original-key'],
+    ['test-1', 'original-key'],
+  ]);
+});

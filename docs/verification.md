@@ -92,12 +92,22 @@ releases. Unknown numeric values remain last. On mobile, the table header become
 a filter grid and results become labeled cards. Unknown
 metadata is shown as unknown; local setup entries keep their own URL/protocol.
 
-Select up to ten hosted models from one provider, enter that provider's key, then
-click **Review batch**. The dialog shows the exact model list, maximum request
-count, provider, and per-request output budget. **Send N requests** is required
-before any inference; canceling the dialog sends none. Calls run sequentially,
-without retries. Cancel/editing settings aborts the current call and queued work.
-Authentication, quota/rate-limit, timeout, and network errors stop the queue.
-Already completed successes remain saved. Share each success separately through
-its GitHub link; the existing ten-publications-per-day limit still applies.
-Batch checks never send a provider's key to another provider or save it in records.
+Select up to ten hosted models across providers, then click **Verify selected**.
+Selections survive filtering and pagination. The sticky selection bar keeps the
+selected count and progress visible. Clicking a row or **Verify** opens the same
+verification drawer without jumping to the top; on mobile it fills the screen.
+
+The drawer groups selected models by provider and asks for each provider's API key.
+Review the shared prompt and output budget, then click **Send N requests**. All
+credentials and settings are validated before any call. Calls run sequentially,
+without retries, using only the matching provider's key. Authentication, quota,
+timeout, and network errors skip the remaining models for that provider while
+other providers continue. Cancel stops the entire queue.
+
+Closing the drawer leaves a running verification active; reopen it from the
+selection bar to see progress and individual results. Browsing or changing table
+filters does not interrupt a run. Already completed successes remain saved. Share
+each success separately through its GitHub link; the existing ten-publications-per-day
+limit still applies. Keys stay only in page memory and never enter saved records.
+Local-server entries support single-model verification only. Single-model checks
+retain their baseline call and speed benchmark (up to two requests).

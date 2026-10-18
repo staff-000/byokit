@@ -208,8 +208,13 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
     }
     const count = Math.min(2, picks.length),
       before = calls;
+    change('provider-filter', 'openai');
+    assert.match($('#batch-count').textContent, /2 models selected/);
+    change('provider-filter', 'deepseek');
+    assert.equal(document.querySelectorAll('.batch-pick:checked').length, 2);
     $('#batch-open').click();
-    assert.equal($('#batch-confirm').open, true);
+    assert.equal($('#verification-drawer').open, true);
+    change('batch-prompt', 'private fixture prompt');
     assert.match($('#batch-confirm-description').textContent, new RegExp(`up to ${count} AI`));
     assert.equal(calls, before);
     $('#batch-confirm-cancel').click();
