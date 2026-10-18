@@ -73,6 +73,12 @@ test('JavaScript and Python produce identical classifications and community asse
     }),
     report('quota', failure({ status: 402 })),
   ];
+  // Private browser observations do not identify a community contributor.
+  const anonymous = { ...records[0], id: 'browser-observation' };
+  delete anonymous.contributor;
+  records.push(anonymous);
+  const emptyContributor = { ...anonymous, id: 'empty-contributor', contributor: '' };
+  records.push(emptyContributor);
   const input = { fixtures, records, now };
   const py = spawnSync(
     'python3',
@@ -87,6 +93,16 @@ test('JavaScript and Python produce identical classifications and community asse
     attempts: fixtures.map((f) => classifyVerificationError(f.error, f.options)),
     community: communityAssessment(records, { now }),
   });
+  assert.equal(
+    communityAssessment([anonymous, emptyContributor], { now }).successfulContributors,
+    0,
+  );
+  assert.equal(communityAssessment(records, { now }).successfulContributors, 1);
+  const filtered = verificationSummary({ verifications: records }, 'deepseek/test', {
+    asOf: new Date(now).toISOString(),
+    contributor: 'GITHUB:SOMEONE',
+  });
+  assert.equal(filtered.records.length, 2);
 });
 test('fresh successes survive issues; stale and future observations stay separate', () => {
   const records = [

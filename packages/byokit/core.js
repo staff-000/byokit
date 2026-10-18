@@ -1788,7 +1788,11 @@ export function verificationSummary(
     data?._verificationsByOffering?.get(offeringId) ||
     (data?.verifications || []).filter((r) => r.offeringId === offeringId);
   const records = contributor
-    ? source.filter((r) => r.contributor.toLowerCase() === contributor.toLowerCase())
+    ? source.filter(
+        (r) =>
+          typeof r.contributor === 'string' &&
+          r.contributor.toLowerCase() === contributor.toLowerCase(),
+      )
     : source;
   const community = communityAssessment(records, { now: Date.parse(asOf), maxAgeDays });
   return {

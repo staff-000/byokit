@@ -316,7 +316,9 @@ export function communityAssessment(records, { now = Date.now(), maxAgeDays = 90
     counts[reason] = (counts[reason] || 0) + 1;
   }
   const identities = new Set(
-    successes.map((r) => r.id.match(/^website:([1-9]\d*):/)?.[1] || r.contributor.toLowerCase()),
+    successes
+      .filter((r) => typeof r.contributor === 'string' && r.contributor.trim())
+      .map((r) => r.id.match(/^website:([1-9]\d*):/)?.[1] || r.contributor.toLowerCase()),
   );
   return {
     status: successes.length

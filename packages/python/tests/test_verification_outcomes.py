@@ -8,6 +8,33 @@ from test_calls import Connection, Response, model
 
 
 class VerificationOutcomesTests(unittest.TestCase):
+    def test_anonymous_browser_records_do_not_count_as_contributors(self):
+        anonymous = {
+            "id": "browser-observation",
+            "offeringId": "deepseek/test",
+            "checkedAt": "2026-10-18T10:00:00Z",
+            "result": "passed",
+            "checks": ["textGeneration"],
+        }
+        records = [
+            anonymous,
+            {**anonymous, "id": "empty-contributor", "contributor": ""},
+            {**anonymous, "id": "published", "contributor": "github:someone"},
+        ]
+        data = {"verifications": records}
+        summary = byokit.verification_summary(
+            data, "deepseek/test", as_of="2026-10-18T12:00:00Z"
+        )
+        self.assertEqual(summary["community"]["successfulContributors"], 1)
+        self.assertEqual(summary["community"]["status"], "verified")
+        filtered = byokit.verification_summary(
+            data,
+            "deepseek/test",
+            as_of="2026-10-18T12:00:00Z",
+            contributor="GITHUB:SOMEONE",
+        )
+        self.assertEqual([r["id"] for r in filtered["records"]], ["published"])
+
     def test_shared_classification_fixtures(self):
         fixtures = json.loads(
             (

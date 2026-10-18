@@ -424,6 +424,7 @@ def community_assessment(records, *, now, max_age_days=90):
         if (m := re.match(r"^website:([1-9]\d*):", r["id"]))
         else r["contributor"].lower()
         for r in successes
+        if isinstance(r.get("contributor"), str) and r["contributor"].strip()
     }
     return {
         "status": "verified"

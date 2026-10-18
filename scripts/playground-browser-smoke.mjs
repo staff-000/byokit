@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import * as byokit from '../packages/byokit/catalog.js';
+import { successRecord } from '../website/inference.js';
 export async function playgroundSmoke(page) {
   const status = page.locator('#playground-status'),
     output = page.locator('#playground-output'),
@@ -13,6 +14,28 @@ export async function playgroundSmoke(page) {
     JSON.parse(await output.textContent()).map((m) => m.model),
     expected,
   );
+  const model = byokit.getModels({ local: false })[0];
+  const record = successRecord(
+    {
+      offeringId: model.id,
+      providerId: model.providerId,
+      modelId: model.apiModelId,
+      protocol: model.connection.protocol,
+      maxTokens: 128,
+    },
+    { checkedAt: new Date().toISOString(), latencyMs: 100, usage: {} },
+  );
+  await page.evaluate((record) => {
+    localStorage.setItem('byokit.inference-verifications.v1', JSON.stringify([record]));
+  }, record);
+  await page.locator('#playground-example').selectOption('matchers');
+  await page.locator('#playground-run').click();
+  await page
+    .getByText('Finished. Output comes from the real byokit catalog.', { exact: true })
+    .waitFor();
+  assert.match(await output.textContent(), /Found \d+ matching models:/);
+  assert.ok(!(await output.textContent()).includes('TypeError'));
+  await page.evaluate(() => localStorage.removeItem('byokit.inference-verifications.v1'));
   await editor.fill(
     'console.log(byokit.getModels({ local: false, limit: 2 }).map(m => m.apiModelId))',
   );

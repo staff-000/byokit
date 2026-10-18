@@ -1972,7 +1972,11 @@ def verification_summary(
     records = [
         r
         for r in (records_source or [])
-        if not contributor or r["contributor"].lower() == contributor.lower()
+        if not contributor
+        or (
+            isinstance(r.get("contributor"), str)
+            and r["contributor"].lower() == contributor.lower()
+        )
     ]
     community = community_assessment(records, now=now, max_age_days=max_age_days)
     return {

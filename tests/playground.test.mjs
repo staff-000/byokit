@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises';
 import { buildPlaygroundWorker } from '../scripts/build-playground.mjs';
 import { playgroundExamples } from '../website/playground-examples.js';
 import * as byokit from '../packages/byokit/catalog.js';
+import { successRecord } from '../website/inference.js';
 const source = await buildPlaygroundWorker();
 async function execute(code, verifications) {
   const messages = [];
@@ -47,6 +48,30 @@ test('all editable examples run offline and preserve custom-model unknown metada
   }
   const custom = await execute(playgroundExamples.custom.code);
   assert.equal(JSON.parse(custom[0].text).verification.status, 'unverified');
+});
+test('matcher example works with anonymous browser verification records', async () => {
+  const offeringId = 'openai/gpt-5.6-terra';
+  const record = successRecord(
+    {
+      offeringId,
+      providerId: 'openai',
+      modelId: 'gpt-5.6-terra',
+      protocol: 'chat',
+      maxTokens: 128,
+    },
+    { checkedAt: new Date().toISOString(), latencyMs: 100, usage: {} },
+  );
+  assert.equal(record.contributor, undefined);
+  const messages = await execute(playgroundExamples.matchers.code, [record]);
+  assert.equal(messages.at(-1).type, 'done', messages.at(-1).text);
+  assert.ok(messages.at(-1).models.some((m) => m.id === offeringId));
+  const summary = await execute(
+    `const model = byokit.getModels(byokit.COMPLETE, { local: false })
+      .find(m => m.id === '${offeringId}');
+    console.log(model.verification.community.successfulContributors);`,
+    [record],
+  );
+  assert.equal(summary[0].text, '0');
 });
 test('runner reports syntax/errors, awaits returned values and bounds output', async () => {
   assert.equal((await execute('const = ;')).at(-1).type, 'error');
