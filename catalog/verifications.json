@@ -1577,5 +1577,149 @@
     "adapter": "byokit-website@count-128-delta-v1:chat",
     "evidence": "https://github.com/staff-000/byokit/issues/10",
     "notes": "Community-reported succeeded chat attempt. Output budget 128; latency 1078 ms; speed 261.3 tokens/sec. GitHub author ID 249984446; submitted 2026-10-19T08:41:50Z; Provider call ran in the contributor’s browser."
+  },
+  {
+    "id": "website:213893042:173a18fd-7492-48c6-b02d-4ae51c2127b0",
+    "offeringId": "anthropic/claude-haiku-5-5",
+    "contributor": "github:ayr09",
+    "checkedAt": "2026-10-19T17:37:53.233Z",
+    "result": "passed",
+    "assessment": {
+      "attempt": {
+        "outcome": "succeeded",
+        "reason": null,
+        "scope": "request",
+        "certainty": "explicit",
+        "source": "client_error",
+        "classifierVersion": "1",
+        "retry": {
+          "action": "none",
+          "afterSeconds": null
+        }
+      },
+      "checks": {
+        "textGeneration": "passed",
+        "speed": "not_run"
+      },
+      "phases": [
+        {
+          "phase": "generation",
+          "attempt": {
+            "outcome": "succeeded",
+            "reason": null,
+            "scope": "request",
+            "certainty": "explicit",
+            "source": "client_error",
+            "classifierVersion": "1",
+            "retry": {
+              "action": "none",
+              "afterSeconds": null
+            }
+          }
+        }
+      ]
+    },
+    "checks": [
+      "textGeneration"
+    ],
+    "adapter": "byokit-website@1",
+    "evidence": "https://github.com/staff-000/byokit/issues/11",
+    "notes": "Community-reported succeeded anthropic attempt. Output budget 128; latency 1673 ms. GitHub author ID 213893042; submitted 2026-10-19T17:38:10Z; Provider call ran in the contributor’s browser."
+  },
+  {
+    "id": "website:213893042:6dfcb131-56ca-4a91-8c35-e102eb9f3b7a",
+    "offeringId": "anthropic/claude-sonnet-5-5",
+    "contributor": "github:ayr09",
+    "checkedAt": "2026-10-19T17:37:54.980Z",
+    "result": "passed",
+    "assessment": {
+      "attempt": {
+        "outcome": "succeeded",
+        "reason": null,
+        "scope": "request",
+        "certainty": "explicit",
+        "source": "client_error",
+        "classifierVersion": "1",
+        "retry": {
+          "action": "none",
+          "afterSeconds": null
+        }
+      },
+      "checks": {
+        "textGeneration": "passed",
+        "speed": "not_run"
+      },
+      "phases": [
+        {
+          "phase": "generation",
+          "attempt": {
+            "outcome": "succeeded",
+            "reason": null,
+            "scope": "request",
+            "certainty": "explicit",
+            "source": "client_error",
+            "classifierVersion": "1",
+            "retry": {
+              "action": "none",
+              "afterSeconds": null
+            }
+          }
+        }
+      ]
+    },
+    "checks": [
+      "textGeneration"
+    ],
+    "adapter": "byokit-website@1",
+    "evidence": "https://github.com/staff-000/byokit/issues/11",
+    "notes": "Community-reported succeeded anthropic attempt. Output budget 128; latency 1746 ms. GitHub author ID 213893042; submitted 2026-10-19T17:38:10Z; Provider call ran in the contributor’s browser."
+  },
+  {
+    "id": "website:213893042:fb73626a-3ed9-4459-a9d8-b6e8776de212",
+    "offeringId": "anthropic/claude-opus-5-5",
+    "contributor": "github:ayr09",
+    "checkedAt": "2026-10-19T17:37:56.953Z",
+    "result": "passed",
+    "assessment": {
+      "attempt": {
+        "outcome": "succeeded",
+        "reason": null,
+        "scope": "request",
+        "certainty": "explicit",
+        "source": "client_error",
+        "classifierVersion": "1",
+        "retry": {
+          "action": "none",
+          "afterSeconds": null
+        }
+      },
+      "checks": {
+        "textGeneration": "passed",
+        "speed": "not_run"
+      },
+      "phases": [
+        {
+          "phase": "generation",
+          "attempt": {
+            "outcome": "succeeded",
+            "reason": null,
+            "scope": "request",
+            "certainty": "explicit",
+            "source": "client_error",
+            "classifierVersion": "1",
+            "retry": {
+              "action": "none",
+              "afterSeconds": null
+            }
+          }
+        }
+      ]
+    },
+    "checks": [
+      "textGeneration"
+    ],
+    "adapter": "byokit-website@1",
+    "evidence": "https://github.com/staff-000/byokit/issues/11",
+    "notes": "Community-reported succeeded anthropic attempt. Output budget 128; latency 1972 ms. GitHub author ID 213893042; submitted 2026-10-19T17:38:10Z; Provider call ran in the contributor’s browser."
   }
 ]
