@@ -75,6 +75,29 @@ console.log(models.map(model => ({
   context: model.limits.context,
 })));`,
   },
+  textProcess: {
+    label: 'Text processing preset',
+    code: `const models = byokit.getModels({
+  providerIds: byokit.any(
+    byokit.ProviderId.Anthropic,
+    byokit.ProviderId.Google,
+    byokit.ProviderId.OpenAI,
+    byokit.ProviderId.DeepSeek,
+  ),
+  filters: {
+    tier: byokit.any(byokit.Tier.Flash, byokit.Tier.Workhorse),
+    output: byokit.exact(byokit.Modality.Text),
+    speciality: byokit.exact(byokit.Speciality.General),
+    releasedWithin: '1y',
+  },
+  dedupe: 2,
+});
+console.log(models.map(model => ({
+  provider: model.provider.name,
+  model: model.apiModelId,
+  context: model.limits.context,
+})));`,
+  },
   image: {
     label: 'Select image models',
     code: `// Use byokit.Contain to match models that output images (pure image or text+image)

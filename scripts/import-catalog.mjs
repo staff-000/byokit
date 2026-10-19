@@ -59,6 +59,7 @@ let catalog = {
     { id: 'china', providerIds: [] },
     { id: 'official-flagship', providerIds: [], offeringIds: [] },
     { id: 'official', providerIds: [], offeringIds: [] },
+    { id: 'text-process', providerIds: [] },
   ],
   assets: [],
 };
@@ -94,6 +95,8 @@ for (const [id, p] of Object.entries(upstream).sort(([a], [b]) => a.localeCompar
   });
   for (const preset of curation.presets)
     catalog.presets.find((x) => x.id === preset).providerIds.push(id);
+  if (['anthropic', 'google', 'openai', 'deepseek'].includes(id))
+    catalog.presets.find((x) => x.id === 'text-process')?.providerIds.push(id);
   const entries = Object.values(p.models || {}).sort(
     (a, b) =>
       (b.release_date || '').localeCompare(a.release_date || '') || a.id.localeCompare(b.id),
@@ -278,7 +281,8 @@ for (const id of ['ollama', 'local']) {
     price: { currency: 'USD', input: null, output: null },
     tags: ['deployment:local'],
   });
-  for (const p of catalog.presets) if (id === 'local' || p.id !== 'default') p.providerIds.push(id);
+  for (const p of catalog.presets)
+    if (p.id !== 'text-process' && (id === 'local' || p.id !== 'default')) p.providerIds.push(id);
 }
 const manualIndex = args.indexOf('--manual');
 const manual =

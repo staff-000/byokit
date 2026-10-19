@@ -17,6 +17,7 @@ export const Preset = Object.freeze({
   China: 'china',
   OfficialFlagship: 'official-flagship',
   Official: 'official-flagship',
+  TextProcess: 'text-process',
 });
 export const Country = Object.freeze({ China: 'cn', UnitedStates: 'us', France: 'fr' });
 export const Deployment = Object.freeze({
@@ -275,6 +276,7 @@ export const ModelList = Object.freeze({
   Global: 'global',
   OfficialFlagship: 'official-flagship',
   Official: 'official-flagship',
+  TextProcess: 'text-process',
 });
 export const LocalApi = Object.freeze({ OpenAI: 'openai-compatible', Ollama: 'ollama' });
 export const LifecycleBasis = Object.freeze({
@@ -312,4 +314,5 @@ export const DEFAULT = ModelList.Default,
   CHINA = ModelList.China,
   GLOBAL = ModelList.Global,
   OFFICIAL_FLAGSHIP = ModelList.OfficialFlagship,
-  OFFICIAL = ModelList.Official;
+  OFFICIAL = ModelList.Official,
+  TEXT_PROCESS = ModelList.TextProcess;

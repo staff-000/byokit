@@ -18,6 +18,7 @@ export declare enum Preset {
   China = 'china',
   OfficialFlagship = 'official-flagship',
   Official = 'official-flagship',
+  TextProcess = 'text-process',
 }
 
 export declare enum Country {
@@ -338,6 +339,7 @@ export declare enum ModelList {
   Global = 'global',
   OfficialFlagship = 'official-flagship',
   Official = 'official-flagship',
+  TextProcess = 'text-process',
 }
 
 export declare enum LocalApi {
@@ -386,4 +388,5 @@ export declare const DEFAULT: ModelList.Default,
   CHINA: ModelList.China,
   GLOBAL: ModelList.Global,
   OFFICIAL_FLAGSHIP: ModelList.OfficialFlagship,
-  OFFICIAL: ModelList.Official;
+  OFFICIAL: ModelList.Official,
+  TEXT_PROCESS: ModelList.TextProcess;

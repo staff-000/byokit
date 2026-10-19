@@ -19,6 +19,7 @@ class Preset(str, Enum):
     CHINA = "china"
     OFFICIAL_FLAGSHIP = "official-flagship"
     OFFICIAL = "official-flagship"
+    TEXT_PROCESS = "text-process"
 
 class Country(str, Enum):
     CHINA = "cn"
@@ -305,6 +306,7 @@ class ModelList(str, Enum):
     GLOBAL = "global"
     OFFICIAL_FLAGSHIP = "official-flagship"
     OFFICIAL = "official-flagship"
+    TEXT_PROCESS = "text-process"
 
 class LocalApi(str, Enum):
     OPEN_AI = "openai-compatible"
@@ -346,3 +348,4 @@ CHINA=ModelList.CHINA
 GLOBAL=ModelList.GLOBAL
 OFFICIAL_FLAGSHIP=ModelList.OFFICIAL_FLAGSHIP
 OFFICIAL=ModelList.OFFICIAL
+TEXT_PROCESS=ModelList.TEXT_PROCESS

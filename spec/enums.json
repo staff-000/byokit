@@ -16,7 +16,8 @@
     "Global": "global",
     "China": "china",
     "OfficialFlagship": "official-flagship",
-    "Official": "official-flagship"
+    "Official": "official-flagship",
+    "TextProcess": "text-process"
   },
   "Country": {
     "China": "cn",
@@ -302,7 +303,8 @@
     "China": "china",
     "Global": "global",
     "OfficialFlagship": "official-flagship",
-    "Official": "official-flagship"
+    "Official": "official-flagship",
+    "TextProcess": "text-process"
   },
   "LocalApi": {
     "OpenAI": "openai-compatible",

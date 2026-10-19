@@ -1383221,6 +1383221,15 @@
         "deepseek/deepseek-v4-pro",
         "zhipuai/glm-5.3"
       ]
+    },
+    {
+      "id": "text-process",
+      "providerIds": [
+        "anthropic",
+        "google",
+        "openai",
+        "deepseek"
+      ]
     }
   ],
   "assets": [

@@ -42,16 +42,16 @@ const py =
 await writeFile(
   new URL('../packages/byokit/enums.js', import.meta.url),
   js +
-    'export const DEFAULT=ModelList.Default, LIVE=ModelList.Live, COMPLETE=ModelList.Complete, CHINA=ModelList.China, GLOBAL=ModelList.Global, OFFICIAL_FLAGSHIP=ModelList.OfficialFlagship, OFFICIAL=ModelList.Official;\n',
+    'export const DEFAULT=ModelList.Default, LIVE=ModelList.Live, COMPLETE=ModelList.Complete, CHINA=ModelList.China, GLOBAL=ModelList.Global, OFFICIAL_FLAGSHIP=ModelList.OfficialFlagship, OFFICIAL=ModelList.Official, TEXT_PROCESS=ModelList.TextProcess;\n',
 );
 await writeFile(
   new URL('../packages/byokit/enums.d.ts', import.meta.url),
   ts +
-    'export declare const DEFAULT:ModelList.Default, LIVE:ModelList.Live, COMPLETE:ModelList.Complete, CHINA:ModelList.China, GLOBAL:ModelList.Global, OFFICIAL_FLAGSHIP:ModelList.OfficialFlagship, OFFICIAL:ModelList.Official;\n',
+    'export declare const DEFAULT:ModelList.Default, LIVE:ModelList.Live, COMPLETE:ModelList.Complete, CHINA:ModelList.China, GLOBAL:ModelList.Global, OFFICIAL_FLAGSHIP:ModelList.OfficialFlagship, OFFICIAL:ModelList.Official, TEXT_PROCESS:ModelList.TextProcess;\n',
 );
 await writeFile(
   new URL('../packages/python/src/byokit/enums.py', import.meta.url),
   py +
-    '\nDEFAULT=ModelList.DEFAULT\nLIVE=ModelList.LIVE\nCOMPLETE=ModelList.COMPLETE\nCHINA=ModelList.CHINA\nGLOBAL=ModelList.GLOBAL\nOFFICIAL_FLAGSHIP=ModelList.OFFICIAL_FLAGSHIP\nOFFICIAL=ModelList.OFFICIAL\n',
+    '\nDEFAULT=ModelList.DEFAULT\nLIVE=ModelList.LIVE\nCOMPLETE=ModelList.COMPLETE\nCHINA=ModelList.CHINA\nGLOBAL=ModelList.GLOBAL\nOFFICIAL_FLAGSHIP=ModelList.OFFICIAL_FLAGSHIP\nOFFICIAL=ModelList.OFFICIAL\nTEXT_PROCESS=ModelList.TEXT_PROCESS\n',
 );
 console.log(`Generated ${Object.keys(spec).length} enums for JavaScript/TypeScript and Python.`);

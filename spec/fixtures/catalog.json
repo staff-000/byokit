@@ -284,6 +284,12 @@
       "providerIds": [
         "test"
       ]
+    },
+    {
+      "id": "text-process",
+      "providerIds": [
+        "test"
+      ]
     }
   ]
 }

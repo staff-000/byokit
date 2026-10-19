@@ -23,6 +23,9 @@ import {
   not,
   Speciality,
   Tier,
+  ProviderId,
+  Preset,
+  TEXT_PROCESS,
 } from '../packages/byokit/index.js';
 import bundled, { getModels } from 'byokit/catalog';
 const fixture = () => JSON.parse(readFileSync('spec/fixtures/catalog.json'));
@@ -190,6 +193,44 @@ test('Global includes editorial providers and preserves local choices', () => {
   const run = pythonModels({ data, queries: [{ preset: 'global' }] });
   assert.equal(run.status, 0, run.stderr);
   assert.deepEqual(JSON.parse(run.stdout), [c.getModels({ preset: 'global' })]);
+});
+
+test('text-process preset filters Anthropic, Google, OpenAI, DeepSeek text models with dedupe', () => {
+  const explicit = getModels({
+    providerIds: any(
+      ProviderId.Anthropic,
+      ProviderId.Google,
+      ProviderId.OpenAI,
+      ProviderId.DeepSeek,
+    ),
+    filters: {
+      tier: any(Tier.Flash, Tier.Workhorse),
+      output: exact(Modality.Text),
+      speciality: exact(Speciality.General),
+      releasedWithin: '1y',
+    },
+    dedupe: 2,
+  });
+  const fromConstant = getModels(TEXT_PROCESS);
+  const fromPreset = getModels({ preset: Preset.TextProcess });
+  assert.equal(explicit.length, 11);
+  assert.deepEqual(
+    explicit.map((m) => m.id),
+    fromConstant.map((m) => m.id),
+  );
+  assert.deepEqual(
+    explicit.map((m) => m.id),
+    fromPreset.map((m) => m.id),
+  );
+  const pythonRun = pythonModels({
+    data: JSON.parse(readFileSync('catalog/catalog.json')),
+    queries: [{ list: 'text-process' }],
+  });
+  assert.equal(pythonRun.status, 0, pythonRun.stderr);
+  assert.deepEqual(
+    JSON.parse(pythonRun.stdout)[0].map((m) => m.id),
+    explicit.map((m) => m.id),
+  );
 });
 test('catalog namespace includes all helpers used by documented examples', async () => {
   const byokit = await import('byokit/catalog');

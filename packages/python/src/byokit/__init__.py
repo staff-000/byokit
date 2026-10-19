@@ -2302,6 +2302,32 @@ def _normalize_query(input=None, options=None):
         config["filters"] = filters
     if config.get("preset") == "official":
         config["preset"] = "official-flagship"
+    if (
+        config.get("list") in (ModelList.TEXT_PROCESS, "text-process")
+        or config.get("preset") == "text-process"
+    ):
+        config["preset"] = "text-process"
+        if "providerIds" not in config:
+            config["providerIds"] = [
+                ProviderId.ANTHROPIC,
+                ProviderId.GOOGLE,
+                ProviderId.OPEN_AI,
+                ProviderId.DEEP_SEEK,
+            ]
+        filters = dict(config.get("filters") or {})
+        if "tier" not in filters:
+            filters["tier"] = {"any": [Tier.FLASH, Tier.WORKHORSE]}
+        if "output" not in filters:
+            filters["output"] = {"exact": [Modality.TEXT]}
+        if "speciality" not in filters:
+            filters["speciality"] = {"exact": [Speciality.GENERAL]}
+        if "releasedWithin" not in filters:
+            filters["releasedWithin"] = "1y"
+        config["filters"] = filters
+        if "dedupe" not in config:
+            config["dedupe"] = 2
+        if "local" not in config:
+            config["local"] = False
     if config.get("list") not in (ModelList.COMPLETE, "complete"):
         filters = dict(config.get("filters") or {})
         if "callable" not in filters:

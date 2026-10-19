@@ -30,6 +30,7 @@ import {
   Country,
   Speciality,
   Tier,
+  ProviderId,
 } from './enums.js';
 export * from './enums.js';
 
@@ -2026,6 +2027,41 @@ function normalizeQuery(input = {}, options) {
   }
   if (config.preset === 'official') {
     config.preset = 'official-flagship';
+  }
+  if (
+    config.list === ModelList.TextProcess ||
+    config.list === 'text-process' ||
+    config.preset === 'text-process'
+  ) {
+    config.preset = 'text-process';
+    if (config.providerIds === undefined) {
+      config.providerIds = [
+        ProviderId.Anthropic,
+        ProviderId.Google,
+        ProviderId.OpenAI,
+        ProviderId.DeepSeek,
+      ];
+    }
+    const f = { ...(config.filters || {}) };
+    if (f.tier === undefined) {
+      f.tier = { any: [Tier.Flash, Tier.Workhorse] };
+    }
+    if (f.output === undefined) {
+      f.output = { exact: [Modality.Text] };
+    }
+    if (f.speciality === undefined) {
+      f.speciality = { exact: [Speciality.General] };
+    }
+    if (f.releasedWithin === undefined) {
+      f.releasedWithin = '1y';
+    }
+    config.filters = f;
+    if (config.dedupe === undefined) {
+      config.dedupe = 2;
+    }
+    if (config.local === undefined) {
+      config.local = false;
+    }
   }
   if (config.list !== ModelList.Complete && config.list !== 'complete') {
     const f = { ...(config.filters || {}) };

@@ -15,6 +15,8 @@ from byokit import (
     to_config_json,
     ModelSort,
     ModelList,
+    Preset,
+    TEXT_PROCESS,
     LIVE,
     Tag,
 )
@@ -463,7 +465,19 @@ class CoreTests(unittest.TestCase):
         })
         self.assertTrue(len(xor_result) > 0)
 
-
+    def test_text_process_preset(self):
+        cat = load_catalog()
+        models_const = cat.get_models(TEXT_PROCESS)
+        models_preset = cat.get_models({"preset": Preset.TEXT_PROCESS})
+        self.assertEqual(len(models_const), 11)
+        self.assertEqual(
+            [m["id"] for m in models_const],
+            [m["id"] for m in models_preset],
+        )
+        conf = to_config(TEXT_PROCESS)
+        self.assertEqual(conf["preset"], "text-process")
+        self.assertEqual(conf["dedupe"], 2)
+        self.assertEqual(validate_config(conf), [])
 
 
 if __name__ == "__main__":
