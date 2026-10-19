@@ -298,6 +298,56 @@ class CoreTests(unittest.TestCase):
         self.assertTrue(all(m["provider"]["id"] == "anthropic" for m in bundled_grouped["anthropic"]))
         self.assertTrue(all(m["provider"]["id"] == "openai" for m in bundled_grouped["openai"]))
 
+    def test_dedupe(self):
+        from byokit import Any, Exact, Tier, Modality, ModelList
+
+        bundled_cat = load_catalog()
+        flash_config = {
+            "list": ModelList.COMPLETE,
+            "providerIds": Any("openai", "google"),
+            "filters": {
+                "tier": Exact(Tier.FLASH),
+                "output": Exact(Modality.TEXT),
+                "releasedWithin": "1y",
+            },
+            "local": False,
+        }
+
+        # Without dedupe: 8 models
+        all_flash = bundled_cat.get_models(flash_config)
+        self.assertEqual(len(all_flash), 8)
+
+        # dedupe: 1 keeps 1 newest model per provider
+        deduped1 = bundled_cat.get_models(dict(flash_config, dedupe=1))
+        self.assertEqual(len(deduped1), 2)
+        google_model = next(m for m in deduped1 if m["providerId"] == "google")
+        openai_model = next(m for m in deduped1 if m["providerId"] == "openai")
+        self.assertEqual(google_model["id"], "google/gemini-3.8-flash")
+        self.assertEqual(openai_model["id"], "openai/gpt-6-luna")
+
+        # dedupe: True acts as dedupe: 1
+        deduped_true = bundled_cat.get_models(dict(flash_config, dedupe=True))
+        self.assertEqual([m["id"] for m in deduped_true], [m["id"] for m in deduped1])
+
+        # filters.dedupe: 1 also works
+        deduped_filter = bundled_cat.get_models(dict(flash_config, filters=dict(flash_config["filters"], dedupe=1)))
+        self.assertEqual([m["id"] for m in deduped_filter], [m["id"] for m in deduped1])
+
+        # dedupe: 2 keeps up to 2 models per provider
+        deduped2 = bundled_cat.get_models(dict(flash_config, dedupe=2))
+        self.assertEqual(len(deduped2), 4)
+        google_ids = [m["id"] for m in deduped2 if m["providerId"] == "google"]
+        openai_ids = [m["id"] for m in deduped2 if m["providerId"] == "openai"]
+        self.assertEqual(len(google_ids), 2)
+        self.assertEqual(len(openai_ids), 2)
+        self.assertIn("google/gemini-3.8-flash", google_ids)
+        self.assertIn("google/gemini-3.7-flash", google_ids)
+
+        # Invalid dedupe values are rejected
+        for invalid in [0, -1, 1.5, "invalid"]:
+            self.assertTrue(len(validate_config({"dedupe": invalid})) > 0)
+            self.assertTrue(len(validate_config({"filters": {"dedupe": invalid}})) > 0)
+
     def test_callable_default_and_override(self):
         from byokit import load_catalog, Exact
         bundled_cat = load_catalog()

@@ -475,6 +475,7 @@ export function validateConfig(c = {}) {
       'budget',
       'tasks',
       'includePreviews',
+      'dedupe',
     ],
     filters: [
       'speciality',
@@ -506,6 +507,7 @@ export function validateConfig(c = {}) {
       'official',
       'releasedWithin',
       'releaseChannel',
+      'dedupe',
     ],
     prefer: ['features', 'lowerCost'],
     ui: ['maxProviders', 'maxModelsPerProvider', 'allowCustomModel'],
@@ -716,6 +718,26 @@ export function validateConfig(c = {}) {
   for (const key of ['maxInputTokens', 'maxOutputTokens', 'overheadTokens'])
     if (c.budget?.[key] !== undefined && !finite(c.budget[key]))
       errors.push(`budget.${key} must be a nonnegative finite number`);
+  for (const [key, val] of [
+    ['dedupe', c.dedupe],
+    ['filters.dedupe', c.filters?.dedupe],
+  ]) {
+    if (val !== undefined && typeof val !== 'boolean' && (!Number.isInteger(val) || val < 1)) {
+      errors.push(`${key} must be a positive integer or boolean`);
+    }
+  }
+  for (const [key, val] of [
+    ['dedupe', c.dedupe],
+    ['filters.dedupe', c.filters?.dedupe],
+  ]) {
+    if (
+      val !== undefined &&
+      typeof val !== 'boolean' &&
+      (!Number.isInteger(val) || val < 1)
+    ) {
+      errors.push(`${key} must be a positive integer or boolean`);
+    }
+  }
   return errors;
 }
 function unknown(c) {
@@ -1389,6 +1411,29 @@ export class Catalog {
           (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
         );
       });
+      const dedupeLimit =
+        typeof config.dedupe === 'number'
+          ? config.dedupe
+          : config.dedupe === true
+            ? 1
+            : typeof config.filters?.dedupe === 'number'
+              ? config.filters.dedupe
+              : config.filters?.dedupe === true
+                ? 1
+                : undefined;
+      if (dedupeLimit !== undefined && dedupeLimit >= 1) {
+        const counts = new Map();
+        choices = choices.filter((o) => {
+          const m = this.models.get(o.modelId);
+          const spec = o.speciality || getModelSpeciality(o, m);
+          const tier = o.tier || getModelTier(o, m);
+          const key = `${spec}:${tier}`;
+          const count = counts.get(key) || 0;
+          if (count >= dedupeLimit) return false;
+          counts.set(key, count + 1);
+          return true;
+        });
+      }
       const cap = uncapped
         ? config.list === ModelList.Complete || config.providerIds || recommended
           ? Infinity

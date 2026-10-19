@@ -520,6 +520,7 @@ def validate_config(config):
             "budget",
             "tasks",
             "includePreviews",
+            "dedupe",
         ],
         "filters": [
             "speciality",
@@ -551,6 +552,7 @@ def validate_config(config):
             "official",
             "releasedWithin",
             "releaseChannel",
+            "dedupe",
         ],
         "prefer": ["features", "lowerCost"],
         "ui": ["maxProviders", "maxModelsPerProvider", "allowCustomModel"],
@@ -741,6 +743,20 @@ def validate_config(config):
     for key in ["maxInputTokens", "maxOutputTokens", "overheadTokens"]:
         if key in config.get("budget", {}) and not finite(config["budget"][key]):
             errors.append(f"budget.{key} must be a nonnegative finite number")
+    for key, val in [
+        ("dedupe", config.get("dedupe")),
+        (
+            "filters.dedupe",
+            config.get("filters", {}).get("dedupe")
+            if isinstance(config.get("filters"), dict)
+            else None,
+        ),
+    ]:
+        if val is not None and not (
+            isinstance(val, bool)
+            or (isinstance(val, int) and not isinstance(val, bool) and val >= 1)
+        ):
+            errors.append(f"{key} must be a positive integer or boolean")
     return errors
 
 
@@ -1453,6 +1469,32 @@ class Catalog:
                 ),
                 key=order,
             )
+            dedupe_limit = (
+                config["dedupe"]
+                if isinstance(config.get("dedupe"), int)
+                and not isinstance(config.get("dedupe"), bool)
+                else 1
+                if config.get("dedupe") is True
+                else config.get("filters", {}).get("dedupe")
+                if isinstance(config.get("filters", {}).get("dedupe"), int)
+                and not isinstance(config.get("filters", {}).get("dedupe"), bool)
+                else 1
+                if config.get("filters", {}).get("dedupe") is True
+                else None
+            )
+            if dedupe_limit is not None and dedupe_limit >= 1:
+                counts = {}
+                deduped_choices = []
+                for o in choices:
+                    m = self.models.get(o["modelId"], {})
+                    spec = o.get("speciality") or get_model_speciality(o, m)
+                    tier = o.get("tier") or get_model_tier(o, m)
+                    key = f"{spec}:{tier}"
+                    cnt = counts.get(key, 0)
+                    if cnt < dedupe_limit:
+                        counts[key] = cnt + 1
+                        deduped_choices.append(o)
+                choices = deduped_choices
             cap = (
                 (
                     len(choices)

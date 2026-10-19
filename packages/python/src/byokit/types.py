@@ -106,6 +106,7 @@ class Filters(TypedDict, total=False):
     verifiedWithinDays: int
     official: bool
     releasedWithin: Literal["1m", "3m", "6m", "1y", "2y"] | Tag | str | int | float
+    dedupe: int | bool
 
 
 class Prefer(TypedDict, total=False):
@@ -139,6 +140,7 @@ class PickerConfig(TypedDict, total=False):
     asOf: str
     unknownPolicy: UnknownPolicy
     includePreviews: bool
+    dedupe: int | bool
     filters: Filters
     prefer: Prefer
     ui: UI

@@ -209,6 +209,7 @@ export interface PickerConfig {
   providerIds?: ListFilter<ProviderId | CustomProviderId | (string & {})>;
   unknownPolicy?: UnknownPolicy;
   includePreviews?: boolean;
+  dedupe?: number | boolean;
   filters?: {
     releaseChannel?: ListFilter<ReleaseChannel>;
     speciality?: ListFilter<Speciality>;
@@ -240,6 +241,7 @@ export interface PickerConfig {
     verifiedWithinDays?: number;
     official?: boolean;
     releasedWithin?: '1m' | '3m' | '6m' | '1y' | '2y' | Tag | (string & {}) | number;
+    dedupe?: number | boolean;
   };
   prefer?: { features?: FeatureName[]; lowerCost?: boolean };
   ui?: { maxProviders?: number; maxModelsPerProvider?: number; allowCustomModel?: boolean };

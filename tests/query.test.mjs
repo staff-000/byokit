@@ -483,3 +483,90 @@ test('speciality, tier and nested combinator logic (any, exact, exclude, and, or
   assert.ok(xorQuery.length > 0);
   assert.ok(xorQuery.every((m) => m.tier === Tier.Flash || m.tier === Tier.Flagship));
 });
+
+test('dedupe option caps copies per (speciality, tier) within each provider', () => {
+  const cat = new Catalog(bundled);
+  const flashConfig = {
+    list: COMPLETE,
+    providerIds: any('openai', 'google'),
+    filters: {
+      tier: exact(Tier.Flash),
+      output: exact(Modality.Text),
+      releasedWithin: '1y',
+    },
+    local: false,
+  };
+
+  // Without dedupe, returns all historical versions (6 Google + 2 OpenAI = 8 models)
+  const allFlash = cat.getModels(flashConfig);
+  assert.equal(allFlash.length, 8);
+  assert.equal(allFlash.filter((m) => m.providerId === 'google').length, 6);
+  assert.equal(allFlash.filter((m) => m.providerId === 'openai').length, 2);
+
+  // dedupe: 1 keeps only the single newest release per provider
+  const deduped1 = cat.getModels({ ...flashConfig, dedupe: 1 });
+  assert.equal(deduped1.length, 2);
+  assert.equal(deduped1.find((m) => m.providerId === 'google').id, 'google/gemini-3.8-flash');
+  assert.equal(deduped1.find((m) => m.providerId === 'openai').id, 'openai/gpt-6-luna');
+
+  // dedupe: true is an alias for dedupe: 1
+  const dedupedTrue = cat.getModels({ ...flashConfig, dedupe: true });
+  assert.deepEqual(
+    dedupedTrue.map((m) => m.id),
+    deduped1.map((m) => m.id),
+  );
+
+  // filters.dedupe: 1 also works
+  const dedupedFilter = cat.getModels({
+    ...flashConfig,
+    filters: { ...flashConfig.filters, dedupe: 1 },
+  });
+  assert.deepEqual(
+    dedupedFilter.map((m) => m.id),
+    deduped1.map((m) => m.id),
+  );
+
+  // dedupe: 2 keeps up to 2 newest releases per provider
+  const deduped2 = cat.getModels({ ...flashConfig, dedupe: 2 });
+  assert.equal(deduped2.length, 4);
+  assert.equal(deduped2.filter((m) => m.providerId === 'google').length, 2);
+  assert.equal(deduped2.filter((m) => m.providerId === 'openai').length, 2);
+  assert.ok(deduped2.some((m) => m.id === 'google/gemini-3.8-flash'));
+  assert.ok(deduped2.some((m) => m.id === 'google/gemini-3.7-flash'));
+
+  // Invalid dedupe values are rejected
+  for (const invalid of [0, -1, 1.5, 'invalid', []]) {
+    assert.throws(
+      () => cat.getModels({ ...flashConfig, dedupe: invalid }),
+      /dedupe must be a positive integer or boolean/,
+    );
+    assert.throws(
+      () => cat.getModels({ ...flashConfig, filters: { ...flashConfig.filters, dedupe: invalid } }),
+      /dedupe must be a positive integer or boolean/,
+    );
+  }
+
+  // Cross-language Python parity
+  const run = pythonModels({
+    data: bundled,
+    queries: [
+      { ...flashConfig, dedupe: 1 },
+      { ...flashConfig, dedupe: 2 },
+      { ...flashConfig, filters: { ...flashConfig.filters, dedupe: 1 } },
+    ],
+  });
+  assert.equal(run.status, 0, run.stderr);
+  const pyResults = JSON.parse(run.stdout);
+  assert.deepEqual(
+    pyResults[0].map((m) => m.id),
+    deduped1.map((m) => m.id),
+  );
+  assert.deepEqual(
+    pyResults[1].map((m) => m.id),
+    deduped2.map((m) => m.id),
+  );
+  assert.deepEqual(
+    pyResults[2].map((m) => m.id),
+    dedupedFilter.map((m) => m.id),
+  );
+});
