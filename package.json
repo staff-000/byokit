@@ -1,7 +1,7 @@
 {
   "name": "byokit-workspace",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Add BYOK with a model list and one simple call. Keep your model choices fresh.",
   "workspaces": [
     "packages/byokit"
