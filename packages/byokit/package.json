@@ -55,6 +55,7 @@
     "connection.js",
     "sdk.js",
     "custom-model.js",
+    "execution-model.js",
     "bin.mjs",
     "dom",
     "react",

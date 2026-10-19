@@ -87,7 +87,7 @@ export interface Model {
   tags: string[];
 }
 export interface Offering {
-  connection?: Connection;
+  connection?: Connection | null;
   id: string;
   providerId: ProviderId | CustomProviderId | (string & {});
   modelId: string;
@@ -301,6 +301,11 @@ export class Catalog {
   getModels(list: ModelList, config?: PickerConfig): ModelOption[];
   getModelsByProvider(config?: PickerConfig): Record<string, ModelOption[]>;
   getModelsByProvider(list: ModelList, config?: PickerConfig): Record<string, ModelOption[]>;
+  /** Match catalog modelId identity before applying selection filters, dedupe, and limits. */
+  getEquivalentModels(
+    seeds: readonly (string | Pick<Offering, 'id'>)[],
+    config?: PickerConfig,
+  ): ModelOption[];
   serializeQuery(input?: PickerConfig | ModelList, options?: PickerConfig): string;
   getConfig(config?: PickerConfig): PickerConfig;
   getConfig(list: ModelList, config?: PickerConfig): PickerConfig;
@@ -354,7 +359,7 @@ export function matchesModality(
 export function validateCatalog(data: unknown): string[];
 export function validateConfig(config?: PickerConfig): string[];
 export function checkFit(
-  offering: Offering | undefined,
+  offering: Offering | ExecutionModel | undefined,
   budget: Budget,
   options?: FitOptions,
 ): FitResult;
@@ -573,6 +578,39 @@ export interface ChatInput {
   tool_choice?: 'auto' | 'none' | 'required' | { type: 'function'; function: { name: string } };
   stream?: false;
 }
+/** Execution-safe projection; excludes catalog evidence, logos, pricing, and nested model facts. */
+export type ExecutionModel = Pick<
+  Offering,
+  | 'id'
+  | 'providerId'
+  | 'modelId'
+  | 'apiModelId'
+  | 'name'
+  | 'speciality'
+  | 'tier'
+  | 'deployment'
+  | 'limits'
+  | 'modalities'
+  | 'features'
+  | 'local'
+  | 'status'
+  | 'providerShape'
+  | 'requiresProviderOverride'
+  | 'callSupport'
+> & {
+  connection: Connection | null;
+  provider?: Pick<Provider, 'id' | 'name' | 'auth' | 'deployment'>;
+};
+export function compactModels(models: readonly (ModelOption | ExecutionModel)[]): ExecutionModel[];
+export interface ClientConnectionConfig {
+  baseURL: string;
+  protocol?: import('./enums.js').ApiProtocol;
+  apiKey?: string;
+  defaultHeaders?: Record<string, string>;
+  allowInsecureHttp?: boolean;
+}
+/** Offline validation; returns non-secret connection metadata or throws CallError. */
+export function validateClientConfig(config: ClientConnectionConfig): Connection;
 export interface ClaudeToolUse {
   type: 'tool_use';
   id: string;
@@ -619,10 +657,20 @@ export interface ChatResult {
   model: string;
   choices: {
     index: number;
-    message: { role: 'assistant'; content: string | null; tool_calls?: ToolCall[] };
+    message: {
+      role: 'assistant';
+      content: string | null;
+      reasoning_content?: string;
+      tool_calls?: ToolCall[];
+    };
     finish_reason: string;
   }[];
-  usage: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
+  usage: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    total_tokens?: number;
+    completion_tokens_details?: { reasoning_tokens: number };
+  };
 }
 export interface ClaudeResult {
   id: string;
@@ -647,22 +695,28 @@ export class CallError extends Error {
   status?: number;
   attempt: VerificationAttempt;
   assessment?: VerificationAssessment;
+  /** Safe metadata for EMPTY_RESPONSE; contains no generated text or raw provider data. */
+  completion?: {
+    finishReason: string | null;
+    usage: ChatResult['usage'];
+    reasoningPresent: boolean;
+  };
 }
 export class NotImplementedError extends Error {}
 export function call(
-  model: ModelOption,
+  model: ExecutionModel,
   input: string | ChatInput,
   key: string,
   options?: CallOptions,
 ): Promise<ChatResult>;
 export function callClaude(
-  model: ModelOption,
+  model: ExecutionModel,
   input: string | ClaudeInput,
   key: string,
   options?: CallOptions,
 ): Promise<ClaudeResult>;
 export function prepareCall(
-  model: ModelOption,
+  model: ExecutionModel,
   input: string | ChatInput | ClaudeInput,
   options?: Pick<
     CallOptions,
@@ -679,7 +733,7 @@ export function prepareCall(
 
 /** @deprecated Legacy bound-model callback constructor. */
 export interface SDKClientOptions extends CallOptions {
-  model: ModelOption;
+  model: ExecutionModel;
   apiKey?: () => string | Promise<string>;
 }
 export interface CompletionInput extends ChatInput {
@@ -707,7 +761,7 @@ export interface StandardClientOptions extends CallOptions {
   /** Native wire protocol override; defaults to the named client’s protocol. */
   protocol?: import('./enums.js').ApiProtocol;
   /** Optional exact endpoint metadata for model-fit checks. */
-  models?: readonly ModelOption[];
+  models?: readonly ExecutionModel[];
 }
 export interface StandardCompletionInput extends ChatInput {
   model: string;
@@ -745,10 +799,10 @@ export interface RequestOptions extends CallOptions {
   apiKey?: string;
 }
 export interface ChatRequest extends ChatInput {
-  model: ModelOption;
+  model: ExecutionModel;
 }
 export interface MessageRequest extends ClaudeInput {
-  model: ModelOption;
+  model: ExecutionModel;
 }
 /** @deprecated Use OpenAI or Anthropic with constructor credentials. */
 export class Byokit {
@@ -775,6 +829,14 @@ export interface CustomModel {
 }
 /** Append one explicit, unverified model; does not mutate input, query the network, or re-sort. */
 export function appendModel(models: readonly ModelOption[], model: CustomModel): ModelOption[];
+export function appendModel(
+  models: readonly ExecutionModel[],
+  model: CustomModel,
+): ExecutionModel[];
+export function getEquivalentModels(
+  seeds: readonly (string | Pick<Offering, 'id'>)[],
+  config?: PickerConfig,
+): ModelOption[];
 export function getModels(config?: PickerConfig): ModelOption[];
 export function getModels(list: ModelList, config?: PickerConfig): ModelOption[];
 export function getModelsByProvider(config?: PickerConfig): Record<string, ModelOption[]>;

@@ -4,6 +4,36 @@ Byokit supplies lightweight clients with familiar constructor and resource metho
 These are byokit implementations of a supported subset, not the official SDKs.
 Discovery remains offline and the standalone call helpers remain available.
 
+## Validate settings without a request
+
+Before saving or syncing a credential, call `validateClientConfig` from
+`byokit/client` with `{ baseURL, protocol, apiKey }`. Optional `defaultHeaders`
+and `allowInsecureHttp` follow the client's transport rules. It returns only
+the non-secret `{ baseUrl, protocol }` connection or throws `CallError`; it never
+constructs a request, discovers models, or checks availability. Python exposes
+`validate_client_config` using `base_url`, `api_key`, `default_headers`, and
+`allow_insecure_http`. The constructor still validates credential transport at
+call time; the helper lets applications validate before storing a key.
+
+## Compiled models and incomplete answers
+
+Full generated JavaScript lists use `ModelOption`. `byokit build config.json
+--out models.js --compact` produces smaller `ExecutionModel` entries, omitting
+catalog evidence and logos. Both are accepted by `call`, `prepareCall`, and
+client `models` without assertions. `.mjs` outputs include `.d.mts` declarations.
+Use `compactModels` for custom build scripts and `getEquivalentModels` at
+discovery time to select reseller offerings by shared catalog identity.
+
+`ChatResult.choices[0].message.reasoning_content` is optional and separate from
+answer content. A thought-only Gemini response or reasoning-only compatible
+completion raises `EMPTY_RESPONSE`. Safe `error.completion` metadata includes
+`finishReason`, `usage`, and `reasoningPresent`; it never includes thought text,
+raw responses, prompts, or credentials. Token usage may include
+`completion_tokens_details.reasoning_tokens`. A normalized `length` finish
+reason retains the provider's output-budget signal without automatically
+retrying or changing request settings. Python errors expose the same metadata
+field names.
+
 ## JavaScript / TypeScript
 
 ```ts

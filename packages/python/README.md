@@ -270,6 +270,39 @@ python -m byokit build byok.config.json --out app/generated_models.py
 
 The JavaScript output exports `getModels()` and generated ID constants; the Python output exports `get_models()` and generated enums. Use a returned model directly with `call()`; do not assume an enum member or model ID will exist in every generated query. For JavaScript, import execution helpers from `byokit/client` to avoid including the bundled catalog.
 
+For smaller production artifacts, add `--compact` to either command. Compact entries preserve identity, connection, call support, authentication requirements, modalities, feature states, and limits. They omit logos, pricing, nested model facts, and verification/evidence payloads. Both full and compact JavaScript declarations use BYOKit's native types and enums; their entries work with `call()` and client `models` without casts. Compact output is a model list, not a catalog for further discovery queries.
+
+When a build script performs additional selection, use `compactModels(models)` (Python: `compact_models(models)`) before writing its output. For equivalent reseller offerings, use catalog identity rather than name matching:
+
+```js
+const direct = byokit.getModels({
+  providerIds: byokit.any(
+    byokit.ProviderId.Anthropic,
+    byokit.ProviderId.Google,
+    byokit.ProviderId.OpenAI,
+    byokit.ProviderId.DeepSeek,
+  ),
+  local: false,
+  filters: {
+    speciality: byokit.Speciality.General,
+    tier: byokit.any(byokit.Tier.Flash, byokit.Tier.Workhorse),
+    output: byokit.exact(byokit.Modality.Text),
+    releasedWithin: '1y',
+  },
+  dedupe: 2,
+});
+const reseller = byokit.getEquivalentModels(direct, {
+  providerIds: [byokit.ProviderId.OpenRouter],
+});
+const compiled = byokit.compactModels([...direct, ...reseller]);
+```
+
+`getEquivalentModels()` / `get_equivalent_models()` also accepts offering IDs. It matches the catalog's shared `modelId` before applying filters, deduplication, and limits. Offering IDs and API model IDs remain provider-specific; equivalents still need their hosting provider's key. The helper does not infer identity from names, and cannot link models without shared upstream identity.
+
+Before saving or syncing connection settings and credentials, use `validateClientConfig({ baseURL, protocol, apiKey })` (Python: `validate_client_config({"base_url": ..., "protocol": ..., "api_key": ...})`). It validates URL shape, protocol, headers, and credential transport offline, throwing `CallError` on invalid settings. It returns only `{ baseUrl, protocol }`, sends no request, and does not establish account access or server availability. Supported optional settings are `defaultHeaders` and `allowInsecureHttp` (Python: `default_headers`, `allow_insecure_http`).
+
+Reasoning text is kept in `message.reasoning_content`, separate from the visible answer. Thought-only or reasoning-only responses raise `EMPTY_RESPONSE`. Its optional `error.completion` metadata contains a normalized `finishReason`, safe token `usage`, and a `reasoningPresent` flag, with no raw response or thought text. `finishReason: 'length'` indicates the provider reported an exhausted output budget; choose any retry or budget change explicitly.
+
 ## Credential safety
 
 - Built-in execution keeps keys in memory and sends them directly to the configured endpoint, with redirects disabled. It does not persist keys or send telemetry. Never include keys in model metadata, URLs, reports, prompts, or source code.

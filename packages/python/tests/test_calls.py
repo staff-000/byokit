@@ -262,7 +262,7 @@ class CallTests(unittest.TestCase):
         self.assertEqual(r["choices"][0]["message"]["content"], "Signed answer")
         self.assertEqual(r["choices"][0]["message"]["reasoning_content"], "Thinking...")
 
-        # 3. Only thinking parts fallback
+        # 3. Only thinking parts never become visible answers
         Connection.response_data = {
             "candidates": [
                 {
@@ -274,11 +274,10 @@ class CallTests(unittest.TestCase):
             ]
         }
         with patch("byokit.inference.http.client.HTTPSConnection", Connection):
-            r = byokit.call(gemini_model, "Hi", "dummy-key", {"runtime_checks": False})
-        self.assertEqual(r["choices"][0]["message"]["content"], "Deep thoughts only")
-        self.assertEqual(
-            r["choices"][0]["message"]["reasoning_content"], "Deep thoughts only"
-        )
+            with self.assertRaises(byokit.CallError) as caught:
+                byokit.call(gemini_model, "Hi", "dummy-key", {"runtime_checks": False})
+        self.assertEqual(caught.exception.code, "EMPTY_RESPONSE")
+        self.assertTrue(caught.exception.completion["reasoningPresent"])
 
 
 

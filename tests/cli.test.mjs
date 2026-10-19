@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, readFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -99,6 +99,7 @@ test('CLI surfaces descriptive error message on invalid input and exits with 2',
 
 test('CLI build supports omitted catalog, precompiled models.js, and generated_models.py', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'byokit-precompiled-'));
+  symlinkSync(resolve('node_modules'), join(dir, 'node_modules'), 'dir');
   const configFile = join(dir, 'byok.config.json');
   // Omit "catalog" to test default bundled catalog usage
   writeFileSync(
@@ -157,6 +158,11 @@ test('CLI build supports omitted catalog, precompiled models.js, and generated_m
     `import { models, getModels, OfferingId } from './models.js';
 const list = getModels();
 const first = models[0];
+import {call, OpenAI, ModelOption, ApiProtocol} from 'byokit/client';
+const native: ModelOption = first;
+call(first, 'Hi', 'dummy-key');
+new OpenAI({apiKey: 'dummy-key', baseURL: first.connection!.baseUrl, protocol: first.connection!.protocol, models: list});
+const protocol: ApiProtocol | undefined = first.connection?.protocol;
 const id: OfferingId = OfferingId[${JSON.stringify(sampleOfferingId)}];
 `,
   );

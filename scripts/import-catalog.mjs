@@ -530,6 +530,10 @@ if (i < 0) {
       '  if (!defaultCatalog) defaultCatalog = new Catalog(data, { trusted: true });\n' +
       '  return defaultCatalog.getModels(input, options);\n' +
       '}\n' +
+      'export function getEquivalentModels(seeds, config = {}) {\n' +
+      '  if (!defaultCatalog) defaultCatalog = new Catalog(data, { trusted: true });\n' +
+      '  return defaultCatalog.getEquivalentModels(seeds, config);\n' +
+      '}\n' +
       'export function getModelsByProvider(input = {}, options) {\n' +
       '  if (!defaultCatalog) defaultCatalog = new Catalog(data, { trusted: true });\n' +
       '  return defaultCatalog.getModelsByProvider(input, options);\n' +

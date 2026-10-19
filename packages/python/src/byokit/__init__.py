@@ -1218,6 +1218,26 @@ class Catalog:
     def get(self, offering_id):
         return self.offerings.get(offering_id)
 
+    def get_equivalent_models(
+        self, seeds: list, config: "PickerConfig | None" = None
+    ) -> list[dict]:
+        if not isinstance(seeds, list):
+            raise ValueError("Provide a list of catalog offerings or offering IDs.")
+        ids = set()
+        for seed in seeds:
+            identity = seed if isinstance(seed, str) else (
+                seed.get("id") if isinstance(seed, dict) else None
+            )
+            offering = self.offerings.get(identity)
+            if not offering:
+                raise ValueError("Equivalent-model seeds must identify catalog offerings.")
+            ids.add(offering["modelId"])
+        view = Catalog({
+            **self.data,
+            "offerings": [o for o in self.data["offerings"] if o["modelId"] in ids],
+        }, trusted=True)
+        return view.get_models({"list": "complete", **(config or {}), "local": False})
+
     def get_models(
         self,
         config: "PickerConfig | ModelList | None" = None,
@@ -2091,6 +2111,10 @@ def get_models(
     return load_catalog().get_models(config, options)
 
 
+def get_equivalent_models(seeds: list, config: "PickerConfig | None" = None) -> list[dict]:
+    return load_catalog().get_equivalent_models(seeds, config)
+
+
 def get_models_by_provider(
     config: "PickerConfig | ModelList | None" = None,
     options: "PickerConfig | None" = None,
@@ -2565,6 +2589,7 @@ def _local_groups(config, catalog):
 
 from .inference import call, call_claude, prepare_call, connection_for, call_support_for, local_offering_id, CallError
 
-from .sdk import Byokit, OpenAI, Anthropic, openAI, claude
+from .sdk import Byokit, OpenAI, Anthropic, openAI, claude, validate_client_config
+from .execution_model import compact_models
 
 from .custom_model import append_model, validate_connection

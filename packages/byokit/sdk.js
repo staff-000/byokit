@@ -1,4 +1,12 @@
-import { call, callClaude, prepareCall, CallError, validateHeaders } from './call.js';
+import {
+  call,
+  callClaude,
+  prepareCall,
+  CallError,
+  validateHeaders,
+  validateCredentialTransport,
+  allowsEmptyKey,
+} from './call.js';
 import { ApiProtocol } from './enums.js';
 const invalid = (message) => {
   throw new CallError('INVALID_REQUEST', message);
@@ -66,7 +74,7 @@ function createClient(config, format) {
   if (!object(config.model)) invalid('Select a model from getModels().');
   // The client captures only non-secret configuration and the application’s key accessor.
   const bound = structuredClone(config.model),
-    source = config.apiKey ?? (bound.local ? () => '' : undefined);
+    source = config.apiKey ?? (allowsEmptyKey(bound) ? () => '' : undefined);
   if (typeof source !== 'function')
     invalid('apiKey must be a callback; clients do not retain key strings.');
   const defaults = options(
@@ -146,6 +154,24 @@ function endpoint(value, protocol) {
   // Anthropic SDK base URLs conventionally omit the /v1 API prefix.
   if (protocol === ApiProtocol.Claude && !base.endsWith('/v1')) base += '/v1';
   return base;
+}
+/** Offline validation before saving credentials. Returns only non-secret connection metadata. */
+export function validateClientConfig(config) {
+  if (
+    !object(config) ||
+    Object.keys(config).some(
+      (k) => !['baseURL', 'protocol', 'apiKey', 'defaultHeaders', 'allowInsecureHttp'].includes(k),
+    )
+  )
+    invalid('Unsupported connection configuration.');
+  const protocol = config.protocol ?? ApiProtocol.OpenAI;
+  if (!Object.values(ApiProtocol).includes(protocol)) invalid('Unsupported API protocol.');
+  const key = config.apiKey ?? '';
+  if (typeof key !== 'string') invalid('apiKey must be a string.');
+  const baseUrl = endpoint(config.baseURL, protocol);
+  const headers = validateHeaders(config.defaultHeaders ?? {});
+  validateCredentialTransport(baseUrl, key, config.allowInsecureHttp, headers);
+  return { baseUrl, protocol };
 }
 function standardClient(config, format) {
   if (

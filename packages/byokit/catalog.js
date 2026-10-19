@@ -8,6 +8,10 @@ export function getModels(input = {}, options) {
   if (!defaultCatalog) defaultCatalog = new Catalog(data, { trusted: true });
   return defaultCatalog.getModels(input, options);
 }
+export function getEquivalentModels(seeds, config = {}) {
+  if (!defaultCatalog) defaultCatalog = new Catalog(data, { trusted: true });
+  return defaultCatalog.getEquivalentModels(seeds, config);
+}
 export function getModelsByProvider(input = {}, options) {
   if (!defaultCatalog) defaultCatalog = new Catalog(data, { trusted: true });
   return defaultCatalog.getModelsByProvider(input, options);

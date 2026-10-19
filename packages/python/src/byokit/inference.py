@@ -37,6 +37,14 @@ class CallError(Exception):
         self.attempt = classify_verification_error({"code":code,"status":status})
 
 
+def allows_empty_key(model):
+    return (
+        bool(model.get("local"))
+        or model.get("deployment") == "local"
+        or (model.get("provider") or {}).get("auth") in ("optional", "none")
+    )
+
+
 def connection_for(model):
     if model.get("connection"):
         return dict(model["connection"])
@@ -669,8 +677,6 @@ def _parse(data, protocol, model):
                 content += b["text"]
         if thought_text:
             reasoning_content = thought_text
-        if not content and not calls and thought_text:
-            content = thought_text
         finish = (
             "length"
             if candidate.get("finishReason") == "MAX_TOKENS"
@@ -718,8 +724,6 @@ def _parse(data, protocol, model):
             completion_tokens=data.get("usage", {}).get("completion_tokens"),
         )
     calls = [_tool_call(t) for t in calls]
-    if not content.strip() and not calls:
-        raise CallError("EMPTY_RESPONSE", "No visible text or tool calls.")
     usage = {
         k: v
         for k, v in u.items()
@@ -727,6 +731,26 @@ def _parse(data, protocol, model):
     }
     if len(usage) == 2:
         usage["total_tokens"] = sum(usage.values())
+    if protocol == ApiProtocol.GEMINI:
+        total = data.get("usageMetadata", {}).get("totalTokenCount")
+        reasoning = data.get("usageMetadata", {}).get("thoughtsTokenCount")
+    else:
+        total = data.get("usage", {}).get("total_tokens")
+        reasoning = (data.get("usage", {}).get("completion_tokens_details") or {}).get("reasoning_tokens")
+    if type(total) is int and total >= 0:
+        usage["total_tokens"] = total
+    if type(reasoning) is int and reasoning >= 0:
+        usage["completion_tokens_details"] = {"reasoning_tokens": reasoning}
+    if not content.strip() and not calls:
+        error = CallError("EMPTY_RESPONSE", "No visible text or tool calls.")
+        error.completion = {
+            "finishReason": finish if finish in (
+                "stop", "length", "tool_calls", "content_filter", "function_call"
+            ) else None,
+            "usage": usage,
+            "reasoningPresent": bool(reasoning_content and reasoning_content.strip()),
+        }
+        raise error
     return dict(
         **(
             {
@@ -820,7 +844,7 @@ def _validate_credential_transport(url, key, allow_insecure_http=False, headers=
 
 def _execute(model, input, key, options, format):
     options = options or {}
-    if not isinstance(key, str) or not model.get("local") and not key:
+    if not isinstance(key, str) or not allows_empty_key(model) and not key.strip():
         _fail("Provide a per-call API key (empty for unauthenticated local servers).")
     timeout = options.get("timeout_ms", 90000) / 1000
     if not math.isfinite(timeout) or timeout <= 0:

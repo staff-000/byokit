@@ -51,6 +51,7 @@ for (const file of [
   'connection.js',
   'sdk.js',
   'custom-model.js',
+  'execution-model.js',
   'client.js',
 ])
   await cp(resolve(root, 'packages/byokit', file), resolve(out, 'lib/core', file));

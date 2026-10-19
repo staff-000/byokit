@@ -3,7 +3,7 @@ import hashlib
 import json
 import re
 from pathlib import Path
-from . import Catalog, check_task, validate_config, load_catalog
+from . import Catalog, check_task, validate_config, load_catalog, compact_models
 
 
 def main():
@@ -14,6 +14,7 @@ def main():
     parser.add_argument("config")
     parser.add_argument("--strict", action="store_true")
     parser.add_argument("--out")
+    parser.add_argument("--compact", action="store_true")
     args = parser.parse_args()
     try:
         path = Path(args.config).resolve()
@@ -71,11 +72,14 @@ def main():
         if args.command == "build":
             if not args.out:
                 raise ValueError("build requires --out")
+            if args.compact and not args.out.endswith((".js", ".mjs", ".py")):
+                raise ValueError("--compact requires JavaScript or Python model-list output.")
             output = Path(args.out)
             output.parent.mkdir(parents=True, exist_ok=True)
 
             if args.out.endswith(".py"):
-                precompiled = catalog.get_models(config)
+                selected = catalog.get_models(config)
+                precompiled = compact_models(selected) if args.compact else selected
                 registry = {
                     "OfferingId": list(dict.fromkeys(o["id"] for o in precompiled)),
                     "ModelId": list(dict.fromkeys(o["apiModelId"] for o in precompiled)),
@@ -133,6 +137,7 @@ def main():
                     json.dumps(
                         {
                             "schemaVersion": 1,
+                            "target": "compact" if args.compact else "full",
                             "upstreamHash": hashlib.sha256(raw.encode()).hexdigest(),
                             "configHash": hashlib.sha256(
                                 json.dumps(config).encode()
@@ -148,7 +153,8 @@ def main():
                 return 0
 
             if args.out.endswith((".js", ".mjs")):
-                precompiled = catalog.get_models(config)
+                selected = catalog.get_models(config)
+                precompiled = compact_models(selected) if args.compact else selected
                 registry = {
                     "OfferingId": list(dict.fromkeys(o["id"] for o in precompiled)),
                     "ModelId": list(dict.fromkeys(o["apiModelId"] for o in precompiled)),
@@ -193,38 +199,20 @@ def main():
                 )
                 output.write_text(js_content)
                 dts_content = (
-                    "export type PrecompiledModel = {\n"
-                    "  id: string;\n"
-                    "  providerId: string;\n"
-                    "  modelId: string;\n"
-                    "  apiModelId: string;\n"
-                    "  name: string;\n"
-                    "  deployment: string;\n"
-                    "  connection?: { baseUrl: string; protocol: string };\n"
-                    "  callSupport?: { textGeneration: boolean; reason: string | null };\n"
-                    "  limits?: Record<string, any>;\n"
-                    "  features?: Record<string, any>;\n"
-                    "  price?: Record<string, any>;\n"
-                    "  tags?: string[];\n"
-                    "  provider?: Record<string, any>;\n"
-                    "  model?: Record<string, any>;\n"
-                    "  family?: Record<string, any> | null;\n"
-                    "  logos?: { provider?: string | null; family?: string | null };\n"
-                    "  verification?: Record<string, any>;\n"
-                    "  [key: string]: any;\n"
-                    "};\n"
-                    "export declare const models: readonly PrecompiledModel[];\n"
+                    "import type { ModelOption, ExecutionModel } from 'byokit/client';\n"
+                    + f"export type PrecompiledModel = {'ExecutionModel' if args.compact else 'ModelOption'};\n"
+                    + "export declare const models: readonly PrecompiledModel[];\n"
                     "export declare function getModels(): PrecompiledModel[];\n"
                     "export declare function getModelsByProvider(): Record<string, PrecompiledModel[]>;\n"
-                    + "\n".join(declarations)
-                    + "\n"
+                    + "\n".join(declarations) + "\n"
                 )
-                dts_output = output.with_suffix(".d.ts")
+                dts_output = output.with_suffix(".d.mts" if output.suffix == ".mjs" else ".d.ts")
                 dts_output.write_text(dts_content)
                 Path(str(output) + ".lock.json").write_text(
                     json.dumps(
                         {
                             "schemaVersion": 1,
+                            "target": "compact" if args.compact else "full",
                             "upstreamHash": hashlib.sha256(raw.encode()).hexdigest(),
                             "configHash": hashlib.sha256(
                                 json.dumps(config).encode()

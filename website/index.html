@@ -552,11 +552,11 @@ console.log(response.choices[0].message.content);</code></pre>
               <p>Evaluate your query at build time:</p>
               <pre><code># Node / TS:
 npx byokit build byok.config.json \
-  --out src/generated/models.js
+  --out src/generated/models.js --compact
 
 # Python:
 byokit build byok.config.json \
-  --out app/generated_models.py</code></pre>
+  --out app/generated_models.py --compact</code></pre>
             </div>
             <div class="build-step">
               <span class="step-num">3</span>

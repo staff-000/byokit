@@ -2,7 +2,10 @@
 
 import copy
 import time
-from .inference import call, call_claude, prepare_call, CallError, validate_headers
+from .inference import (
+    call, call_claude, prepare_call, CallError, validate_headers,
+    _validate_credential_transport, allows_empty_key,
+)
 from .types import (
     CallOptions,
     ChatMessage,
@@ -191,7 +194,7 @@ class _LegacyOpenAI:
             api_key
             if api_key is not None
             else (lambda: "")
-            if model.get("local")
+            if allows_empty_key(model)
             else None
         )
         if not callable(source):
@@ -209,7 +212,7 @@ class _LegacyAnthropic:
             api_key
             if api_key is not None
             else (lambda: "")
-            if model.get("local")
+            if allows_empty_key(model)
             else None
         )
         if not callable(source):
@@ -393,6 +396,24 @@ def _endpoint(value, protocol):
     if protocol == ApiProtocol.CLAUDE and not base.endswith("/v1"):
         base += "/v1"
     return base
+
+
+def validate_client_config(config):
+    """Validate settings offline; return only non-secret connection metadata."""
+    if not isinstance(config, dict) or set(config) - {
+        "base_url", "protocol", "api_key", "default_headers", "allow_insecure_http"
+    }:
+        _invalid("Unsupported connection configuration.")
+    protocol = config.get("protocol", ApiProtocol.OPEN_AI)
+    if protocol not in list(ApiProtocol):
+        _invalid("Unsupported API protocol.")
+    key = config.get("api_key", "")
+    if not isinstance(key, str):
+        _invalid("api_key must be a string.")
+    base = _endpoint(config.get("base_url"), protocol)
+    headers = validate_headers(config.get("default_headers", {}))
+    _validate_credential_transport(base, key, config.get("allow_insecure_http", False), headers)
+    return {"baseUrl": base, "protocol": protocol}
 
 
 class _StandardRequest:

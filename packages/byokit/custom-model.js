@@ -8,6 +8,8 @@ import {
   Popularity,
   VerificationStatus,
   Currency,
+  Speciality,
+  Tier,
 } from './enums.js';
 export function validateConnection(connection) {
   if (
@@ -97,6 +99,9 @@ export function appendModel(models, custom) {
     name,
     deployment,
     connection,
+    callSupport: { textGeneration: true, reason: null },
+    speciality: Speciality.Unknown,
+    tier: Tier.Unknown,
     limits,
     modalities: { input: null, output: null },
     features: {},
@@ -115,6 +120,8 @@ export function appendModel(models, custom) {
       openWeights: null,
       commercialUse: CommercialUse.Unknown,
       license: null,
+      speciality: Speciality.Unknown,
+      tier: Tier.Unknown,
       tags: [],
     },
     family: null,

@@ -1,5 +1,5 @@
 import { classifyVerificationError, readProviderError } from './verification.js';
-import { ApiProtocol, FeatureName, Role } from './enums.js';
+import { ApiProtocol, FeatureName, Role, Deployment, AuthRequirement } from './enums.js';
 import { connectionFor } from './connection.js';
 import { checkFit } from './core.js';
 export class CallError extends Error {
@@ -16,6 +16,13 @@ const fail = (message) => {
   throw new CallError('INVALID_REQUEST', message);
 };
 const obj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+export function allowsEmptyKey(model) {
+  return (
+    !!model?.local ||
+    model?.deployment === Deployment.Local ||
+    [AuthRequirement.Optional, AuthRequirement.None].includes(model?.provider?.auth)
+  );
+}
 function keys(v, allowed, label) {
   if (!obj(v)) fail(`${label} must be an object.`);
   if (Object.keys(v).some((k) => !allowed.includes(k))) fail(`Unsupported ${label} parameter.`);
@@ -598,9 +605,6 @@ function parsed(data, protocol, model) {
       }
     }
     if (thoughtText) reasoningContent = thoughtText;
-    if (!content && !calls.length && thoughtText) {
-      content = thoughtText;
-    }
     finish = c.finishReason === 'MAX_TOKENS' ? 'length' : calls.length ? 'tool_calls' : 'stop';
     usage = {
       prompt_tokens: data.usageMetadata?.promptTokenCount,
@@ -629,14 +633,40 @@ function parsed(data, protocol, model) {
       completion_tokens: data.usage?.completion_tokens,
     };
   }
-  if (typeof content !== 'string' || (!content.trim() && !calls.length))
-    throw new CallError('EMPTY_RESPONSE', 'Provider returned no visible text or tool calls.');
-  calls = calls.map(toolCall);
   const cleanUsage = Object.fromEntries(
     Object.entries(usage).filter(([, n]) => Number.isInteger(n) && n >= 0),
   );
   if (cleanUsage.prompt_tokens !== undefined && cleanUsage.completion_tokens !== undefined)
     cleanUsage.total_tokens = cleanUsage.prompt_tokens + cleanUsage.completion_tokens;
+  const total =
+    protocol === ApiProtocol.Gemini
+      ? data.usageMetadata?.totalTokenCount
+      : data.usage?.total_tokens;
+  const reasoning =
+    protocol === ApiProtocol.Gemini
+      ? data.usageMetadata?.thoughtsTokenCount
+      : data.usage?.completion_tokens_details?.reasoning_tokens;
+  if (Number.isInteger(total) && total >= 0) cleanUsage.total_tokens = total;
+  if (Number.isInteger(reasoning) && reasoning >= 0)
+    cleanUsage.completion_tokens_details = { reasoning_tokens: reasoning };
+  if (typeof content !== 'string' || (!content.trim() && !calls.length)) {
+    const error = new CallError(
+      'EMPTY_RESPONSE',
+      'Provider returned no visible text or tool calls.',
+    );
+    // Do not attach response bodies, thought text, IDs, or arbitrary provider strings.
+    error.completion = {
+      finishReason: ['stop', 'length', 'tool_calls', 'content_filter', 'function_call'].includes(
+        finish,
+      )
+        ? finish
+        : null,
+      usage: cleanUsage,
+      reasoningPresent: !!reasoningContent?.trim(),
+    };
+    throw error;
+  }
+  calls = calls.map(toolCall);
   return {
     ...(protocol === ApiProtocol.Claude
       ? {
@@ -682,7 +712,7 @@ async function execute(model, input, key, options, format) {
   if (typeof key !== 'string')
     fail('Provide the API key as a per-call string (empty for unauthenticated local servers).');
   if (!obj(model)) fail('Select a configured model.');
-  if (!model.local && !key.trim()) fail('Provide a provider API key.');
+  if (!allowsEmptyKey(model) && !key.trim()) fail('Provide a provider API key.');
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) fail('timeoutMs must be positive.');
   const extraHeaders = validateHeaders(options?.headers ?? {});
   const request = prepareCall(model, input, {

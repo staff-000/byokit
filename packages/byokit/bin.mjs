@@ -2,12 +2,12 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
-import { Catalog, validateConfig, checkTask } from './index.js';
+import { Catalog, validateConfig, checkTask, compactModels } from './index.js';
 const [command, file, ...args] = process.argv.slice(2);
 async function run() {
   if (!['check', 'build'].includes(command) || !file) {
     console.log(
-      'Usage: byokit check|build config.json [--strict] [--out catalog.json|models.js|models.py]',
+      'Usage: byokit check|build config.json [--strict] [--out catalog.json|models.js|models.py] [--compact]',
     );
     return 2;
   }
@@ -70,10 +70,14 @@ async function run() {
     if (i < 0 || !args[i + 1]) throw new Error('build requires --out');
     const output = resolve(args[i + 1]),
       data = catalog.data;
+    const compact = args.includes('--compact');
+    if (compact && !/\.(m?js|py)$/.test(output))
+      throw new Error('--compact requires JavaScript or Python model-list output.');
     await mkdir(dirname(output), { recursive: true });
 
     if (output.endsWith('.js') || output.endsWith('.mjs')) {
-      const precompiled = catalog.getModels(config);
+      const selected = catalog.getModels(config);
+      const precompiled = compact ? compactModels(selected) : selected;
       const registry = {
         OfferingId: [...new Set(precompiled.map((o) => o.id))],
         ModelId: [...new Set(precompiled.map((o) => o.apiModelId))],
@@ -101,14 +105,15 @@ async function run() {
         .join('\n');
       const jsContent = `export const models = Object.freeze(${JSON.stringify(precompiled, null, 2)});\nexport function getModels() {\n  return structuredClone(models);\n}\nexport function getModelsByProvider() {\n  const grouped = {};\n  for (const m of models) {\n    const key = m.provider?.id || m.providerId || (m.local ? 'local' : 'unknown');\n    if (!grouped[key]) grouped[key] = [];\n    grouped[key].push(structuredClone(m));\n  }\n  return grouped;\n}\n${runtime}\n`;
       await writeFile(output, jsContent);
-      const dtsContent = `export type PrecompiledModel = {\n  id: string;\n  providerId: string;\n  modelId: string;\n  apiModelId: string;\n  name: string;\n  deployment: string;\n  connection?: { baseUrl: string; protocol: string };\n  callSupport?: { textGeneration: boolean; reason: string | null };\n  limits?: Record<string, any>;\n  features?: Record<string, any>;\n  price?: Record<string, any>;\n  tags?: string[];\n  provider?: Record<string, any>;\n  model?: Record<string, any>;\n  family?: Record<string, any> | null;\n  logos?: { provider?: string | null; family?: string | null };\n  verification?: Record<string, any>;\n  [key: string]: any;\n};\nexport declare const models: readonly PrecompiledModel[];\nexport declare function getModels(): PrecompiledModel[];\nexport declare function getModelsByProvider(): Record<string, PrecompiledModel[]>;\n${declarations.join('\n')}\n`;
-      const dtsOutput = output.replace(/\.m?js$/, '.d.ts');
+      const dtsContent = `import type { ModelOption, ExecutionModel } from 'byokit/client';\nexport type PrecompiledModel = ${compact ? 'ExecutionModel' : 'ModelOption'};\nexport declare const models: readonly PrecompiledModel[];\nexport declare function getModels(): PrecompiledModel[];\nexport declare function getModelsByProvider(): Record<string, PrecompiledModel[]>;\n${declarations.join('\n')}\n`;
+      const dtsOutput = output.replace(/\.m?js$/, output.endsWith('.mjs') ? '.d.mts' : '.d.ts');
       await writeFile(dtsOutput, dtsContent);
       await writeFile(
         output + '.lock.json',
         JSON.stringify(
           {
             schemaVersion: 1,
+            target: compact ? 'compact' : 'full',
             upstreamHash: createHash('sha256').update(raw).digest('hex'),
             configHash: createHash('sha256').update(JSON.stringify(config)).digest('hex'),
           },
@@ -121,7 +126,8 @@ async function run() {
     }
 
     if (output.endsWith('.py')) {
-      const precompiled = catalog.getModels(config);
+      const selected = catalog.getModels(config);
+      const precompiled = compact ? compactModels(selected) : selected;
       const toPyIdent = (s) => {
         let id = s
           .replace(/[^a-zA-Z0-9]+/g, '_')
@@ -162,6 +168,7 @@ async function run() {
         JSON.stringify(
           {
             schemaVersion: 1,
+            target: compact ? 'compact' : 'full',
             upstreamHash: createHash('sha256').update(raw).digest('hex'),
             configHash: createHash('sha256').update(JSON.stringify(config)).digest('hex'),
           },

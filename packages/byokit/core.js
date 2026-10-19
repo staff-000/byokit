@@ -1,6 +1,7 @@
 import { communityAssessment, textWasVerified, validAssessment } from './verification.js';
 export { classifyVerificationError } from './verification.js';
-export { Byokit, openAI, claude, OpenAI, Anthropic } from './sdk.js';
+export { Byokit, openAI, claude, OpenAI, Anthropic, validateClientConfig } from './sdk.js';
+export { compactModels } from './execution-model.js';
 import { validateConnection } from './custom-model.js';
 import { connectionFor, callSupportFor, localOfferingId } from './connection.js';
 export { appendModel } from './custom-model.js';
@@ -1244,6 +1245,23 @@ export class Catalog {
   }
   clearCache() {
     this._cache.clear();
+  }
+  getEquivalentModels(seeds, config = {}) {
+    if (!Array.isArray(seeds))
+      throw new Error('Provide a list of catalog offerings or offering IDs.');
+    const ids = new Set(
+      seeds.map((seed) => {
+        const offering = this.offerings.get(typeof seed === 'string' ? seed : seed?.id);
+        if (!offering) throw new Error('Equivalent-model seeds must identify catalog offerings.');
+        return offering.modelId;
+      }),
+    );
+    // Match catalog identity only. Never infer equivalence from names or hosting providers.
+    const view = new Catalog(
+      { ...this.data, offerings: this.data.offerings.filter((o) => ids.has(o.modelId)) },
+      { trusted: true },
+    );
+    return view.getModels({ list: ModelList.Complete, ...config, local: false });
   }
   getModels(input = {}, options) {
     const config = normalizeQuery(input, options);

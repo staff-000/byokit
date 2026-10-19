@@ -364,21 +364,22 @@ test('Gemini thinking parts, thoughtSignature, and reasoning content parse corre
   assert.equal(resWithSignature.choices[0].message.content, 'Signed answer');
   assert.equal(resWithSignature.choices[0].message.reasoning_content, 'Thinking...');
 
-  // 3. Only thinking parts fallback
-  const resOnlyThinking = await byokit.call(geminiModel, 'Hi', 'key', {
-    ...noChecks,
-    fetch: async () =>
-      ok({
-        candidates: [
-          {
-            content: {
-              parts: [{ text: 'Deep thoughts only', thought: true }],
+  // 3. Only thinking parts never become visible answers
+  await assert.rejects(
+    byokit.call(geminiModel, 'Hi', 'key', {
+      ...noChecks,
+      fetch: async () =>
+        ok({
+          candidates: [
+            {
+              content: {
+                parts: [{ text: 'Deep thoughts only', thought: true }],
+              },
+              finishReason: 'STOP',
             },
-            finishReason: 'STOP',
-          },
-        ],
-      }),
-  });
-  assert.equal(resOnlyThinking.choices[0].message.content, 'Deep thoughts only');
-  assert.equal(resOnlyThinking.choices[0].message.reasoning_content, 'Deep thoughts only');
+          ],
+        }),
+    }),
+    (error) => error.code === 'EMPTY_RESPONSE' && error.completion.reasoningPresent === true,
+  );
 });
