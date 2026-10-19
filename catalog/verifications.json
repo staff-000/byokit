@@ -1465,5 +1465,69 @@
     "adapter": "byokit-website@1",
     "evidence": "https://github.com/staff-000/byokit/issues/9",
     "notes": "Community-reported succeeded gemini attempt. Output budget 128; latency 5745 ms. GitHub author ID 249984446; submitted 2026-10-19T07:38:38Z; Provider call ran in the contributor’s browser."
+  },
+  {
+    "id": "website:249984446:c3da4587-a5e0-4492-b179-24519361304b",
+    "offeringId": "deepseek/deepseek-chat",
+    "contributor": "github:staff-000",
+    "checkedAt": "2026-10-19T08:41:38.467Z",
+    "result": "passed",
+    "assessment": {
+      "attempt": {
+        "outcome": "succeeded",
+        "reason": null,
+        "scope": "request",
+        "certainty": "explicit",
+        "source": "client_error",
+        "classifierVersion": "1",
+        "retry": {
+          "action": "none",
+          "afterSeconds": null
+        }
+      },
+      "checks": {
+        "textGeneration": "passed",
+        "speed": "passed"
+      },
+      "phases": [
+        {
+          "phase": "baseline",
+          "attempt": {
+            "outcome": "succeeded",
+            "reason": null,
+            "scope": "request",
+            "certainty": "explicit",
+            "source": "client_error",
+            "classifierVersion": "1",
+            "retry": {
+              "action": "none",
+              "afterSeconds": null
+            }
+          }
+        },
+        {
+          "phase": "generation",
+          "attempt": {
+            "outcome": "succeeded",
+            "reason": null,
+            "scope": "request",
+            "certainty": "explicit",
+            "source": "client_error",
+            "classifierVersion": "1",
+            "retry": {
+              "action": "none",
+              "afterSeconds": null
+            }
+          }
+        }
+      ]
+    },
+    "checks": [
+      "textGeneration"
+    ],
+    "tokensPerSecond": 261.3,
+    "adapter": "byokit-website@count-128-delta-v1:chat",
+    "evidence": "https://github.com/staff-000/byokit/issues/10",
+    "notes": "Community-reported succeeded chat attempt. Output budget 128; latency 1078 ms; speed 261.3 tokens/sec. GitHub author ID 249984446; submitted 2026-10-19T08:41:50Z; Provider call ran in the contributor’s browser."
   }
 ]
