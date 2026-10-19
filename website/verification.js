@@ -423,6 +423,7 @@ function filteredModels() {
     verifications: publishedReports,
     callableOnly: $('#callable-filter').checked,
     includeOutdated: $('#include-outdated').checked,
+    officialOnly: $('#official-filter') ? $('#official-filter').checked : false,
   });
   const sort = $('#sort-filter').value;
   if (['speed', 'speedAscend', 'speedDescend'].includes(sort)) {
@@ -1419,12 +1420,32 @@ if ($('#models')) {
     'verification-filter',
     'callable-filter',
     'include-outdated',
+    'official-filter',
   ])
-    $('#' + id).addEventListener('input', () => {
+    $('#' + id)?.addEventListener('input', () => {
       tracker.stop();
       shown = 40;
       renderModels();
     });
+  const officialIds = new Set(
+    byokit.default.providers
+      .filter((p) => p.tags?.includes(byokit.Tag.ProviderOfficial))
+      .map((p) => p.id),
+  );
+  $('#official-filter')?.addEventListener('input', () => {
+    if (
+      $('#official-filter').checked &&
+      $('#provider-filter').value &&
+      !officialIds.has($('#provider-filter').value)
+    ) {
+      $('#provider-filter').value = '';
+    }
+  });
+  $('#provider-filter')?.addEventListener('input', () => {
+    if ($('#provider-filter').value && !officialIds.has($('#provider-filter').value)) {
+      if ($('#official-filter')) $('#official-filter').checked = false;
+    }
+  });
 }
 function advanceToNextUnverified() {
   if (busy || batchController) return;

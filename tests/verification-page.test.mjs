@@ -120,6 +120,7 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
       'sort-filter',
       'callable-filter',
       'include-outdated',
+      'official-filter',
     ])
       assert.ok($('#' + id).closest('thead'), id + ' belongs to the table header');
     const providerOptions = [...document.querySelectorAll('#provider-filter option')]
@@ -131,6 +132,7 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
     );
     assert.deepEqual(providerOptions, sortedProviderOptions);
     assert.equal($('#callable-filter').checked, true);
+    assert.equal($('#official-filter').checked, true);
     assert.ok(document.querySelector('#provider-filter option[value="302ai"]'));
     assert.ok(!document.querySelector('#provider-filter option[value="local"]'));
     assert.ok([...document.querySelectorAll('#models .batch-pick')].every((c) => !c.disabled));
@@ -145,6 +147,15 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
     $('#callable-filter').dispatchEvent(new dom.window.Event('input'));
     assert.match($('#models').textContent, /No matching/);
     change('provider-filter', '');
+    $('#official-filter').checked = true;
+    $('#official-filter').dispatchEvent(new dom.window.Event('input'));
+    const officialCount = document.querySelectorAll('#models tr').length;
+    $('#official-filter').checked = false;
+    $('#official-filter').dispatchEvent(new dom.window.Event('input'));
+    const allCount = document.querySelectorAll('#models tr').length;
+    assert.ok(allCount >= officialCount);
+    $('#official-filter').checked = true;
+    $('#official-filter').dispatchEvent(new dom.window.Event('input'));
     $('#setup-local').click();
     assert.equal($('#local-setup').open, true);
     assert.equal($('#verification-drawer').open, false);

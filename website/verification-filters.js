@@ -11,6 +11,16 @@ export function filterModels(state = {}) {
     })
     .map((m) => m.providerId);
   providerIds = [...new Set(providerIds)];
+  if (state.officialOnly) {
+    const officialIds = new Set(
+      byokit.default.providers
+        .filter((p) => p.tags?.includes(byokit.Tag.ProviderOfficial))
+        .map((p) => p.id),
+    );
+    if (!state.provider || officialIds.has(state.provider)) {
+      providerIds = providerIds.filter((id) => officialIds.has(id));
+    }
+  }
   if (state.provider) providerIds = providerIds.filter((id) => id === state.provider);
   const filters = {
     ...(state.callableOnly !== false ? { callable: true } : {}),

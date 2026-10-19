@@ -43,6 +43,20 @@ test('filterModels filters accurately by speciality and tier', () => {
   assert.ok(flashModels.length > 0);
   assert.ok(flashModels.every((m) => m.tier === 'flash'));
 });
+test('filterModels officialOnly restricts to first-party official providers', () => {
+  const officialModels = filterModels({ officialOnly: true, includeOutdated: true });
+  assert.ok(officialModels.length > 0);
+  assert.ok(officialModels.every((m) => m.provider?.tags?.includes(byokit.Tag.ProviderOfficial)));
+  const officialProviders = new Set(officialModels.map((m) => m.providerId));
+  assert.deepEqual([...officialProviders].sort(), [
+    'anthropic',
+    'deepseek',
+    'google',
+    'mistral',
+    'openai',
+    'zhipuai',
+  ]);
+});
 test('documented single selection is bounded, rejects empty matches and excludes Local', () => {
   const models = byokit.getModels({
     providerIds: byokit.exact(byokit.ProviderId.DeepSeek),
