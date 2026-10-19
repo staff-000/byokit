@@ -366,8 +366,7 @@ for (const button of document.querySelectorAll('[data-format]'))
     }
     renderExample();
   });
-$('#hero-providers').replaceChildren(
-  ...byokit.getModels().map((model) => el('span', model.provider.name)),
-);
+const defaultProviders = [...new Set(byokit.getModels().map((model) => model.provider.name))];
+$('#hero-providers').replaceChildren(...defaultProviders.map((name) => el('span', name)));
 renderExample();
 render();
