@@ -1,3 +1,4 @@
+import { localSetupSmoke } from './local-setup-browser-smoke.mjs';
 import { playgroundSmoke, playgroundVerificationSmoke } from './playground-browser-smoke.mjs';
 import { chromium } from 'playwright-core';
 import assert from 'node:assert/strict';
@@ -124,7 +125,14 @@ try {
   assert.match(await page.locator('#models').textContent(), /No matching/);
   await page.locator('#provider-filter').selectOption('');
   await page.locator('#setup-local').click();
-  assert.equal(await page.locator('#local-fields').isVisible(), true);
+  assert.equal(await page.locator('#local-setup').isVisible(), true);
+  assert.equal(await page.locator('#verification-drawer').isVisible(), false);
+  await page.locator('#local-setup-model').fill('fixture-local');
+  await page.getByRole('button', { name: 'Use this model', exact: true }).click();
+  assert.equal(await page.locator('#local-configured').isVisible(), true);
+  await page.locator('#local-verify').click();
+  assert.equal(await page.locator('#verification-drawer').isVisible(), true);
+  assert.match(await page.locator('#selected-name').textContent(), /fixture-local/);
   await page.locator('#drawer-close').click();
   assert.equal(await page.locator('#verified-only').count(), 0);
   assert.equal(await page.locator('#include-outdated').count(), 1);
@@ -477,6 +485,7 @@ try {
   await page.locator('#verification-drawer').waitFor({ state: 'visible' });
   assert.equal((await page.locator('#verification-drawer').boundingBox()).width, 390);
   await page.locator('#drawer-close').click();
+  await localSetupSmoke(page);
   assert.ok(moduleURLs.length >= 10);
   for (const url of moduleURLs)
     assert.equal(

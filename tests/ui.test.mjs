@@ -95,7 +95,9 @@ test('switching providers cannot overwrite the previously saved credential refer
     .querySelector('form')
     .dispatchEvent(new document.defaultView.Event('submit', { cancelable: true }));
   await tick();
-  assert.deepEqual(refs, ['byokit:local']);
+  assert.equal(refs.length, 1);
+  assert.ok(refs[0].startsWith('byokit:local/'));
+  assert.notEqual(refs[0], 'existing-test');
   ui.destroy();
 });
 
@@ -170,5 +172,65 @@ test('a retired saved hosted model is not restored or silently substituted', () 
   assert.ok(![...model.options].some((o) => o.value === 'test/small'));
   assert.equal(model.value, '__unavailable');
   assert.equal(ui.getSelection().modelId, '');
+  ui.destroy();
+});
+
+test('local setup saves a callable model without checking or discovery', async () => {
+  let saved,
+    checks = 0,
+    discoveries = 0;
+  const { root, ui } = setup({
+    value: { providerId: 'local' },
+    onSave: (selection) => (saved = selection),
+    onCheck: async () => {
+      checks++;
+      return { ok: true };
+    },
+    discoverLocal: async () => {
+      discoveries++;
+      return [];
+    },
+  });
+  assert.equal(root.querySelector('button[type=submit]').textContent, 'Use this model');
+  const form = root.querySelector('form');
+  form.dispatchEvent(new document.defaultView.Event('submit', { cancelable: true }));
+  await tick();
+  assert.equal(saved, undefined);
+  root.querySelector('input[data-role=custom]').value = 'installed-model';
+  root.querySelector('input[type=url]').value = 'not-a-url';
+  form.dispatchEvent(new document.defaultView.Event('submit', { cancelable: true }));
+  await tick();
+  assert.equal(saved, undefined);
+  root.querySelector('input[type=url]').value = 'http://localhost:8000';
+  form.dispatchEvent(new document.defaultView.Event('submit', { cancelable: true }));
+  await tick();
+  assert.equal(checks, 0);
+  assert.equal(discoveries, 0);
+  assert.equal(saved.model.providerId, 'local');
+  assert.equal(saved.model.apiModelId, 'installed-model');
+  assert.equal(saved.offeringId, saved.model.id);
+  assert.equal(saved.model.connection.baseUrl, 'http://localhost:8000/v1');
+  assert.equal(saved.model.callSupport.textGeneration, true);
+  ui.destroy();
+});
+
+test('picker switches configured local endpoints and clears connection credentials', () => {
+  const { root, ui, dom } = setup({
+    value: { providerId: 'local' },
+    config: {
+      local: [
+        { endpoint: 'http://localhost:8000', modelId: 'one' },
+        { endpoint: 'http://localhost:11434', api: 'ollama', modelId: 'two' },
+      ],
+    },
+  });
+  const model = root.querySelectorAll('select')[1];
+  root.querySelector('input[type=password]').value = 'first-server-key';
+  model.value = model.options[1].value;
+  model.dispatchEvent(new dom.window.Event('change'));
+  assert.equal(ui.getSelection().model.apiModelId, 'two');
+  assert.equal(ui.getSelection().model.connection.baseUrl, 'http://localhost:11434');
+  assert.equal(ui.getSelection().api, 'ollama');
+  assert.equal(root.querySelector('input[type=password]').value, '');
   ui.destroy();
 });

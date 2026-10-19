@@ -1,3 +1,58 @@
+<dialog id="local-setup" aria-label="Configure local model">
+  <div class="drawer-heading">
+    <div>
+      <strong>Local model</strong>
+      <p>Enter your connection settings. Saving sends no requests.</p>
+    </div>
+    <button id="local-close" type="button" class="small-button">Close ×</button>
+  </div>
+  <form id="local-setup-form" class="drawer-section">
+    <div class="call-fields">
+      <label
+        >Server URL<input
+          id="local-setup-url"
+          type="url"
+          value="http://localhost:11434/v1"
+          required
+          autocomplete="off"
+      /></label>
+      <label
+        >Protocol<select id="local-setup-api">
+          <option value="openai-compatible">OpenAI-compatible</option>
+          <option value="ollama">Ollama</option>
+        </select></label
+      >
+      <label
+        >Model ID<input
+          id="local-setup-model"
+          type="text"
+          placeholder="Your installed model ID"
+          required
+          autocomplete="off"
+          list="local-discovered-models"
+      /></label>
+    </div>
+    <datalist id="local-discovered-models"></datalist>
+    <div class="call-actions">
+      <button type="submit" class="button primary action-highlight">Use this model</button
+      ><button id="local-find" type="button" class="small-button">Find models</button>
+    </div>
+  </form>
+  <p id="local-setup-status" class="fine" role="status"></p>
+  <section id="local-configured" hidden class="drawer-section">
+    <h2 id="local-configured-name"></h2>
+    <p class="fine">Configured · not yet verified. Local results stay private.</p>
+    <code id="local-configured-connection"></code>
+    <div class="call-actions">
+      <button id="local-edit" type="button" class="small-button">Edit connection</button
+      ><button id="local-verify" type="button" class="button primary action-highlight">
+        Verify model
+      </button>
+    </div>
+    <p class="fine">Use this configuration in your app:</p>
+    <pre id="local-sdk-example" class="request-code"></pre>
+  </section>
+</dialog>
 <dialog id="verification-drawer" aria-label="Model verification">
   <div class="drawer-heading">
     <div>
@@ -16,6 +71,9 @@
         <code id="selected-id"></code>
       </div>
       <div class="call-heading-actions">
+        <button id="local-edit-verification" type="button" class="small-button" hidden>
+          Edit connection
+        </button>
         <button
           id="next-unverified"
           type="button"

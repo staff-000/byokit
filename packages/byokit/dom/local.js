@@ -1,3 +1,4 @@
+import { localOfferingId } from '../connection.js';
 import { LocalRuntime, LocalApi } from '../index.js';
 /** Explicit discovery only; never called on mount or catalog refresh. */
 export async function discoverLocal(
@@ -45,7 +46,7 @@ export async function discoverLocal(
     const name = m.name || m.id;
     if (typeof name !== 'string') throw new Error('Invalid model ID');
     return {
-      id: `local/${name}`,
+      id: localOfferingId({ endpoint, api: protocol, modelId: name }),
       providerId: 'local',
       modelId: `local/${name}`,
       apiModelId: name,

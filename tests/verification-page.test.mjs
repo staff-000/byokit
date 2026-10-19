@@ -76,6 +76,7 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
     let source = await readFile('website/verification.js', 'utf8');
     for (const [relative, file] of [
       ['../packages/byokit/catalog.js', 'packages/byokit/catalog.js'],
+      ['../packages/byokit/dom/local.js', 'packages/byokit/dom/local.js'],
       ['./lib/core/catalog.js', 'packages/byokit/catalog.js'],
       ['./verification-report.js', 'website/verification-report.js'],
       ['./contributor-badges.js', 'website/contributor-badges.js'],
@@ -145,8 +146,18 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
     assert.match($('#models').textContent, /No matching/);
     change('provider-filter', '');
     $('#setup-local').click();
+    assert.equal($('#local-setup').open, true);
+    assert.equal($('#verification-drawer').open, false);
+    const callsBeforeSetup = calls;
+    $('#local-setup-model').value = 'fixture-local';
+    $('#local-setup-form').dispatchEvent(new dom.window.Event('submit', { cancelable: true }));
+    assert.equal($('#local-configured').hidden, false);
+    assert.equal(calls, callsBeforeSetup);
+    assert.match($('#local-sdk-example').textContent, /byokit.call/);
+    $('#local-verify').click();
     assert.equal($('#verification-drawer').open, true);
-    assert.equal($('#local-fields').hidden, false);
+    assert.match($('#selected-name').textContent, /fixture-local/);
+    assert.equal($('#local-fields').hidden, true);
     $('#drawer-close').click();
     assert.equal(document.querySelectorAll('#models tr:first-child td').length, 8);
     change('sort-filter', 'priceDescend');

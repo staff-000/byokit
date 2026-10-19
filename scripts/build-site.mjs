@@ -54,6 +54,8 @@ for (const file of [
   'client.js',
 ])
   await cp(resolve(root, 'packages/byokit', file), resolve(out, 'lib/core', file));
+await mkdir(resolve(out, 'lib/core/dom'), { recursive: true });
+await cp(resolve(root, 'packages/byokit/dom/local.js'), resolve(out, 'lib/core/dom/local.js'));
 await mkdir(resolve(out, 'assets'), { recursive: true });
 for (const provider of catalog.providers) {
   try {

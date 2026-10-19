@@ -112,6 +112,12 @@ const node = (tag, text, className) => {
   return element;
 };
 function modelSupport(model) {
+  if (model.providerId === 'local' && model.local)
+    return {
+      single: true,
+      batch: false,
+      reason: 'Configure your connection before verifying. Local results stay private.',
+    };
   const known = offeringIndex.get(model.id);
   if (!known)
     return {
@@ -226,7 +232,15 @@ function renderGeneratedModels() {
     verify.disabled = !support.single;
     if (support.reason) verify.title = support.reason;
     verify.addEventListener('click', () =>
-      openVerification((controller) => controller.openModel(model.id)),
+      openVerification((controller) =>
+        model.local && model.providerId === 'local'
+          ? controller.setupLocal({
+              endpoint: model.local.endpoint,
+              api: model.local.api,
+              modelId: model.apiModelId,
+            })
+          : controller.openModel(model.id),
+      ),
     );
     card.append(select, info, verify);
     container.append(card);

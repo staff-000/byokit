@@ -2559,3 +2559,78 @@ dialog .record-actions {
     bottom: -16px;
   }
 }
+
+#local-setup {
+  width: min(480px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  padding: 20px;
+  border: 1px solid var(--line, #d9ded5);
+  border-radius: 16px;
+  font-size: 13px;
+}
+#local-setup::backdrop {
+  background: rgb(0 0 0 / 35%);
+}
+#local-setup .drawer-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+#local-setup .drawer-heading p {
+  margin: 6px 0 0;
+  font-size: 12px;
+}
+#local-setup .call-fields {
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+#local-setup label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+#local-setup :is(input, select) {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fafbfe;
+  color: var(--ink);
+  font: inherit;
+}
+#local-setup .drawer-heading {
+  align-items: flex-start;
+}
+#local-setup .call-actions {
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+#local-setup .button {
+  padding: 9px 14px;
+  font-size: 13px;
+}
+#local-setup h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+#local-setup .fine {
+  font-size: 12px;
+}
+#local-setup code {
+  overflow-wrap: anywhere;
+}
+#local-setup .request-code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 700px) {
+  #local-setup input,
+  #local-setup select {
+    font-size: 16px;
+  }
+}

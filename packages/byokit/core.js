@@ -2,7 +2,7 @@ import { communityAssessment, textWasVerified, validAssessment } from './verific
 export { classifyVerificationError } from './verification.js';
 export { Byokit, openAI, claude, OpenAI, Anthropic } from './sdk.js';
 import { validateConnection } from './custom-model.js';
-import { connectionFor, callSupportFor } from './connection.js';
+import { connectionFor, callSupportFor, localOfferingId } from './connection.js';
 export { appendModel } from './custom-model.js';
 export { call, callClaude, prepareCall, CallError } from './call.js';
 export class NotImplementedError extends Error {
@@ -2096,12 +2096,12 @@ function localGroups(config, catalog) {
     deployment: 'local',
     tags: [],
   };
-  const offerings = entries.map((entry, i) => ({
-    id: entries.length === 1 ? 'local/custom' : `local/endpoint-${i}`,
+  const offerings = entries.map((entry) => ({
+    id: localOfferingId(entry),
     providerId: 'local',
     modelId: entry.modelId || 'local/custom',
-    apiModelId: entry.modelId || '',
-    name: entry.name || entry.modelId || 'Local — enter your server URL',
+    apiModelId: entry.modelId?.trim() || '',
+    name: entry.name || entry.modelId || 'Local — configure endpoint',
     deployment: 'local',
     speciality: Speciality.Unknown,
     tier: Tier.Unknown,
@@ -2109,7 +2109,7 @@ function localGroups(config, catalog) {
     local: {
       endpoint: entry.endpoint || '',
       api: entry.api || LocalApi.OpenAI,
-      configured: !!entry.endpoint,
+      configured: !!entry.endpoint && !!entry.modelId?.trim(),
     },
     modalities: { input: null, output: null },
     limits: { context: null, input: null, output: null, contextAccounting: 'unknown' },

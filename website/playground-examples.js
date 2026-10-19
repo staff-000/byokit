@@ -7,6 +7,20 @@ console.log(models.map(model => ({
   model: model.apiModelId || '(configure local server)',
 })));`,
   },
+  local: {
+    label: 'Configure a local model',
+    code: `// Configuration only: this query sends no requests.
+const models = byokit.getModels({
+  providerIds: [],
+  local: [{
+    endpoint: 'http://localhost:11434',
+    api: byokit.LocalApi.Ollama,
+    modelId: 'my-installed-model',
+  }],
+});
+console.log(models);
+// In your app: await byokit.call(models[0], 'Hello', '');`,
+  },
   matchers: {
     label: 'Filter with matchers (exact, any, and, or)',
     code: `// Composable matchers: exact, any, contain, exclude, and, or, xor, not

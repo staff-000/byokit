@@ -8,6 +8,7 @@ const en = {
   optionalKey: 'API key (optional)',
   custom: 'Custom model ID',
   save: 'Save',
+  useLocal: 'Use this model',
   check: 'Check connection',
   checking: 'Checking…',
   saved: 'Settings saved',
@@ -33,6 +34,7 @@ const zh = {
   optionalKey: 'API 密钥（可选）',
   custom: '自定义模型 ID',
   save: '保存',
+  useLocal: '使用此模型',
   check: '检查连接',
   checking: '检查中…',
   saved: '设置已保存',
@@ -168,8 +170,11 @@ export function mountByok(container, options) {
     status.dataset.state = state;
   }
   function selection() {
-    const o = catalog.get(model.el.value);
-    return {
+    const local = current()?.provider.deployment === 'local';
+    const o = local
+      ? current()?.offerings.find((entry) => entry.id === model.el.value)
+      : catalog.get(model.el.value);
+    const result = {
       providerId: provider.el.value,
       offeringId: o?.id,
       modelId:
@@ -181,6 +186,19 @@ export function mountByok(container, options) {
         ? { endpoint: endpoint.el.value.trim(), api: api.el.value }
         : {}),
     };
+    if (local && result.modelId && result.endpoint) {
+      try {
+        const configured = catalog.getModels({
+          providerIds: [],
+          local: [{ endpoint: result.endpoint, api: result.api, modelId: result.modelId }],
+        })[0];
+        result.offeringId = configured.id;
+        result.model = configured;
+      } catch {
+        /* An incomplete draft is validated on save. */
+      }
+    }
+    return result;
   }
   function edit() {
     controller?.abort();
@@ -254,7 +272,11 @@ export function mountByok(container, options) {
     search.label.hidden = !expanded;
     more.textContent = expanded ? labels.collapse : labels.advanced;
     let choices =
-      g?.provider.deployment === 'local' ? localChoices : expanded ? full : g?.offerings || [];
+      g?.provider.deployment === 'local'
+        ? [...g.offerings.filter((entry) => entry.local?.configured), ...localChoices]
+        : expanded
+          ? full
+          : g?.offerings || [];
     if (expanded && search.el.value)
       choices = choices.filter((o) =>
         `${o.name} ${o.apiModelId}`.toLowerCase().includes(search.el.value.toLowerCase()),
@@ -268,9 +290,17 @@ export function mountByok(container, options) {
       const o = catalog.get(saved.offeringId);
       addOption(model.el, o.id, `${o.name} · saved`);
     }
-    if (config.ui?.allowCustomModel !== false || (saved?.modelId && !catalog.get(saved.offeringId)))
+    if (
+      g?.provider.deployment === 'local' ||
+      config.ui?.allowCustomModel !== false ||
+      (saved?.modelId && !catalog.get(saved.offeringId))
+    )
       addOption(model.el, '__custom', labels.custom);
-    if (saved?.offeringId && catalog.get(saved.offeringId)?.providerId === g?.provider.id) {
+    if (
+      g?.provider.deployment !== 'local' &&
+      saved?.offeringId &&
+      catalog.get(saved.offeringId)?.providerId === g?.provider.id
+    ) {
       if (full.some((o) => o.id === saved.offeringId)) model.el.value = saved.offeringId;
       else {
         addOption(model.el, '__unavailable', 'Saved model unavailable — choose a LIVE model');
@@ -293,6 +323,12 @@ export function mountByok(container, options) {
       api.el.value = entry.local.api;
       custom.el.value = entry.apiModelId;
     }
+    save.textContent = local ? labels.useLocal : labels.save;
+    model.label.hidden = local && choices.length === 0;
+    if (local) {
+      endpoint.label.after(api.label);
+      api.label.after(custom.label);
+    } else budgetHint.after(custom.label);
     endpoint.label.hidden = !local;
     api.label.hidden = !local;
     discovery.hidden = !local || !options.discoverLocal;
@@ -355,7 +391,9 @@ export function mountByok(container, options) {
             ? options.value?.credentialRef
             : undefined) ||
           options.credentialRef ||
-          `byokit:${activeProvider}`;
+          (activeProvider === 'local'
+            ? `byokit:${selection().offeringId || 'local/unconfigured'}`
+            : `byokit:${activeProvider}`);
       store
         .get?.(ref)
         .then((secret) => {
@@ -364,10 +402,22 @@ export function mountByok(container, options) {
         .catch(() => {});
     }
   };
-  model.el.onchange = edit;
+  model.el.onchange = () => {
+    const entry = current()?.offerings.find((item) => item.id === model.el.value);
+    if (entry?.local?.configured) {
+      key.el.value = '';
+      endpoint.el.value = entry.local.endpoint;
+      api.el.value = entry.local.api;
+    }
+    edit();
+  };
   custom.el.oninput = edit;
-  api.el.onchange = edit;
-  endpoint.el.oninput = edit;
+  const editConnection = () => {
+    key.el.value = '';
+    edit();
+  };
+  api.el.onchange = editConnection;
+  endpoint.el.oninput = editConnection;
   key.el.oninput = edit;
   async function action(kind) {
     if (busy || disposed) return;
@@ -381,6 +431,10 @@ export function mountByok(container, options) {
       message(labels.select, 'warning');
       return;
     }
+    if (p.deployment === 'local' && !s.model) {
+      message('Enter a valid HTTP(S) URL and model ID.', 'warning');
+      return;
+    }
     const secret = key.el.value;
     if (p?.auth === 'required' && !secret) {
       message(labels.missing, 'warning');
@@ -392,7 +446,7 @@ export function mountByok(container, options) {
     busy = true;
     save.disabled = true;
     check.disabled = true;
-    message(labels.checking, 'checking');
+    if (kind === 'check') message(labels.checking, 'checking');
     try {
       if (kind === 'check') {
         const result = await bounded(
@@ -407,9 +461,13 @@ export function mountByok(container, options) {
         );
       } else {
         const ref =
-          (options.value?.providerId === s.providerId ? options.value?.credentialRef : undefined) ||
-          options.credentialRef ||
-          `byokit:${s.providerId}`;
+          s.providerId === 'local'
+            ? `byokit:${s.offeringId}`
+            : (options.value?.providerId === s.providerId
+                ? options.value?.credentialRef
+                : undefined) ||
+              options.credentialRef ||
+              `byokit:${s.providerId}`;
         await store.set(ref, secret);
         if (disposed || request !== revision) return;
         await options.onSave({ ...s, credentialRef: ref });

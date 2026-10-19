@@ -43,6 +43,17 @@ def connection_for(model):
     if model.get("local"):
         local = model["local"]
         base = local.get("endpoint", "").rstrip("/")
+        if base:
+            parsed = urllib.parse.urlsplit(base)
+            if (parsed.scheme not in ("http", "https") or not parsed.hostname
+                    or parsed.username or parsed.password or parsed.query or parsed.fragment):
+                _fail("Endpoint must be HTTP(S), without credentials, query or fragment.")
+            host = parsed.hostname or ""
+            if ":" in host:
+                host = "[" + host + "]"
+            port = parsed.port
+            authority = host + ((":" + str(port)) if port is not None and (parsed.scheme, port) not in [("http", 80), ("https", 443)] else "")
+            base = urllib.parse.urlunsplit((parsed.scheme.lower(), authority, parsed.path.rstrip("/"), "", ""))
         protocol = (
             ApiProtocol.OLLAMA if local.get("api") == "ollama" else ApiProtocol.OPEN_AI
         )
@@ -1029,8 +1040,9 @@ def call_claude(
 def call_support_for(model):
     import re
 
-    if model.get("local", {}).get("configured"):
-        return {"textGeneration": True, "reason": None}
+    if model.get("local") is not None:
+        configured = bool(model["local"].get("configured") and model.get("apiModelId", "").strip())
+        return {"textGeneration": configured, "reason": None if configured else "Configure a server URL and model ID"}
     reason = None
     modalities = model.get("modalities") or {}
     if not model.get("connection") and model.get("providerId") not in PROVIDERS:
@@ -1054,3 +1066,10 @@ def call_support_for(model):
     ):
         reason = "Unsupported model operation"
     return {"textGeneration": reason is None, "reason": reason}
+
+
+def local_offering_id(entry):
+    if not entry.get("endpoint"):
+        return "local/custom"
+    connection = connection_for({"local": entry})
+    return "local/" + "/".join(urllib.parse.quote(value, safe="~!*'()-._") for value in [connection["baseUrl"], connection["protocol"], entry.get("modelId", "").strip()])

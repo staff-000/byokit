@@ -1,3 +1,4 @@
+import { discoverLocal } from '../packages/byokit/dom/local.js';
 import { textWasVerified } from '../packages/byokit/verification.js';
 import { assessmentForError, attemptText, retryCountdown } from './attempt-display.js';
 import {
@@ -155,6 +156,10 @@ let drawerOrigin = null,
   drawerOriginModel = null,
   lastRunMode = null;
 const providerKeys = new Map();
+const credentialId = (model) =>
+  model.local
+    ? `local:${model.connection?.baseUrl}:${model.connection?.protocol}`
+    : model.providerId;
 function openDrawer(mode) {
   $('#batch-status').hidden = mode !== 'batch';
   $('#batch-results').hidden = mode !== 'batch';
@@ -172,14 +177,18 @@ function openModel(model) {
     openDrawer(batchController ? 'batch' : 'single');
     return;
   }
+  if (model.local && !model.local.configured) {
+    openLocalSetup();
+    return;
+  }
   if (!model.local && !model.callSupport?.textGeneration) return;
-  providerKeys.set(selected.providerId, $('#api-key').value);
+  providerKeys.set(credentialId(selected), $('#api-key').value);
   $('#prompt').value = SPEED_PROMPT;
   $('#max-tokens').value = SPEED_MAX_TOKENS;
   select(model);
   for (const row of document.querySelectorAll('#models tr'))
     row.classList.toggle('selected', row.dataset.offering === model.id);
-  $('#api-key').value = providerKeys.get(model.providerId) || '';
+  $('#api-key').value = providerKeys.get(credentialId(model)) || '';
   openDrawer('single');
   $('#api-key').focus({ preventScroll: true });
 }
@@ -195,7 +204,7 @@ $('#verification-drawer').addEventListener('close', () => {
   target?.focus({ preventScroll: true });
 });
 $('#api-key').addEventListener('input', () =>
-  providerKeys.set(selected.providerId, $('#api-key').value),
+  providerKeys.set(credentialId(selected), $('#api-key').value),
 );
 const storageKey = 'byokit.inference-verifications.v1';
 let records = [],
@@ -211,10 +220,7 @@ const models = byokit.getModels(byokit.COMPLETE, {
     includeDeprecated: true,
   },
 });
-$('#setup-local')?.addEventListener('click', () => {
-  const local = models.find((m) => m.local);
-  if (local) openModel(local);
-});
+$('#setup-local')?.addEventListener('click', () => openLocalSetup());
 function isUnverified(m) {
   if (!m || m.local) return false;
   if (records.some((r) => r.offeringId === m.id && textWasVerified(r))) return false;
@@ -330,9 +336,18 @@ function updateCostEstimate() {
 function select(model) {
   const changedProvider = selected?.providerId !== model.providerId;
   invalidate();
+  const changedLocalConnection =
+    selected?.local &&
+    model.local &&
+    (selected.connection?.baseUrl !== model.connection?.baseUrl ||
+      selected.connection?.protocol !== model.connection?.protocol);
   selected = model;
+  if (model.local) {
+    $('#endpoint').value = model.local.endpoint;
+    $('#local-model').value = model.apiModelId;
+  }
   $('#attempt-community').textContent = communityText(model.id);
-  if (changedProvider) {
+  if (changedProvider || changedLocalConnection) {
     $('#api-key').value = '';
     $('#api-key').placeholder = `Paste your ${model.provider?.name || model.providerId} key`;
   }
@@ -357,7 +372,14 @@ function select(model) {
       return option;
     }),
   );
-  $('#local-fields').hidden = !model.local;
+  if (model.local) $('#protocol').value = model.local.api === 'ollama' ? 'ollama' : 'chat';
+  $('#local-fields').hidden = true;
+  $('#local-edit-verification').hidden = !model.local;
+  $('#protocol').closest('label').hidden = !!model.local;
+  $('#next-unverified').hidden = !!model.local;
+  $('#key-note').textContent = model.local
+    ? 'Optional key for your server. It stays in page memory.'
+    : 'Use a key for the selected provider. A small inference call may use your credits.';
   $('#key-optional').textContent = model.local ? '(optional)' : '';
   $('#provider-docs').hidden = !api?.docs;
   if (api?.docs) $('#provider-docs').href = api.docs;
@@ -373,7 +395,9 @@ function select(model) {
     $('#verify').disabled = false;
     $('#verify').title = '';
     status(
-      `Ready to verify ${model.provider?.name || model.providerId} ${model.name}. Enter your API key and click Verify model.`,
+      model.local
+        ? `Configured ${model.name}. Verification sends two requests to your server.`
+        : `Ready to verify ${model.provider?.name || model.providerId} ${model.name}. Enter your API key and click Verify model.`,
     );
   }
   updateCostEstimate();
@@ -1196,7 +1220,7 @@ $('#copy-request').addEventListener('click', async () => {
 $('#cancel').addEventListener('click', () => controller?.abort());
 $('#clear-key').addEventListener('click', () => {
   $('#api-key').value = '';
-  providerKeys.delete(selected.providerId);
+  providerKeys.delete(credentialId(selected));
   invalidate();
   destination();
   status('API key cleared.');
@@ -1205,11 +1229,123 @@ for (const id of ['api-key', 'protocol', 'endpoint', 'local-model', 'prompt', 'm
   $('#' + id).addEventListener('input', () => {
     if (id === 'endpoint') {
       $('#api-key').value = '';
-      providerKeys.delete(selected.providerId);
+      providerKeys.delete(credentialId(selected));
     }
     invalidate();
     destination();
   });
+let configuredLocal = null,
+  localSetupOrigin = null,
+  localDiscovery = null,
+  localSetupRevision = 0;
+function openLocalSetup(model = configuredLocal) {
+  if (busy || batchController) {
+    openDrawer(batchController ? 'batch' : 'single');
+    return;
+  }
+  localSetupOrigin = document.activeElement;
+  if (model?.local?.configured) {
+    configuredLocal = model;
+    $('#local-setup-url').value = model.local.endpoint;
+    $('#local-setup-api').value = model.local.api;
+    $('#local-setup-model').value = model.apiModelId;
+  }
+  $('#local-setup-form').hidden = false;
+  $('#local-configured').hidden = true;
+  $('#local-setup-status').textContent = '';
+  $('#local-setup').showModal();
+  $('#local-setup-url').focus({ preventScroll: true });
+}
+$('#local-close').addEventListener('click', () => $('#local-setup').close());
+$('#local-setup').addEventListener('close', () => {
+  localDiscovery?.abort();
+  localSetupRevision++;
+  localSetupOrigin?.focus({ preventScroll: true });
+});
+for (const id of ['local-setup-url', 'local-setup-api', 'local-setup-model']) {
+  $('#' + id).addEventListener('input', () => {
+    localDiscovery?.abort();
+    localSetupRevision++;
+    $('#local-setup-status').textContent = '';
+    $('#local-discovered-models').replaceChildren();
+  });
+}
+$('#local-setup-form').addEventListener('submit', (event) => {
+  event.preventDefault();
+  const entry = {
+    endpoint: $('#local-setup-url').value.trim(),
+    api: $('#local-setup-api').value,
+    modelId: $('#local-setup-model').value.trim(),
+  };
+  try {
+    if (!entry.modelId) throw new Error('Enter a model ID.');
+    const model = byokit.getModels({ providerIds: [], local: [entry] })[0];
+    if (!model?.callSupport.textGeneration)
+      throw new Error('Enter a valid URL, protocol, and model ID.');
+    localDiscovery?.abort();
+    localSetupRevision++;
+    if (
+      configuredLocal?.connection.baseUrl !== model.connection.baseUrl ||
+      configuredLocal?.connection.protocol !== model.connection.protocol
+    ) {
+      if (configuredLocal) providerKeys.delete(credentialId(configuredLocal));
+      $('#api-key').value = '';
+    }
+    configuredLocal = model;
+    if (!models.some((item) => item.id === model.id)) models.push(model);
+    $('#local-setup-form').hidden = true;
+    $('#local-configured').hidden = false;
+    $('#local-configured-name').textContent = model.name;
+    $('#local-configured-connection').textContent =
+      `${model.connection.baseUrl} · ${model.connection.protocol}`;
+    $('#local-sdk-example').textContent =
+      `const models = byokit.getModels({ local: [${JSON.stringify(entry, null, 2)}] });\nconst local = models.find(model => model.providerId === 'local');\nconst response = await byokit.call(local, 'Hello', '');`;
+    $('#local-setup-status').textContent = 'Model configured. No request was sent.';
+    $('#local-verify').focus({ preventScroll: true });
+  } catch (error) {
+    $('#local-setup-status').textContent = error.message;
+  }
+});
+$('#local-edit').addEventListener('click', () => {
+  $('#local-setup-form').hidden = false;
+  $('#local-configured').hidden = true;
+  $('#local-setup-url').focus({ preventScroll: true });
+});
+$('#local-verify').addEventListener('click', () => {
+  $('#local-setup').close();
+  openModel(configuredLocal);
+});
+$('#local-edit-verification').addEventListener('click', () => {
+  $('#verification-drawer').close();
+  openLocalSetup(selected);
+});
+$('#local-find').addEventListener('click', async () => {
+  localDiscovery?.abort();
+  localDiscovery = new AbortController();
+  const revision = ++localSetupRevision;
+  $('#local-setup-status').textContent = 'Finding models…';
+  try {
+    const found = await discoverLocal($('#local-setup-url').value.trim(), {
+      api: $('#local-setup-api').value,
+      signal: localDiscovery.signal,
+    });
+    if (revision !== localSetupRevision) return;
+    $('#local-discovered-models').replaceChildren(
+      ...found.map((model) => {
+        const option = el('option');
+        option.value = model.apiModelId;
+        return option;
+      }),
+    );
+    $('#local-setup-status').textContent = found.length
+      ? `${found.length} models found. Choose or enter a model ID.`
+      : 'The server returned no models. You can enter a model ID manually.';
+  } catch {
+    if (revision === localSetupRevision)
+      $('#local-setup-status').textContent =
+        'Could not list models. The server may be unreachable, require authentication, or be blocked by browser restrictions. Enter a model ID manually.';
+  }
+});
 if ($('#models')) {
   // Catalog tags and typed capabilities drive the available selectors.
   for (const tag of [
@@ -1361,6 +1497,12 @@ void tracker.check('').catch(() => {});
 
 // Both the verification table and playground resolve IDs against the reviewed catalog.
 export const verificationDrawer = Object.freeze({
+  setupLocal(entry) {
+    if (entry?.endpoint) {
+      const model = byokit.getModels({ providerIds: [], local: [entry] })[0];
+      openLocalSetup(model);
+    } else openLocalSetup();
+  },
   openModel(id) {
     const model = models.find((m) => m.id === id);
     if (!model || (!model.local && !model.callSupport?.textGeneration))

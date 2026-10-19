@@ -16,7 +16,9 @@ export const providerConnections = Object.freeze({
 export function connectionFor(model) {
   if (model.connection) return { ...model.connection };
   if (model.local) {
-    let baseUrl = model.local.endpoint?.replace(/\/$/, '') || '';
+    let baseUrl = model.local.endpoint
+      ? new URL(model.local.endpoint).href.replace(/\/+$/, '')
+      : '';
     const protocol = model.local.api === 'ollama' ? ApiProtocol.Ollama : ApiProtocol.OpenAI;
     if (baseUrl && protocol === ApiProtocol.OpenAI && !baseUrl.endsWith('/v1')) baseUrl += '/v1';
     if (protocol === ApiProtocol.Ollama) baseUrl = baseUrl.replace(/\/v1$/, '');
@@ -29,7 +31,13 @@ export function connectionFor(model) {
 
 /** Catalog discovery never installs or trusts upstream adapters. */
 export function callSupportFor(model) {
-  if (model.local?.configured) return { textGeneration: true, reason: null };
+  if (model.local) {
+    const configured = !!model.local.configured && !!model.apiModelId?.trim();
+    return {
+      textGeneration: configured,
+      reason: configured ? null : 'Configure a server URL and model ID',
+    };
+  }
   let reason = null;
   if (!model.connection && !providerConnections[model.providerId])
     reason = 'No reviewed provider adapter';
@@ -49,4 +57,15 @@ export function callSupportFor(model) {
   )
     reason = 'Unsupported model operation';
   return { textGeneration: reason === null, reason };
+}
+
+export function localOfferingId(entry) {
+  if (!entry.endpoint) return 'local/custom';
+  const connection = connectionFor({ local: entry });
+  return (
+    'local/' +
+    [connection.baseUrl, connection.protocol, entry.modelId?.trim() || '']
+      .map(encodeURIComponent)
+      .join('/')
+  );
 }

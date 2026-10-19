@@ -280,3 +280,43 @@ class CallTests(unittest.TestCase):
             r["choices"][0]["message"]["reasoning_content"], "Deep thoughts only"
         )
 
+
+
+class LocalSetupTests(unittest.TestCase):
+    def test_local_setup_identity_and_incomplete_call(self):
+        entries = [
+            {"endpoint": "http://LOCALHOST:80/v1/", "modelId": "one"},
+            {"endpoint": "http://localhost:11434", "api": byokit.LocalApi.OLLAMA, "modelId": "two"},
+        ]
+        models = byokit.get_models({"providerIds": [], "local": entries})
+        reversed_models = byokit.get_models({"providerIds": [], "local": list(reversed(entries))})
+        self.assertEqual([m["id"] for m in models], [m["id"] for m in reversed(reversed_models)])
+        self.assertEqual(models[0]["connection"]["baseUrl"], "http://localhost/v1")
+        for model in models:
+            self.assertTrue(model["callSupport"]["textGeneration"])
+            self.assertEqual(prepare_call(model, "Hello")["body"]["model"], model["apiModelId"])
+        incomplete = byokit.get_models({"providerIds": [], "local": [{"endpoint": "http://localhost:8080"}]})[0]
+        self.assertFalse(incomplete["local"]["configured"])
+        self.assertFalse(incomplete["callSupport"]["textGeneration"])
+        with patch("http.client.HTTPConnection") as network:
+            with self.assertRaises(byokit.CallError):
+                byokit.call(incomplete, "Hello", "")
+            network.assert_not_called()
+
+    def test_both_local_protocols_use_regular_call(self):
+        for api in [byokit.LocalApi.OPEN_AI, byokit.LocalApi.OLLAMA]:
+            selected = byokit.get_models({"providerIds": [], "local": [{"endpoint": "http://localhost:11434", "api": api, "modelId": "installed-model"}]})[0]
+            Connection.requests = []
+            Connection.response_data = (
+                {"message": {"content": "OK"}, "done": True}
+                if api == byokit.LocalApi.OLLAMA
+                else {"choices": [{"message": {"content": "OK"}}]}
+            )
+            with patch("http.client.HTTPConnection", Connection):
+                result = byokit.call(selected, "Hello", "")
+            self.assertEqual(result["choices"][0]["message"]["content"], "OK")
+            self.assertEqual(len(Connection.requests), 1)
+            path, body, headers = Connection.requests[0]
+            self.assertEqual(path, "/api/chat" if api == byokit.LocalApi.OLLAMA else "/v1/chat/completions")
+            self.assertEqual(body["model"], "installed-model")
+            self.assertNotIn("Authorization", headers)

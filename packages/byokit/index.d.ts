@@ -246,6 +246,8 @@ export interface PickerConfig {
   budget?: { maxInputTokens?: number; maxOutputTokens?: number; overheadTokens?: number };
 }
 export interface Selection {
+  /** Configured local model, ready for call(); absent for incomplete drafts. */
+  model?: ModelOption;
   providerId: ProviderId | CustomProviderId | (string & {});
   offeringId?: string;
   modelId: string;

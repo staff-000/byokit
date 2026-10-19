@@ -161,3 +161,41 @@ is an explicit choice for an unauthenticated local endpoint; omission is rejecte
 - Legacy `openAI()`/`claude()` factories and bound-model callback constructor forms
   keep their prior behavior, but are deprecated. Use a new client to change accounts.
 - `byokit.call(model, prompt, key)` and `callClaude()` remain stateless helpers.
+
+### Local models
+
+Local is a setup option in model pickers. Supply a server URL, protocol, and model ID to get a regular callable model; configuring it sends no network request.
+
+```js
+const models = byokit.getModels({
+  local: [
+    {
+      endpoint: 'http://localhost:11434',
+      api: byokit.LocalApi.Ollama,
+      modelId: 'my-installed-model',
+    },
+  ],
+});
+const local = models.find((model) => model.providerId === 'local');
+const response = await byokit.call(local, 'Hello', '');
+```
+
+```python
+models = byokit.get_models({
+    "local": [{
+        "endpoint": "http://localhost:11434",
+        "api": byokit.LocalApi.OLLAMA,
+        "modelId": "my-installed-model",
+    }],
+})
+local = next(model for model in models if model["providerId"] == "local")
+response = byokit.call(local, "Hello", "")
+```
+
+The entry contains `providerId`, `apiModelId`, and `connection` (`baseUrl` and `protocol`). Use `LocalApi.OpenAI` in JavaScript or `LocalApi.OPEN_AI` in Python for an OpenAI-compatible server. The empty key is suitable for a server without authentication; pass a key separately when required.
+
+The generic **Local — configure endpoint** entry is a setup option, with `callSupport.textGeneration: false`. A URL without a model ID is also incomplete. Configured entries support routing through the selected adapter; configuration does not establish server availability or model capabilities. Unknown modalities remain unknown and are excluded by modality filters.
+
+Local offering IDs identify the normalized endpoint, protocol, and served model ID, and stay stable when entries are reordered. Older `local/custom` and positional verification records remain readable but are not attributed to a new connection.
+
+The DOM picker's **Use this model** action validates and saves without discovery or generation. For a configured local selection, `selection.model` is a regular `ModelOption` ready for `byokit.call(selection.model, prompt, key)`. Existing selection fields and credential references remain available. **Find models** is optional and runs only when clicked. The website keeps configuration in page memory and opens verification only when requested; local results remain private.

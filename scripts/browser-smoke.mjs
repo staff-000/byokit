@@ -16,7 +16,8 @@ try {
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await page.getByText('Settings saved', { exact: true }).waitFor();
   assert.ok(!(await page.locator('#output').textContent()).includes('demo-secret'));
-  await page.getByRole('button', { name: 'Use global preset' }).click();
+  await page.getByRole('button', { name: 'Use China preset' }).click();
+  await page.getByRole('button', { name: 'Use Global preset' }).click();
   assert.ok(
     (await page.locator('.byokit select').first().locator('option').allTextContents()).some(
       (s) => s === 'DeepSeek',
@@ -26,11 +27,13 @@ try {
   await page.locator('input[data-role=custom]').fill('my-local-model');
   await page.locator('input[type=url]').fill('http://localhost:8080/v1');
   await page.locator('.byokit select').nth(2).selectOption('openai-compatible');
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.getByRole('button', { name: 'Use this model', exact: true }).click();
   await page.getByText('Settings saved', { exact: true }).waitFor();
   const localSaved = JSON.parse(await page.locator('#output').textContent());
   assert.equal(localSaved.api, 'openai-compatible');
   assert.equal(localSaved.modelId, 'my-local-model');
+  assert.equal(localSaved.model.connection.baseUrl, 'http://localhost:8080/v1');
+  assert.equal(localSaved.model.callSupport.textGeneration, true);
   await page.screenshot({ path: '/private/tmp/byokit-desktop.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));

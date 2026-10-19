@@ -75,7 +75,8 @@ Python generates `generated_models.py` exporting `MODELS`, `get_models()`, and `
 Pass `api: byokit.LocalApi.OpenAI` for Ollama, vLLM, or llama.cpp `/v1/models`;
 pass `api: byokit.LocalApi.Ollama` for native `/api/tags`, optionally `runningOnly: true` for `/api/ps`.
 UI `discoverLocal(endpoint, signal, {api})` callbacks receive the selected protocol.
-Queries append one generic Local setup entry, or explicit `local` URL/model entries,
+Manual setup needs only URL, protocol, and model ID. **Use this model** saves without sending requests; `onSave` receives a callable `selection.model` for local entries. Pass it directly to `byokit.call(selection.model, prompt, key)`. Connection checks and model discovery remain explicit actions.
+Queries append one generic **Local — configure endpoint** setup entry, or explicit `local` URL/model entries,
 without hosted metadata filtering. `local: false` removes them.
 It runs only when called, defaults to loopback, requires allowRemote for other hosts,
 and times out after ten seconds. Supply application callbacks for authenticated runtimes.

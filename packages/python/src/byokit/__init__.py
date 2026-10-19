@@ -2345,6 +2345,7 @@ def _validate_local(entry):
             not isinstance(entry.get("endpoint"), str)
             or url.scheme not in ["http", "https"]
             or not url.netloc
+            or not url.hostname
             or url.username
             or url.password
             or url.query
@@ -2431,17 +2432,15 @@ def _local_groups(config, catalog):
         name="Local",
     )
     offerings = []
-    for i, entry in enumerate(entries):
+    for entry in entries:
         offerings.append(
             {
-                "id": "local/custom"
-                if len(entries) == 1
-                else "local/endpoint-" + str(i),
+                "id": local_offering_id(entry),
                 "providerId": "local",
                 "modelId": entry.get("modelId", "local/custom"),
-                "apiModelId": entry.get("modelId", ""),
+                "apiModelId": entry.get("modelId", "").strip(),
                 "name": entry.get(
-                    "name", entry.get("modelId", "Local — enter your server URL")
+                    "name", entry.get("modelId", "Local — configure endpoint")
                 ),
                 "deployment": "local",
                 "speciality": "unknown",
@@ -2450,7 +2449,7 @@ def _local_groups(config, catalog):
                 "local": {
                     "endpoint": entry.get("endpoint", ""),
                     "api": entry.get("api", "openai-compatible"),
-                    "configured": bool(entry.get("endpoint")),
+                    "configured": bool(entry.get("endpoint") and entry.get("modelId", "").strip()),
                 },
                 "modalities": {"input": None, "output": None},
                 "limits": {
@@ -2469,7 +2468,7 @@ def _local_groups(config, catalog):
     return [{"provider": provider, "offerings": offerings}]
 
 
-from .inference import call, call_claude, prepare_call, connection_for, call_support_for, CallError
+from .inference import call, call_claude, prepare_call, connection_for, call_support_for, local_offering_id, CallError
 
 from .sdk import Byokit, OpenAI, Anthropic, openAI, claude
 

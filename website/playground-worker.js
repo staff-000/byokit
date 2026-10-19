@@ -146,7 +146,13 @@ self.onmessage = async ({ data }) => {
           m.connection?.protocol ||
           (pId === 'anthropic' ? 'anthropic' : pId === 'google' ? 'gemini' : 'chat'),
         endpoint: m.connection?.baseUrl || m.baseUrl,
-        local: !!m.local,
+        local: m.local
+          ? {
+              endpoint: m.local.endpoint || '',
+              api: m.local.api || 'openai-compatible',
+              configured: !!m.local.configured,
+            }
+          : false,
         callSupport: m.callSupport || { textGeneration: true },
         verification: m.verification,
       };
