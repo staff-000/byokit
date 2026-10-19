@@ -1,6 +1,6 @@
 {
   "name": "byokit",
-  "version": "0.0.2",
+  "version": "0.2.0",
   "description": "Add BYOK with a model list and one simple call. Keep your model choices fresh.",
   "type": "module",
   "bin": {
