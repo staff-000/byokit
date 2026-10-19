@@ -129,6 +129,9 @@ try {
   assert.equal(await page.locator('#github-sign-in').count(), 0);
   await page.locator('#models tr').first().waitFor();
   assert.equal(await page.locator('#callable-filter').isChecked(), true);
+  assert.equal(await page.locator('#official-filter').isChecked(), true);
+  assert.equal(await page.locator('#provider-filter option[value="302ai"]').count(), 0);
+  await page.locator('#official-filter').uncheck();
   assert.equal(await page.locator('#provider-filter option[value="302ai"]').count(), 1);
   assert.equal(await page.locator('#provider-filter option[value="local"]').count(), 0);
   assert.equal(await page.locator('#models .batch-pick:disabled').count(), 0);

@@ -1399,11 +1399,31 @@ if ($('#models')) {
   ].sort((a, b) =>
     (a.name || a.id).localeCompare(b.name || b.id, undefined, { sensitivity: 'base' }),
   );
-  for (const provider of providers) {
-    const option = el('option', provider.name);
-    option.value = provider.id;
-    $('#provider-filter').append(option);
+  const officialIds = new Set(
+    byokit.default.providers
+      .filter((p) => p.tags?.includes(byokit.Tag.ProviderOfficial))
+      .map((p) => p.id),
+  );
+  function renderProviderOptions() {
+    const currentVal = $('#provider-filter').value;
+    const isOfficial = $('#official-filter') ? $('#official-filter').checked : false;
+    const list = isOfficial ? providers.filter((p) => officialIds.has(p.id)) : providers;
+    $('#provider-filter').replaceChildren(el('option', 'All providers', { value: '' }));
+    for (const provider of list) {
+      const option = el('option', provider.name);
+      option.value = provider.id;
+      $('#provider-filter').append(option);
+    }
+    if (list.some((p) => p.id === currentVal)) {
+      $('#provider-filter').value = currentVal;
+    } else {
+      $('#provider-filter').value = '';
+    }
   }
+  renderProviderOptions();
+  $('#official-filter')?.addEventListener('input', () => {
+    renderProviderOptions();
+  });
   for (const id of [
     'model-search',
     'provider-filter',
@@ -1427,25 +1447,6 @@ if ($('#models')) {
       shown = 40;
       renderModels();
     });
-  const officialIds = new Set(
-    byokit.default.providers
-      .filter((p) => p.tags?.includes(byokit.Tag.ProviderOfficial))
-      .map((p) => p.id),
-  );
-  $('#official-filter')?.addEventListener('input', () => {
-    if (
-      $('#official-filter').checked &&
-      $('#provider-filter').value &&
-      !officialIds.has($('#provider-filter').value)
-    ) {
-      $('#provider-filter').value = '';
-    }
-  });
-  $('#provider-filter')?.addEventListener('input', () => {
-    if ($('#provider-filter').value && !officialIds.has($('#provider-filter').value)) {
-      if ($('#official-filter')) $('#official-filter').checked = false;
-    }
-  });
 }
 function advanceToNextUnverified() {
   if (busy || batchController) return;

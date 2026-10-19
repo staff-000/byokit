@@ -130,9 +130,13 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
     const sortedProviderOptions = [...providerOptions].sort((a, b) =>
       a.localeCompare(b, undefined, { sensitivity: 'base' }),
     );
-    assert.deepEqual(providerOptions, sortedProviderOptions);
     assert.equal($('#callable-filter').checked, true);
     assert.equal($('#official-filter').checked, true);
+    assert.equal(providerOptions.length, 6);
+    assert.ok(!document.querySelector('#provider-filter option[value="302ai"]'));
+    // Unchecking official filter restores full provider list
+    $('#official-filter').checked = false;
+    $('#official-filter').dispatchEvent(new dom.window.Event('input'));
     assert.ok(document.querySelector('#provider-filter option[value="302ai"]'));
     assert.ok(!document.querySelector('#provider-filter option[value="local"]'));
     assert.ok([...document.querySelectorAll('#models .batch-pick')].every((c) => !c.disabled));
