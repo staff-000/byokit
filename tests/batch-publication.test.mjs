@@ -58,7 +58,7 @@ test('one compact batch issue roundtrips 10 reports and uses trusted GitHub iden
   assert.equal(contributorBadges(published.reports)[0].verificationCount, 10);
   assert.equal(addReport(published.data, published.reports, submission).changed, false);
 });
-test('batch publication is atomic, preserves the per-model daily cap, and deduplicates individual reports', () => {
+test('batch publication accepts same-day contributions beyond ten and deduplicates individual reports', () => {
   const batch = createBatchReport(reports(3)),
     submission = issueSubmission(event(batch), catalog);
   const individual = canonicalReport({
@@ -75,7 +75,10 @@ test('batch publication is atomic, preserves the per-model daily cap, and dedupl
   }));
   const snapshot = JSON.stringify(catalog),
     previous = JSON.stringify(existing);
-  assert.throws(() => addReport(catalog, existing, submission), /Daily publication limit/);
+  const next = addReport(catalog, existing, submission);
+  assert.equal(next.changed, true);
+  assert.equal(next.reports.length, 11);
+  assert.equal(addReport(next.data, next.reports, submission).changed, false);
   assert.equal(JSON.stringify(existing), previous);
   assert.equal(JSON.stringify(catalog), snapshot);
 });

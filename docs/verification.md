@@ -42,13 +42,21 @@ verification bot's commits. Enable Issues, Actions, and the existing Actions Pag
 publishing source. Normal issues are ignored.
 
 The workflow accepts strict reports checked within 24 hours before issue creation,
-deduplicates by numeric contributor ID/report UUID and source issue, and limits
-contributors to ten reports per day. It checks trusted main code only; issue
-content is data. Concurrent pushes reread/retry without repeating provider calls.
+and deduplicates by numeric contributor ID/report UUID and source issue. There
+is no daily publication limit per contributor. Each batch issue accepts up to
+ten model observations; contributors may submit multiple batches or individual
+reports. It checks trusted main code only; issue content is data. Concurrent
+pushes reread/retry without repeating provider calls.
 A successful deployment closes the issue with commit/workflow links. Failures leave
 it open; rerun the workflow after resolving permissions or deployment problems.
 For invalid report content, submit a corrected issue instead of rerunning its
 captured invalid opened event.
+
+Publication failures identify the category in both the workflow log and issue
+comment, with a recovery action. Only fixed, sanitized explanations are exposed;
+exception messages and raw report/provider data are not logged. Publication
+failure does not mean the provider call failed, and workflow reruns never call
+the provider again.
 
 `catalog/verifications.json` is the canonical report store. Catalog generation
 updates JavaScript/Python data and the verification hash in the same commit.
@@ -153,7 +161,7 @@ observations, not guaranteed performance or independent experiments.
 The public report carries the benchmark version without including the prompt,
 API key, or generated text. A successful result remains private until you share
 it on GitHub. Repeated tests are retained and count toward the contributor's
-published-contribution total; the daily publication limit still applies.
+published-contribution total without a daily publication limit.
 
 ## Structured verification outcomes
 
@@ -228,8 +236,8 @@ A batch issue contains up to ten sanitized model observations. Successful checks
 and classified issues are retained separately; canceled and skipped entries are
 excluded. A published successful text-generation check qualifies for the Model
 Verifier badge. A batch containing only issues does not qualify for a success
-badge. The publisher validates all models before committing, applies daily limits
-to model reports, and preserves report IDs so resubmission cannot add duplicate
+badge. The publisher validates all models before committing and preserves report
+IDs so resubmission cannot add duplicate
 measurements. A publication error cannot commit a partial batch.
 
 The highlighted sharing action automatically prepares one compact GitHub draft.

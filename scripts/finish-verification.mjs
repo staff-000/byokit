@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { contributorBadges, badgeMarkdown } from '../website/contributor-badges.js';
 import { REPORT_MARKER, parseIssueReport } from '../website/verification-report.js';
+import { publicationFailureNotice } from './publication-errors.mjs';
 const repository = 'staff-000/byokit',
   site = 'https://staff-000.github.io/byokit/';
 const event = JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH, 'utf8')),
@@ -87,7 +88,7 @@ const body = published
   ? `${process.env.STAGING === 'true' ? 'Staging pipeline passed. The receipt is published separately; no model verification was added.' : 'Community verification published on the website.'}\n\n${commit}[Website](${site}verification.html) · [Workflow/deployment](${run})`
   : process.env.RECORD_RESULT === 'success'
     ? `The report is committed, but public website publication has not been confirmed. Leave this issue open and rerun the workflow after resolving deployment.\n\n${commit}[Workflow/deployment](${run})`
-    : `The verification report could not be published. Check the exact catalog model/protocol, report format, 24-hour submission window, daily limit, and repository permissions. Rerun this workflow after resolving the problem; this never repeats the provider call.\n\n[Workflow](${run})`;
+    : `${publicationFailureNotice(process.env.PUBLICATION_FAILURE)}\n\n[Workflow](${run})`;
 const recognition = earnedBadge
   ? `\n\n**Model Verifier badge earned!** Thank you, @${earnedBadge.login}.\n\n[![Your byokit Model Verifier badge](${earnedBadge.badgeUrl})](${earnedBadge.recognitionUrl})\n\nAdd it to your GitHub profile README:\n\n\`\`\`markdown\n${badgeMarkdown(earnedBadge)}\n\`\`\``
   : '';

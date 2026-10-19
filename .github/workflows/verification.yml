@@ -16,6 +16,7 @@ jobs:
       ref: ${{ steps.record.outputs.ref }}
       staging: ${{ steps.record.outputs.staging }}
       operation: ${{ steps.record.outputs.operation }}
+      failure: ${{ steps.record.outputs.failure }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -53,6 +54,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RECORD_RESULT: ${{ needs.record.result }}
+          PUBLICATION_FAILURE: ${{ needs.record.outputs.failure }}
           RECORD_REF: ${{ needs.record.outputs.ref }}
           STAGING: ${{ needs.record.outputs.staging }}
           OPERATION_ID: ${{ needs.record.outputs.operation }}

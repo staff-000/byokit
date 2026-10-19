@@ -107,7 +107,7 @@ test('freshness uses issue creation time, not workflow execution time', () => {
     issueSubmission(event(report(), { created_at: '2026-10-14T11:58:00.000Z' }), catalog),
   );
 });
-test('deduplication, numeric contributor limits, and concurrent rereads preserve records and lifecycle', () => {
+test('deduplication and unlimited same-day contributions preserve records and lifecycle', () => {
   const submission = issueSubmission(event(), catalog),
     first = addReport(catalog, [], submission);
   assert.equal(first.reports.length, 1);
@@ -118,22 +118,24 @@ test('deduplication, numeric contributor limits, and concurrent rereads preserve
   };
   assert.equal(addReport(first.data, first.reports, another).changed, false);
   let state = { data: catalog, reports: [] };
-  for (let n = 0; n < 10; n++) {
+  for (let n = 0; n < 25; n++) {
     const e = event(
       { ...report(), operationId: `71e4f6ef-c19e-4d28-bdf6-${String(n).padStart(12, '0')}` },
       { number: 100 + n, user: { ...user, login: n % 2 ? 'renamed-user' : 'contributor' } },
     );
     state = addReport(state.data, state.reports, issueSubmission(e, catalog));
   }
-  assert.equal(state.reports.length, 10);
-  assert.throws(
-    () =>
-      addReport(
-        state.data,
-        state.reports,
-        issueSubmission(event(report(), { number: 999 }), catalog),
-      ),
-    /Daily/,
+  assert.equal(state.reports.length, 25);
+  const next = addReport(
+    state.data,
+    state.reports,
+    issueSubmission(event(report(), { number: 999 }), catalog),
+  );
+  assert.equal(next.reports.length, 26);
+  assert.equal(
+    addReport(next.data, next.reports, issueSubmission(event(report(), { number: 999 }), catalog))
+      .changed,
+    false,
   );
   assert.deepEqual(first.data.offerings, catalog.offerings);
   assert.equal(catalog.verifications?.length ?? 0, 0);

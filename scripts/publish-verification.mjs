@@ -4,21 +4,16 @@ import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { issueSubmission, canonicalReport } from './verification-report.mjs';
 import { validateCatalog, validateVerifications } from '../packages/byokit/index.js';
+import {
+  PublicationError,
+  publicationFailureCode,
+  publicationFailureNotice,
+} from './publication-errors.mjs';
 function addSingleReport(data, reports, submission, batch = false) {
   const record = canonicalReport(submission);
   if (reports.some((r) => r.id === record.id || (!batch && r.evidence === record.evidence)))
     return { changed: false, data, reports, record };
-  const userPrefix = `website:${submission.user.id}:`,
-    submitted = Date.parse(submission.createdAt);
-  if (
-    reports.filter(
-      (r) =>
-        r.id.startsWith(userPrefix) &&
-        Math.abs(submitted - Date.parse(r.notes?.match(/submitted ([^;]+);/)?.[1] || r.checkedAt)) <
-          86400000,
-    ).length >= 10
-  )
-    throw new Error('Daily publication limit reached.');
+  const submitted = Date.parse(submission.createdAt);
   const next = [...reports, record].sort(
     (a, b) => a.checkedAt.localeCompare(b.checkedAt) || a.id.localeCompare(b.id),
   );
@@ -76,7 +71,7 @@ function addSingleReport(data, reports, submission, batch = false) {
   }
   const catalog = { ...data, offerings: updatedOfferings, verifications: next };
   if (validateVerifications(next, catalog).length || validateCatalog(catalog).length)
-    throw new Error('Invalid resulting catalog.');
+    throw new PublicationError('catalog_validation');
   return { changed: true, data: catalog, reports: next, record };
 }
 export function addReport(data, reports, submission) {
@@ -86,19 +81,19 @@ export function addReport(data, reports, submission) {
     !submission.reports.length ||
     submission.reports.length > 10
   )
-    throw new Error('Invalid batch submission.');
+    throw new PublicationError('report_format');
   const existingIssue = reports.filter((r) => r.evidence === submission.evidence);
   const expectedIds = new Set(
     submission.reports.map((r) => `website:${submission.user.id}:${r.operationId}`),
   );
   if (existingIssue.some((r) => !expectedIds.has(r.id)))
-    throw new Error('Issue already contains different verification records.');
+    throw new PublicationError('report_conflict');
   for (const report of submission.reports) {
     const prior = reports.find(
       (r) => r.id === `website:${submission.user.id}:${report.operationId}`,
     );
     if (prior && prior.offeringId !== report.offeringId)
-      throw new Error('A report ID already identifies another model.');
+      throw new PublicationError('report_conflict');
   }
   let current = { data, reports, changed: false },
     records = [];
@@ -111,7 +106,7 @@ export function addReport(data, reports, submission) {
 }
 const git = (args) => {
   const r = spawnSync('git', args, { encoding: 'utf8' });
-  if (r.status !== 0) throw new Error('Repository operation failed.');
+  if (r.status !== 0) throw new PublicationError('repository_operation');
   return r.stdout.trim();
 };
 async function output(values) {
@@ -243,15 +238,12 @@ async function run() {
       return;
     }
   }
-  throw new Error(
-    'Publication could not push after concurrent-update retries. Rerun this workflow.',
-  );
+  throw new PublicationError('concurrent_update');
 }
 if (process.argv[1]?.endsWith('publish-verification.mjs'))
-  run().catch(async (_error) => {
-    await output({ failed: true });
-    console.error(
-      'Verification publication failed. Check report fields, catalog match, 24-hour freshness, daily limit, and repository permissions. No report payload is logged.',
-    );
+  run().catch(async (error) => {
+    const failure = publicationFailureCode(error);
+    await output({ failed: true, failure });
+    console.error(publicationFailureNotice(failure));
     process.exitCode = 1;
   });

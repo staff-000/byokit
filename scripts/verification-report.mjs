@@ -1,5 +1,6 @@
 import { SPEED_BENCHMARK, speedAdapter } from '../website/speed-measurements.js';
 import { parseIssueReport } from '../website/verification-report.js';
+import { PublicationError } from './publication-errors.mjs';
 export const REPOSITORY = 'staff-000/byokit';
 export function issueSubmission(event, catalog) {
   if (
@@ -8,7 +9,12 @@ export function issueSubmission(event, catalog) {
     event.issue?.pull_request
   )
     return null;
-  const report = parseIssueReport(event.issue?.body);
+  let report;
+  try {
+    report = parseIssueReport(event.issue?.body);
+  } catch {
+    throw new PublicationError('report_format');
+  }
   if (!report) return null;
   const issue = event.issue,
     user = issue.user;
@@ -19,7 +25,7 @@ export function issueSubmission(event, catalog) {
     user.id < 1 ||
     !/^[-a-z0-9]{1,39}$/i.test(user.login || '')
   )
-    throw new Error('Invalid GitHub issue identity.');
+    throw new PublicationError('report_identity');
   const bundle = report.reports || [report];
   for (const report of bundle) {
     const createdAt = Date.parse(issue.created_at),
@@ -29,7 +35,7 @@ export function issueSubmission(event, catalog) {
       checkedAt > createdAt + 60000 ||
       createdAt - checkedAt > 86400000
     )
-      throw new Error('The check must be within 24 hours before issue submission.');
+      throw new PublicationError('report_freshness');
     const offering = catalog.offerings.find((o) => o.id === report.offeringId),
       expected =
         offering?.providerId === 'anthropic'
@@ -43,9 +49,9 @@ export function issueSubmission(event, catalog) {
       offering.apiModelId !== report.modelId ||
       report.protocol !== expected
     )
-      throw new Error('Report does not match a supported catalog-hosted offering.');
+      throw new PublicationError('catalog_mismatch');
     if (report.staging && user.login.toLowerCase() !== 'staff-000')
-      throw new Error('Only the repository owner may submit pipeline staging fixtures.');
+      throw new PublicationError('staging_forbidden');
   }
   const evidence = `https://github.com/${REPOSITORY}/issues/${issue.number}`;
   return {
