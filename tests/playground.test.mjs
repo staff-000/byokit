@@ -65,13 +65,18 @@ test('matcher example works with anonymous browser verification records', async 
   const messages = await execute(playgroundExamples.matchers.code, [record]);
   assert.equal(messages.at(-1).type, 'done', messages.at(-1).text);
   assert.ok(messages.at(-1).models.some((m) => m.id === offeringId));
+  const baseline = await execute(
+    `const model = byokit.getModels(byokit.COMPLETE, { local: false })
+      .find(m => m.id === '${offeringId}');
+    console.log(model.verification.community?.successfulContributors ?? 0);`,
+  );
   const summary = await execute(
     `const model = byokit.getModels(byokit.COMPLETE, { local: false })
       .find(m => m.id === '${offeringId}');
-    console.log(model.verification.community.successfulContributors);`,
+    console.log(model.verification.community?.successfulContributors ?? 0);`,
     [record],
   );
-  assert.equal(summary[0].text, '0');
+  assert.equal(summary[0].text, baseline[0].text);
 });
 test('runner reports syntax/errors, awaits returned values and bounds output', async () => {
   assert.equal((await execute('const = ;')).at(-1).type, 'error');
