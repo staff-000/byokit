@@ -107,5 +107,101 @@
     "adapter": "byokit-website@1",
     "evidence": "https://github.com/staff-000/byokit/issues/4",
     "notes": "Community-reported succeeded chat attempt. Output budget 128; latency 1116 ms. GitHub author ID 249984446; submitted 2026-10-18T17:15:39Z; Provider call ran in the contributor’s browser."
+  },
+  {
+    "id": "website:249984446:fc3ea876-d944-42b9-8da5-3e471b65fceb",
+    "offeringId": "openai/gpt-4o-mini",
+    "contributor": "github:staff-000",
+    "checkedAt": "2026-10-19T06:17:26.842Z",
+    "result": "passed",
+    "assessment": {
+      "attempt": {
+        "outcome": "succeeded",
+        "reason": null,
+        "scope": "request",
+        "certainty": "explicit",
+        "source": "client_error",
+        "classifierVersion": "1",
+        "retry": {
+          "action": "none",
+          "afterSeconds": null
+        }
+      },
+      "checks": {
+        "textGeneration": "passed",
+        "speed": "not_run"
+      },
+      "phases": [
+        {
+          "phase": "generation",
+          "attempt": {
+            "outcome": "succeeded",
+            "reason": null,
+            "scope": "request",
+            "certainty": "explicit",
+            "source": "client_error",
+            "classifierVersion": "1",
+            "retry": {
+              "action": "none",
+              "afterSeconds": null
+            }
+          }
+        }
+      ]
+    },
+    "checks": [
+      "textGeneration"
+    ],
+    "adapter": "byokit-website@1",
+    "evidence": "https://github.com/staff-000/byokit/issues/8",
+    "notes": "Community-reported succeeded chat attempt. Output budget 128; latency 2408 ms. GitHub author ID 249984446; submitted 2026-10-19T06:17:37Z; Provider call ran in the contributor’s browser."
+  },
+  {
+    "id": "website:249984446:0b8418c5-46f7-4325-ad9a-379664278214",
+    "offeringId": "openai/gpt-4o",
+    "contributor": "github:staff-000",
+    "checkedAt": "2026-10-19T06:17:28.676Z",
+    "result": "passed",
+    "assessment": {
+      "attempt": {
+        "outcome": "succeeded",
+        "reason": null,
+        "scope": "request",
+        "certainty": "explicit",
+        "source": "client_error",
+        "classifierVersion": "1",
+        "retry": {
+          "action": "none",
+          "afterSeconds": null
+        }
+      },
+      "checks": {
+        "textGeneration": "passed",
+        "speed": "not_run"
+      },
+      "phases": [
+        {
+          "phase": "generation",
+          "attempt": {
+            "outcome": "succeeded",
+            "reason": null,
+            "scope": "request",
+            "certainty": "explicit",
+            "source": "client_error",
+            "classifierVersion": "1",
+            "retry": {
+              "action": "none",
+              "afterSeconds": null
+            }
+          }
+        }
+      ]
+    },
+    "checks": [
+      "textGeneration"
+    ],
+    "adapter": "byokit-website@1",
+    "evidence": "https://github.com/staff-000/byokit/issues/8",
+    "notes": "Community-reported succeeded chat attempt. Output budget 128; latency 1833 ms. GitHub author ID 249984446; submitted 2026-10-19T06:17:37Z; Provider call ran in the contributor’s browser."
   }
 ]
