@@ -518,6 +518,31 @@ async function main() {
   const newVersion = bumpVersion(currentVersion, targetInput);
   console.log(`Target version:  ${newVersion}`);
 
+  // Pre-flight check: ensure target version is not already published on npm
+  if (!options.dryRun && !options.pypiOnly) {
+    try {
+      const npmVersionsRaw = run(`npm view ${NPM_PACKAGE.name} versions --json`, {
+        capture: true,
+        silent: true,
+        ignoreError: true,
+      });
+      if (npmVersionsRaw) {
+        const npmVersions = JSON.parse(npmVersionsRaw);
+        const versionList = Array.isArray(npmVersions) ? npmVersions : [npmVersions];
+        if (versionList.includes(newVersion)) {
+          console.error(
+            `\n❌ Error: Version ${newVersion} has already been published to npm for "${NPM_PACKAGE.name}".`,
+          );
+          console.error(`Published versions on npm: ${versionList.join(', ')}`);
+          console.error(
+            `npm versions are immutable. Please specify an unpublished version (e.g. 0.2.0).\n`,
+          );
+          process.exit(1);
+        }
+      }
+    } catch {}
+  }
+
   // Handle standalone --github-only
   if (options.githubOnly) {
     const versionToRelease = options.target || currentVersion;
