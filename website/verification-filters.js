@@ -1,4 +1,41 @@
 import * as byokit from '../packages/byokit/catalog.js';
+
+export const OFFICIAL_PROVIDER_PREFIXES = [
+  'openai',
+  'anthropic',
+  'google',
+  'mistral',
+  'deepseek',
+  'zhipuai',
+  'moonshotai',
+  'kimi',
+  'sakana',
+  'minimax',
+  'xiaomi',
+  'xai',
+  'tencent',
+  'alibaba',
+  'stepfun',
+  'perplexity',
+  'llama',
+  'meta',
+  'cohere',
+  'volcengine',
+  'sensenova',
+  'upstage',
+  'ai21',
+  'bailing',
+  'zai',
+];
+
+export function isOfficialProvider(providerId, provider) {
+  if (!providerId) return false;
+  if (provider?.tags?.includes(byokit.Tag.ProviderOfficial)) return true;
+  return OFFICIAL_PROVIDER_PREFIXES.some(
+    (prefix) => providerId === prefix || providerId.startsWith(prefix + '-'),
+  );
+}
+
 export function filterModels(state = {}) {
   let providerIds = byokit
     .getModels(byokit.COMPLETE, {
@@ -12,13 +49,8 @@ export function filterModels(state = {}) {
     .map((m) => m.providerId);
   providerIds = [...new Set(providerIds)];
   if (state.officialOnly) {
-    const officialIds = new Set(
-      byokit.default.providers
-        .filter((p) => p.tags?.includes(byokit.Tag.ProviderOfficial))
-        .map((p) => p.id),
-    );
-    if (!state.provider || officialIds.has(state.provider)) {
-      providerIds = providerIds.filter((id) => officialIds.has(id));
+    if (!state.provider || isOfficialProvider(state.provider)) {
+      providerIds = providerIds.filter((id) => isOfficialProvider(id));
     }
   }
   if (state.provider) providerIds = providerIds.filter((id) => id === state.provider);

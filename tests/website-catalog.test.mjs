@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import * as byokit from '../packages/byokit/catalog.js';
-import { filterModels } from '../website/verification-filters.js';
+import { filterModels, isOfficialProvider } from '../website/verification-filters.js';
 test('verification table defaults to callable models and can show the full hosted catalog', () => {
   const expected = byokit.getModels(byokit.COMPLETE, {
     local: false,
@@ -44,11 +44,11 @@ test('filterModels filters accurately by speciality and tier', () => {
   assert.ok(flashModels.every((m) => m.tier === 'flash'));
 });
 test('filterModels officialOnly restricts to first-party official providers', () => {
-  const officialModels = filterModels({ officialOnly: true, includeOutdated: true });
-  assert.ok(officialModels.length > 0);
-  assert.ok(officialModels.every((m) => m.provider?.tags?.includes(byokit.Tag.ProviderOfficial)));
-  const officialProviders = new Set(officialModels.map((m) => m.providerId));
-  assert.deepEqual([...officialProviders].sort(), [
+  const callableOfficialModels = filterModels({ officialOnly: true, includeOutdated: true });
+  assert.ok(callableOfficialModels.length > 0);
+  assert.ok(callableOfficialModels.every((m) => isOfficialProvider(m.providerId, m.provider)));
+  const callableOfficialProviders = new Set(callableOfficialModels.map((m) => m.providerId));
+  assert.deepEqual([...callableOfficialProviders].sort(), [
     'anthropic',
     'deepseek',
     'google',
@@ -56,6 +56,24 @@ test('filterModels officialOnly restricts to first-party official providers', ()
     'openai',
     'zhipuai',
   ]);
+
+  const allOfficialModels = filterModels({
+    officialOnly: true,
+    callableOnly: false,
+    includeOutdated: true,
+  });
+  assert.ok(allOfficialModels.length > callableOfficialModels.length);
+  assert.ok(allOfficialModels.every((m) => isOfficialProvider(m.providerId, m.provider)));
+  const allOfficialProviders = new Set(allOfficialModels.map((m) => m.providerId));
+  assert.ok(allOfficialProviders.has('moonshotai'));
+  assert.ok(allOfficialProviders.has('xai'));
+  assert.ok(allOfficialProviders.has('minimax'));
+  assert.ok(allOfficialProviders.has('alibaba'));
+  assert.ok(allOfficialProviders.has('stepfun'));
+  assert.ok(allOfficialProviders.has('perplexity'));
+  assert.ok(allOfficialProviders.has('meta'));
+  assert.ok(!allOfficialProviders.has('302ai'));
+  assert.ok(!allOfficialProviders.has('openrouter'));
 });
 test('documented single selection is bounded, rejects empty matches and excludes Local', () => {
   const models = byokit.getModels({

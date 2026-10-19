@@ -123,20 +123,28 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
       'official-filter',
     ])
       assert.ok($('#' + id).closest('thead'), id + ' belongs to the table header');
+    assert.equal($('#provider-filter option:first-child').textContent, 'All providers');
+    assert.equal($('#provider-filter option:first-child').value, '');
+    assert.equal($('#provider-filter').value, '');
     const providerOptions = [...document.querySelectorAll('#provider-filter option')]
       .slice(1)
       .map((o) => o.textContent);
-    assert.ok(providerOptions.length > 5);
+    assert.ok(providerOptions.length > 20);
     const sortedProviderOptions = [...providerOptions].sort((a, b) =>
       a.localeCompare(b, undefined, { sensitivity: 'base' }),
     );
     assert.equal($('#callable-filter').checked, true);
     assert.equal($('#official-filter').checked, true);
-    assert.equal(providerOptions.length, 6);
+    assert.equal(providerOptions.length, 49);
+    assert.ok(document.querySelector('#provider-filter option[value="moonshotai"]'));
+    assert.ok(document.querySelector('#provider-filter option[value="xai"]'));
+    assert.ok(document.querySelector('#provider-filter option[value="minimax"]'));
+    assert.ok(document.querySelector('#provider-filter option[value="alibaba"]'));
     assert.ok(!document.querySelector('#provider-filter option[value="302ai"]'));
     // Unchecking official filter restores full provider list
     $('#official-filter').checked = false;
     $('#official-filter').dispatchEvent(new dom.window.Event('input'));
+    assert.ok(document.querySelectorAll('#provider-filter option').length > 200);
     assert.ok(document.querySelector('#provider-filter option[value="302ai"]'));
     assert.ok(!document.querySelector('#provider-filter option[value="local"]'));
     assert.ok([...document.querySelectorAll('#models .batch-pick')].every((c) => !c.disabled));

@@ -7,7 +7,7 @@ import {
   SPEED_PROMPT,
   SPEED_MAX_TOKENS,
 } from './speed-measurements.js';
-import { filterModels } from './verification-filters.js';
+import { filterModels, isOfficialProvider } from './verification-filters.js';
 import { runBatch, validateBatch, MAX_BATCH_REQUESTS } from './batch-verification.js';
 import { contributorBadges, badgeMarkdown } from './contributor-badges.js';
 import {
@@ -1399,16 +1399,13 @@ if ($('#models')) {
   ].sort((a, b) =>
     (a.name || a.id).localeCompare(b.name || b.id, undefined, { sensitivity: 'base' }),
   );
-  const officialIds = new Set(
-    byokit.default.providers
-      .filter((p) => p.tags?.includes(byokit.Tag.ProviderOfficial))
-      .map((p) => p.id),
-  );
   function renderProviderOptions() {
     const currentVal = $('#provider-filter').value;
     const isOfficial = $('#official-filter') ? $('#official-filter').checked : false;
-    const list = isOfficial ? providers.filter((p) => officialIds.has(p.id)) : providers;
-    $('#provider-filter').replaceChildren(el('option', 'All providers', { value: '' }));
+    const list = isOfficial ? providers.filter((p) => isOfficialProvider(p.id, p)) : providers;
+    const allOption = el('option', 'All providers');
+    allOption.value = '';
+    $('#provider-filter').replaceChildren(allOption);
     for (const provider of list) {
       const option = el('option', provider.name);
       option.value = provider.id;
