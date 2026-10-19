@@ -109,6 +109,54 @@
     "notes": "Community-reported succeeded chat attempt. Output budget 128; latency 1116 ms. GitHub author ID 249984446; submitted 2026-10-18T17:15:39Z; Provider call ran in the contributor’s browser."
   },
   {
+    "id": "website:249984446:563d1e24-6601-4518-8d29-9728a9f65ccc",
+    "offeringId": "deepseek/deepseek-v4-pro",
+    "contributor": "github:staff-000",
+    "checkedAt": "2026-10-18T17:15:08.448Z",
+    "result": "passed",
+    "assessment": {
+      "attempt": {
+        "outcome": "succeeded",
+        "reason": null,
+        "scope": "request",
+        "certainty": "explicit",
+        "source": "client_error",
+        "classifierVersion": "1",
+        "retry": {
+          "action": "none",
+          "afterSeconds": null
+        }
+      },
+      "checks": {
+        "textGeneration": "passed",
+        "speed": "not_run"
+      },
+      "phases": [
+        {
+          "phase": "generation",
+          "attempt": {
+            "outcome": "succeeded",
+            "reason": null,
+            "scope": "request",
+            "certainty": "explicit",
+            "source": "client_error",
+            "classifierVersion": "1",
+            "retry": {
+              "action": "none",
+              "afterSeconds": null
+            }
+          }
+        }
+      ]
+    },
+    "checks": [
+      "textGeneration"
+    ],
+    "adapter": "byokit-website@1",
+    "evidence": "https://github.com/staff-000/byokit/issues/5",
+    "notes": "Community-reported succeeded chat attempt. Output budget 128; latency 1978 ms. GitHub author ID 249984446; submitted 2026-10-18T17:15:46Z; Provider call ran in the contributor’s browser."
+  },
+  {
     "id": "website:249984446:449faefc-0194-484e-9f54-71656b76dcd3",
     "offeringId": "openai/gpt-6.1-sol",
     "contributor": "github:staff-000",
