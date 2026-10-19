@@ -294,7 +294,7 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
     assert.equal(calls, before + count);
     assert.equal(document.querySelectorAll('#batch-results a').length, 0);
     assert.equal($('#batch-share-actions').hidden, false);
-    assert.match($('#batch-share').textContent, /Share batch/);
+    assert.match($('#batch-share').textContent, /Report results/);
     const batchShare = $('#batch-share'),
       batchReport = parseIssueReport(new URL(batchShare.href).searchParams.get('body'));
     assert.equal(batchReport.reports.length, count);

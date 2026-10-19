@@ -110,18 +110,18 @@ function prepareBatchSharing() {
       (r) => !r.assessment || r.assessment.checks.textGeneration === 'passed',
     );
   $('#batch-share').textContent = eligible
-    ? 'Share batch on GitHub · earn badge ↗'
-    : 'Share batch observations on GitHub ↗';
+    ? 'Report results on GitHub · earn badge ↗'
+    : 'Report results on GitHub ↗';
   $('#batch-share').href = href;
   if (href.length > 7800) {
     batchClipboardBody = issueBody(batchDraft);
     const short = new URL(href);
     short.searchParams.delete('body');
     $('#batch-share').href = short.href;
-    $('#batch-share').textContent = 'Copy batch report & open GitHub ↗';
+    $('#batch-share').textContent = 'Copy results & report on GitHub ↗';
   }
   $('#batch-share-note').textContent =
-    `One issue includes ${batchReports.length} sanitized observations. ${eligible ? 'A published successful text check earns your badge.' : 'These issue observations do not earn a success badge.'} GitHub asks you to review and submit the issue; we check its status automatically.`;
+    `Your results help catch compatibility issues and make byokit more reliable. One issue includes ${batchReports.length} sanitized observations. ${eligible ? 'A published successful text check earns your badge.' : 'These issue observations do not earn a success badge.'} GitHub asks you to review and submit the issue; we check its status automatically.`;
   $('#batch-share-actions').hidden = false;
 }
 $('#batch-share').addEventListener('click', () => {
