@@ -272,22 +272,26 @@ $('#explorer-save-config')?.addEventListener('click', () => {
   }
 });
 let language = 'typescript',
-  example = 'inference',
+  example = 'direct',
   format = 'openai';
 function renderExample() {
   $('#start-code').textContent =
     tutorials[example === 'inference' && format === 'claude' ? 'claude' : example][language];
-  const inference = example === 'inference';
+  const sdk = example === 'inference';
+  const local = example === 'local';
+  const inference = sdk || local || example === 'direct';
   const formatTabs = document.querySelector('.language-tabs[aria-label="Response format"]');
-  if (formatTabs) formatTabs.hidden = !inference;
-  $('#example-note').textContent = inference
-    ? `Server-side example: set ${format === 'claude' ? 'ANTHROPIC_API_KEY' : 'DEEPSEEK_API_KEY'} in your environment. Reuse the client for multiple requests. Keys stay in memory and are never persisted.`
-    : 'Catalog queries run offline. No API key or provider request is needed.';
+  if (formatTabs) formatTabs.hidden = !sdk;
+  $('#example-note').textContent = local
+    ? 'Set the URL, protocol, and served model ID. Configuration is offline; call() needs your running server. The empty key means no authentication.'
+    : inference
+      ? `Server-side example: set ${sdk && format === 'claude' ? 'ANTHROPIC_API_KEY' : 'DEEPSEEK_API_KEY'}. Displaying or copying code sends no requests. Use the selected provider’s own key.`
+      : 'Catalog queries run offline. No API key or provider request is needed.';
   $('#return-label').textContent = inference
     ? 'EXAMPLE GENERATED TEXT'
     : 'RETURN (SELECTED FIELDS)';
   $('#expected-return').textContent = inference
-    ? format === 'claude'
+    ? sdk && format === 'claude'
       ? '[{ type: "text", text: "Hello!" }] — actual model output varies.'
       : 'Hello! — actual model output varies.'
     : example === 'matchers'
@@ -325,11 +329,11 @@ function renderExample() {
       : JSON.stringify(
           byokit
             .getModels()
-            .slice(0, 1)
+            .slice(0, 2)
             .map((model) => ({
-              provider: model.provider.id,
-              model: model.apiModelId,
-              context: model.limits.context,
+              providerId: model.providerId,
+              apiModelId: model.apiModelId,
+              callable: model.callSupport.textGeneration,
             })),
           null,
           2,

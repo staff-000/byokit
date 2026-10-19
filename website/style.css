@@ -1367,7 +1367,7 @@ h3 {
 
 .example-purpose {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 8px;
   align-items: flex-start;
   margin: 18px 0;
@@ -2632,5 +2632,34 @@ dialog .record-actions {
   #local-setup input,
   #local-setup select {
     font-size: 16px;
+  }
+}
+
+.api-contract {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.api-contract article {
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: white;
+}
+.api-contract h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+.api-contract p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.api-contract code {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 700px) {
+  .api-contract {
+    grid-template-columns: 1fr;
   }
 }

@@ -87,6 +87,22 @@ try {
   assert.ok((await page.locator('#start-code').textContent()).includes('client.messages.create('));
   assert.ok((await page.locator('#expected-return').textContent()).includes('type:'));
   await page.getByRole('button', { name: 'OpenAI format', exact: true }).click();
+  await page.locator('[data-example="direct"]').click();
+  assert.ok((await page.locator('#start-code').textContent()).includes('byokit.call(model,'));
+  assert.ok((await page.locator('#start-code').textContent()).includes('Set DEEPSEEK_API_KEY'));
+  assert.equal(
+    await page.getByRole('button', { name: 'Claude format', exact: true }).isVisible(),
+    false,
+  );
+  await page.locator('[data-example="local"]').click();
+  assert.ok((await page.locator('#start-code').textContent()).includes('byokit.LocalApi.Ollama'));
+  await page.getByRole('button', { name: 'Python', exact: true }).click();
+  assert.ok((await page.locator('#start-code').textContent()).includes('byokit.LocalApi.OLLAMA'));
+  assert.ok((await page.locator('#example-note').textContent()).includes('running server'));
+  await page.getByRole('button', { name: 'JavaScript / TS', exact: true }).click();
+  await page.locator('[data-example="direct"]').click();
+  assert.match(await page.locator('#integration-contract').textContent(), /connection.protocol/);
+  assert.match(await page.locator('#integration-contract').textContent(), /providerId/);
   await playgroundSmoke(page);
   await playgroundVerificationSmoke(page);
   await page

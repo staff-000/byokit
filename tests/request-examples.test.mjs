@@ -234,9 +234,9 @@ test('hero call helper and Python SDK examples execute through the library', asy
       assert.equal(typeof JSON.parse(o.body).model, 'string');
       return { ok: true, json: async () => ({ choices: [{ message: { content: 'OK' } }] }) };
     };
-    await new AsyncFunction('byokit', 'apiKey', 'console', code.replace(/^import[\s\S]*?;\n/, ''))(
+    await new AsyncFunction('byokit', 'process', 'console', code.replace(/^import[\s\S]*?;\n/, ''))(
       byokit,
-      'dummy',
+      { env: { DEEPSEEK_API_KEY: 'dummy' } },
       { log() {} },
     );
   } finally {

@@ -29,7 +29,9 @@
     "check:budget": "node packages/byokit/bin.mjs check examples/task.config.json --strict",
     "lint": "eslint packages/ scripts/ website/ tests/ && prettier --check .",
     "lint:fix": "eslint packages/ scripts/ website/ tests/ --fix && prettier --write .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "readme:sync": "node scripts/sync-readmes.mjs",
+    "readme:check": "node scripts/sync-readmes.mjs --check"
   },
   "engines": {
     "node": ">=20"
