@@ -1385300,6 +1385300,496 @@
       "notes": "Community-reported succeeded chat attempt. Output budget 128; latency 2222 ms. GitHub author ID 249984446; submitted 2026-10-19T06:13:26Z; Provider call ran in the contributor’s browser."
     },
     {
+      "id": "website:249984446:81e670f0-b407-42df-b454-e23a88262a0f",
+      "offeringId": "openai/gpt-5.5",
+      "contributor": "github:staff-000",
+      "checkedAt": "2026-10-19T06:14:14.200Z",
+      "result": "passed",
+      "assessment": {
+        "attempt": {
+          "outcome": "succeeded",
+          "reason": null,
+          "scope": "request",
+          "certainty": "explicit",
+          "source": "client_error",
+          "classifierVersion": "1",
+          "retry": {
+            "action": "none",
+            "afterSeconds": null
+          }
+        },
+        "checks": {
+          "textGeneration": "passed",
+          "speed": "not_run"
+        },
+        "phases": [
+          {
+            "phase": "generation",
+            "attempt": {
+              "outcome": "succeeded",
+              "reason": null,
+              "scope": "request",
+              "certainty": "explicit",
+              "source": "client_error",
+              "classifierVersion": "1",
+              "retry": {
+                "action": "none",
+                "afterSeconds": null
+              }
+            }
+          }
+        ]
+      },
+      "checks": [
+        "textGeneration"
+      ],
+      "adapter": "byokit-website@1",
+      "evidence": "https://github.com/staff-000/byokit/issues/7",
+      "notes": "Community-reported succeeded chat attempt. Output budget 128; latency 3465 ms. GitHub author ID 249984446; submitted 2026-10-19T06:14:42Z; Provider call ran in the contributor’s browser."
+    },
+    {
+      "id": "website:249984446:c90a42eb-7bf2-496c-a804-8406c7ee8338",
+      "offeringId": "openai/gpt-5.5-pro",
+      "contributor": "github:staff-000",
+      "checkedAt": "2026-10-19T06:14:14.834Z",
+      "result": "failed",
+      "assessment": {
+        "attempt": {
+          "outcome": "blocked",
+          "reason": "invalid_request",
+          "scope": "request",
+          "certainty": "explicit",
+          "source": "provider_code",
+          "classifierVersion": "1",
+          "httpStatus": 404,
+          "retry": {
+            "action": "check_settings",
+            "afterSeconds": null
+          }
+        },
+        "checks": {
+          "textGeneration": "blocked",
+          "speed": "not_run"
+        },
+        "phases": [
+          {
+            "phase": "generation",
+            "attempt": {
+              "outcome": "blocked",
+              "reason": "invalid_request",
+              "scope": "request",
+              "certainty": "explicit",
+              "source": "provider_code",
+              "classifierVersion": "1",
+              "httpStatus": 404,
+              "retry": {
+                "action": "check_settings",
+                "afterSeconds": null
+              }
+            }
+          }
+        ]
+      },
+      "checks": [
+        "textGeneration"
+      ],
+      "adapter": "byokit-website@1",
+      "evidence": "https://github.com/staff-000/byokit/issues/7",
+      "notes": "Community-reported blocked chat attempt. Output budget 128; latency 631 ms. GitHub author ID 249984446; submitted 2026-10-19T06:14:42Z; Provider call ran in the contributor’s browser."
+    },
+    {
+      "id": "website:249984446:6f061202-3af3-4f72-83ab-86090f236076",
+      "offeringId": "openai/gpt-5.4-mini",
+      "contributor": "github:staff-000",
+      "checkedAt": "2026-10-19T06:14:16.293Z",
+      "result": "passed",
+      "assessment": {
+        "attempt": {
+          "outcome": "succeeded",
+          "reason": null,
+          "scope": "request",
+          "certainty": "explicit",
+          "source": "client_error",
+          "classifierVersion": "1",
+          "retry": {
+            "action": "none",
+            "afterSeconds": null
+          }
+        },
+        "checks": {
+          "textGeneration": "passed",
+          "speed": "not_run"
+        },
+        "phases": [
+          {
+            "phase": "generation",
+            "attempt": {
+              "outcome": "succeeded",
+              "reason": null,
+              "scope": "request",
+              "certainty": "explicit",
+              "source": "client_error",
+              "classifierVersion": "1",
+              "retry": {
+                "action": "none",
+                "afterSeconds": null
+              }
+            }
+          }
+        ]
+      },
+      "checks": [
+        "textGeneration"
+      ],
+      "adapter": "byokit-website@1",
+      "evidence": "https://github.com/staff-000/byokit/issues/7",
+      "notes": "Community-reported succeeded chat attempt. Output budget 128; latency 1458 ms. GitHub author ID 249984446; submitted 2026-10-19T06:14:42Z; Provider call ran in the contributor’s browser."
+    },
+    {
+      "id": "website:249984446:c2f89a86-8d04-4a59-acb7-dc90492920da",
+      "offeringId": "openai/gpt-5.4-nano",
+      "contributor": "github:staff-000",
+      "checkedAt": "2026-10-19T06:14:17.935Z",
+      "result": "passed",
+      "assessment": {
+        "attempt": {
+          "outcome": "succeeded",
+          "reason": null,
+          "scope": "request",
+          "certainty": "explicit",
+          "source": "client_error",
+          "classifierVersion": "1",
+          "retry": {
+            "action": "none",
+            "afterSeconds": null
+          }
+        },
+        "checks": {
+          "textGeneration": "passed",
+          "speed": "not_run"
+        },
+        "phases": [
+          {
+            "phase": "generation",
+            "attempt": {
+              "outcome": "succeeded",
+              "reason": null,
+              "scope": "request",
+              "certainty": "explicit",
+              "source": "client_error",
+              "classifierVersion": "1",
+              "retry": {
+                "action": "none",
+                "afterSeconds": null
+              }
+            }
+          }
+        ]
+      },
+      "checks": [
+        "textGeneration"
+      ],
+      "adapter": "byokit-website@1",
+      "evidence": "https://github.com/staff-000/byokit/issues/7",
+      "notes": "Community-reported succeeded chat attempt. Output budget 128; latency 1640 ms. GitHub author ID 249984446; submitted 2026-10-19T06:14:42Z; Provider call ran in the contributor’s browser."
+    },
+    {
+      "id": "website:249984446:43936a54-ad27-46cb-8bdc-7b74e6082cc7",
+      "offeringId": "openai/gpt-5.4",
+      "contributor": "github:staff-000",
+      "checkedAt": "2026-10-19T06:14:19.845Z",
+      "result": "passed",
+      "assessment": {
+        "attempt": {
+          "outcome": "succeeded",
+          "reason": null,
+          "scope": "request",
+          "certainty": "explicit",
+          "source": "client_error",
+          "classifierVersion": "1",
+          "retry": {
+            "action": "none",
+            "afterSeconds": null
+          }
+        },
+        "checks": {
+          "textGeneration": "passed",
+          "speed": "not_run"
+        },
+        "phases": [
+          {
+            "phase": "generation",
+            "attempt": {
+              "outcome": "succeeded",
+              "reason": null,
+              "scope": "request",
+              "certainty": "explicit",
+              "source": "client_error",
+              "classifierVersion": "1",
+              "retry": {
+                "action": "none",
+                "afterSeconds": null
+              }
+            }
+          }
+        ]
+      },
+      "checks": [
+        "textGeneration"
+      ],
+      "adapter": "byokit-website@1",
+      "evidence": "https://github.com/staff-000/byokit/issues/7",
+      "notes": "Community-reported succeeded chat attempt. Output budget 128; latency 1908 ms. GitHub author ID 249984446; submitted 2026-10-19T06:14:42Z; Provider call ran in the contributor’s browser."
+    },
+    {
+      "id": "website:249984446:fcfc378c-0bca-4119-ad58-8f8952a6e533",
+      "offeringId": "openai/gpt-5.4-pro",
+      "contributor": "github:staff-000",
+      "checkedAt": "2026-10-19T06:14:21.040Z",
+      "result": "failed",
+      "assessment": {
+        "attempt": {
+          "outcome": "blocked",
+          "reason": "invalid_request",
+          "scope": "request",
+          "certainty": "explicit",
+          "source": "provider_code",
+          "classifierVersion": "1",
+          "httpStatus": 404,
+          "retry": {
+            "action": "check_settings",
+            "afterSeconds": null
+          }
+        },
+        "checks": {
+          "textGeneration": "blocked",
+          "speed": "not_run"
+        },
+        "phases": [
+          {
+            "phase": "generation",
+            "attempt": {
+              "outcome": "blocked",
+              "reason": "invalid_request",
+              "scope": "request",
+              "certainty": "explicit",
+              "source": "provider_code",
+              "classifierVersion": "1",
+              "httpStatus": 404,
+              "retry": {
+                "action": "check_settings",
+                "afterSeconds": null
+              }
+            }
+          }
+        ]
+      },
+      "checks": [
+        "textGeneration"
+      ],
+      "adapter": "byokit-website@1",
+      "evidence": "https://github.com/staff-000/byokit/issues/7",
+      "notes": "Community-reported blocked chat attempt. Output budget 128; latency 1193 ms. GitHub author ID 249984446; submitted 2026-10-19T06:14:42Z; Provider call ran in the contributor’s browser."
+    },
+    {
+      "id": "website:249984446:643ffa5d-2fe3-4024-94e4-a207d5c46ef2",
+      "offeringId": "openai/gpt-5.3-codex",
+      "contributor": "github:staff-000",
+      "checkedAt": "2026-10-19T06:14:21.669Z",
+      "result": "failed",
+      "assessment": {
+        "attempt": {
+          "outcome": "blocked",
+          "reason": "invalid_request",
+          "scope": "request",
+          "certainty": "explicit",
+          "source": "provider_code",
+          "classifierVersion": "1",
+          "httpStatus": 404,
+          "retry": {
+            "action": "check_settings",
+            "afterSeconds": null
+          }
+        },
+        "checks": {
+          "textGeneration": "blocked",
+          "speed": "not_run"
+        },
+        "phases": [
+          {
+            "phase": "generation",
+            "attempt": {
+              "outcome": "blocked",
+              "reason": "invalid_request",
+              "scope": "request",
+              "certainty": "explicit",
+              "source": "provider_code",
+              "classifierVersion": "1",
+              "httpStatus": 404,
+              "retry": {
+                "action": "check_settings",
+                "afterSeconds": null
+              }
+            }
+          }
+        ]
+      },
+      "checks": [
+        "textGeneration"
+      ],
+      "adapter": "byokit-website@1",
+      "evidence": "https://github.com/staff-000/byokit/issues/7",
+      "notes": "Community-reported blocked chat attempt. Output budget 128; latency 626 ms. GitHub author ID 249984446; submitted 2026-10-19T06:14:42Z; Provider call ran in the contributor’s browser."
+    },
+    {
+      "id": "website:249984446:ca49c6c1-cca4-40b5-8fde-b02895862a8e",
+      "offeringId": "openai/gpt-5.3-codex-spark",
+      "contributor": "github:staff-000",
+      "checkedAt": "2026-10-19T06:14:22.334Z",
+      "result": "failed",
+      "assessment": {
+        "attempt": {
+          "outcome": "blocked",
+          "reason": "model_not_found_or_inaccessible",
+          "scope": "unknown",
+          "certainty": "explicit",
+          "source": "provider_code",
+          "classifierVersion": "1",
+          "httpStatus": 404,
+          "retry": {
+            "action": "check_model_id_and_access",
+            "afterSeconds": null
+          }
+        },
+        "checks": {
+          "textGeneration": "blocked",
+          "speed": "not_run"
+        },
+        "phases": [
+          {
+            "phase": "generation",
+            "attempt": {
+              "outcome": "blocked",
+              "reason": "model_not_found_or_inaccessible",
+              "scope": "unknown",
+              "certainty": "explicit",
+              "source": "provider_code",
+              "classifierVersion": "1",
+              "httpStatus": 404,
+              "retry": {
+                "action": "check_model_id_and_access",
+                "afterSeconds": null
+              }
+            }
+          }
+        ]
+      },
+      "checks": [
+        "textGeneration"
+      ],
+      "adapter": "byokit-website@1",
+      "evidence": "https://github.com/staff-000/byokit/issues/7",
+      "notes": "Community-reported blocked chat attempt. Output budget 128; latency 662 ms. GitHub author ID 249984446; submitted 2026-10-19T06:14:42Z; Provider call ran in the contributor’s browser."
+    },
+    {
+      "id": "website:249984446:089e72a0-c2e8-4a07-9ce3-ef08ab33e389",
+      "offeringId": "openai/gpt-5.2",
+      "contributor": "github:staff-000",
+      "checkedAt": "2026-10-19T06:14:24.603Z",
+      "result": "passed",
+      "assessment": {
+        "attempt": {
+          "outcome": "succeeded",
+          "reason": null,
+          "scope": "request",
+          "certainty": "explicit",
+          "source": "client_error",
+          "classifierVersion": "1",
+          "retry": {
+            "action": "none",
+            "afterSeconds": null
+          }
+        },
+        "checks": {
+          "textGeneration": "passed",
+          "speed": "not_run"
+        },
+        "phases": [
+          {
+            "phase": "generation",
+            "attempt": {
+              "outcome": "succeeded",
+              "reason": null,
+              "scope": "request",
+              "certainty": "explicit",
+              "source": "client_error",
+              "classifierVersion": "1",
+              "retry": {
+                "action": "none",
+                "afterSeconds": null
+              }
+            }
+          }
+        ]
+      },
+      "checks": [
+        "textGeneration"
+      ],
+      "adapter": "byokit-website@1",
+      "evidence": "https://github.com/staff-000/byokit/issues/7",
+      "notes": "Community-reported succeeded chat attempt. Output budget 128; latency 2267 ms. GitHub author ID 249984446; submitted 2026-10-19T06:14:42Z; Provider call ran in the contributor’s browser."
+    },
+    {
+      "id": "website:249984446:73ced132-5347-49e6-804b-ab3773e91190",
+      "offeringId": "openai/gpt-5.2-pro",
+      "contributor": "github:staff-000",
+      "checkedAt": "2026-10-19T06:14:25.466Z",
+      "result": "failed",
+      "assessment": {
+        "attempt": {
+          "outcome": "blocked",
+          "reason": "invalid_request",
+          "scope": "request",
+          "certainty": "explicit",
+          "source": "provider_code",
+          "classifierVersion": "1",
+          "httpStatus": 404,
+          "retry": {
+            "action": "check_settings",
+            "afterSeconds": null
+          }
+        },
+        "checks": {
+          "textGeneration": "blocked",
+          "speed": "not_run"
+        },
+        "phases": [
+          {
+            "phase": "generation",
+            "attempt": {
+              "outcome": "blocked",
+              "reason": "invalid_request",
+              "scope": "request",
+              "certainty": "explicit",
+              "source": "provider_code",
+              "classifierVersion": "1",
+              "httpStatus": 404,
+              "retry": {
+                "action": "check_settings",
+                "afterSeconds": null
+              }
+            }
+          }
+        ]
+      },
+      "checks": [
+        "textGeneration"
+      ],
+      "adapter": "byokit-website@1",
+      "evidence": "https://github.com/staff-000/byokit/issues/7",
+      "notes": "Community-reported blocked chat attempt. Output budget 128; latency 860 ms. GitHub author ID 249984446; submitted 2026-10-19T06:14:42Z; Provider call ran in the contributor’s browser."
+    },
+    {
       "id": "website:249984446:fc3ea876-d944-42b9-8da5-3e471b65fceb",
       "offeringId": "openai/gpt-4o-mini",
       "contributor": "github:staff-000",
