@@ -2002,6 +2002,20 @@ function withSignals(o, asOf) {
 }
 
 export const PRESET_CONFIGS = Object.freeze({
+  china: Object.freeze({
+    preset: 'china',
+  }),
+  global: Object.freeze({
+    preset: 'global',
+  }),
+  'official-flagship': Object.freeze({
+    preset: 'official-flagship',
+    filters: { official: true },
+  }),
+  official: Object.freeze({
+    preset: 'official-flagship',
+    filters: { official: true },
+  }),
   'text-process': Object.freeze({
     preset: 'text-process',
     providerIds: [ProviderId.Anthropic, ProviderId.Google, ProviderId.OpenAI, ProviderId.DeepSeek],
@@ -2016,6 +2030,10 @@ export const PRESET_CONFIGS = Object.freeze({
   }),
 });
 
+export const CHINA_CONFIG = PRESET_CONFIGS.china;
+export const GLOBAL_CONFIG = PRESET_CONFIGS.global;
+export const OFFICIAL_FLAGSHIP_CONFIG = PRESET_CONFIGS['official-flagship'];
+export const OFFICIAL_CONFIG = PRESET_CONFIGS.official;
 export const TEXT_PROCESS_CONFIG = PRESET_CONFIGS['text-process'];
 
 function clonePresetValue(val) {
@@ -2061,26 +2079,10 @@ function normalizeQuery(input = {}, options) {
   if (config.list === undefined && config.preset === undefined && config.providerIds === undefined)
     config.list = ModelList.Default;
   if (config.list === ModelList.Live) config.list = ModelList.Default;
-  if (config.list === ModelList.China) config.preset = 'china';
-  if (config.list === ModelList.Global) config.preset = 'global';
-  if (
-    config.list === ModelList.OfficialFlagship ||
-    config.list === ModelList.Official ||
-    config.list === 'official-flagship' ||
-    config.list === 'official'
-  ) {
-    config.preset = 'official-flagship';
-    config.filters = { ...config.filters, official: true };
-  }
-  if (config.preset === 'official') {
-    config.preset = 'official-flagship';
-  }
-  if (
-    config.list === ModelList.TextProcess ||
-    config.list === 'text-process' ||
-    config.preset === 'text-process'
-  ) {
-    applyPresetDefaults(config, PRESET_CONFIGS['text-process']);
+
+  const presetKey = config.list || config.preset;
+  if (presetKey && PRESET_CONFIGS[presetKey]) {
+    applyPresetDefaults(config, PRESET_CONFIGS[presetKey]);
   }
   if (config.list !== ModelList.Complete && config.list !== 'complete') {
     const f = { ...(config.filters || {}) };

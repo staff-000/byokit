@@ -785,4 +785,8 @@ export function toConfigJson(list: ModelList, config?: PickerConfig, indent?: nu
 export function getReleaseTags(releaseDate: string | undefined | null, asOf?: string): string[];
 export function parseReleasedWithinDays(val: unknown): number | undefined;
 export const PRESET_CONFIGS: Readonly<Record<string, Readonly<PickerConfig>>>;
+export const CHINA_CONFIG: Readonly<PickerConfig>;
+export const GLOBAL_CONFIG: Readonly<PickerConfig>;
+export const OFFICIAL_FLAGSHIP_CONFIG: Readonly<PickerConfig>;
+export const OFFICIAL_CONFIG: Readonly<PickerConfig>;
 export const TEXT_PROCESS_CONFIG: Readonly<PickerConfig>;

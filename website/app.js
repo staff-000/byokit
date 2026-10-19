@@ -7,6 +7,7 @@ const modes = {
   china: byokit.CHINA,
   global: byokit.GLOBAL,
   official: byokit.OFFICIAL_FLAGSHIP,
+  'text-process': byokit.TEXT_PROCESS,
 };
 let mode = 'default',
   shown = 12;
@@ -45,7 +46,9 @@ function snippet(config) {
       ? ''
       : mode === 'official'
         ? 'byokit.OFFICIAL_FLAGSHIP'
-        : `byokit.${mode.toUpperCase()}`;
+        : mode === 'text-process'
+          ? 'byokit.TEXT_PROCESS'
+          : `byokit.${mode.toUpperCase()}`;
   const parts = ['sort: byokit.ModelSort.ProviderOrder'],
     filters = [];
   if (config.local === false) parts.push('local: false');

@@ -2274,6 +2274,20 @@ def _with_signals(o, as_of=None):
 
 
 PRESET_CONFIGS = {
+    "china": {
+        "preset": "china",
+    },
+    "global": {
+        "preset": "global",
+    },
+    "official-flagship": {
+        "preset": "official-flagship",
+        "filters": {"official": True},
+    },
+    "official": {
+        "preset": "official-flagship",
+        "filters": {"official": True},
+    },
     "text-process": {
         "preset": "text-process",
         "providerIds": [
@@ -2293,6 +2307,10 @@ PRESET_CONFIGS = {
     },
 }
 
+CHINA_CONFIG = PRESET_CONFIGS["china"]
+GLOBAL_CONFIG = PRESET_CONFIGS["global"]
+OFFICIAL_FLAGSHIP_CONFIG = PRESET_CONFIGS["official-flagship"]
+OFFICIAL_CONFIG = PRESET_CONFIGS["official"]
 TEXT_PROCESS_CONFIG = PRESET_CONFIGS["text-process"]
 
 
@@ -2332,27 +2350,11 @@ def _normalize_query(input=None, options=None):
         config["list"] = ModelList.DEFAULT
     if config.get("list") == ModelList.LIVE:
         config["list"] = ModelList.DEFAULT
-    if config.get("list") == ModelList.CHINA:
-        config["preset"] = "china"
-    if config.get("list") == ModelList.GLOBAL:
-        config["preset"] = "global"
-    if config.get("list") in (
-        ModelList.OFFICIAL_FLAGSHIP,
-        ModelList.OFFICIAL,
-        "official-flagship",
-        "official",
-    ):
-        config["preset"] = "official-flagship"
-        filters = dict(config.get("filters") or {})
-        filters["official"] = True
-        config["filters"] = filters
-    if config.get("preset") == "official":
-        config["preset"] = "official-flagship"
-    if (
-        config.get("list") in (ModelList.TEXT_PROCESS, "text-process")
-        or config.get("preset") == "text-process"
-    ):
-        _apply_preset_defaults(config, PRESET_CONFIGS["text-process"])
+
+    raw_key = config.get("list") or config.get("preset")
+    preset_key = getattr(raw_key, "value", raw_key)
+    if preset_key in PRESET_CONFIGS:
+        _apply_preset_defaults(config, PRESET_CONFIGS[preset_key])
     if config.get("list") not in (ModelList.COMPLETE, "complete"):
         filters = dict(config.get("filters") or {})
         if "callable" not in filters:
