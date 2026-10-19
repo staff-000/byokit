@@ -1384910,6 +1384910,294 @@
       "adapter": "byokit-website@1",
       "evidence": "https://github.com/staff-000/byokit/issues/8",
       "notes": "Community-reported succeeded chat attempt. Output budget 128; latency 1833 ms. GitHub author ID 249984446; submitted 2026-10-19T06:17:37Z; Provider call ran in the contributor’s browser."
+    },
+    {
+      "id": "website:249984446:9853d3d4-1dfe-4ab1-9787-fbba0a01eb35",
+      "offeringId": "google/gemini-3.8-flash",
+      "contributor": "github:staff-000",
+      "checkedAt": "2026-10-19T07:31:39.504Z",
+      "result": "passed",
+      "assessment": {
+        "attempt": {
+          "outcome": "succeeded",
+          "reason": null,
+          "scope": "request",
+          "certainty": "explicit",
+          "source": "client_error",
+          "classifierVersion": "1",
+          "retry": {
+            "action": "none",
+            "afterSeconds": null
+          }
+        },
+        "checks": {
+          "textGeneration": "passed",
+          "speed": "not_run"
+        },
+        "phases": [
+          {
+            "phase": "generation",
+            "attempt": {
+              "outcome": "succeeded",
+              "reason": null,
+              "scope": "request",
+              "certainty": "explicit",
+              "source": "client_error",
+              "classifierVersion": "1",
+              "retry": {
+                "action": "none",
+                "afterSeconds": null
+              }
+            }
+          }
+        ]
+      },
+      "checks": [
+        "textGeneration"
+      ],
+      "adapter": "byokit-website@1",
+      "evidence": "https://github.com/staff-000/byokit/issues/9",
+      "notes": "Community-reported succeeded gemini attempt. Output budget 128; latency 20433 ms. GitHub author ID 249984446; submitted 2026-10-19T07:38:38Z; Provider call ran in the contributor’s browser."
+    },
+    {
+      "id": "website:249984446:07595d4d-2f2d-45d4-98e9-d220804fb50b",
+      "offeringId": "google/gemini-3.7-flash",
+      "contributor": "github:staff-000",
+      "checkedAt": "2026-10-19T07:31:55.672Z",
+      "result": "passed",
+      "assessment": {
+        "attempt": {
+          "outcome": "succeeded",
+          "reason": null,
+          "scope": "request",
+          "certainty": "explicit",
+          "source": "client_error",
+          "classifierVersion": "1",
+          "retry": {
+            "action": "none",
+            "afterSeconds": null
+          }
+        },
+        "checks": {
+          "textGeneration": "passed",
+          "speed": "not_run"
+        },
+        "phases": [
+          {
+            "phase": "generation",
+            "attempt": {
+              "outcome": "succeeded",
+              "reason": null,
+              "scope": "request",
+              "certainty": "explicit",
+              "source": "client_error",
+              "classifierVersion": "1",
+              "retry": {
+                "action": "none",
+                "afterSeconds": null
+              }
+            }
+          }
+        ]
+      },
+      "checks": [
+        "textGeneration"
+      ],
+      "adapter": "byokit-website@1",
+      "evidence": "https://github.com/staff-000/byokit/issues/9",
+      "notes": "Community-reported succeeded gemini attempt. Output budget 128; latency 16160 ms. GitHub author ID 249984446; submitted 2026-10-19T07:38:38Z; Provider call ran in the contributor’s browser."
+    },
+    {
+      "id": "website:249984446:924dfaa8-8cd7-449a-adfd-ab416f4d5960",
+      "offeringId": "google/gemini-3.6-flash",
+      "contributor": "github:staff-000",
+      "checkedAt": "2026-10-19T07:31:57.654Z",
+      "result": "passed",
+      "assessment": {
+        "attempt": {
+          "outcome": "succeeded",
+          "reason": null,
+          "scope": "request",
+          "certainty": "explicit",
+          "source": "client_error",
+          "classifierVersion": "1",
+          "retry": {
+            "action": "none",
+            "afterSeconds": null
+          }
+        },
+        "checks": {
+          "textGeneration": "passed",
+          "speed": "not_run"
+        },
+        "phases": [
+          {
+            "phase": "generation",
+            "attempt": {
+              "outcome": "succeeded",
+              "reason": null,
+              "scope": "request",
+              "certainty": "explicit",
+              "source": "client_error",
+              "classifierVersion": "1",
+              "retry": {
+                "action": "none",
+                "afterSeconds": null
+              }
+            }
+          }
+        ]
+      },
+      "checks": [
+        "textGeneration"
+      ],
+      "adapter": "byokit-website@1",
+      "evidence": "https://github.com/staff-000/byokit/issues/9",
+      "notes": "Community-reported succeeded gemini attempt. Output budget 128; latency 1980 ms. GitHub author ID 249984446; submitted 2026-10-19T07:38:38Z; Provider call ran in the contributor’s browser."
+    },
+    {
+      "id": "website:249984446:35b760e7-34f3-49c2-ae6f-250747c67706",
+      "offeringId": "google/gemini-3.5-flash",
+      "contributor": "github:staff-000",
+      "checkedAt": "2026-10-19T07:31:59.451Z",
+      "result": "passed",
+      "assessment": {
+        "attempt": {
+          "outcome": "succeeded",
+          "reason": null,
+          "scope": "request",
+          "certainty": "explicit",
+          "source": "client_error",
+          "classifierVersion": "1",
+          "retry": {
+            "action": "none",
+            "afterSeconds": null
+          }
+        },
+        "checks": {
+          "textGeneration": "passed",
+          "speed": "not_run"
+        },
+        "phases": [
+          {
+            "phase": "generation",
+            "attempt": {
+              "outcome": "succeeded",
+              "reason": null,
+              "scope": "request",
+              "certainty": "explicit",
+              "source": "client_error",
+              "classifierVersion": "1",
+              "retry": {
+                "action": "none",
+                "afterSeconds": null
+              }
+            }
+          }
+        ]
+      },
+      "checks": [
+        "textGeneration"
+      ],
+      "adapter": "byokit-website@1",
+      "evidence": "https://github.com/staff-000/byokit/issues/9",
+      "notes": "Community-reported succeeded gemini attempt. Output budget 128; latency 1795 ms. GitHub author ID 249984446; submitted 2026-10-19T07:38:38Z; Provider call ran in the contributor’s browser."
+    },
+    {
+      "id": "website:249984446:f48f4085-996a-4f97-b932-bdaaa9a25e5a",
+      "offeringId": "google/gemini-3-flash-preview",
+      "contributor": "github:staff-000",
+      "checkedAt": "2026-10-19T07:32:00.797Z",
+      "result": "passed",
+      "assessment": {
+        "attempt": {
+          "outcome": "succeeded",
+          "reason": null,
+          "scope": "request",
+          "certainty": "explicit",
+          "source": "client_error",
+          "classifierVersion": "1",
+          "retry": {
+            "action": "none",
+            "afterSeconds": null
+          }
+        },
+        "checks": {
+          "textGeneration": "passed",
+          "speed": "not_run"
+        },
+        "phases": [
+          {
+            "phase": "generation",
+            "attempt": {
+              "outcome": "succeeded",
+              "reason": null,
+              "scope": "request",
+              "certainty": "explicit",
+              "source": "client_error",
+              "classifierVersion": "1",
+              "retry": {
+                "action": "none",
+                "afterSeconds": null
+              }
+            }
+          }
+        ]
+      },
+      "checks": [
+        "textGeneration"
+      ],
+      "adapter": "byokit-website@1",
+      "evidence": "https://github.com/staff-000/byokit/issues/9",
+      "notes": "Community-reported succeeded gemini attempt. Output budget 128; latency 1328 ms. GitHub author ID 249984446; submitted 2026-10-19T07:38:38Z; Provider call ran in the contributor’s browser."
+    },
+    {
+      "id": "website:249984446:4c1f8478-358e-468f-b25d-c48ccf64d094",
+      "offeringId": "google/gemini-flash-latest",
+      "contributor": "github:staff-000",
+      "checkedAt": "2026-10-19T07:32:06.544Z",
+      "result": "passed",
+      "assessment": {
+        "attempt": {
+          "outcome": "succeeded",
+          "reason": null,
+          "scope": "request",
+          "certainty": "explicit",
+          "source": "client_error",
+          "classifierVersion": "1",
+          "retry": {
+            "action": "none",
+            "afterSeconds": null
+          }
+        },
+        "checks": {
+          "textGeneration": "passed",
+          "speed": "not_run"
+        },
+        "phases": [
+          {
+            "phase": "generation",
+            "attempt": {
+              "outcome": "succeeded",
+              "reason": null,
+              "scope": "request",
+              "certainty": "explicit",
+              "source": "client_error",
+              "classifierVersion": "1",
+              "retry": {
+                "action": "none",
+                "afterSeconds": null
+              }
+            }
+          }
+        ]
+      },
+      "checks": [
+        "textGeneration"
+      ],
+      "adapter": "byokit-website@1",
+      "evidence": "https://github.com/staff-000/byokit/issues/9",
+      "notes": "Community-reported succeeded gemini attempt. Output budget 128; latency 5745 ms. GitHub author ID 249984446; submitted 2026-10-19T07:38:38Z; Provider call ran in the contributor’s browser."
     }
   ]
 }
