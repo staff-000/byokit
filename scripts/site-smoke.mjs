@@ -137,7 +137,10 @@ try {
   assert.equal(await page.locator('#provider-filter').inputValue(), '');
   assert.ok((await page.locator('#provider-filter option[value="moonshotai"]').count()) > 0);
   assert.ok((await page.locator('#provider-filter option[value="xai"]').count()) > 0);
-  assert.equal(await page.locator('#provider-filter option').first().textContent(), 'All providers');
+  assert.equal(
+    await page.locator('#provider-filter option').first().textContent(),
+    'All providers',
+  );
   assert.equal(await page.locator('#provider-filter').inputValue(), '');
   assert.ok((await page.locator('#provider-filter option[value="moonshotai"]').count()) > 0);
   assert.ok((await page.locator('#provider-filter option[value="xai"]').count()) > 0);

@@ -17,6 +17,7 @@ from byokit import (
     ModelList,
     Preset,
     TEXT_PROCESS,
+    TEXT_PROCESS_CONFIG,
     LIVE,
     Tag,
 )
@@ -469,11 +470,26 @@ class CoreTests(unittest.TestCase):
         cat = load_catalog()
         models_const = cat.get_models(TEXT_PROCESS)
         models_preset = cat.get_models({"preset": Preset.TEXT_PROCESS})
+        models_config = cat.get_models(TEXT_PROCESS_CONFIG)
         self.assertEqual(len(models_const), 11)
         self.assertEqual(
             [m["id"] for m in models_const],
             [m["id"] for m in models_preset],
         )
+        self.assertEqual(
+            [m["id"] for m in models_const],
+            [m["id"] for m in models_config],
+        )
+
+        deduped1 = cat.get_models({"preset": Preset.TEXT_PROCESS, "dedupe": 1})
+        self.assertEqual(len(deduped1), 7)
+
+        flash_only = cat.get_models(
+            {"preset": Preset.TEXT_PROCESS, "filters": {"tier": "flash"}}
+        )
+        self.assertTrue(0 < len(flash_only) < 11)
+        self.assertTrue(all(m["tier"] == "flash" for m in flash_only))
+
         conf = to_config(TEXT_PROCESS)
         self.assertEqual(conf["preset"], "text-process")
         self.assertEqual(conf["dedupe"], 2)

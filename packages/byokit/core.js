@@ -2001,6 +2001,53 @@ function withSignals(o, asOf) {
   };
 }
 
+export const PRESET_CONFIGS = Object.freeze({
+  'text-process': Object.freeze({
+    preset: 'text-process',
+    providerIds: [ProviderId.Anthropic, ProviderId.Google, ProviderId.OpenAI, ProviderId.DeepSeek],
+    filters: {
+      tier: { any: [Tier.Flash, Tier.Workhorse] },
+      output: { exact: [Modality.Text] },
+      speciality: { exact: [Speciality.General] },
+      releasedWithin: '1y',
+    },
+    dedupe: 2,
+    local: false,
+  }),
+});
+
+export const TEXT_PROCESS_CONFIG = PRESET_CONFIGS['text-process'];
+
+function clonePresetValue(val) {
+  if (Array.isArray(val)) return val.map(clonePresetValue);
+  if (val && typeof val === 'object') {
+    const res = {};
+    for (const [k, v] of Object.entries(val)) res[k] = clonePresetValue(v);
+    return res;
+  }
+  return val;
+}
+
+function applyPresetDefaults(target, defaults) {
+  for (const [key, value] of Object.entries(defaults)) {
+    if (target[key] === undefined) {
+      target[key] = clonePresetValue(value);
+    } else if (
+      key === 'filters' &&
+      typeof target.filters === 'object' &&
+      target.filters !== null &&
+      !Array.isArray(target.filters)
+    ) {
+      for (const [fKey, fVal] of Object.entries(value)) {
+        if (target.filters[fKey] === undefined) {
+          target.filters[fKey] = clonePresetValue(fVal);
+        }
+      }
+    }
+  }
+  return target;
+}
+
 function normalizeQuery(input = {}, options) {
   const mode = typeof input === 'string';
   if (mode && !Object.values(ModelList).includes(input) && input !== 'official')
@@ -2033,35 +2080,7 @@ function normalizeQuery(input = {}, options) {
     config.list === 'text-process' ||
     config.preset === 'text-process'
   ) {
-    config.preset = 'text-process';
-    if (config.providerIds === undefined) {
-      config.providerIds = [
-        ProviderId.Anthropic,
-        ProviderId.Google,
-        ProviderId.OpenAI,
-        ProviderId.DeepSeek,
-      ];
-    }
-    const f = { ...(config.filters || {}) };
-    if (f.tier === undefined) {
-      f.tier = { any: [Tier.Flash, Tier.Workhorse] };
-    }
-    if (f.output === undefined) {
-      f.output = { exact: [Modality.Text] };
-    }
-    if (f.speciality === undefined) {
-      f.speciality = { exact: [Speciality.General] };
-    }
-    if (f.releasedWithin === undefined) {
-      f.releasedWithin = '1y';
-    }
-    config.filters = f;
-    if (config.dedupe === undefined) {
-      config.dedupe = 2;
-    }
-    if (config.local === undefined) {
-      config.local = false;
-    }
+    applyPresetDefaults(config, PRESET_CONFIGS['text-process']);
   }
   if (config.list !== ModelList.Complete && config.list !== 'complete') {
     const f = { ...(config.filters || {}) };

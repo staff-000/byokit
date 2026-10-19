@@ -792,3 +792,5 @@ export function toConfig(config?: PickerConfig): PickerConfig;
 export function toConfig(list: ModelList, config?: PickerConfig): PickerConfig;
 export function toConfigJson(config?: PickerConfig, indent?: number): string;
 export function toConfigJson(list: ModelList, config?: PickerConfig, indent?: number): string;
+export const PRESET_CONFIGS: Readonly<Record<string, Readonly<PickerConfig>>>;
+export const TEXT_PROCESS_CONFIG: Readonly<PickerConfig>;

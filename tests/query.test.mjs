@@ -26,6 +26,7 @@ import {
   ProviderId,
   Preset,
   TEXT_PROCESS,
+  TEXT_PROCESS_CONFIG,
 } from '../packages/byokit/index.js';
 import bundled, { getModels } from 'byokit/catalog';
 const fixture = () => JSON.parse(readFileSync('spec/fixtures/catalog.json'));
@@ -213,6 +214,7 @@ test('text-process preset filters Anthropic, Google, OpenAI, DeepSeek text model
   });
   const fromConstant = getModels(TEXT_PROCESS);
   const fromPreset = getModels({ preset: Preset.TextProcess });
+  const fromConfig = getModels(TEXT_PROCESS_CONFIG);
   assert.equal(explicit.length, 11);
   assert.deepEqual(
     explicit.map((m) => m.id),
@@ -222,6 +224,20 @@ test('text-process preset filters Anthropic, Google, OpenAI, DeepSeek text model
     explicit.map((m) => m.id),
     fromPreset.map((m) => m.id),
   );
+  assert.deepEqual(
+    explicit.map((m) => m.id),
+    fromConfig.map((m) => m.id),
+  );
+
+  // User override: dedupe: 1 keeps only 1 model per (speciality, tier)
+  const deduped1 = getModels({ preset: Preset.TextProcess, dedupe: 1 });
+  assert.equal(deduped1.length, 7);
+
+  // User override: filter by tier: flash preserves other preset defaults (output: text, speciality: general)
+  const flashOnly = getModels({ preset: Preset.TextProcess, filters: { tier: Tier.Flash } });
+  assert.ok(flashOnly.length > 0 && flashOnly.length < 11);
+  assert.ok(flashOnly.every((m) => m.tier === 'flash'));
+
   const pythonRun = pythonModels({
     data: JSON.parse(readFileSync('catalog/catalog.json')),
     queries: [{ list: 'text-process' }],

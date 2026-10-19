@@ -2273,6 +2273,52 @@ def _with_signals(o, as_of=None):
     )
 
 
+PRESET_CONFIGS = {
+    "text-process": {
+        "preset": "text-process",
+        "providerIds": [
+            ProviderId.ANTHROPIC,
+            ProviderId.GOOGLE,
+            ProviderId.OPEN_AI,
+            ProviderId.DEEP_SEEK,
+        ],
+        "filters": {
+            "tier": {"any": [Tier.FLASH, Tier.WORKHORSE]},
+            "output": {"exact": [Modality.TEXT]},
+            "speciality": {"exact": [Speciality.GENERAL]},
+            "releasedWithin": "1y",
+        },
+        "dedupe": 2,
+        "local": False,
+    },
+}
+
+TEXT_PROCESS_CONFIG = PRESET_CONFIGS["text-process"]
+
+
+def _clone_preset_value(val):
+    if isinstance(val, list):
+        return [_clone_preset_value(x) for x in val]
+    if isinstance(val, dict):
+        return {k: _clone_preset_value(v) for k, v in val.items()}
+    return val
+
+
+def _apply_preset_defaults(target: dict, defaults: dict) -> dict:
+    for key, value in defaults.items():
+        if key not in target or target[key] is None:
+            target[key] = _clone_preset_value(value)
+        elif (
+            key == "filters"
+            and isinstance(target.get("filters"), dict)
+            and isinstance(value, dict)
+        ):
+            for f_key, f_val in value.items():
+                if f_key not in target["filters"] or target["filters"][f_key] is None:
+                    target["filters"][f_key] = _clone_preset_value(f_val)
+    return target
+
+
 def _normalize_query(input=None, options=None):
     if isinstance(input, str):
         if input not in ({v.value for v in ModelList} | {"official"}):
@@ -2306,28 +2352,7 @@ def _normalize_query(input=None, options=None):
         config.get("list") in (ModelList.TEXT_PROCESS, "text-process")
         or config.get("preset") == "text-process"
     ):
-        config["preset"] = "text-process"
-        if "providerIds" not in config:
-            config["providerIds"] = [
-                ProviderId.ANTHROPIC,
-                ProviderId.GOOGLE,
-                ProviderId.OPEN_AI,
-                ProviderId.DEEP_SEEK,
-            ]
-        filters = dict(config.get("filters") or {})
-        if "tier" not in filters:
-            filters["tier"] = {"any": [Tier.FLASH, Tier.WORKHORSE]}
-        if "output" not in filters:
-            filters["output"] = {"exact": [Modality.TEXT]}
-        if "speciality" not in filters:
-            filters["speciality"] = {"exact": [Speciality.GENERAL]}
-        if "releasedWithin" not in filters:
-            filters["releasedWithin"] = "1y"
-        config["filters"] = filters
-        if "dedupe" not in config:
-            config["dedupe"] = 2
-        if "local" not in config:
-            config["local"] = False
+        _apply_preset_defaults(config, PRESET_CONFIGS["text-process"])
     if config.get("list") not in (ModelList.COMPLETE, "complete"):
         filters = dict(config.get("filters") or {})
         if "callable" not in filters:
