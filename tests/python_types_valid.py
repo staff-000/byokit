@@ -107,3 +107,6 @@ composable: Filters = {
     "output": byokit.or_(byokit.exact(byokit.Modality.TEXT), byokit.exact(byokit.Modality.IMAGE)),
 }
 byokit.get_models({"filters": composable})
+
+from byokit.types import CallOptions
+trusted_development_options: CallOptions = {"allow_insecure_http": True}

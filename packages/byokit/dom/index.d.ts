@@ -13,6 +13,7 @@ export interface ByokOptions {
   config?: PickerConfig;
   value?: Selection;
   credentialStore?: CredentialStore;
+  /** Namespace for provider/connection-scoped references. Saved value.credentialRef stays bound to its original scope. */
   credentialRef?: string;
   locale?: Locale;
   labels?: Record<string, string>;

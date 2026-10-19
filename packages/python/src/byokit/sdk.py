@@ -19,6 +19,27 @@ def _invalid(message):
     raise CallError("INVALID_REQUEST", message)
 
 
+class _Credential:
+    """Keep secrets out of attribute dumps and refuse generic serialization."""
+
+    __slots__ = ("__value",)
+
+    def __init__(self, value):
+        self.__value = value
+
+    def reveal(self):
+        return self.__value
+
+    def __repr__(self):
+        return "<byokit credential: redacted>"
+
+    def __getstate__(self):
+        raise TypeError("BYOKit credentials cannot be serialized.")
+
+    def __reduce_ex__(self, protocol):
+        raise TypeError("BYOKit credentials cannot be serialized.")
+
+
 def _check_options(options):
     if not isinstance(options, dict) or set(options) - {
         "check_budget",
@@ -29,6 +50,7 @@ def _check_options(options):
         "overhead_tokens",
         "on_warning",
         "headers",
+        "allow_insecure_http",
     }:
         _invalid("Unsupported client request option.")
 
@@ -36,7 +58,7 @@ def _check_options(options):
 class _Request:
     def __init__(self, model, source, defaults, format):
         self._model = copy.deepcopy(model)
-        self._source = source
+        self._source = _Credential(source)
         _check_options(defaults)
         self._defaults = dict(defaults)
         self._format = format
@@ -68,6 +90,7 @@ class _Request:
             "overhead_tokens",
             "on_warning",
             "headers",
+            "allow_insecure_http",
         }:
             _invalid("Unsupported client request option.")
         cancel = opts.get("cancel_event")
@@ -86,7 +109,7 @@ class _Request:
         # They run on the caller’s thread; blocking callback work is owned by the application.
         started = time.monotonic()
         try:
-            key = self._source()
+            key = self._source.reveal()()
         except Exception:
             raise CallError(
                 "CREDENTIAL_ERROR", "Could not obtain the API key."
@@ -384,7 +407,7 @@ class _StandardRequest:
             _invalid("Unsupported API protocol.")
         self._base_url = _endpoint(base_url, protocol)
         self._protocol = protocol
-        self.__key = api_key
+        self.__key = _Credential(api_key)
         self._headers = validate_headers(
             {} if default_headers is None else default_headers
         )
@@ -427,6 +450,12 @@ class _StandardRequest:
             self._models[m["apiModelId"]] = copy.deepcopy(m)
         self._format = format
 
+    def __getstate__(self):
+        raise TypeError("BYOKit clients cannot be serialized; recreate them from non-secret settings.")
+
+    def __reduce_ex__(self, protocol):
+        raise TypeError("BYOKit clients cannot be serialized; recreate them from non-secret settings.")
+
     def _create(
         self, params: dict, model: str | None, options: CallOptions | None
     ) -> SDKResponse:
@@ -451,12 +480,13 @@ class _StandardRequest:
             )
         )
         selected["connection"] = dict(baseUrl=self._base_url, protocol=self._protocol)
-        if not self.__key:
+        key = self.__key.reveal()
+        if not key:
             selected["local"] = dict(endpoint=self._base_url)
         opts = {**self._defaults, **(options or {})}
         opts["headers"] = {**self._headers, **validate_headers(opts.get("headers", {}))}
         result = (call_claude if self._format == "claude" else call)(
-            selected, params, self.__key, opts
+            selected, params, key, opts
         )
         return _response(result)
 

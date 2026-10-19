@@ -181,3 +181,9 @@ npx byokit build byok.config.json --out src/generated/models.js
 ## License
 
 MIT © [staff-000](https://github.com/staff-000)
+
+### Credential safety
+
+Built-in execution keeps keys in memory and sends them directly to the configured endpoint, with redirects disabled. It does not persist keys or send telemetry. Authenticated remote calls require HTTPS; loopback HTTP supports local development. For trusted development networks only, explicitly pass `allowInsecureHttp: true` (Python: `allow_insecure_http=True`). Custom headers on remote HTTP require the same opt-in.
+
+The picker's default store is in memory; custom credential stores receive raw keys and control persistence. Credential references are scoped by provider and known connection. Python clients reject pickling and block generic JSON attribute dumps of credentials. Serialize non-secret settings and recreate clients. Application callbacks, debugging tools, and custom transports control their own logging and must not log keys or headers.

@@ -112,4 +112,29 @@ export async function localSetupSmoke(page) {
   await page.locator('#local-close').click();
   assert.equal(calls.length, beforeClose);
   assert.equal(await page.evaluate(() => document.activeElement.textContent), 'Set up local');
+  let remoteRequests = 0;
+  await page.route('http://remote.example/**', async (route) => {
+    remoteRequests++;
+    await route.abort();
+  });
+  await page.locator('#setup-local').click();
+  await page.locator('#local-setup-url').fill('http://remote.example');
+  await page.locator('#local-setup-api').selectOption('openai-compatible');
+  await page.locator('#local-setup-model').fill('remote-security-test');
+  await page.getByRole('button', { name: 'Use this model', exact: true }).click();
+  await page.locator('#local-verify').click();
+  assert.equal(await page.locator('#api-key').inputValue(), '');
+  await page.locator('#api-key').fill('synthetic-remote-security-key');
+  assert.match(await page.locator('#destination').textContent(), /Use HTTPS/);
+  await page.locator('#verify').click();
+  await page
+    .locator('#call-status')
+    .filter({ hasText: 'request settings need correction' })
+    .waitFor();
+  assert.equal(remoteRequests, 0, 'remote HTTP credentials must be blocked before any request');
+  const stored = await page.evaluate(() =>
+    localStorage.getItem('byokit.inference-verifications.v1'),
+  );
+  assert.ok(!stored.includes('synthetic-remote-security-key'));
+  await page.locator('#drawer-close').click();
 }

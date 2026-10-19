@@ -234,3 +234,128 @@ test('picker switches configured local endpoints and clears connection credentia
   assert.equal(root.querySelector('input[type=password]').value, '');
   ui.destroy();
 });
+
+test('custom credential reference is scoped on reads and writes, never reused across providers', async () => {
+  const values = new Map([['shared-reference', 'legacy-hosted-key']]);
+  let saved;
+  const reads = [];
+  const { root, ui, dom } = setup({
+    value: { providerId: 'test', modelId: 'small' },
+    credentialRef: 'shared-reference',
+    credentialStore: {
+      get: async (ref) => {
+        reads.push(ref);
+        return values.get(ref);
+      },
+      set: async (ref, secret) => values.set(ref, secret),
+    },
+    onSave: (selection) => (saved = selection),
+  });
+  await tick();
+  const provider = root.querySelector('select'),
+    key = root.querySelector('input[type=password]');
+  assert.equal(key.value, '');
+  key.value = 'hosted-key';
+  root.querySelector('form').dispatchEvent(new dom.window.Event('submit', { cancelable: true }));
+  await tick();
+  const hostedRef = saved.credentialRef;
+  assert.equal(hostedRef, 'shared-reference:test');
+  provider.value = 'local';
+  provider.dispatchEvent(new dom.window.Event('change'));
+  await tick();
+  assert.equal(key.value, '');
+  root.querySelector('input[data-role=custom]').value = 'local-model';
+  key.value = 'local-key';
+  root.querySelector('form').dispatchEvent(new dom.window.Event('submit', { cancelable: true }));
+  await tick();
+  assert.notEqual(saved.credentialRef, hostedRef);
+  assert.equal(values.get(hostedRef), 'hosted-key');
+  assert.equal(values.get(saved.credentialRef), 'local-key');
+  assert.ok(!reads.includes('shared-reference'));
+  provider.value = 'test';
+  provider.dispatchEvent(new dom.window.Event('change'));
+  assert.equal(key.value, 'hosted-key');
+  assert.equal(ui.getSelection().modelId, 'small');
+  ui.destroy();
+});
+
+test('saved legacy local credential reference cannot follow an edited endpoint or protocol', async () => {
+  const refs = [];
+  const value = {
+    providerId: 'local',
+    modelId: 'one',
+    endpoint: 'http://localhost:8000',
+    api: 'openai-compatible',
+    credentialRef: 'legacy-local-ref',
+  };
+  const { root, ui, dom } = setup({
+    value,
+    credentialStore: {
+      get: async (ref) => (ref === 'legacy-local-ref' ? 'original-key' : undefined),
+      set: async (ref) => refs.push(ref),
+    },
+  });
+  await tick();
+  const key = root.querySelector('input[type=password]');
+  assert.equal(key.value, 'original-key');
+  for (const edit of [
+    () => {
+      root.querySelector('input[type=url]').value = 'http://localhost:9000';
+      root.querySelector('input[type=url]').dispatchEvent(new dom.window.Event('input'));
+    },
+    () => {
+      root.querySelectorAll('select')[2].value = 'ollama';
+      root.querySelectorAll('select')[2].dispatchEvent(new dom.window.Event('change'));
+    },
+  ]) {
+    edit();
+    assert.equal(key.value, '');
+    key.value = 'new-server-key';
+    root.querySelector('form').dispatchEvent(new dom.window.Event('submit', { cancelable: true }));
+    await tick();
+  }
+  assert.equal(refs.length, 2);
+  assert.ok(refs.every((ref) => ref !== 'legacy-local-ref'));
+  assert.notEqual(refs[0], refs[1]);
+  ui.destroy();
+});
+
+test('hosted custom endpoints under one provider cannot reuse saved credentials', async () => {
+  const changed = structuredClone(data);
+  changed.offerings[0].connection = {
+    baseUrl: 'https://first.example/v1',
+    protocol: 'openai-compatible',
+  };
+  changed.offerings[1].connection = {
+    baseUrl: 'https://second.example/v1',
+    protocol: 'openai-compatible',
+  };
+  let saved;
+  const { root, ui, dom } = setup({
+    catalog: changed,
+    value: {
+      providerId: 'test',
+      offeringId: changed.offerings[0].id,
+      modelId: changed.offerings[0].apiModelId,
+      credentialRef: 'first-endpoint-key',
+    },
+    credentialStore: {
+      get: async (ref) => (ref === 'first-endpoint-key' ? 'first-secret' : undefined),
+      set: async () => {},
+    },
+    onSave: (s) => (saved = s),
+  });
+  await tick();
+  const key = root.querySelector('input[type=password]');
+  assert.equal(key.value, 'first-secret');
+  const model = root.querySelectorAll('select')[1];
+  model.value = changed.offerings[1].id;
+  model.dispatchEvent(new dom.window.Event('change'));
+  assert.equal(key.value, '');
+  key.value = 'second-secret';
+  root.querySelector('form').dispatchEvent(new dom.window.Event('submit', { cancelable: true }));
+  await tick();
+  assert.notEqual(saved.credentialRef, 'first-endpoint-key');
+  assert.ok(saved.credentialRef.includes(encodeURIComponent('https://second.example/v1')));
+  ui.destroy();
+});

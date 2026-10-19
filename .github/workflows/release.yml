@@ -75,30 +75,42 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TARGET: ${{ inputs.target }}
+          RELEASE_DRY_RUN: ${{ inputs.dry_run }}
+          RELEASE_NPM_ONLY: ${{ inputs.npm_only }}
+          RELEASE_PYPI_ONLY: ${{ inputs.pypi_only }}
         run: |
-          ARGS="${{ inputs.target }}"
-          if [ "${{ inputs.dry_run }}" = "true" ]; then
-            ARGS="$ARGS --dry-run"
+          if [[ ! "$RELEASE_TARGET" =~ ^(patch|minor|major|[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?)$ ]]; then
+            echo "Invalid release target. Use patch, minor, major, or X.Y.Z with an optional prerelease."
+            exit 1
+          fi
+          args=("$RELEASE_TARGET")
+          if [ "$RELEASE_DRY_RUN" = "true" ]; then
+            args+=(--dry-run)
           else
-            ARGS="$ARGS --push"
+            args+=(--push)
           fi
-          if [ "${{ inputs.npm_only }}" = "true" ]; then
-            ARGS="$ARGS --npm-only"
+          if [ "$RELEASE_NPM_ONLY" = "true" ]; then
+            args+=(--npm-only)
           fi
-          if [ "${{ inputs.pypi_only }}" = "true" ]; then
-            ARGS="$ARGS --pypi-only"
+          if [ "$RELEASE_PYPI_ONLY" = "true" ]; then
+            args+=(--pypi-only)
           fi
-          node scripts/release.mjs $ARGS
+          node scripts/release.mjs "${args[@]}"
 
       - name: Run release script (GitHub Release Published)
         if: github.event_name == 'release'
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
-          TAG="${{ github.event.release.tag_name }}"
-          VERSION="${TAG#v}"
-          node scripts/release.mjs "$VERSION" --no-git
+          version="${RELEASE_TAG#v}"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
+            echo "Invalid release tag. Use X.Y.Z with an optional v prefix and prerelease."
+            exit 1
+          fi
+          node scripts/release.mjs "$version" --no-git
 
       - name: Check for updates (Scheduled)
         id: check_updates

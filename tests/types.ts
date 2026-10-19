@@ -121,3 +121,8 @@ standard.chat.completions.create({model:'test',messages:[]},{apiKey:'other'});
 getModels({filters:{releaseChannel:['stable','unknown'],output:{or:[{exact:[Modality.Text]},{exact:[Modality.Image]}]}}});
 // @ts-expect-error invalid release channel
 getModels({filters:{releaseChannel:['banana']}});
+
+// Remote plaintext authentication requires an explicit boolean development option.
+calls.call(chosen, 'Hello', 'key', {allowInsecureHttp: true});
+// @ts-expect-error transport opt-in is a boolean, not a string
+calls.call(chosen, 'Hello', 'key', {allowInsecureHttp: 'true'});

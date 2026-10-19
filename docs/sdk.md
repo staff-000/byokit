@@ -145,12 +145,28 @@ parameters fail. Tool calls are returned, never executed automatically.
 The key stays in client memory for reuse and is sent only to its fixed endpoint.
 Constructor/header/model settings are copied; later caller mutations cannot reroute
 requests. Models are strings, so requests cannot supply another endpoint. Requests
-have independent cancellation and deadlines. Keys never enter persistent settings,
-logs, telemetry, diagnostics, catalog metadata or returned responses. Redirects are
-blocked. Default headers are copied and cannot replace auth, cookies, Host,
+have independent cancellation and deadlines. Built-in execution does not persist keys
+or send telemetry. Normalized provider errors and returned results omit/redact the
+supplied key. Redirects are blocked. Default headers are copied and cannot replace auth, cookies, Host,
 Content-Type or transport framing headers. Per-request `headers` can override other
 constructor headers without changing the key or endpoint. Empty `apiKey`/`api_key`
 is an explicit choice for an unauthenticated local endpoint; omission is rejected.
+
+Authenticated remote calls require HTTPS. HTTP is allowed for `localhost`, IPv4
+loopback (`127.0.0.0/8`), and `::1`. For a trusted development network only, explicitly
+set `allowInsecureHttp: true` (Python: `allow_insecure_http=True`) in client or call
+options. This also gates custom headers on remote HTTP, since headers may contain
+credentials. The website does not offer this bypass. Unauthenticated remote HTTP
+calls without custom headers remain possible.
+
+Python reusable clients cannot be pickled; generic JSON serialization with
+`default=vars` also fails safely when it reaches the credential holder. Attribute
+dumps show a redacted holder rather than the key string. Serialize non-secret
+configuration and recreate the client instead. Responses remain JSON serializable.
+These protections prevent accidental dumps; code inspecting process memory or
+explicitly accessing credentials can still read them. Do not log headers or locals.
+Custom credential stores, transport functions, and application callbacks control
+their own persistence and logging.
 
 ## Migration
 

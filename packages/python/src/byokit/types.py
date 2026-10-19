@@ -250,6 +250,7 @@ class ClaudeInput(_ClaudeOptional):
 
 
 class CallOptions(TypedDict, total=False):
+    allow_insecure_http: bool
     headers: dict[str, str]
     check_budget: bool
     runtime_checks: bool

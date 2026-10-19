@@ -598,6 +598,8 @@ export interface ClaudeInput {
   stream?: false;
 }
 export interface CallOptions {
+  /** Development only: permit credentials over HTTP outside loopback. Defaults to false. */
+  allowInsecureHttp?: boolean;
   headers?: Record<string, string>;
   checkBudget?: boolean;
   runtimeChecks?: boolean;

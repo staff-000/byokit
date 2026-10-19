@@ -5,6 +5,7 @@ import {
 } from '../packages/byokit/verification.js';
 import { SPEED_BENCHMARK, isStandardSpeedSettings, speedAdapter } from './speed-measurements.js';
 import { OpenAI, prepareCall, ApiProtocol, CallError } from '../packages/byokit/index.js';
+import { validateCredentialTransport } from '../packages/byokit/call.js';
 // Verification UI: shared library adapters, browser-local records, no stored credentials.
 import { providerConnections } from '../packages/byokit/connection.js';
 import catalog from '../packages/byokit/catalog.js';
@@ -91,6 +92,7 @@ export function requestFor(settings, key) {
   const request = prepareCall(verificationModel(settings), verificationInput(settings), {
     runtimeChecks: false,
   });
+  validateCredentialTransport(request.url, key);
   const headers = { 'Content-Type': 'application/json' };
   if (request.protocol === ApiProtocol.Claude) {
     headers['x-api-key'] = key;

@@ -302,12 +302,14 @@ function destination() {
   try {
     $('#destination').textContent = requestFor(
       { ...settings(), prompt: 'check' },
-      'display-only',
+      selected.local ? $('#api-key').value.trim() : 'display-only',
     ).url;
-  } catch {
-    $('#destination').textContent = selected.local
-      ? 'Enter your server URL and model ID.'
-      : ProviderApi[selected.providerId]?.base || 'Unsupported provider';
+  } catch (error) {
+    $('#destination').textContent = error.message?.startsWith('Use HTTPS')
+      ? 'Use HTTPS for remote servers with an API key. HTTP authentication is allowed only on localhost and loopback IPs here.'
+      : selected.local
+        ? 'Enter your server URL and model ID.'
+        : ProviderApi[selected.providerId]?.base || 'Unsupported provider';
   }
 }
 function updateCostEstimate() {

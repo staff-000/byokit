@@ -14,6 +14,7 @@ const optionKeys = [
   'onWarning',
   'fetch',
   'headers',
+  'allowInsecureHttp',
 ];
 function options(value = {}) {
   if (!object(value) || Object.keys(value).some((k) => !optionKeys.includes(k)))

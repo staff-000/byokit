@@ -1,4 +1,5 @@
 import { Catalog, createMemoryCredentialStore, checkFit, LocalApi } from '../index.js';
+import { connectionFor } from '../connection.js';
 const en = {
   provider: 'Provider',
   model: 'Model',
@@ -66,6 +67,7 @@ export function mountByok(container, options) {
     revision = 0,
     choice = options.value || {},
     localChoices = [],
+    keyScope = null,
     busy = false,
     controller,
     expanded = false;
@@ -169,22 +171,21 @@ export function mountByok(container, options) {
     status.textContent = text;
     status.dataset.state = state;
   }
-  function selection() {
-    const local = current()?.provider.deployment === 'local';
+  function selection(providerId = provider.el.value) {
+    const group = available.find((g) => g.provider.id === providerId);
+    const local = group?.provider.deployment === 'local';
     const o = local
-      ? current()?.offerings.find((entry) => entry.id === model.el.value)
+      ? group?.offerings.find((entry) => entry.id === model.el.value)
       : catalog.get(model.el.value);
     const result = {
-      providerId: provider.el.value,
+      providerId,
       offeringId: o?.id,
       modelId:
         model.el.value === '__unavailable'
           ? ''
           : o?.apiModelId ||
             (model.el.value === '__custom' ? custom.el.value.trim() : model.el.value),
-      ...(current()?.provider.deployment === 'local'
-        ? { endpoint: endpoint.el.value.trim(), api: api.el.value }
-        : {}),
+      ...(local ? { endpoint: endpoint.el.value.trim(), api: api.el.value } : {}),
     };
     if (local && result.modelId && result.endpoint) {
       try {
@@ -200,9 +201,35 @@ export function mountByok(container, options) {
     }
     return result;
   }
+  function credentialScope(s) {
+    if (s.providerId === 'local' && !s.endpoint) return null;
+    try {
+      const connection =
+        s.providerId === 'local'
+          ? connectionFor({ local: { endpoint: s.endpoint, api: s.api } })
+          : connectionFor(catalog.get(s.offeringId) || { providerId: s.providerId });
+      if (!connection) return s.providerId || null;
+      const base = new URL(connection.baseUrl).href.replace(/\/+$/, '');
+      return `${s.providerId}/${encodeURIComponent(base)}/${encodeURIComponent(connection.protocol)}`;
+    } catch {
+      return null;
+    }
+  }
+  function credentialReference(s) {
+    const scope = credentialScope(s);
+    if (!scope) return null;
+    // A saved reference is bound to its saved provider/connection. An application
+    // reference is a namespace, never a shared slot for unrelated providers.
+    if (options.value?.credentialRef && scope === credentialScope(options.value))
+      return options.value.credentialRef;
+    return `${options.credentialRef || 'byokit'}:${scope}`;
+  }
   function edit() {
     controller?.abort();
     revision++;
+    const scope = credentialScope(selection());
+    if (scope !== keyScope) key.el.value = '';
+    keyScope = scope;
     describeModel();
     check.disabled = false;
     save.disabled = false;
@@ -352,6 +379,7 @@ export function mountByok(container, options) {
     if (!g) message(labels.empty, 'warning');
     else if (!custom.label.hidden) message(labels.unverified, 'warning');
     else message('');
+    keyScope = credentialScope(selection());
   }
   more.onclick = () => {
     const saved = selection();
@@ -363,7 +391,7 @@ export function mountByok(container, options) {
   provider.el.onchange = () => {
     drafts.set(activeProvider, {
       selection: {
-        ...selection(),
+        ...selection(activeProvider),
         providerId: activeProvider,
         endpoint: endpoint.el.value,
         api: api.el.value,
@@ -386,14 +414,8 @@ export function mountByok(container, options) {
     edit();
     if (!draft) {
       const r = revision,
-        ref =
-          (options.value?.providerId === activeProvider
-            ? options.value?.credentialRef
-            : undefined) ||
-          options.credentialRef ||
-          (activeProvider === 'local'
-            ? `byokit:${selection().offeringId || 'local/unconfigured'}`
-            : `byokit:${activeProvider}`);
+        ref = credentialReference(selection());
+      if (!ref) return;
       store
         .get?.(ref)
         .then((secret) => {
@@ -460,14 +482,8 @@ export function mountByok(container, options) {
           result.ok ? 'ready' : 'error',
         );
       } else {
-        const ref =
-          s.providerId === 'local'
-            ? `byokit:${s.offeringId}`
-            : (options.value?.providerId === s.providerId
-                ? options.value?.credentialRef
-                : undefined) ||
-              options.credentialRef ||
-              `byokit:${s.providerId}`;
+        const ref = credentialReference(s);
+        if (!ref) throw new Error('Configure the connection before saving credentials.');
         await store.set(ref, secret);
         if (disposed || request !== revision) return;
         await options.onSave({ ...s, credentialRef: ref });
@@ -513,10 +529,11 @@ export function mountByok(container, options) {
     }
   };
   renderModels(choice);
-  if (choice.credentialRef) {
+  const initialRef = credentialReference(selection());
+  if (initialRef) {
     const r = revision;
     store
-      .get(choice.credentialRef)
+      .get(initialRef)
       .then((secret) => {
         if (!disposed && revision === r) key.el.value = secret || '';
       })

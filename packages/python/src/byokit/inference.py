@@ -801,6 +801,23 @@ def validate_headers(value):
     return result
 
 
+def _validate_credential_transport(url, key, allow_insecure_http=False, headers=None):
+    import ipaddress
+
+    if not isinstance(allow_insecure_http, bool):
+        _fail("allow_insecure_http must be boolean.")
+    endpoint = urllib.parse.urlsplit(url)
+    host = endpoint.hostname or ""
+    loopback = host == "localhost"
+    try:
+        loopback = loopback or ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        pass
+    if (endpoint.scheme == "http" and not loopback and not allow_insecure_http
+            and (key or headers)):
+        _fail("Use HTTPS for authenticated remote endpoints. For trusted development networks only, explicitly set allow_insecure_http.")
+
+
 def _execute(model, input, key, options, format):
     options = options or {}
     if not isinstance(key, str) or not model.get("local") and not key:
@@ -817,6 +834,9 @@ def _execute(model, input, key, options, format):
         check_budget=options.get("check_budget", False),
         input_tokens=options.get("input_tokens"),
         overhead_tokens=options.get("overhead_tokens", 0),
+    )
+    _validate_credential_transport(
+        req["url"], key, options.get("allow_insecure_http", False), extra_headers
     )
     for d in req["diagnostics"]:
         if d["severity"] == "warning":

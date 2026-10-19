@@ -82,6 +82,22 @@ export function validateHeaders(value) {
   }
   return result;
 }
+export function validateCredentialTransport(url, key, allowInsecureHttp = false, headers = {}) {
+  if (typeof allowInsecureHttp !== 'boolean') fail('allowInsecureHttp must be boolean.');
+  const endpoint = new URL(url);
+  const loopback =
+    ['localhost', '[::1]'].includes(endpoint.hostname) ||
+    /^127(?:\.\d{1,3}){3}$/.test(endpoint.hostname);
+  if (
+    endpoint.protocol === 'http:' &&
+    !loopback &&
+    !allowInsecureHttp &&
+    (key || Object.keys(headers).length)
+  )
+    fail(
+      'Use HTTPS for authenticated remote endpoints. For trusted development networks only, explicitly set allowInsecureHttp.',
+    );
+}
 function normalize(input, format) {
   if (!['openai', 'claude'].includes(format)) fail('Unsupported input format.');
   const p = typeof input === 'string' ? { messages: [{ role: Role.User, content: input }] } : input;
@@ -676,6 +692,7 @@ async function execute(model, input, key, options, format) {
     inputTokens,
     overheadTokens,
   });
+  validateCredentialTransport(request.url, key, options?.allowInsecureHttp, extraHeaders);
   for (const d of request.diagnostics)
     if (d.severity === 'warning') {
       if (onWarning) onWarning(d);

@@ -25,6 +25,15 @@ not the key. Connection checks are explicit and time out after 15 seconds. Provi
 switches keep drafts independent; unmount clears drafts and fences late callbacks.
 `locale: 'zh'` supplies basic Chinese labels; custom labels are supported.
 
+The default credential store is an in-memory map. A custom `credentialStore` receives
+raw keys and may persist them; choose and audit that adapter yourself. `credentialRef`
+is now a namespace: reads and writes append the provider and known connection scope
+(URL and protocol). An existing `value.credentialRef` is reused only for the same saved
+provider and connection. Unscoped application references are not automatically loaded;
+re-enter the key or supply a saved selection explicitly bound to its original scope.
+Changing a local or custom endpoint clears the key field. This prevents a stored key
+from following a provider or connection change.
+
 React exports `ByokSettings` from `byokit/react`. Pass memoized `options` matching
 the DOM options and import its stylesheet separately. Changing options remounts.
 

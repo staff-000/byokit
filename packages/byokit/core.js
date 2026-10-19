@@ -730,11 +730,7 @@ export function validateConfig(c = {}) {
     ['dedupe', c.dedupe],
     ['filters.dedupe', c.filters?.dedupe],
   ]) {
-    if (
-      val !== undefined &&
-      typeof val !== 'boolean' &&
-      (!Number.isInteger(val) || val < 1)
-    ) {
+    if (val !== undefined && typeof val !== 'boolean' && (!Number.isInteger(val) || val < 1)) {
       errors.push(`${key} must be a positive integer or boolean`);
     }
   }

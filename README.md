@@ -12,7 +12,7 @@ Full parity across **TypeScript/JavaScript** and **Python**.
 1. **"Model Discovery + Unified Execution" in Two Calls** — One simple call to get an up-to-date list of BYOK models (`byokit.getModels()`), and one simple call to run inference (`byokit.call()` or familiar `OpenAI` / `Anthropic` client wrappers). No provider-specific SDK glue required.
 2. **Presets, Composable Matchers & Rich Filters** — Curated presets (`DEFAULT`, `COMPLETE`, `CHINA`, `GLOBAL`, `OFFICIAL`) paired with composable matchers (`exact`, `any`, `contain`, `exclude`, `and`, `or`, `xor`, `not`) for modalities, required `speciality`, model `tier`, context windows, pricing, and tag exclusions.
 3. **Regular Releases & Community Verification** — Pinned catalog snapshots sync automatically every 12 hours from Models.dev with scheduled releases, backed by browser-based community inference verification and contributor badges.
-4. **Zero-Trust Credential & Key Privacy** — Keys stay strictly in caller memory and travel directly to provider endpoints. `byokit` never proxies calls, stores keys in files/browser storage/telemetry, or leaks secrets into logs or serialized objects.
+4. **Credential Privacy by Default** — Built-in execution keeps keys in memory and sends them directly to the configured endpoint. The website stores sanitized verification records, not keys. Custom storage and transport integrations are controlled by your application.
 5. **Build-Time Generation (0 Runtime Overhead) & Caching** — Precompile your fixed query at build time (`npx byokit build`) into a tiny ~15 KB static module with typed autocomplete instead of shipping the full 20 MB catalog. Dynamic queries at runtime are deterministically cached.
 6. **Pre-Flight Task & Budget Fit Checking** — Validate declared token budgets, context limits, features, and modalities before making requests (`byokit.checkModelFit()` / `byokit check`) to prevent runtime failures and wasted tokens.
 7. **Complete Cross-Language Parity** — Full feature parity across JavaScript/TypeScript and Python (`byokit.get_models()`, `byokit.call()`, matching enums, sorting rules, and budget checks).
@@ -267,10 +267,12 @@ const result = await byokit.call(model, 'Explain quantum computing in one senten
 console.log(result.choices[0].message.content);
 ```
 
-### Zero-Trust Credential Privacy
+### Credential Privacy
 
-- Credentials stay strictly in caller memory and are dispatched directly to the provider endpoint.
-- `byokit` never routes through proxies, never caches keys in browser storage or disk, and redacts credentials from all logs, serialization, and error diagnostics.
+- Built-in execution sends credentials directly to the configured endpoint and does not persist keys to disk, browser storage, or telemetry. Keys remain in memory for active calls or reusable clients.
+- Authenticated remote endpoints require HTTPS. HTTP on `localhost`, IPv4 loopback, and `::1` supports local development. Trusted development networks can explicitly opt in with `allowInsecureHttp: true` (Python: `allow_insecure_http=True`); this exposes credentials to that network.
+- Python clients reject pickling, and their credential holder blocks generic JSON attribute dumps. Recreate clients from non-secret settings rather than serializing them. Returned results and normalized provider errors omit/redact the supplied key; do not dump clients, request headers, or process locals to logs.
+- The picker defaults to an in-memory credential store. An application-provided `credentialStore` receives raw keys and can persist them. Custom fetch functions, callbacks, debugging tools, and storage adapters remain the application's responsibility.
 
 ---
 
