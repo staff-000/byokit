@@ -739,7 +739,13 @@ async function execute(model, input, key, options, format) {
     if (request.protocol === ApiProtocol.Claude) {
       headers['x-api-key'] = key;
       headers['anthropic-version'] = '2023-06-01';
-      if (typeof window !== 'undefined')
+      // Workers send browser Origin headers too, but have no window. Module
+      // workers cannot use importScripts, so also recognize WorkerGlobalScope.
+      if (
+        typeof window !== 'undefined' ||
+        typeof importScripts === 'function' ||
+        (typeof WorkerGlobalScope !== 'undefined' && globalThis instanceof WorkerGlobalScope)
+      )
         headers['anthropic-dangerous-direct-browser-access'] = 'true';
     } else if (request.protocol === ApiProtocol.Gemini) headers['x-goog-api-key'] = key;
     else if (key) headers.Authorization = 'Bearer ' + key;

@@ -383,3 +383,91 @@ test('Gemini thinking parts, thoughtSignature, and reasoning content parse corre
     (error) => error.code === 'EMPTY_RESPONSE' && error.completion.reasoningPresent === true,
   );
 });
+
+function callRuntime(t, kind) {
+  const worker = class {
+    static [Symbol.hasInstance](value) {
+      return kind === 'module-worker' && value === globalThis;
+    }
+  };
+  const values = {
+    window: kind === 'page' ? {} : undefined,
+    importScripts: kind === 'classic-worker' ? () => {} : undefined,
+    WorkerGlobalScope: kind === 'module-worker' ? worker : undefined,
+  };
+  for (const [name, value] of Object.entries(values)) {
+    const descriptor = Object.getOwnPropertyDescriptor(globalThis, name);
+    Object.defineProperty(globalThis, name, { configurable: true, writable: true, value });
+    t.after(() => {
+      if (descriptor) Object.defineProperty(globalThis, name, descriptor);
+      else delete globalThis[name];
+    });
+  }
+}
+
+for (const runtime of ['page', 'classic-worker', 'module-worker', 'node']) {
+  test(`Claude browser access header covers ${runtime} without changing other provider authentication`, async (t) => {
+    callRuntime(t, runtime);
+    for (const [providerId, connection] of Object.entries(providerConnections)) {
+      const native = connection.protocol === byokit.ApiProtocol.Claude;
+      const gemini = connection.protocol === byokit.ApiProtocol.Gemini;
+      const data = native
+        ? { content: [{ type: 'text', text: 'OK' }], stop_reason: 'end_turn' }
+        : gemini
+          ? { candidates: [{ content: { parts: [{ text: 'OK' }] }, finishReason: 'STOP' }] }
+          : chat;
+      let calls = 0;
+      const options = {
+        ...noChecks,
+        fetch: async (_, { headers }) => {
+          ++calls;
+          const actual = new Headers(headers);
+          assert.equal(
+            actual.get('anthropic-dangerous-direct-browser-access'),
+            native && runtime !== 'node' ? 'true' : null,
+          );
+          assert.equal(actual.get('x-api-key'), native ? 'test-key' : null);
+          assert.equal(actual.get('anthropic-version'), native ? '2023-06-01' : null);
+          assert.equal(actual.get('x-goog-api-key'), gemini ? 'test-key' : null);
+          assert.equal(actual.get('authorization'), !native && !gemini ? 'Bearer test-key' : null);
+          return ok(data);
+        },
+      };
+      assert.equal(
+        (await byokit.call(model(providerId), 'Hi', 'test-key', options)).choices[0].message
+          .content,
+        'OK',
+      );
+      // NutEgg uses the reusable OpenAI-shaped client with the Claude protocol.
+      const client = new byokit.OpenAI({
+        baseURL: connection.baseUrl,
+        protocol: connection.protocol,
+        models: [model(providerId)],
+        apiKey: 'test-key',
+        ...options,
+      });
+      assert.equal(
+        (
+          await client.chat.completions.create({
+            model: 'served-demo',
+            messages: [{ role: 'user', content: 'Hi' }],
+          })
+        ).choices[0].message.content,
+        'OK',
+      );
+      assert.equal(calls, 2);
+    }
+  });
+}
+
+test('Claude custom headers remain configurable in worker contexts', async (t) => {
+  callRuntime(t, 'module-worker');
+  await byokit.call(model('anthropic'), 'Hi', 'test-key', {
+    ...noChecks,
+    headers: { 'anthropic-dangerous-direct-browser-access': 'false' },
+    fetch: async (_, { headers }) => {
+      assert.equal(new Headers(headers).get('anthropic-dangerous-direct-browser-access'), 'false');
+      return ok({ content: [{ type: 'text', text: 'OK' }], stop_reason: 'end_turn' });
+    },
+  });
+});

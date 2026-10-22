@@ -182,6 +182,12 @@ Content-Type or transport framing headers. Per-request `headers` can override ot
 constructor headers without changing the key or endpoint. Empty `apiKey`/`api_key`
 is an explicit choice for an unauthenticated local endpoint; omission is rejected.
 
+JavaScript Claude-protocol requests include Anthropic's browser-access header in
+browser pages, classic workers, module workers, and extension service workers.
+The header is omitted by default in Node and does not change Gemini or
+OpenAI-compatible authentication. Browser CORS policies remain provider-owned;
+worker support does not guarantee that every provider accepts browser requests.
+
 Authenticated remote calls require HTTPS. HTTP is allowed for `localhost`, IPv4
 loopback (`127.0.0.0/8`), and `::1`. For a trusted development network only, explicitly
 set `allowInsecureHttp: true` (Python: `allow_insecure_http=True`) in client or call
