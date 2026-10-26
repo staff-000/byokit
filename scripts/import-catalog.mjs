@@ -1,3 +1,4 @@
+import { creatorFor } from './creator-attribution.mjs';
 /** Explicit local snapshot import. Does not download or change a trusted endpoint. */
 import { callSupportFor } from '../packages/byokit/connection.js';
 import { mergeManualCatalog } from './manual-catalog.mjs';
@@ -114,6 +115,7 @@ for (const [id, p] of Object.entries(upstream).sort(([a], [b]) => a.localeCompar
       known.add(modelId);
       catalog.models.push({
         id: modelId,
+        creatorId: creatorFor(modelId),
         name: base?.name || modelId,
         familyId,
         type: base?.type,
@@ -489,6 +491,20 @@ if (previous) {
   };
   await writeFile(resolve(out, 'changes.json'), JSON.stringify(diff, null, 2) + '\n');
 }
+const unresolvedCreators = catalog.offerings
+  .filter(
+    (o) =>
+      o.providerId === 'openrouter' && !catalog.models.find((m) => m.id === o.modelId)?.creatorId,
+  )
+  .map((o) => o.id);
+await writeFile(
+  resolve(out, 'creator-coverage.json'),
+  JSON.stringify({ unresolvedOpenRouterOfferingIds: unresolvedCreators }, null, 2) + '\n',
+);
+if (unresolvedCreators.length)
+  console.warn(
+    `Creator attribution unresolved for ${unresolvedCreators.length} OpenRouter offerings; see creator-coverage.json`,
+  );
 await writeFile(destination, JSON.stringify(catalog, null, 2) + '\n');
 await writeFile(
   resolve(out, 'catalog.lock.json'),

@@ -311,6 +311,8 @@ export function validateCatalog(data) {
   const providers = new Set(data.providers.map((x) => x.id)),
     models = new Set(data.models.map((x) => x.id));
   for (const m of data.models) {
+    if (m.creatorId != null && (typeof m.creatorId !== 'string' || !m.creatorId.trim()))
+      errors.push(`${m.id}: invalid creatorId`);
     if (!m.speciality || !Object.values(Speciality).includes(m.speciality))
       errors.push(`${m.id}: invalid or missing speciality`);
     if (!m.tier || !Object.values(Tier).includes(m.tier))
@@ -471,6 +473,7 @@ export function validateConfig(c = {}) {
       'catalog',
       'preset',
       'providerIds',
+      'creatorIds',
       'filters',
       'prefer',
       'ui',
@@ -623,6 +626,8 @@ export function validateConfig(c = {}) {
   if (c.providerIds !== undefined && c.providerIds !== null) {
     validateSelectorNode(c.providerIds, 'providerIds');
   }
+
+  if (c.creatorIds != null) validateSelectorNode(c.creatorIds, 'creatorIds');
 
   const filterSelectors = [
     'releaseChannel',
@@ -1177,7 +1182,9 @@ export class Catalog {
     }
     this.data = trusted ? { ...data } : structuredClone(data);
     this.providers = new Map(this.data.providers.map((x) => [x.id, x]));
-    this.models = new Map(this.data.models.map((x) => [x.id, x]));
+    this.models = new Map(
+      this.data.models.map((x) => [x.id, { ...x, creatorId: x.creatorId ?? null }]),
+    );
     this.offerings = new Map(this.data.offerings.map((x) => [x.id, x]));
     this.families = new Map(this.data.families.map((x) => [x.id, x]));
     this.assets = new Map((this.data.assets || []).map((x) => [x.id, x]));
@@ -1311,10 +1318,11 @@ export class Catalog {
           family = this.families.get(model?.familyId);
         return {
           ...o,
+          creatorId: model.creatorId ?? o.creatorId ?? null,
           connection: connectionFor(o),
           callSupport: o.callSupport || callSupportFor(o),
           provider: g.provider,
-          model,
+          model: { ...model, creatorId: model.creatorId ?? o.creatorId ?? null },
           family: family || null,
           logos: {
             provider: this.assets.get(g.provider.logoId) || null,
@@ -1426,38 +1434,25 @@ export class Catalog {
           (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
         );
       });
-      const dedupeLimit =
-        typeof config.dedupe === 'number'
-          ? config.dedupe
-          : config.dedupe === true
-            ? 1
-            : typeof config.filters?.dedupe === 'number'
-              ? config.filters.dedupe
-              : config.filters?.dedupe === true
-                ? 1
-                : undefined;
-      if (dedupeLimit !== undefined && dedupeLimit >= 1) {
-        const counts = new Map();
-        choices = choices.filter((o) => {
-          const m = this.models.get(o.modelId);
-          const spec = o.speciality || getModelSpeciality(o, m);
-          const tier = o.tier || getModelTier(o, m);
-          const key = `${spec}:${tier}`;
-          const count = counts.get(key) || 0;
-          if (count >= dedupeLimit) return false;
-          counts.set(key, count + 1);
-          return true;
-        });
-      }
+      if (choices.length) groups.push({ provider: this.providers.get(id), offerings: choices });
+    }
+    const selected = selectCreators(groups, config, this.models);
+    groups.length = 0;
+    for (const group of selected) {
+      const choices = group.offerings;
       const cap = uncapped
         ? config.list === ModelList.Complete || config.providerIds || recommended
           ? Infinity
           : (config.ui?.maxModelsPerProvider ?? 1)
         : (config.ui?.maxModelsPerProvider ?? 4);
       if (choices.length)
-        groups.push({ provider: this.providers.get(id), offerings: choices.slice(0, cap) });
+        groups.push({ provider: group.provider, offerings: choices.slice(0, cap) });
     }
-    const locals = localGroups(config, this);
+    const locals = selectCreators(
+      localGroups(config, this),
+      { ...config, dedupe: false, filters: { ...config.filters, dedupe: false } },
+      this.models,
+    );
     return [
       ...(uncapped
         ? groups
@@ -2127,9 +2122,11 @@ function validateLocal(entry) {
     !entry ||
     typeof entry !== 'object' ||
     Array.isArray(entry) ||
-    Object.keys(entry).some((k) => !['endpoint', 'api', 'modelId', 'name'].includes(k))
+    Object.keys(entry).some((k) => !['endpoint', 'api', 'modelId', 'name', 'creatorId'].includes(k))
   )
     throw new Error('Invalid local entry');
+  if (entry.creatorId != null && (typeof entry.creatorId !== 'string' || !entry.creatorId.trim()))
+    throw new Error('Invalid creatorId');
   if (typeof entry.endpoint !== 'string') throw new Error('Local endpoint must be a URL string');
   let url;
   try {
@@ -2215,6 +2212,7 @@ function localGroups(config, catalog) {
   const offerings = entries.map((entry) => ({
     id: localOfferingId(entry),
     providerId: 'local',
+    creatorId: entry.creatorId ?? null,
     modelId: entry.modelId || 'local/custom',
     apiModelId: entry.modelId?.trim() || '',
     name: entry.name || entry.modelId || 'Local — configure endpoint',
@@ -2236,4 +2234,46 @@ function localGroups(config, catalog) {
     popularity: { status: Popularity.Uncertain, evidence: null },
   }));
   return [{ provider: { ...provider, name: 'Local' }, offerings }];
+}
+
+function selectCreators(groups, config, models) {
+  const selector =
+    config.creatorIds == null ? null : normalizeListFilter(config.creatorIds, 'creatorIds');
+  groups = groups.map((g) => ({
+    ...g,
+    offerings: g.offerings.filter((o) => {
+      const creator = models.get(o.modelId)?.creatorId ?? o.creatorId ?? null;
+      return !selector || (creator !== null && evaluateFilterNode(new Set([creator]), selector));
+    }),
+  }));
+  const value = config.dedupe !== undefined ? config.dedupe : config.filters?.dedupe;
+  const n = value === true ? 1 : typeof value === 'number' ? value : 0;
+  if (n >= 1) {
+    const buckets = new Map();
+    for (const g of groups)
+      for (const o of g.offerings) {
+        const m = models.get(o.modelId) || {};
+        const key = JSON.stringify([
+          m.creatorId ?? `unknown:${o.modelId}`,
+          m.speciality ?? 'unknown',
+          m.tier ?? 'unknown',
+        ]);
+        if (!buckets.has(key)) buckets.set(key, new Map());
+        buckets.get(key).set(o.modelId, m);
+      }
+    const keep = new Set();
+    for (const bucket of buckets.values()) {
+      const rows = [...bucket].sort(
+        ([a, am], [b, bm]) =>
+          (bm.releaseDate || '').localeCompare(am.releaseDate || '') ||
+          (a < b ? -1 : a > b ? 1 : 0),
+      );
+      for (const [id] of rows.slice(0, n)) keep.add(id);
+    }
+    groups = groups.map((g) => ({
+      ...g,
+      offerings: g.offerings.filter((o) => keep.has(o.modelId)),
+    }));
+  }
+  return groups.filter((g) => g.offerings.length);
 }

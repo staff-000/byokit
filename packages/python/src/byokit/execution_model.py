@@ -7,7 +7,8 @@ def compact_models(models: list[dict]) -> list[dict]:
     if not isinstance(models, list):
         raise ValueError("Provide a list of model offerings.")
     fields = [
-        "id", "providerId", "modelId", "apiModelId", "name", "deployment", "connection",
+        "id", "creatorId",
+    "providerId", "modelId", "apiModelId", "name", "deployment", "connection",
         "callSupport", "limits", "modalities", "local", "status", "providerShape",
         "requiresProviderOverride", "speciality", "tier",
     ]

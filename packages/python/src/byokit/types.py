@@ -121,6 +121,7 @@ class UI(TypedDict, total=False):
 
 
 class _LocalOptional(TypedDict, total=False):
+    creatorId: str | None
     api: LocalApi
     modelId: str
     name: str
@@ -135,6 +136,7 @@ class PickerConfig(TypedDict, total=False):
     list: ModelList
     local: list[LocalEndpoint] | Literal[False]
     preset: Preset
+    creatorIds: ListFilter[str]
     providerIds: ListFilter[str]
     limit: int
     asOf: str
@@ -262,6 +264,7 @@ class CallOptions(TypedDict, total=False):
 
 
 class _CustomModelOptional(TypedDict, total=False):
+    creatorId: str | None
     providerName: str
     name: str
     deployment: Deployment

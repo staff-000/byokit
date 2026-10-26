@@ -329,3 +329,7 @@ BYOKit combines maintained recommendations, full catalog discovery, optional DOM
 Maintainers: edit this root README, then run `npm run readme:sync` to update the npm and PyPI READMEs. `npm run readme:check` and executable documentation tests catch drift.
 
 MIT license. Built on the open [Models.dev](https://models.dev) catalog. [Contribute](https://github.com/staff-000/byokit/blob/main/CONTRIBUTING.md) · [License](https://github.com/staff-000/byokit/blob/main/LICENSE)
+
+## Creator selection
+
+`creatorId` identifies the model builder; `providerId` selects the endpoint and credentials. Filter using `getModels({ providerIds: ["openai", "openrouter"], creatorIds: ["openai"], dedupe: 2 })`. Creator selectors support the same matcher syntax as provider selectors. Dedupe selects the newest models per creator/speciality/tier, then retains their eligible offerings across providers. See [migration notes](docs/creator-migration.md) for this breaking behavior change.

@@ -34,7 +34,8 @@ def append_model(models: list[dict], custom: CustomModel) -> list[dict]:
         or not isinstance(custom, dict)
         or set(custom)
         - {
-            "providerId",
+            "creatorId",
+        "providerId",
             "providerName",
             "modelId",
             "name",
@@ -53,6 +54,8 @@ def append_model(models: list[dict], custom: CustomModel) -> list[dict]:
             not isinstance(custom[key], str) or not custom[key].strip()
         ):
             raise ValueError("Invalid custom model name")
+    if custom.get("creatorId") is not None and (not isinstance(custom["creatorId"], str) or not custom["creatorId"].strip()):
+        raise ValueError("Invalid creatorId")
     connection = {"baseUrl": custom.get("baseUrl"), "protocol": custom.get("protocol")}
     validate_connection(connection)
     deployment = custom.get("deployment", "hosted")
@@ -87,6 +90,7 @@ def append_model(models: list[dict], custom: CustomModel) -> list[dict]:
     name = custom.get("name", custom["modelId"])
     model = {
         "id": identity,
+        "creatorId": custom.get("creatorId"),
         "providerId": custom["providerId"],
         "modelId": identity,
         "apiModelId": custom["modelId"],
@@ -111,6 +115,7 @@ def append_model(models: list[dict], custom: CustomModel) -> list[dict]:
         "model": {
             "id": identity,
             "name": name,
+            "creatorId": custom.get("creatorId"),
             "openWeights": None,
             "commercialUse": "unknown",
             "license": None,

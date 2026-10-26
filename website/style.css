@@ -356,6 +356,9 @@ h3 {
   font: 11px var(--mono);
   color: var(--muted);
 }
+.explorer-note {
+  padding: 0 18px;
+}
 .filters {
   display: flex;
   align-items: center;
@@ -946,6 +949,8 @@ h3 {
     min-width: 0;
   }
   .query-bar {
+    flex-direction: column;
+    align-items: stretch;
     padding: 15px;
   }
   .query-bar code {

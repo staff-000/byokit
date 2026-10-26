@@ -3,6 +3,7 @@ export function compactModels(models) {
   if (!Array.isArray(models)) throw new Error('Provide a list of model offerings.');
   const fields = [
     'id',
+    'creatorId',
     'providerId',
     'modelId',
     'apiModelId',

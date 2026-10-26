@@ -299,7 +299,29 @@ Your console output will appear here.</pre>
             </div>
             <span id="count" class="count" aria-live="polite">Loading catalog…</span>
           </div>
+          <p class="fine explorer-note">
+            Creator identifies who built the model. Provider identifies whose endpoint and API key
+            you use.
+          </p>
           <div class="filters">
+            <label
+              >Provider<select id="provider">
+                <option value="">All providers</option>
+              </select></label
+            >
+            <label
+              >Creator<select id="creator">
+                <option value="">All creators</option>
+              </select></label
+            >
+            <label
+              >Models per creator / speciality / tier<select id="dedupe">
+                <option value="">List default</option>
+                <option value="false">All versions</option>
+                <option value="1">Newest 1</option>
+                <option value="2">Newest 2</option>
+              </select></label
+            >
             <label
               >Output
               <select id="output">
@@ -343,6 +365,10 @@ Your console output will appear here.</pre>
             ><label><input id="exclude-china" type="checkbox" /> Exclude China-origin tags</label
             ><label><input id="local" type="checkbox" checked /> Append Local</label>
           </div>
+          <p class="fine explorer-note">
+            Newest selections retain every eligible provider offering. Unknown creators appear under
+            All creators. List presets and other filters still apply.
+          </p>
           <div class="query-bar">
             <code id="query">byokit.getModels();</code>
             <div class="query-actions">

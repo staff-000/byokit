@@ -27,6 +27,10 @@ const compact = (n) =>
         : String(n);
 function query() {
   const config = { sort: byokit.ModelSort.ProviderOrder };
+  if ($('#provider').value) config.providerIds = [$('#provider').value];
+  if ($('#creator').value) config.creatorIds = [$('#creator').value];
+  if ($('#dedupe').value)
+    config.dedupe = $('#dedupe').value === 'false' ? false : Number($('#dedupe').value);
   if (!$('#local').checked) config.local = false;
   const filters = {};
   if ($('#output').value) filters.output = [$('#output').value];
@@ -51,6 +55,9 @@ function snippet(config) {
           : `byokit.${mode.toUpperCase()}`;
   const parts = ['sort: byokit.ModelSort.ProviderOrder'],
     filters = [];
+  if (config.providerIds) parts.push(`providerIds: ${JSON.stringify(config.providerIds)}`);
+  if (config.creatorIds) parts.push(`creatorIds: ${JSON.stringify(config.creatorIds)}`);
+  if (config.dedupe !== undefined) parts.push(`dedupe: ${config.dedupe}`);
   if (config.local === false) parts.push('local: false');
   if (config.filters?.output)
     filters.push(
@@ -108,6 +115,7 @@ function row(model) {
   title.append(
     el('span', model.provider.name, 'provider-name'),
     el('div', model.name, 'model-name'),
+    el('span', `Creator: ${model.creatorId || 'Unknown'}`, 'evidence-note'),
     el('code', model.apiModelId || 'URL + API protocol + model ID', 'model-id'),
   );
   group.append(icon, title);
@@ -166,7 +174,9 @@ function render() {
       search = $('#search').value.trim().toLowerCase(),
       matches = search
         ? models.filter((m) =>
-            `${m.name} ${m.apiModelId} ${m.provider.name}`.toLowerCase().includes(search),
+            `${m.name} ${m.apiModelId} ${m.provider.name} ${m.creatorId || ''}`
+              .toLowerCase()
+              .includes(search),
           )
         : models;
     $('#query').textContent = snippet(config);
@@ -200,6 +210,9 @@ for (const button of document.querySelectorAll('[data-mode]'))
     render();
   });
 for (const id of [
+  'provider',
+  'creator',
+  'dedupe',
   'output',
   'speciality',
   'tier',
@@ -216,7 +229,8 @@ for (const id of [
         $('#output').value &&
         $('#output').value !== 'text') ||
       (id === 'speciality' && mode === 'default' && $('#speciality').value) ||
-      (id === 'tier' && mode === 'default' && $('#tier').value)
+      (id === 'tier' && mode === 'default' && $('#tier').value) ||
+      ((id === 'creator' || id === 'provider') && mode === 'default' && $('#' + id).value)
     ) {
       mode = 'complete';
       for (const b of document.querySelectorAll('[data-mode]')) {
@@ -306,7 +320,10 @@ function renderExample() {
                 byokit.ProviderId.Google,
                 byokit.ProviderId.Anthropic,
                 byokit.ProviderId.DeepSeek,
+                byokit.ProviderId.OpenRouter,
               ),
+              creatorIds: ['anthropic', 'google', 'openai', 'deepseek'],
+              dedupe: 2,
               filters: {
                 speciality: byokit.exact(byokit.Speciality.General),
                 tier: byokit.or(
@@ -321,6 +338,7 @@ function renderExample() {
             })
             .slice(0, 2)
             .map((model) => ({
+              creatorId: model.creatorId,
               provider: model.provider.id,
               model: model.apiModelId,
               speciality: model.speciality,
@@ -369,6 +387,24 @@ for (const button of document.querySelectorAll('[data-format]'))
     }
     renderExample();
   });
+const creatorCatalogModels = byokit.getModels(byokit.COMPLETE, {
+  local: false,
+  filters: { callable: false, includeDeprecated: true, includePreviews: true },
+});
+const creatorNames = {
+  openai: 'OpenAI',
+  anthropic: 'Anthropic',
+  google: 'Google',
+  deepseek: 'DeepSeek',
+  meta: 'Meta',
+  alibaba: 'Alibaba',
+  xai: 'xAI',
+};
+const creators = [...new Set(creatorCatalogModels.map((m) => m.creatorId).filter(Boolean))].sort();
+for (const id of creators) $('#creator').append(new Option(creatorNames[id] || id, id));
+const providers = new Map(creatorCatalogModels.map((m) => [m.providerId, m.provider.name]));
+for (const [id, name] of [...providers].sort((a, b) => a[1].localeCompare(b[1])))
+  $('#provider').append(new Option(name, id));
 const defaultProviders = [...new Set(byokit.getModels().map((model) => model.provider.name))];
 $('#hero-providers').replaceChildren(...defaultProviders.map((name) => el('span', name)));
 renderExample();

@@ -332,6 +332,8 @@ def validate_catalog(data):
     valid_specialities = {s.value for s in Speciality}
     valid_tiers = {t.value for t in Tier}
     for m in data["models"]:
+        if m.get("creatorId") is not None and (not isinstance(m["creatorId"], str) or not m["creatorId"].strip()):
+            errors.append(f"{m['id']}: invalid creatorId")
         spec = m.get("speciality")
         spec_val = spec.value if hasattr(spec, "value") else spec
         if not spec_val or spec_val not in valid_specialities:
@@ -514,6 +516,7 @@ def validate_config(config):
             "catalog",
             "preset",
             "providerIds",
+            "creatorIds",
             "filters",
             "prefer",
             "ui",
@@ -648,6 +651,8 @@ def validate_config(config):
             return
         errors.append(f"{path} must be a string or matcher")
 
+    if config.get("creatorIds") is not None:
+        validate_selector_node(config["creatorIds"], "creatorIds")
     if "providerIds" in config and config["providerIds"] is not None:
         validate_selector_node(config["providerIds"], "providerIds")
 
@@ -1134,7 +1139,7 @@ class Catalog:
         else:
             self.data = data
         self.providers = {p["id"]: p for p in self.data["providers"]}
-        self.models = {m["id"]: m for m in self.data["models"]}
+        self.models = {m["id"]: dict(m, creatorId=m.get("creatorId")) for m in self.data["models"]}
         self.offerings = {o["id"]: o for o in self.data["offerings"]}
         self.families = {f["id"]: f for f in self.data.get("families", [])}
         self.assets = {a["id"]: a for a in self.data.get("assets", [])}
@@ -1280,7 +1285,8 @@ class Catalog:
                         connection=connection_for(o),
                         callSupport=o.get("callSupport", call_support_for(o)),
                         provider=g["provider"],
-                        model=model,
+                        creatorId=model.get("creatorId", o.get("creatorId")),
+                        model=dict(model, creatorId=model.get("creatorId", o.get("creatorId"))),
                         family=family,
                         logos={
                             "provider": self.assets.get(g["provider"].get("logoId")),
@@ -1489,32 +1495,12 @@ class Catalog:
                 ),
                 key=order,
             )
-            dedupe_limit = (
-                config["dedupe"]
-                if isinstance(config.get("dedupe"), int)
-                and not isinstance(config.get("dedupe"), bool)
-                else 1
-                if config.get("dedupe") is True
-                else config.get("filters", {}).get("dedupe")
-                if isinstance(config.get("filters", {}).get("dedupe"), int)
-                and not isinstance(config.get("filters", {}).get("dedupe"), bool)
-                else 1
-                if config.get("filters", {}).get("dedupe") is True
-                else None
-            )
-            if dedupe_limit is not None and dedupe_limit >= 1:
-                counts = {}
-                deduped_choices = []
-                for o in choices:
-                    m = self.models.get(o["modelId"], {})
-                    spec = o.get("speciality") or get_model_speciality(o, m)
-                    tier = o.get("tier") or get_model_tier(o, m)
-                    key = f"{spec}:{tier}"
-                    cnt = counts.get(key, 0)
-                    if cnt < dedupe_limit:
-                        counts[key] = cnt + 1
-                        deduped_choices.append(o)
-                choices = deduped_choices
+            if choices:
+                groups.append({"provider": self.providers[provider_id], "offerings": choices})
+        selected = _select_creators(groups, config, self.models)
+        groups = []
+        for group in selected:
+            choices = group["offerings"]
             cap = (
                 (
                     len(choices)
@@ -1529,11 +1515,11 @@ class Catalog:
             if choices:
                 groups.append(
                     {
-                        "provider": self.providers[provider_id],
+                        "provider": group["provider"],
                         "offerings": choices[:cap],
                     }
                 )
-        locals_ = _local_groups(config, self)
+        locals_ = _select_creators(_local_groups(config, self), dict(config, dedupe=False), self.models)
         return (
             groups
             if uncapped
@@ -2449,9 +2435,12 @@ to_config_json = get_config_json
 
 
 def _validate_local(entry):
+    if entry.get("creatorId") is not None and (not isinstance(entry["creatorId"], str) or not entry["creatorId"].strip()):
+        raise ValueError("Invalid creatorId")
     from urllib.parse import urlparse
 
     if not isinstance(entry, dict) or set(entry) - {
+        "creatorId",
         "endpoint",
         "api",
         "modelId",
@@ -2556,6 +2545,7 @@ def _local_groups(config, catalog):
             {
                 "id": local_offering_id(entry),
                 "providerId": "local",
+                "creatorId": entry.get("creatorId"),
                 "modelId": entry.get("modelId", "local/custom"),
                 "apiModelId": entry.get("modelId", "").strip(),
                 "name": entry.get(
@@ -2593,3 +2583,31 @@ from .sdk import Byokit, OpenAI, Anthropic, openAI, claude, validate_client_conf
 from .execution_model import compact_models
 
 from .custom_model import append_model, validate_connection
+
+
+def _select_creators(groups, config, models):
+    selector = normalize_list_filter(config["creatorIds"], "creatorIds") if config.get("creatorIds") is not None else None
+    filtered = []
+    for g in groups:
+        offerings = []
+        for o in g["offerings"]:
+            creator = models.get(o["modelId"], {}).get("creatorId", o.get("creatorId"))
+            if selector is None or (creator is not None and evaluate_filter_node({creator}, selector)):
+                offerings.append(o)
+        filtered.append(dict(g, offerings=offerings))
+    value = config.get("dedupe", config.get("filters", {}).get("dedupe"))
+    n = 1 if value is True else value if isinstance(value, int) and not isinstance(value, bool) else 0
+    if n and n >= 1:
+        buckets = {}
+        for g in filtered:
+            for o in g["offerings"]:
+                m = models.get(o["modelId"], {})
+                key = (m.get("creatorId") or "unknown:" + o["modelId"], m.get("speciality", "unknown"), m.get("tier", "unknown"))
+                buckets.setdefault(key, {})[o["modelId"]] = m
+        keep = set()
+        for bucket in buckets.values():
+            rows = sorted(bucket)
+            rows.sort(key=lambda mid: bucket[mid].get("releaseDate") or "", reverse=True)
+            keep.update(rows[:n])
+        filtered = [dict(g, offerings=[o for o in g["offerings"] if o["modelId"] in keep]) for g in filtered]
+    return [g for g in filtered if g["offerings"]]

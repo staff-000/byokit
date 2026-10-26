@@ -66,6 +66,7 @@ export interface Provider {
   tags?: string[];
 }
 export interface Model {
+  creatorId?: string | null;
   id: string;
   name: string;
   familyId?: string;
@@ -87,6 +88,7 @@ export interface Model {
   tags: string[];
 }
 export interface Offering {
+  creatorId?: string | null;
   connection?: Connection | null;
   id: string;
   providerId: ProviderId | CustomProviderId | (string & {});
@@ -161,6 +163,7 @@ export interface CatalogData {
   provenance?: Evidence;
 }
 export interface LocalEndpoint {
+  creatorId?: string | null;
   endpoint: string;
   api?: LocalApi;
   modelId?: string;
@@ -206,6 +209,7 @@ export interface PickerConfig {
   limit?: number;
   asOf?: string;
   preset?: Preset;
+  creatorIds?: ListFilter<string>;
   providerIds?: ListFilter<ProviderId | CustomProviderId | (string & {})>;
   unknownPolicy?: UnknownPolicy;
   includePreviews?: boolean;
@@ -500,6 +504,7 @@ export interface VerificationSummary {
   records: VerificationRecord[];
 }
 export interface ModelOption extends Offering {
+  creatorId: string | null;
   connection: Connection | null;
   lifecycle: { status: Lifecycle; evidence: LifecycleEvidence | null };
   popularity: { status: Popularity; evidence: PopularityEvidence | null };
@@ -582,6 +587,7 @@ export interface ChatInput {
 export type ExecutionModel = Pick<
   Offering,
   | 'id'
+  | 'creatorId'
   | 'providerId'
   | 'modelId'
   | 'apiModelId'
@@ -818,6 +824,7 @@ export class Byokit {
 }
 
 export interface CustomModel {
+  creatorId?: string | null;
   providerId: ProviderId | CustomProviderId | (string & {});
   providerName?: string;
   modelId: string;

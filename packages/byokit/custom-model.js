@@ -42,6 +42,7 @@ export function appendModel(models, custom) {
     Object.keys(custom).some(
       (k) =>
         ![
+          'creatorId',
           'providerId',
           'providerName',
           'modelId',
@@ -60,6 +61,11 @@ export function appendModel(models, custom) {
   for (const key of ['providerName', 'name'])
     if (custom[key] !== undefined && (typeof custom[key] !== 'string' || !custom[key].trim()))
       throw new Error('Invalid custom model name');
+  if (
+    custom.creatorId != null &&
+    (typeof custom.creatorId !== 'string' || !custom.creatorId.trim())
+  )
+    throw new Error('Invalid creatorId');
   const connection = { baseUrl: custom.baseUrl, protocol: custom.protocol };
   validateConnection(connection);
   const deployment = custom.deployment ?? Deployment.Hosted;
@@ -93,6 +99,7 @@ export function appendModel(models, custom) {
   const name = custom.name ?? custom.modelId;
   const model = {
     id,
+    creatorId: custom.creatorId ?? null,
     providerId: custom.providerId,
     modelId: id,
     apiModelId: custom.modelId,
@@ -117,6 +124,7 @@ export function appendModel(models, custom) {
     model: {
       id,
       name,
+      creatorId: custom.creatorId ?? null,
       openWeights: null,
       commercialUse: CommercialUse.Unknown,
       license: null,
