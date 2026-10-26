@@ -47,7 +47,74 @@
     "moonshot-ai": "moonshot",
     "z-ai": "zhipu",
     "bytedance-seed": "bytedance",
-    "~perplexity": "perplexity"
+    "~perplexity": "perplexity",
+    "zhipuai": "zhipu",
+    "zai": "zhipu",
+    "x-ai": "xai",
+    "llama": "meta",
+    "stepfun-ai": "stepfun",
+    "ibm-granite": "ibm",
+    "rekaai": "reka",
+    "togethercomputer": "togetherai",
+    "inclusionai": "ant-group",
+    "bailing": "ant-group",
+    "xiaomi": "xiaomi",
+    "sakana": "sakana",
+    "thinkingmachines": "thinkingmachines",
+    "poolside": "poolside",
+    "meituan": "meituan",
+    "ibm": "ibm",
+    "writer": "writer",
+    "relace": "relace",
+    "morph": "morph",
+    "typesafe": "typesafe",
+    "unbiased": "unbiased",
+    "perceptron": "perceptron",
+    "nex-agi": "nex-agi",
+    "aion-labs": "aion-labs",
+    "thedrummer": "thedrummer",
+    "sao10k": "sao10k",
+    "anthracite-org": "anthracite-org",
+    "gryphe": "gryphe",
+    "mancer": "mancer",
+    "undi95": "undi95",
+    "openbmb": "openbmb",
+    "aisingapore": "aisingapore",
+    "sdaia": "sdaia",
+    "sarvam": "sarvam",
+    "swiss-ai": "swiss-ai",
+    "baai": "baai",
+    "nace-ai": "nace-ai",
+    "quiverai": "quiverai",
+    "motif-technologies": "motif-technologies",
+    "mixedbread": "mixedbread",
+    "sensenova": "sensenova",
+    "paddlepaddle": "paddlepaddle",
+    "trendyol": "trendyol",
+    "deepreinforce": "deepreinforce",
+    "cloudflare": "cloudflare",
+    "scaledown": "scaledown",
+    "jaredpalmer": "jaredpalmer",
+    "prism-ml": "prism-ml",
+    "inference-net": "inference-net",
+    "dots-studio": "dots-studio",
+    "fireworks": "fireworks-ai",
+    "deepseek-ai": "deepseek",
+    "minimaxai": "minimax",
+    "zai-org": "zhipu",
+    "xiaomimimo": "xiaomi",
+    "canopylabs": "canopylabs",
+    "speakleash": "speakleash",
+    "intfloat": "intfloat",
+    "kblab": "kblab",
+    "leonardo-ai": "leonardo-ai",
+    "black-forest-labs": "black-forest-labs",
+    "stabilityai": "stabilityai",
+    "elevenlabs": "elevenlabs",
+    "nomic-ai": "nomic-ai",
+    "jinaai": "jinaai",
+    "snowflake": "snowflake",
+    "sentence-transformers": "sentence-transformers"
   },
   "models": {
     "google-vertex/moonshotai/kimi-k2-thinking-maas": "moonshot",
@@ -150,5 +217,117 @@
     "openrouter/openai/gpt-3.5-turbo-0613": "openai",
     "openrouter/openai/gpt-3.5-turbo-instruct": "openai",
     "openrouter/openai/gpt-3.5-turbo-16k": "openai"
+  },
+  "identifierRules": [
+    {
+      "creatorId": "openai",
+      "pattern": "^(?:gpt(?:-|\\d)|chatgpt-|o[134](?:-|$)|text-embedding-(?:3|ada)|dall-e-|tts-1(?:-|$)|whisper-1(?:$|-)|babbage-002$|davinci-002$|omni-moderation-|codex-)"
+    },
+    {
+      "creatorId": "anthropic",
+      "pattern": "^claude(?:-|\\d)"
+    },
+    {
+      "creatorId": "google",
+      "pattern": "^(?:gemini(?:-|\\d)|gemma(?:-|\\d)|imagen(?:-|\\d)|veo(?:-|\\d))"
+    },
+    {
+      "creatorId": "deepseek",
+      "pattern": "^deepseek(?:-|_|\\d)"
+    },
+    {
+      "creatorId": "alibaba",
+      "pattern": "^(?:qwen(?:-|\\d)|qwq(?:-|$)|qvq(?:-|$)|wan(?:-|\\d))"
+    },
+    {
+      "creatorId": "zhipu",
+      "pattern": "^(?:glm(?:-|\\d)|codegeex(?:-|\\d))"
+    },
+    {
+      "creatorId": "xai",
+      "pattern": "^grok(?:-|\\d)"
+    },
+    {
+      "creatorId": "moonshot",
+      "pattern": "^(?:kimi(?:-|$)|moonshot-v\\d)"
+    },
+    {
+      "creatorId": "minimax",
+      "pattern": "^(?:minimax(?:-|\\d)|abab\\d)"
+    },
+    {
+      "creatorId": "meta",
+      "pattern": "^llama(?:-|\\d)"
+    },
+    {
+      "creatorId": "mistral",
+      "pattern": "^(?:mistral(?:-|\\d)|ministral(?:-|\\d)|mixtral-|codestral-|devstral-|pixtral-|voxtral-|magistral-)"
+    },
+    {
+      "creatorId": "bytedance",
+      "pattern": "^(?:doubao-|seed(?:-|ance|ream))"
+    },
+    {
+      "creatorId": "xiaomi",
+      "pattern": "^mimo(?:-|\\d)"
+    },
+    {
+      "creatorId": "stepfun",
+      "pattern": "^step(?:-|\\d)"
+    },
+    {
+      "creatorId": "cohere",
+      "pattern": "^(?:command-|embed-(?:english|multilingual|v\\d)|rerank-(?:english|multilingual|v\\d))"
+    },
+    {
+      "creatorId": "amazon",
+      "pattern": "^nova-(?:micro|lite|pro|premier|sonic|canvas|reel)"
+    },
+    {
+      "creatorId": "microsoft",
+      "pattern": "^phi(?:-|\\d)"
+    },
+    {
+      "creatorId": "nvidia",
+      "pattern": "^nemotron(?:-|\\d)"
+    },
+    {
+      "creatorId": "baidu",
+      "pattern": "^ernie(?:-|\\d)"
+    },
+    {
+      "creatorId": "perplexity",
+      "pattern": "^sonar(?:-|$)"
+    },
+    {
+      "creatorId": "openbmb",
+      "pattern": "^minicpm(?:-|\\d)"
+    },
+    {
+      "creatorId": "baai",
+      "pattern": "^bge(?:-|_)"
+    },
+    {
+      "creatorId": "alibaba",
+      "pattern": "^tongyi-"
+    }
+  ],
+  "providerTransforms": {
+    "digitalocean": {
+      "pattern": "^(openai|anthropic|alibaba|cohere)-(.+)$",
+      "mode": "namespace"
+    },
+    "azure": {
+      "pattern": "^(cohere)-(.+)$",
+      "mode": "namespace"
+    },
+    "azure-cognitive-services": {
+      "pattern": "^(cohere)-(.+)$",
+      "mode": "namespace"
+    },
+    "cloudflare-workers-ai": {
+      "pattern": "^@(?:cf|hf)/(.+)$",
+      "mode": "identifier"
+    }
   }
 }

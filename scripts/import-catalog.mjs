@@ -1,4 +1,4 @@
-import { creatorFor } from './creator-attribution.mjs';
+import { creatorFor, enrichCatalogCreators } from './creator-attribution.mjs';
 /** Explicit local snapshot import. Does not download or change a trusted endpoint. */
 import { callSupportFor } from '../packages/byokit/connection.js';
 import { mergeManualCatalog } from './manual-catalog.mjs';
@@ -115,7 +115,7 @@ for (const [id, p] of Object.entries(upstream).sort(([a], [b]) => a.localeCompar
       known.add(modelId);
       catalog.models.push({
         id: modelId,
-        creatorId: creatorFor(modelId),
+        creatorId: creatorFor(modelId, { providerId: id, apiModelId: m.id }),
         name: base?.name || modelId,
         familyId,
         type: base?.type,
@@ -448,6 +448,7 @@ const verificationFile =
     ? resolve(args[verificationIndex + 1])
     : new URL('../catalog/verifications.json', import.meta.url);
 catalog.verifications = JSON.parse(await readFile(verificationFile, 'utf8'));
+const creatorReport = enrichCatalogCreators(catalog);
 const errors = validateCatalog(catalog);
 if (errors.length) throw new Error(errors.join('; '));
 await mkdir(out, { recursive: true });
@@ -499,7 +500,7 @@ const unresolvedCreators = catalog.offerings
   .map((o) => o.id);
 await writeFile(
   resolve(out, 'creator-coverage.json'),
-  JSON.stringify({ unresolvedOpenRouterOfferingIds: unresolvedCreators }, null, 2) + '\n',
+  JSON.stringify(creatorReport, null, 2) + '\n',
 );
 if (unresolvedCreators.length)
   console.warn(
