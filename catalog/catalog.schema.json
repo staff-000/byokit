@@ -83,7 +83,7 @@
             ]
           },
           "tier": {
-            "enum": ["flagship", "workhorse", "flash", "lite", "mini", "unknown"]
+            "enum": ["flagship", "workhorse", "flash", "lite", "mini", "edge", "unknown"]
           },
           "tags": {
             "type": "array",
@@ -406,7 +406,7 @@
             ]
           },
           "tier": {
-            "enum": ["flagship", "workhorse", "flash", "lite", "mini", "unknown"]
+            "enum": ["flagship", "workhorse", "flash", "lite", "mini", "edge", "unknown"]
           },
           "releaseChannel": {
             "enum": ["stable", "preview", "experimental", "unknown"]

@@ -114,9 +114,12 @@
     "nomic-ai": "nomic-ai",
     "jinaai": "jinaai",
     "snowflake": "snowflake",
-    "sentence-transformers": "sentence-transformers"
+    "sentence-transformers": "sentence-transformers",
+    "baseten": "baseten",
+    "recursive": "recursive"
   },
   "models": {
+    "nano-gpt/baseten/Kimi-K2-Instruct-FP4": "moonshot",
     "google-vertex/moonshotai/kimi-k2-thinking-maas": "moonshot",
     "google-vertex/qwen/qwen3-235b-a22b-instruct-2507-maas": "alibaba",
     "google-vertex/openai/gpt-oss-20b-maas": "openai",
