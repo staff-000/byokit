@@ -1,6 +1,6 @@
 {
-  "totalModels": 1951,
-  "attributedModels": 1606,
+  "totalModels": 1948,
+  "attributedModels": 1605,
   "unresolvedModelIds": [
     "abacus/route-llm",
     "abliteration-ai/abliterated-model",
@@ -71,7 +71,6 @@
     "klokintegration/Kloker-Integration-Developer",
     "levanto/levanto-sage-v1.4",
     "lightonai/lightonocr-3-0.8b",
-    "llmgateway-providers/azure-ai-foundry/grok-4-1-fast-non-reasoning",
     "llmgateway-providers/deepinfra/nemotron-3-ultra-550b",
     "llmgateway-providers/google-ai-studio/gemini-pro-latest",
     "llmgateway-providers/greenference/qwen3-14b",
@@ -81,7 +80,6 @@
     "llmgateway-providers/novita/ernie-4.5-vl-424b-a47b",
     "llmgateway-providers/novita/kimi-k2",
     "llmgateway-providers/novita/llama-3-70b-instruct",
-    "llmgateway-providers/novita/llama-3.2-3b-instruct",
     "llmgateway-providers/reka-ai/reka-edge-2603",
     "llmgateway/custom",
     "llmgateway/fugu-ultra-v2.0",
