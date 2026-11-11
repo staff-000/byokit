@@ -133,6 +133,7 @@ test('anonymous page verifies, shares safely, fences stale calls and only confir
     const sortedProviderOptions = [...providerOptions].sort((a, b) =>
       a.localeCompare(b, undefined, { sensitivity: 'base' }),
     );
+    assert.deepEqual(providerOptions, sortedProviderOptions);
     assert.equal($('#callable-filter').checked, true);
     assert.equal($('#official-filter').checked, true);
     assert.ok(providerOptions.length >= 45);

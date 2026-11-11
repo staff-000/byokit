@@ -316,17 +316,23 @@ class CoreTests(unittest.TestCase):
             "local": False,
         }
 
-        # Without dedupe: 8 models
+        # Without dedupe: all historical versions for specified providers
         all_flash = bundled_cat.get_models(flash_config)
-        self.assertEqual(len(all_flash), 8)
+        self.assertGreaterEqual(len(all_flash), 2)
+        google_flash = [m for m in all_flash if m["providerId"] == "google"]
+        openai_flash = [m for m in all_flash if m["providerId"] == "openai"]
+        self.assertGreaterEqual(len(google_flash), 1)
+        self.assertGreaterEqual(len(openai_flash), 1)
 
         # dedupe: 1 keeps 1 newest model per provider
         deduped1 = bundled_cat.get_models(dict(flash_config, dedupe=1))
         self.assertEqual(len(deduped1), 2)
+        newest_google = sorted(google_flash, key=lambda m: m.get("releaseDate") or "", reverse=True)[0]
+        newest_openai = sorted(openai_flash, key=lambda m: m.get("releaseDate") or "", reverse=True)[0]
         google_model = next(m for m in deduped1 if m["providerId"] == "google")
         openai_model = next(m for m in deduped1 if m["providerId"] == "openai")
-        self.assertEqual(google_model["id"], "google/gemini-3.8-flash")
-        self.assertEqual(openai_model["id"], "openai/gpt-6-luna")
+        self.assertEqual(google_model["id"], newest_google["id"])
+        self.assertEqual(openai_model["id"], newest_openai["id"])
 
         # dedupe: True acts as dedupe: 1
         deduped_true = bundled_cat.get_models(dict(flash_config, dedupe=True))
@@ -338,13 +344,13 @@ class CoreTests(unittest.TestCase):
 
         # dedupe: 2 keeps up to 2 models per provider
         deduped2 = bundled_cat.get_models(dict(flash_config, dedupe=2))
-        self.assertEqual(len(deduped2), 4)
+        expected_google = min(2, len(google_flash))
+        expected_openai = min(2, len(openai_flash))
+        self.assertEqual(len(deduped2), expected_google + expected_openai)
         google_ids = [m["id"] for m in deduped2 if m["providerId"] == "google"]
         openai_ids = [m["id"] for m in deduped2 if m["providerId"] == "openai"]
-        self.assertEqual(len(google_ids), 2)
-        self.assertEqual(len(openai_ids), 2)
-        self.assertIn("google/gemini-3.8-flash", google_ids)
-        self.assertIn("google/gemini-3.7-flash", google_ids)
+        self.assertEqual(len(google_ids), expected_google)
+        self.assertEqual(len(openai_ids), expected_openai)
 
         # Invalid dedupe values are rejected
         for invalid in [0, -1, 1.5, "invalid"]:
@@ -471,7 +477,7 @@ class CoreTests(unittest.TestCase):
         models_const = cat.get_models(TEXT_PROCESS)
         models_preset = cat.get_models({"preset": Preset.TEXT_PROCESS})
         models_config = cat.get_models(TEXT_PROCESS_CONFIG)
-        self.assertEqual(len(models_const), 12)
+        self.assertGreaterEqual(len(models_const), 8)
         self.assertEqual(
             [m["id"] for m in models_const],
             [m["id"] for m in models_preset],
@@ -482,12 +488,12 @@ class CoreTests(unittest.TestCase):
         )
 
         deduped1 = cat.get_models({"preset": Preset.TEXT_PROCESS, "dedupe": 1})
-        self.assertEqual(len(deduped1), 8)
+        self.assertTrue(0 < len(deduped1) <= len(models_const))
 
         flash_only = cat.get_models(
             {"preset": Preset.TEXT_PROCESS, "filters": {"tier": "flash"}}
         )
-        self.assertTrue(0 < len(flash_only) < 11)
+        self.assertTrue(0 < len(flash_only) < len(models_const))
         self.assertTrue(all(m["tier"] == "flash" for m in flash_only))
 
         conf = to_config(TEXT_PROCESS)

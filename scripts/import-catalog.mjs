@@ -71,6 +71,11 @@ const feature = (value) => ({
   source: 'models.dev',
 });
 const number = (n) => (typeof n === 'number' && Number.isFinite(n) && n >= 0 ? n : null);
+const cleanDate = (d) => {
+  if (typeof d !== 'string' || !d) return null;
+  const match = d.trim().match(/^(\d{4}-\d{2}(?:-\d{2})?)/);
+  return match ? match[1] : null;
+};
 for (const [id, p] of Object.entries(upstream).sort(([a], [b]) => a.localeCompare(b))) {
   const curation = overlay.providers[id] || { presets: [] };
   if (['local', 'ollama'].includes(id)) continue;
@@ -119,8 +124,8 @@ for (const [id, p] of Object.entries(upstream).sort(([a], [b]) => a.localeCompar
         name: base?.name || modelId,
         familyId,
         type: base?.type,
-        releaseDate: base?.release_date || null,
-        lastUpdated: base?.last_updated || null,
+        releaseDate: cleanDate(base?.release_date),
+        lastUpdated: cleanDate(base?.last_updated),
         openWeights: typeof base?.open_weights === 'boolean' ? base.open_weights : null,
         commercialUse: 'unknown',
         license: base?.license || null,
@@ -182,8 +187,8 @@ for (const [id, p] of Object.entries(upstream).sort(([a], [b]) => a.localeCompar
       modelId,
       apiModelId: m.id,
       name: m.name,
-      releaseDate: m.release_date || null,
-      lastUpdated: m.last_updated || null,
+      releaseDate: cleanDate(m.release_date),
+      lastUpdated: cleanDate(m.last_updated),
       type: m.type,
       speciality: getModelSpeciality(m, base),
       tier: getModelTier(m, base),
