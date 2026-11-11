@@ -263,7 +263,7 @@ class CoreTests(unittest.TestCase):
             m["id"]
             for m in bundled_cat.get_models({
                 "providerIds": Any("openai", "google"),
-                "filters": {"output": Exact(Modality.TEXT), "callable": False},
+                "filters": {"output": Exact(Modality.TEXT), "callable": False, "includeDeprecated": True},
             })
         ]
         self.assertNotIn("openai/chatgpt-image-latest", bundled_text_only)
@@ -273,7 +273,7 @@ class CoreTests(unittest.TestCase):
             m["id"]
             for m in bundled_cat.get_models({
                 "providerIds": Exact("openai"),
-                "filters": {"output": Contain([Modality.TEXT]), "callable": False},
+                "filters": {"output": Contain([Modality.TEXT]), "callable": False, "includeDeprecated": True},
             })
         ]
         self.assertIn("openai/chatgpt-image-latest", bundled_contain)
@@ -362,7 +362,7 @@ class CoreTests(unittest.TestCase):
         explicit_non_callable = bundled_cat.get_models({
             "providerIds": Exact("openai"),
             "local": False,
-            "filters": {"callable": False},
+            "filters": {"callable": False, "includeDeprecated": True},
         })
         self.assertGreater(len(explicit_non_callable), 0)
         self.assertTrue(all(m.get("callSupport", {}).get("textGeneration") is False for m in explicit_non_callable))
@@ -471,7 +471,7 @@ class CoreTests(unittest.TestCase):
         models_const = cat.get_models(TEXT_PROCESS)
         models_preset = cat.get_models({"preset": Preset.TEXT_PROCESS})
         models_config = cat.get_models(TEXT_PROCESS_CONFIG)
-        self.assertEqual(len(models_const), 11)
+        self.assertEqual(len(models_const), 12)
         self.assertEqual(
             [m["id"] for m in models_const],
             [m["id"] for m in models_preset],
@@ -482,7 +482,7 @@ class CoreTests(unittest.TestCase):
         )
 
         deduped1 = cat.get_models({"preset": Preset.TEXT_PROCESS, "dedupe": 1})
-        self.assertEqual(len(deduped1), 7)
+        self.assertEqual(len(deduped1), 8)
 
         flash_only = cat.get_models(
             {"preset": Preset.TEXT_PROCESS, "filters": {"tier": "flash"}}

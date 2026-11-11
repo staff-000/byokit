@@ -116,7 +116,11 @@
     "snowflake": "snowflake",
     "sentence-transformers": "sentence-transformers",
     "baseten": "baseten",
-    "recursive": "recursive"
+    "recursive": "recursive",
+    "kt": "kt",
+    "parallel": "parallel",
+    "particle-ai": "particle-ai",
+    "ricursiveai": "ricursiveai"
   },
   "models": {
     "nano-gpt/baseten/Kimi-K2-Instruct-FP4": "moonshot",

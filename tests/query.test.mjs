@@ -215,7 +215,7 @@ test('text-process preset filters Anthropic, Google, OpenAI, DeepSeek text model
   const fromConstant = getModels(TEXT_PROCESS);
   const fromPreset = getModels({ preset: Preset.TextProcess });
   const fromConfig = getModels(TEXT_PROCESS_CONFIG);
-  assert.equal(explicit.length, 11);
+  assert.equal(explicit.length, 12);
   assert.deepEqual(
     explicit.map((m) => m.id),
     fromConstant.map((m) => m.id),
@@ -231,11 +231,11 @@ test('text-process preset filters Anthropic, Google, OpenAI, DeepSeek text model
 
   // User override: dedupe: 1 keeps only 1 model per (speciality, tier)
   const deduped1 = getModels({ preset: Preset.TextProcess, dedupe: 1 });
-  assert.equal(deduped1.length, 7);
+  assert.equal(deduped1.length, 8);
 
   // User override: filter by tier: flash preserves other preset defaults (output: text, speciality: general)
   const flashOnly = getModels({ preset: Preset.TextProcess, filters: { tier: Tier.Flash } });
-  assert.ok(flashOnly.length > 0 && flashOnly.length < 11);
+  assert.ok(flashOnly.length > 0 && flashOnly.length < 12);
   assert.ok(flashOnly.every((m) => m.tier === 'flash'));
 
   const pythonRun = pythonModels({
@@ -420,14 +420,14 @@ test('modality filters support Exact, Contain, Any with backward-compatible arra
   // Bundled catalog check for chatgpt-image-latest and lyria-3-pro-preview
   const textOnlyBundled = getModels({
     providerIds: any('openai', 'google'),
-    filters: { output: exact(Modality.Text), callable: false },
+    filters: { output: exact(Modality.Text), callable: false, includeDeprecated: true },
   }).map((m) => m.id);
   assert.ok(!textOnlyBundled.includes('openai/chatgpt-image-latest'));
   assert.ok(!textOnlyBundled.includes('google/lyria-3-pro-preview'));
 
   const containBundled = getModels({
     providerIds: exact('openai'),
-    filters: { output: Contain([Modality.Text]), callable: false },
+    filters: { output: Contain([Modality.Text]), callable: false, includeDeprecated: true },
   }).map((m) => m.id);
   assert.ok(containBundled.includes('openai/chatgpt-image-latest'));
 });
@@ -463,7 +463,7 @@ test('callable defaults to true for queries and respects explicit overrides', ()
   const explicitNonCallable = getModels({
     providerIds: exact('openai'),
     local: false,
-    filters: { callable: false },
+    filters: { callable: false, includeDeprecated: true },
   });
   assert.ok(explicitNonCallable.length > 0);
   assert.ok(explicitNonCallable.every((m) => m.callSupport?.textGeneration === false));
