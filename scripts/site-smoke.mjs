@@ -71,7 +71,7 @@ try {
   await page.locator('#tools').uncheck();
   await page.locator('#premium').uncheck();
   await page.getByRole('button', { name: 'Text Process', exact: true }).click();
-  assert.equal(await page.locator('#results tr').count(), 11);
+  assert.equal(await page.locator('#results tr').count(), 12);
   assert.ok((await page.locator('#query').textContent()).includes('byokit.TEXT_PROCESS'));
   await page.getByRole('button', { name: 'Python', exact: true }).click();
   assert.ok((await page.locator('#start-code').textContent()).includes('byokit.get_models'));
