@@ -563,6 +563,69 @@ h3 {
   line-height: 1.6;
   margin: 14px 0 18px;
 }
+.highlight-install {
+  margin: 18px 0 22px;
+}
+.install-label {
+  display: block;
+  font: 11px var(--mono);
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.install-card {
+  background: #1c2037;
+  border: 1px solid #2e334d;
+  border-radius: 9px;
+  padding: 4px 12px;
+  color: #edf0f8;
+  max-width: 360px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.install-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  font-family: var(--mono);
+  font-size: 13px;
+}
+.install-row + .install-row {
+  border-top: 1px solid #2e334d;
+}
+.install-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--lime);
+  background: rgba(194, 237, 120, 0.12);
+  padding: 2px 6px;
+  border-radius: 4px;
+  min-width: 32px;
+  text-align: center;
+}
+.install-row code {
+  flex: 1;
+  color: #edf0f8;
+  font-family: inherit;
+  font-size: 12.5px;
+  background: none;
+  padding: 0;
+  border: 0;
+}
+.install-row .copy-icon {
+  font-size: 11px;
+  color: #9ea4bc;
+  background: none;
+  border: 0;
+  padding: 4px 6px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 0.15s ease;
+}
+.install-row .copy-icon:hover {
+  color: var(--lime);
+}
 .detail-list > div {
   position: relative;
   border-top: 1px solid #d8dce7;

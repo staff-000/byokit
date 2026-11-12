@@ -39,6 +39,8 @@ try {
     (await page.locator('#hero-code').textContent()).includes('sort: byokit.ModelSort.PriceAscend'),
   );
   assert.ok((await page.locator('#hero-providers').textContent()).includes('Anthropic'));
+  assert.equal(await page.locator('#install-npm').textContent(), 'npm install byokit');
+  assert.equal(await page.locator('#install-pip').textContent(), 'pip install byokit');
   assert.equal(await page.locator('#results tr').count(), 7);
   await page.locator('#output').selectOption('video');
   assert.ok(
