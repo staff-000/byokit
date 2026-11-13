@@ -1,6 +1,6 @@
 {
-  "totalModels": 2039,
-  "attributedModels": 1671,
+  "totalModels": 2034,
+  "attributedModels": 1666,
   "unresolvedModelIds": [
     "abacus/route-llm",
     "abliteration-ai/abliterated-model",
@@ -53,7 +53,6 @@
     "hyper/prism-flash",
     "inference/osmosis/osmosis-structure-0.6b",
     "inferx/Agents-A1",
-    "kilo/apodex/apodex-1.1-mini:free",
     "kilo/callstack/apex",
     "kilo/humansand/ampersand-v0.1",
     "kilo/interfaze/interfaze-beta",
@@ -219,7 +218,8 @@
     "opencode/ring-2.6-1t-free",
     "opencode/space-bunny-free",
     "opencode/x-preview-f-free",
-    "openrouter/apodex/apodex-1.1-mini:free",
+    "openrouter/heygen/heygen-decision-1",
+    "openrouter/heygen/heygen-decision-1-turbo",
     "openrouter/openrouter/auto",
     "openrouter/openrouter/bodybuilder",
     "openrouter/openrouter/free",
@@ -372,7 +372,8 @@
     "zenmux/volcengine/doubao-seed-code"
   ],
   "unresolvedOpenRouterOfferingIds": [
-    "openrouter/apodex/apodex-1.1-mini:free",
+    "openrouter/heygen/heygen-decision-1",
+    "openrouter/heygen/heygen-decision-1-turbo",
     "openrouter/openrouter/auto",
     "openrouter/openrouter/bodybuilder",
     "openrouter/openrouter/free",
