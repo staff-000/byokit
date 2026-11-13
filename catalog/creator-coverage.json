@@ -1,5 +1,5 @@
 {
-  "totalModels": 2035,
+  "totalModels": 2039,
   "attributedModels": 1671,
   "unresolvedModelIds": [
     "abacus/route-llm",
@@ -53,6 +53,7 @@
     "hyper/prism-flash",
     "inference/osmosis/osmosis-structure-0.6b",
     "inferx/Agents-A1",
+    "kilo/apodex/apodex-1.1-mini:free",
     "kilo/callstack/apex",
     "kilo/humansand/ampersand-v0.1",
     "kilo/interfaze/interfaze-beta",
@@ -65,6 +66,7 @@
     "kilo/openrouter/bodybuilder",
     "kilo/openrouter/free",
     "kilo/openrouter/pareto-code",
+    "kilo/paperinstruments/ultramarine-1-flash",
     "kilo/particle/particle-1",
     "kilo/stealth/glyph-cluster",
     "klokintegration/Kloker",
@@ -217,6 +219,7 @@
     "opencode/ring-2.6-1t-free",
     "opencode/space-bunny-free",
     "opencode/x-preview-f-free",
+    "openrouter/apodex/apodex-1.1-mini:free",
     "openrouter/openrouter/auto",
     "openrouter/openrouter/bodybuilder",
     "openrouter/openrouter/free",
@@ -326,6 +329,7 @@
     "vercel/klingai/kling-v3.0-i2v",
     "vercel/klingai/kling-v3.0-motion-control",
     "vercel/klingai/kling-v3.0-t2v",
+    "vercel/paperinstruments/ultramarine-1-flash",
     "vercel/particle/particle-1",
     "vercel/recraft/recraft-v2",
     "vercel/recraft/recraft-v3",
@@ -368,6 +372,7 @@
     "zenmux/volcengine/doubao-seed-code"
   ],
   "unresolvedOpenRouterOfferingIds": [
+    "openrouter/apodex/apodex-1.1-mini:free",
     "openrouter/openrouter/auto",
     "openrouter/openrouter/bodybuilder",
     "openrouter/openrouter/free",
