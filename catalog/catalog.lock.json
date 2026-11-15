@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "source": "https://models.dev/catalog.json?type=all",
-  "sha256": "4fbf6cf14b09a741e10349e6dc0304dba2dd213c46639c911dac8237c80e217b",
+  "sha256": "0593d071fdb6e956c2a3881b55a34a4a4e45cc51d6b5b8d515bf27a1bda371e4",
   "overlaySha256": "d1175f47e75b0485a6f0118ac4efc6bd83a57fc4ae611d3261c4c62e42fd3b80",
   "manualSha256": "9fcf04c902b4dfe00f1abcc309f297eb469bf4ed56bec733ab53c552e33b40ef",
   "verificationsSha256": "824768900245701b9874fcd71b5a531bdcf89b7be08b504ced5f18fdfb66bf1f",
   "recommendationsSha256": "c83340558739e7019ee62d5ca35f9c463228c672962915fd38f657827c863661",
-  "observedAt": "2026-11-15T10:31:36Z",
+  "observedAt": "2026-11-15T20:13:52Z",
   "generatedAt": "2026-11-15"
 }
