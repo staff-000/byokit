@@ -1,6 +1,6 @@
 {
-  "totalModels": 2072,
-  "attributedModels": 1672,
+  "totalModels": 2075,
+  "attributedModels": 1673,
   "unresolvedModelIds": [
     "abacus/route-llm",
     "abliteration-ai/abliterated-model",
@@ -182,6 +182,8 @@
     "nano-gpt/huihui-ai/Llama-3.3-70B-Instruct-abliterated",
     "nano-gpt/huihui-ai/Qwen2.5-32B-Instruct-abliterated",
     "nano-gpt/inflatebot/MN-12B-Mag-Mell-R1",
+    "nano-gpt/lyber/deepseek-v4.1-flash-1017-abliterated",
+    "nano-gpt/lyber/kimi-k3.1-pro-abliterated",
     "nano-gpt/meganova-ai/manta-flash-1.0",
     "nano-gpt/meganova-ai/manta-mini-1.0",
     "nano-gpt/meganova-ai/manta-pro-1.0",
