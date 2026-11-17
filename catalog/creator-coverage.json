@@ -1,6 +1,6 @@
 {
-  "totalModels": 2084,
-  "attributedModels": 1682,
+  "totalModels": 2097,
+  "attributedModels": 1695,
   "unresolvedModelIds": [
     "abacus/route-llm",
     "abliteration-ai/abliterated-model",
@@ -98,6 +98,7 @@
     "lightonai/lightonocr-3-0.8b",
     "llmgateway-providers/azure/grok-4-1-fast-reasoning",
     "llmgateway-providers/azure/grok-4-3",
+    "llmgateway-providers/canopywave/deepseek-v4.1-flash-latest",
     "llmgateway-providers/consensusprotocol/deepseek-v4.1-flash-uncensored",
     "llmgateway-providers/deepinfra/deepseek-v4.1-flash-latest",
     "llmgateway-providers/deepinfra/nemotron-3-ultra-550b",
@@ -185,7 +186,6 @@
     "nano-gpt/inflatebot/MN-12B-Mag-Mell-R1",
     "nano-gpt/kitani/clover-2",
     "nano-gpt/kitani/clover-2:thinking",
-    "nano-gpt/lyber/deepseek-v4.1-flash-1017-abliterated",
     "nano-gpt/lyber/kimi-k3.1-pro-abliterated",
     "nano-gpt/meganova-ai/manta-flash-1.0",
     "nano-gpt/meganova-ai/manta-mini-1.0",
