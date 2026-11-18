@@ -1,5 +1,5 @@
 {
-  "totalModels": 2097,
+  "totalModels": 2099,
   "attributedModels": 1695,
   "unresolvedModelIds": [
     "abacus/route-llm",
@@ -325,6 +325,8 @@
     "venice/aion-labs-aion-3-5-mini",
     "venice/muse-wonder",
     "venice/olafangensan-glm-4.7-flash-heretic",
+    "venice/openai-gpt-62-astra-pro",
+    "venice/openai-gpt-62-sol-pro",
     "venice/venice-uncensored-1-2",
     "venice/venice-uncensored-role-play",
     "vercel/bfl/flux-2-flex",
