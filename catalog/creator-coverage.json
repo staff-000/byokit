@@ -1,6 +1,6 @@
 {
-  "totalModels": 2087,
-  "attributedModels": 1684,
+  "totalModels": 2090,
+  "attributedModels": 1686,
   "unresolvedModelIds": [
     "abacus/route-llm",
     "abliteration-ai/abliterated-model",
@@ -245,6 +245,7 @@
     "opencode/pulse-alpha-free",
     "opencode/ring-2.6-1t-free",
     "opencode/space-bunny-free",
+    "opencode/tidepool-alpha-free",
     "opencode/x-preview-f-free",
     "opendatalab/mineru2.5-2509-1.2b",
     "openrouter/heygen/heygen-decision-1",
