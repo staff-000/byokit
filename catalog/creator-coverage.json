@@ -1,6 +1,6 @@
 {
-  "totalModels": 2097,
-  "attributedModels": 1692,
+  "totalModels": 2101,
+  "attributedModels": 1694,
   "unresolvedModelIds": [
     "abacus/route-llm",
     "abliteration-ai/abliterated-model",
@@ -113,6 +113,7 @@
     "llmgateway-providers/meta-contributor/muse-spark-1.3-contributor",
     "llmgateway-providers/novita/deepseek-v4.1-flash-latest",
     "llmgateway-providers/novita/kimi-k2",
+    "llmgateway-providers/reka-ai/deepseek-v4.1-flash-latest",
     "llmgateway-providers/reka-ai/reka-edge-2603",
     "llmgateway-providers/runpod/kimi-k3.1-pro-highspeed",
     "llmgateway-providers/runware/deepseek-v4.1-flash-latest",
@@ -213,6 +214,7 @@
     "nano-gpt/pokee-isaac",
     "nano-gpt/pqhaz/DeepSeek-V4.1-Flash-1017-heretic",
     "nano-gpt/pqhaz/DeepSeek-V4.1-Flash-1017-heretic:thinking",
+    "nano-gpt/radixark/daisyrose-27b",
     "nano-gpt/shisa-ai/shisa-v2-llama3.3-70b",
     "nano-gpt/shisa-ai/shisa-v2.1-llama3.3-70b",
     "nano-gpt/sicariussicariistuff/assistant-pepe-32b",
