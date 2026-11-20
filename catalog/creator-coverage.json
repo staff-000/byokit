@@ -1,6 +1,6 @@
 {
-  "totalModels": 2095,
-  "attributedModels": 1691,
+  "totalModels": 2097,
+  "attributedModels": 1692,
   "unresolvedModelIds": [
     "abacus/route-llm",
     "abliteration-ai/abliterated-model",
@@ -362,6 +362,7 @@
     "vercel/klingai/kling-v3.0-i2v",
     "vercel/klingai/kling-v3.0-motion-control",
     "vercel/klingai/kling-v3.0-t2v",
+    "vercel/modaic/mo",
     "vercel/paperinstruments/ultramarine-1-flash",
     "vercel/particle/particle-1",
     "vercel/recraft/recraft-v2",
