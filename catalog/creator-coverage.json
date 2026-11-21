@@ -1,6 +1,6 @@
 {
-  "totalModels": 2101,
-  "attributedModels": 1694,
+  "totalModels": 2104,
+  "attributedModels": 1695,
   "unresolvedModelIds": [
     "abacus/route-llm",
     "abliteration-ai/abliterated-model",
@@ -90,6 +90,7 @@
     "kilo/openrouter/pareto-code",
     "kilo/paperinstruments/ultramarine-1-flash",
     "kilo/particle/particle-1",
+    "kilo/radixark/daisyrose-27b",
     "kilo/stealth/glyph-cluster",
     "klokintegration/Kloker",
     "klokintegration/Kloker-Integration-Architect",
@@ -257,6 +258,7 @@
     "openrouter/openrouter/free",
     "openrouter/openrouter/fusion",
     "openrouter/openrouter/pareto-code",
+    "openrouter/radixark/daisyrose-27b",
     "orcarouter/orcarouter/auto",
     "orcarouter/orcarouter/free",
     "orcarouter/orcarouter/fusion",
@@ -417,6 +419,7 @@
     "openrouter/openrouter/bodybuilder",
     "openrouter/openrouter/free",
     "openrouter/openrouter/fusion",
-    "openrouter/openrouter/pareto-code"
+    "openrouter/openrouter/pareto-code",
+    "openrouter/radixark/daisyrose-27b"
   ]
 }
