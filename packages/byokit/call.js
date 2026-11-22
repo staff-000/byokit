@@ -569,6 +569,7 @@ function parsed(data, protocol, model) {
           type: 'function',
           function: { name: b.name, arguments: JSON.stringify(b.input) },
         });
+      else if (b.type === 'thinking' || b.type === 'redacted_thinking') continue;
       else throw new CallError('UNSUPPORTED_RESPONSE', 'Unsupported provider content block.');
     }
     finish =
@@ -672,11 +673,13 @@ function parsed(data, protocol, model) {
       ? {
           _nativeStop: data.stop_reason,
           _stopSequence: data.stop_sequence ?? null,
-          _nativeContent: data.content.map((b) =>
-            b.type === 'text'
-              ? { type: 'text', text: b.text }
-              : { type: 'tool_use', id: b.id, name: b.name, input: b.input },
-          ),
+          _nativeContent: data.content
+            .filter((b) => b.type === 'text' || b.type === 'tool_use')
+            .map((b) =>
+              b.type === 'text'
+                ? { type: 'text', text: b.text }
+                : { type: 'tool_use', id: b.id, name: b.name, input: b.input },
+            ),
         }
       : {}),
     id,

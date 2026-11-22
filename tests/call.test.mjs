@@ -323,6 +323,30 @@ test('native Claude content order and stop sequence survive normalization withou
   assert.ok(!Object.keys(o).some((k) => k.startsWith('_')));
 });
 
+test('Claude thinking blocks are skipped and never become answers or native content', async () => {
+  const anthropicModel = model('anthropic');
+  const content = [
+    { type: 'thinking', thinking: 'Private reasoning', signature: 'sig' },
+    { type: 'redacted_thinking', data: 'opaque' },
+    { type: 'text', text: 'Answer' },
+  ];
+  const fetch = async () => ok({ content, stop_reason: 'end_turn' });
+  const o = await byokit.call(anthropicModel, 'Hi', 'key', { ...noChecks, fetch });
+  assert.equal(o.choices[0].message.content, 'Answer');
+  assert.equal(o.choices[0].message.reasoning_content, undefined);
+  assert.equal(o.choices[0].finish_reason, 'stop');
+  const c = await byokit.callClaude(anthropicModel, 'Hi', 'key', { ...noChecks, fetch });
+  assert.deepEqual(c.content, [{ type: 'text', text: 'Answer' }]);
+
+  await assert.rejects(
+    byokit.call(anthropicModel, 'Hi', 'key', {
+      ...noChecks,
+      fetch: async () => ok({ content: content.slice(0, 2), stop_reason: 'max_tokens' }),
+    }),
+    (e) => e.code === 'EMPTY_RESPONSE' && e.completion.finishReason === 'length',
+  );
+});
+
 test('Gemini thinking parts, thoughtSignature, and reasoning content parse correctly', async () => {
   const geminiModel = model('google');
   // 1. Thinking part + final answer part
